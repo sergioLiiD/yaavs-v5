@@ -29,9 +29,12 @@ declare module 'next-auth/jwt' {
 }
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET || "tu_secreto_seguro_para_nextauth_aqui",
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 días
   },
+  debug: process.env.NODE_ENV === 'development',
   pages: {
     signIn: '/auth/login',
     signOut: '/auth/logout',
@@ -45,22 +48,27 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Contraseña', type: 'password' },
       },
       async authorize(credentials) {
+        console.log('Authorize function called with:', credentials);
+        
         if (!credentials?.email || !credentials.password) {
+          console.log('No credentials provided');
           return null;
         }
 
         // Implementación simulada para pruebas iniciales
-        // En producción, descomenta el código que accede a la base de datos
-        
-        // Simulación de usuario para pruebas
         if (credentials.email === 'admin@example.com' && credentials.password === 'password') {
-          return {
+          console.log('Test credentials matched, returning mock user');
+          const user = {
             id: '1',
             name: 'Administrador',
             email: 'admin@example.com',
             role: 'ADMINISTRADOR',
           };
+          return user;
         }
+
+        console.log('No matching user found');
+        return null;
 
         /* 
         // Implementación real con base de datos
@@ -85,13 +93,14 @@ export const authOptions: NextAuthOptions = {
           role: user.nivel,
         };
         */
-
-        return null;
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
+      console.log('JWT callback - token:', token);
+      console.log('JWT callback - user:', user);
+      
       if (user) {
         token.role = user.role;
         token.id = user.id;
@@ -99,6 +108,9 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
+      console.log('Session callback - session:', session);
+      console.log('Session callback - token:', token);
+      
       if (token && session.user) {
         session.user.role = token.role;
         session.user.id = token.id;

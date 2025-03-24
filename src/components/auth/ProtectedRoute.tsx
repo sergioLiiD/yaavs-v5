@@ -1,73 +1,81 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { ReactNode } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 
 interface ProtectedRouteProps {
-  children: ReactNode;
-  requiredRoles?: string[]; // Roles permitidos para acceder a la ruta
+  children: React.ReactNode;
+  requiredRoles?: string[];
 }
 
-export function ProtectedRoute({ 
-  children,
+export default function ProtectedRoute({ 
+  children, 
   requiredRoles = [] 
 }: ProtectedRouteProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [authorized, setAuthorized] = useState(false);
-  
+  const pathname = usePathname();
+
   useEffect(() => {
-    console.log('ProtectedRoute - Status:', status);
-    console.log('ProtectedRoute - Session:', session);
+    console.log('ProtectedRoute - Current pathname:', pathname);
+    console.log('ProtectedRoute - Session status:', status);
+    console.log('ProtectedRoute - Session data:', session);
     
-    // Verificación cuando la sesión está lista
+    // Si se está cargando la sesión, no hacer nada aún
     if (status === 'loading') {
-      // Esperando a que se cargue la sesión
-      setAuthorized(false);
+      console.log('ProtectedRoute - Session is loading');
       return;
     }
     
-    // Si el usuario no está autenticado, redirigir al login
+    // Si no hay sesión, redirigir a la página de login
     if (status === 'unauthenticated') {
-      console.log('ProtectedRoute - No autenticado, redirigiendo a /auth/login');
-      setAuthorized(false);
-      router.push('/auth/login');
+      console.log('ProtectedRoute - User is unauthenticated, redirecting to login');
+      router.push(`/auth/login?callbackUrl=${encodeURIComponent(pathname || '/dashboard')}`);
       return;
     }
     
-    // Si hay roles requeridos y el usuario no tiene el rol adecuado
+    // Verificar el rol si se requiere
     if (
       status === 'authenticated' && 
       requiredRoles.length > 0 && 
       session?.user?.role && 
       !requiredRoles.includes(session.user.role)
     ) {
-      console.log('ProtectedRoute - Sin permisos adecuados, redirigiendo a /dashboard');
-      setAuthorized(false);
-      router.push('/dashboard');
+      console.log('ProtectedRoute - User does not have required role:', {
+        userRole: session.user.role,
+        requiredRoles
+      });
+      router.push('/unauthorized');
       return;
     }
     
-    // Usuario autorizado
-    console.log('ProtectedRoute - Usuario autorizado');
-    setAuthorized(true);
-  }, [status, session, router, requiredRoles]);
-  
-  // Mientras se carga, mostrar el spinner
-  if (status === 'loading' || !authorized) {
+    console.log('ProtectedRoute - Access granted');
+  }, [status, session, router, pathname, requiredRoles]);
+
+  // Mientras se carga la sesión, mostrar un indicador de carga
+  if (status === 'loading') {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verificando autenticación...</p>
-          <p className="mt-2 text-sm text-gray-500">Estado: {status}</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
-  
-  // Renderizar el contenido si el usuario está autorizado
-  return <>{children}</>;
+
+  // Si no tiene sesión, no mostrar nada (la redirección se maneja en el useEffect)
+  if (status === 'unauthenticated') {
+    return null;
+  }
+
+  // Si tiene rol requerido o no se especifica rol, mostrar el contenido
+  if (
+    status === 'authenticated' && 
+    (requiredRoles.length === 0 || 
+     (session?.user?.role && requiredRoles.includes(session.user.role)))
+  ) {
+    return <>{children}</>;
+  }
+
+  // Caso no manejado, no mostrar nada
+  return null;
 } 
