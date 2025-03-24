@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { signIn } from 'next-auth/react';
 
 // Esquema de validación
 const loginSchema = z.object({
@@ -39,18 +40,23 @@ export default function LoginPage() {
     setError(null);
     
     try {
-      // Aquí implementaremos la lógica de autenticación
-      // Por ahora, solo simularemos un inicio de sesión exitoso
-      console.log('Iniciando sesión con:', data);
-      
-      // Simulamos una petición
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Redireccionamos al dashboard en caso de éxito
-      router.push('/dashboard');
+      const response = await signIn('credentials', {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (response?.error) {
+        setError('Credenciales incorrectas. Por favor intente de nuevo.');
+        return;
+      }
+
+      if (response?.ok) {
+        router.push('/dashboard');
+      }
     } catch (err) {
       console.error('Error al iniciar sesión:', err);
-      setError('Credenciales incorrectas. Por favor intente de nuevo.');
+      setError('Ha ocurrido un error al iniciar sesión. Por favor intente nuevamente.');
     } finally {
       setIsLoading(false);
     }

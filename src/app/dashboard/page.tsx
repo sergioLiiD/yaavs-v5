@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
+import { useSession } from 'next-auth/react';
 import MainLayout from '@/components/layout/MainLayout';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 // Componentes
 const StatCard = ({ title, value, icon, color }: { title: string; value: string; icon: string; color: string }) => (
@@ -19,6 +21,8 @@ const StatCard = ({ title, value, icon, color }: { title: string; value: string;
 );
 
 export default function DashboardPage() {
+  const { data: session } = useSession();
+  
   // Datos de ejemplo para el dashboard
   const stats = [
     { title: 'Tickets Abiertos', value: '24', icon: 'confirmation_number', color: 'border-yellow-500' },
@@ -35,80 +39,89 @@ export default function DashboardPage() {
   ];
 
   return (
-    <MainLayout title="Dashboard - Sistema de Reparación">
-      <div className="py-6">
-        <div className="mx-auto px-4 sm:px-6 md:px-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        </div>
-        
-        <div className="mx-auto px-4 sm:px-6 md:px-8">
-          {/* Tarjetas de estadísticas */}
-          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat, index) => (
-              <StatCard key={index} {...stat} />
-            ))}
+    <ProtectedRoute>
+      <MainLayout title="Dashboard - Sistema de Reparación">
+        <div className="py-6">
+          <div className="mx-auto px-4 sm:px-6 md:px-8">
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Dashboard
+              {session?.user?.name && (
+                <span className="text-lg ml-2 font-normal text-gray-600">
+                  | Bienvenido, {session.user.name}
+                </span>
+              )}
+            </h1>
           </div>
-
-          {/* Gráfico o información adicional */}
-          <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Tickets por Estatus</h2>
-            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-md">
-              <p className="text-gray-500">Aquí irá un gráfico de tickets por estatus</p>
+          
+          <div className="mx-auto px-4 sm:px-6 md:px-8">
+            {/* Tarjetas de estadísticas */}
+            <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {stats.map((stat, index) => (
+                <StatCard key={index} {...stat} />
+              ))}
             </div>
-          </div>
 
-          {/* Tickets recientes */}
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Tickets Recientes</h2>
-            <div className="overflow-x-auto bg-white rounded-lg shadow-md">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      ID
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Cliente
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Modelo
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Problema
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Estatus
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {recentTickets.map((ticket) => (
-                    <tr key={ticket.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                        {ticket.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {ticket.cliente}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ticket.modelo}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ticket.problema}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          {ticket.estatus}
-                        </span>
-                      </td>
+            {/* Gráfico o información adicional */}
+            <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Tickets por Estatus</h2>
+              <div className="h-64 flex items-center justify-center bg-gray-50 rounded-md">
+                <p className="text-gray-500">Aquí irá un gráfico de tickets por estatus</p>
+              </div>
+            </div>
+
+            {/* Tickets recientes */}
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Tickets Recientes</h2>
+              <div className="overflow-x-auto bg-white rounded-lg shadow-md">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ID
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Cliente
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Modelo
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Problema
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estatus
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {recentTickets.map((ticket) => (
+                      <tr key={ticket.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                          {ticket.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {ticket.cliente}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {ticket.modelo}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {ticket.problema}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            {ticket.estatus}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </MainLayout>
+      </MainLayout>
+    </ProtectedRoute>
   );
 } 

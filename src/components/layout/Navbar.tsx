@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: session } = useSession();
+
+  const handleSignOut = async () => {
+    await signOut({ redirect: true, callbackUrl: '/auth/login' });
+  };
 
   return (
     <nav className="bg-white shadow-sm z-10">
@@ -41,12 +47,26 @@ const Navbar: React.FC = () => {
                   <span className="material-symbols-outlined text-gray-700">
                     account_circle
                   </span>
+                  {session?.user?.name && (
+                    <span className="hidden md:inline-block ml-1 text-sm text-gray-700">
+                      {session.user.name}
+                    </span>
+                  )}
                 </button>
               </div>
               
               {isOpen && (
                 <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg">
                   <div className="py-1 rounded-md bg-white shadow-xs">
+                    {session?.user?.name && (
+                      <div className="block px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
+                        <p className="font-medium">{session.user.name}</p>
+                        <p className="text-xs text-gray-500">{session.user.email}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Rol: {session.user.role || 'Usuario'}
+                        </p>
+                      </div>
+                    )}
                     <Link
                       href="/perfil"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -59,12 +79,12 @@ const Navbar: React.FC = () => {
                     >
                       Configuración
                     </Link>
-                    <Link
-                      href="/auth/login"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    <button
+                      onClick={handleSignOut}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Cerrar Sesión
-                    </Link>
+                    </button>
                   </div>
                 </div>
               )}
