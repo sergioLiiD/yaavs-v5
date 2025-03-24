@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
     console.log('Login page loaded');
@@ -58,66 +59,94 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Sistema de Reparación de Celulares</h1>
-        
-        <h2 className="text-xl font-semibold mb-6 text-center">Iniciar sesión</h2>
-        
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
-              Correo electrónico
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          
-          <div className="mb-6">
-            <label htmlFor="password" className="block text-gray-700 font-medium mb-2">
-              Contraseña
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-300"
-          >
-            {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-          </button>
-        </form>
-        
-        <div className="mt-4 text-center text-sm">
-          <p className="text-gray-600">
-            ¿Olvidaste tu contraseña?{' '}
-            <Link href="/auth/recuperar-password" className="text-blue-500 hover:underline">
-              Recuperar contraseña
-            </Link>
-          </p>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
+      <div className="w-full max-w-md">
+        <div className="flex justify-center mb-8">
+          <img 
+            src="/logo.png" 
+            alt="YAAVS Logo" 
+            className="h-12"
+            onError={(e) => {
+              // Fallback si no hay logo
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+            }} 
+          />
         </div>
         
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center text-xs text-gray-500">
+        <div className="bg-white shadow-md rounded-lg p-8">
+          <h1 className="text-xl font-bold text-center text-gray-900 mb-2">
+            Sistema de Reparación de Celulares
+          </h1>
+          <h2 className="text-sm text-center text-gray-500 mb-5">
+            Inicia sesión para continuar
+          </h2>
+          
+          {error && (
+            <div className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50">
+              <span className="font-medium">Error:</span> {error}
+            </div>
+          )}
+          
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div>
+              <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900">
+                Correo electrónico
+              </label>
+              <input
+                id="email"
+                type="email"
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                placeholder="nombre@empresa.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900">
+                Contraseña
+              </label>
+              <input
+                id="password"
+                type="password"
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember"
+                  type="checkbox"
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  checked={rememberMe}
+                  onChange={() => setRememberMe(!rememberMe)}
+                />
+                <label htmlFor="remember" className="ml-2 text-sm font-medium text-gray-900">
+                  Recordarme
+                </label>
+              </div>
+              <Link href="/auth/recuperar-password" className="text-sm text-blue-600 hover:underline">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+            
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:bg-blue-300"
+            >
+              {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+            </button>
+          </form>
+        </div>
+        
+        <div className="mt-5 text-center text-xs text-gray-500">
           <p>© 2023 Sistema de Reparación de Celulares - YAAVS</p>
         </div>
       </div>

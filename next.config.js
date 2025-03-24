@@ -2,7 +2,7 @@
 const nextConfig = {
   // Desactivar cache para desarrollo
   experimental: {
-    optimizeCss: true,
+    // optimizeCss: true, // Desactivamos esta opción que causa problemas
   },
   // Hacer redirects
   async redirects() {
