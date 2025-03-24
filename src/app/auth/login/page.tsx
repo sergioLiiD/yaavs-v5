@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 
 // Esquema de validación
 const loginSchema = z.object({
@@ -19,8 +19,20 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Si el usuario ya está autenticado, redirigir al dashboard
+  useEffect(() => {
+    console.log('Estado de sesión:', status);
+    console.log('Datos de sesión:', session);
+    
+    if (status === 'authenticated' && session) {
+      console.log('Usuario autenticado, redirigiendo a /dashboard');
+      router.push('/dashboard');
+    }
+  }, [session, status, router]);
   
   const { 
     register, 
@@ -38,6 +50,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     setError(null);
+    console.log('Intentando iniciar sesión con:', data.email);
     
     try {
       const response = await signIn('credentials', {
@@ -46,12 +59,16 @@ export default function LoginPage() {
         redirect: false,
       });
 
+      console.log('Respuesta de signIn:', response);
+
       if (response?.error) {
+        console.error('Error en la autenticación:', response.error);
         setError('Credenciales incorrectas. Por favor intente de nuevo.');
         return;
       }
 
       if (response?.ok) {
+        console.log('Autenticación exitosa, redirigiendo a /dashboard');
         router.push('/dashboard');
       }
     } catch (err) {
@@ -148,6 +165,12 @@ export default function LoginPage() {
             >
               {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </button>
+          </div>
+          
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600">
+              Estado de sesión: <span className="font-semibold">{status}</span>
+            </p>
           </div>
         </form>
       </div>
