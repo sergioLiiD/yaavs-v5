@@ -271,6 +271,10 @@ model Producto {
   marcaId          Int
   modeloId         Int
   proveedorId      Int
+  stock            Int           @default(0)
+  stockMinimo      Int           @default(0)
+  stockMaximo      Int           @default(0)
+  precioPromedio   Float         @default(0)
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   categoria        TipoServicio  @relation(fields: [categoriaId], references: [id])
@@ -278,8 +282,23 @@ model Producto {
   modelo           Modelo        @relation(fields: [modeloId], references: [id])
   proveedor        Proveedor     @relation(fields: [proveedorId], references: [id])
   fotos            FotoProducto[]
+  entradas         EntradaAlmacen[]
 
   @@map("productos")
+}
+
+model EntradaAlmacen {
+  id            Int       @id @default(autoincrement())
+  productoId    Int
+  producto      Producto  @relation(fields: [productoId], references: [id])
+  cantidad      Int
+  precioCompra  Float
+  notas         String?
+  fecha         DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("entradas_almacen")
 }
 
 model FotoProducto {
