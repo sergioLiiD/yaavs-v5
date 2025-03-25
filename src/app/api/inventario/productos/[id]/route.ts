@@ -50,78 +50,44 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !['ADMINISTRADOR', 'GERENTE'].includes(session.user.nivel)) {
+    
+    if (!session?.user) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
     }
 
-    const formData = await request.formData();
-    const producto = {
-      sku: formData.get('sku') as string,
-      nombre: formData.get('nombre') as string,
-      descripcion: formData.get('descripcion') as string,
-      notasInternas: formData.get('notasInternas') as string,
-      garantiaValor: parseInt(formData.get('garantiaValor') as string),
-      garantiaUnidad: formData.get('garantiaUnidad') as string,
-      categoriaId: parseInt(formData.get('categoriaId') as string),
-      marcaId: parseInt(formData.get('marcaId') as string),
-      modeloId: parseInt(formData.get('modeloId') as string),
-      proveedorId: parseInt(formData.get('proveedorId') as string),
+    const data = await request.json();
+    console.log('Datos recibidos para actualizar:', data);
+
+    // Preparar los datos para la actualización
+    const updateData: any = {
+      nombre: data.nombre,
+      tipo: data.tipo,
+      sku: data.sku || null,
+      descripcion: data.descripcion || null,
+      notasInternas: data.notasInternas || null,
+      garantiaValor: parseInt(data.garantiaValor) || 0,
+      garantiaUnidad: data.garantiaUnidad || 'dias',
+      categoriaId: parseInt(data.categoriaId),
+      marcaId: parseInt(data.marcaId),
+      modeloId: parseInt(data.modeloId),
+      proveedorId: data.proveedorId ? parseInt(data.proveedorId) : undefined,
     };
 
-    // Validar campos requeridos
-    if (!producto.sku || !producto.nombre || !producto.descripcion || 
-        !producto.garantiaValor || !producto.garantiaUnidad ||
-        !producto.categoriaId || !producto.marcaId || 
-        !producto.modeloId || !producto.proveedorId) {
-      return NextResponse.json(
-        { error: 'Todos los campos son requeridos' },
-        { status: 400 }
-      );
-    }
-
-    // Validar que el SKU no exista (excepto para el mismo producto)
-    const existingSKU = await prisma.producto.findFirst({
+    const producto = await prisma.producto.update({
       where: {
-        sku: producto.sku,
-        NOT: { id: parseInt(params.id) },
+        id: parseInt(params.id),
       },
+      data: updateData,
     });
 
-    if (existingSKU) {
-      return NextResponse.json(
-        { error: 'El SKU ya existe' },
-        { status: 400 }
-      );
-    }
-
-    // Actualizar el producto
-    const productoActualizado = await prisma.producto.update({
-      where: { id: parseInt(params.id) },
-      data: producto,
-      include: {
-        categoria: true,
-        marca: true,
-        modelo: true,
-        proveedor: true,
-        fotos: true,
-      },
-    });
-
-    // Procesar fotos si existen
-    const fotos = formData.getAll('fotos') as File[];
-    if (fotos.length > 0) {
-      // Aquí implementaremos la lógica para subir las fotos
-      // y crear los registros en la tabla fotos_producto
-    }
-
-    return NextResponse.json(productoActualizado);
+    return NextResponse.json(producto);
   } catch (error) {
     console.error('Error al actualizar producto:', error);
     return NextResponse.json(
-      { error: 'Error al actualizar producto' },
+      { error: 'Error al actualizar el producto' },
       { status: 500 }
     );
   }
@@ -133,23 +99,25 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !['ADMINISTRADOR', 'GERENTE'].includes(session.user.nivel)) {
+    
+    if (!session?.user) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
     }
 
-    // Eliminar el producto y sus fotos (las fotos se eliminarán automáticamente por la relación onDelete: Cascade)
     await prisma.producto.delete({
-      where: { id: parseInt(params.id) },
+      where: {
+        id: parseInt(params.id),
+      },
     });
 
-    return NextResponse.json({ message: 'Producto eliminado correctamente' });
+    return NextResponse.json({ message: 'Producto eliminado' });
   } catch (error) {
     console.error('Error al eliminar producto:', error);
     return NextResponse.json(
-      { error: 'Error al eliminar producto' },
+      { error: 'Error al eliminar el producto' },
       { status: 500 }
     );
   }

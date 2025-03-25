@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { HiPlus, HiPencil, HiTrash, HiChevronDown, HiChevronUp, HiSearch } from 'react-icons/hi';
@@ -208,10 +208,7 @@ export default function ProveedoresPage() {
                   Teléfono
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  RFC
+                  Detalles
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
@@ -220,8 +217,8 @@ export default function ProveedoresPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {proveedoresFiltrados.map((proveedor) => (
-                <>
-                  <tr key={proveedor.id} className="hover:bg-gray-50">
+                <React.Fragment key={proveedor.id}>
+                  <tr className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {proveedor.tipo === 'FISICA' ? 'Persona Física' : 'Persona Moral'}
                     </td>
@@ -235,22 +232,14 @@ export default function ProveedoresPage() {
                       {proveedor.telefono}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {proveedor.email || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {proveedor.rfc}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
                         onClick={() => toggleDetalles(proveedor.id)}
-                        className="text-gray-600 hover:text-gray-900 mr-4"
+                        className="text-blue-600 hover:text-blue-900 font-medium"
                       >
-                        {proveedorExpandido === proveedor.id ? (
-                          <HiChevronUp className="h-5 w-5" />
-                        ) : (
-                          <HiChevronDown className="h-5 w-5" />
-                        )}
+                        {proveedorExpandido === proveedor.id ? 'Ocultar' : 'Mostrar'}
                       </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
                         onClick={() => handleEdit(proveedor)}
                         className="text-blue-600 hover:text-blue-900 mr-4"
@@ -267,33 +256,51 @@ export default function ProveedoresPage() {
                   </tr>
                   {proveedorExpandido === proveedor.id && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-4 bg-gray-50">
+                      <td colSpan={6} className="px-6 py-4 bg-gray-50">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-sm font-medium text-gray-500">Dirección:</p>
-                            <p className="text-sm text-gray-900">{proveedor.direccion || '-'}</p>
+                            <h4 className="text-sm font-medium text-gray-900">Información de Contacto</h4>
+                            <dl className="mt-2 space-y-1">
+                              <div className="flex justify-between">
+                                <dt className="text-sm text-gray-900">Email:</dt>
+                                <dd className="text-sm text-gray-900">{proveedor.email || '-'}</dd>
+                              </div>
+                              <div className="flex justify-between">
+                                <dt className="text-sm text-gray-900">Dirección:</dt>
+                                <dd className="text-sm text-gray-900">{proveedor.direccion || '-'}</dd>
+                              </div>
+                            </dl>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-500">Banco:</p>
-                            <p className="text-sm text-gray-900">{proveedor.banco}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Cuenta Bancaria:</p>
-                            <p className="text-sm text-gray-900">{proveedor.cuentaBancaria}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">CLABE Interbancaria:</p>
-                            <p className="text-sm text-gray-900">{proveedor.clabeInterbancaria}</p>
+                            <h4 className="text-sm font-medium text-gray-900">Información Fiscal</h4>
+                            <dl className="mt-2 space-y-1">
+                              <div className="flex justify-between">
+                                <dt className="text-sm text-gray-900">RFC:</dt>
+                                <dd className="text-sm text-gray-900">{proveedor.rfc || '-'}</dd>
+                              </div>
+                              <div className="flex justify-between">
+                                <dt className="text-sm text-gray-900">Banco:</dt>
+                                <dd className="text-sm text-gray-900">{proveedor.banco || '-'}</dd>
+                              </div>
+                              <div className="flex justify-between">
+                                <dt className="text-sm text-gray-900">Cuenta Bancaria:</dt>
+                                <dd className="text-sm text-gray-900">{proveedor.cuentaBancaria || '-'}</dd>
+                              </div>
+                              <div className="flex justify-between">
+                                <dt className="text-sm text-gray-900">CLABE Interbancaria:</dt>
+                                <dd className="text-sm text-gray-900">{proveedor.clabeInterbancaria || '-'}</dd>
+                              </div>
+                            </dl>
                           </div>
                           <div className="col-span-2">
-                            <p className="text-sm font-medium text-gray-500">Notas:</p>
-                            <p className="text-sm text-gray-900">{proveedor.notas || '-'}</p>
+                            <h4 className="text-sm font-medium text-gray-900">Notas</h4>
+                            <p className="mt-2 text-sm text-gray-900">{proveedor.notas || '-'}</p>
                           </div>
                         </div>
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
@@ -302,25 +309,25 @@ export default function ProveedoresPage() {
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 overflow-y-auto pt-20">
             <div className="bg-white rounded-lg p-6 w-full max-w-2xl my-4">
-              <h2 className="text-xl font-semibold mb-4">
+              <h2 className="text-xl font-semibold mb-4 text-gray-900">
                 {editingId ? 'Editar Proveedor' : 'Nuevo Proveedor'}
               </h2>
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Tipo</label>
+                    <label className="block text-sm font-medium text-gray-900">Tipo</label>
                     <select
                       name="tipo"
                       value={formData.tipo}
                       onChange={(e) => setFormData({ ...formData, tipo: e.target.value as TipoProveedor })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
                     >
-                      <option value="FISICA">Persona Física</option>
-                      <option value="MORAL">Persona Moral</option>
+                      <option value="FISICA" className="text-gray-900">Persona Física</option>
+                      <option value="MORAL" className="text-gray-900">Persona Moral</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Nombre *</label>
+                    <label className="block text-sm font-medium text-gray-900">Nombre *</label>
                     <input
                       type="text"
                       name="nombre"
@@ -331,7 +338,7 @@ export default function ProveedoresPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Contacto</label>
+                    <label className="block text-sm font-medium text-gray-900">Contacto</label>
                     <input
                       type="text"
                       name="contacto"
@@ -341,7 +348,7 @@ export default function ProveedoresPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Teléfono *</label>
+                    <label className="block text-sm font-medium text-gray-900">Teléfono *</label>
                     <input
                       type="tel"
                       name="telefono"
@@ -352,7 +359,7 @@ export default function ProveedoresPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <label className="block text-sm font-medium text-gray-900">Email</label>
                     <input
                       type="email"
                       name="email"
@@ -362,7 +369,7 @@ export default function ProveedoresPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">RFC</label>
+                    <label className="block text-sm font-medium text-gray-900">RFC</label>
                     <input
                       type="text"
                       name="rfc"
@@ -372,7 +379,7 @@ export default function ProveedoresPage() {
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">Dirección</label>
+                    <label className="block text-sm font-medium text-gray-900">Dirección</label>
                     <textarea
                       name="direccion"
                       value={formData.direccion || ''}
@@ -382,7 +389,7 @@ export default function ProveedoresPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Banco</label>
+                    <label className="block text-sm font-medium text-gray-900">Banco</label>
                     <input
                       type="text"
                       name="banco"
@@ -392,7 +399,7 @@ export default function ProveedoresPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Cuenta Bancaria</label>
+                    <label className="block text-sm font-medium text-gray-900">Cuenta Bancaria</label>
                     <input
                       type="text"
                       name="cuentaBancaria"
@@ -402,7 +409,7 @@ export default function ProveedoresPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">CLABE Interbancaria</label>
+                    <label className="block text-sm font-medium text-gray-900">CLABE Interbancaria</label>
                     <input
                       type="text"
                       name="clabeInterbancaria"
@@ -412,7 +419,7 @@ export default function ProveedoresPage() {
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">Notas</label>
+                    <label className="block text-sm font-medium text-gray-900">Notas</label>
                     <textarea
                       name="notas"
                       value={formData.notas || ''}

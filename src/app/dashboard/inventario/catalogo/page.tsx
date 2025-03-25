@@ -41,6 +41,7 @@ interface Producto {
     id: number;
     url: string;
   }[];
+  tipo: 'PRODUCTO' | 'SERVICIO';
 }
 
 interface TipoServicio {
@@ -66,6 +67,7 @@ interface Proveedor {
 
 interface FormData {
   nombre: string;
+  tipo: 'PRODUCTO' | 'SERVICIO';
   sku: string;
   descripcion: string;
   notasInternas: string;
@@ -88,6 +90,7 @@ export default function CatalogoPage() {
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [formData, setFormData] = useState<FormData>({
     nombre: '',
+    tipo: 'PRODUCTO',
     sku: '',
     descripcion: '',
     notasInternas: '',
@@ -242,45 +245,32 @@ export default function CatalogoPage() {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const data = {
-      nombre: formData.nombre,
-      sku: formData.sku,
-      descripcion: formData.descripcion,
-      notasInternas: formData.notasInternas || null,
-      garantiaValor: formData.garantiaValor,
-      garantiaUnidad: formData.garantiaUnidad,
-      categoriaId: formData.categoriaId,
-      marcaId: formData.marcaId,
-      modeloId: formData.modeloId,
-      proveedorId: formData.proveedorId,
-    };
-
     try {
-      const response = await fetch('/api/inventario/productos', {
-        method: productoSeleccionado ? 'PUT' : 'POST',
+      const url = productoSeleccionado ? `/api/inventario/productos/${productoSeleccionado.id}` : '/api/inventario/productos';
+      
+      const method = productoSeleccionado ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(productoSeleccionado ? { ...data, id: productoSeleccionado.id } : data),
+        credentials: 'include',
+        body: JSON.stringify(formData),
       });
 
-      if (response.status === 403) {
-        throw new Error('No tienes permisos para realizar esta operación. Por favor, inicia sesión nuevamente.');
-      }
-
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Error al guardar el producto');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al guardar el producto');
       }
 
-      await cargarDatosIniciales();
       setShowModal(false);
       setProductoSeleccionado(null);
       setFormData({
         nombre: '',
+        tipo: 'PRODUCTO',
         sku: '',
         descripcion: '',
         notasInternas: '',
@@ -291,13 +281,12 @@ export default function CatalogoPage() {
         modeloId: 0,
         proveedorId: 0,
       });
+      setFotos([]);
+      setPreviewFotos([]);
+      await cargarDatosIniciales();
     } catch (error) {
       console.error('Error:', error);
-      if (error instanceof Error) {
-        alert(error.message);
-      } else {
-        alert('Error al guardar el producto. Por favor, intenta nuevamente.');
-      }
+      alert(error instanceof Error ? error.message : 'Error al guardar el producto');
     }
   };
 
@@ -326,6 +315,7 @@ export default function CatalogoPage() {
     setProductoSeleccionado(producto);
     setFormData({
       nombre: producto.nombre,
+      tipo: producto.tipo,
       sku: producto.sku,
       descripcion: producto.descripcion,
       notasInternas: producto.notasInternas || '',
@@ -388,6 +378,9 @@ export default function CatalogoPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                  Tipo
+                </th>
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                   Nombre
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
@@ -412,6 +405,15 @@ export default function CatalogoPage() {
                 <>
                   <tr key={producto.id}>
                     <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        producto.tipo === 'PRODUCTO' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {producto.tipo === 'PRODUCTO' ? 'Producto' : 'Servicio'}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {producto.nombre}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -471,7 +473,7 @@ export default function CatalogoPage() {
                             <h4 className="text-sm font-medium text-gray-900">Garantía</h4>
                             <dl className="mt-2 space-y-1">
                               <div className="flex justify-between">
-                                <dt className="text-sm text-gray-500">Valor:</dt>
+                                <dt className="text-sm text-gray-500">Cantidad:</dt>
                                 <dd className="text-sm text-gray-900">{producto.garantiaValor}</dd>
                               </div>
                               <div className="flex justify-between">
@@ -513,6 +515,22 @@ export default function CatalogoPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="tipo" className="block text-sm font-medium text-gray-700">
+                  Tipo
+                </label>
+                <select
+                  name="tipo"
+                  id="tipo"
+                  value={formData.tipo}
+                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value as 'PRODUCTO' | 'SERVICIO' })}
+                  className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
+                  required
+                >
+                  <option value="PRODUCTO">Producto</option>
+                  <option value="SERVICIO">Servicio</option>
+                </select>
+              </div>
               <div>
                 <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
                   Nombre
@@ -694,6 +712,7 @@ export default function CatalogoPage() {
                     setProductoSeleccionado(null);
                     setFormData({
                       nombre: '',
+                      tipo: 'PRODUCTO',
                       sku: '',
                       descripcion: '',
                       notasInternas: '',

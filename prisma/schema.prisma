@@ -253,25 +253,31 @@ model Proveedor {
   @@map("proveedores")
 }
 
+enum TipoProducto {
+  PRODUCTO
+  SERVICIO
+}
+
 model Producto {
-  id             Int            @id @default(autoincrement())
-  sku            String         @unique
-  nombre         String
-  descripcion    String
-  notasInternas  String?
-  garantiaValor  Int
-  garantiaUnidad String
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  categoriaId    Int
-  marcaId        Int
-  modeloId       Int
-  proveedorId    Int
-  fotos          FotoProducto[]
-  categoria      TipoServicio   @relation(fields: [categoriaId], references: [id])
-  marca          Marca          @relation(fields: [marcaId], references: [id])
-  modelo         Modelo         @relation(fields: [modeloId], references: [id])
-  proveedor      Proveedor      @relation(fields: [proveedorId], references: [id])
+  id               Int           @id @default(autoincrement())
+  tipo             TipoProducto  @default(PRODUCTO)
+  sku              String?
+  nombre           String
+  descripcion      String?
+  notasInternas    String?
+  garantiaValor    Int
+  garantiaUnidad   String
+  categoriaId      Int
+  marcaId          Int
+  modeloId         Int
+  proveedorId      Int
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  categoria        TipoServicio  @relation(fields: [categoriaId], references: [id])
+  marca            Marca         @relation(fields: [marcaId], references: [id])
+  modelo           Modelo        @relation(fields: [modeloId], references: [id])
+  proveedor        Proveedor     @relation(fields: [proveedorId], references: [id])
+  fotos            FotoProducto[]
 
   @@map("productos")
 }
