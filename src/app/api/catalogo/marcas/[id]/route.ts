@@ -130,28 +130,84 @@ export async function DELETE(
       );
     }
 
-    // Verificar si tiene modelos asociados
-    const modelosCount = await prisma.modelo.count({
-      where: { marcaId: id }
+    // Obtener todos los modelos asociados a la marca
+    const modelos = await prisma.modelo.findMany({
+      where: {
+        marcaId: id
+      }
     });
 
-    if (modelosCount > 0) {
-      return NextResponse.json(
-        { 
-          error: 'No se puede eliminar la marca porque tiene modelos asociados',
-          count: modelosCount
-        },
-        { status: 400 }
-      );
+    // Para cada modelo, eliminar sus relaciones
+    for (const modelo of modelos) {
+      // Eliminar problemas de modelo
+      await prisma.problemaModelo.deleteMany({
+        where: {
+          modeloId: modelo.id
+        }
+      });
+
+      // Eliminar tickets asociados al modelo
+      const tickets = await prisma.ticket.findMany({
+        where: {
+          modeloId: modelo.id
+        }
+      });
+
+      for (const ticket of tickets) {
+        // Eliminar reparaciones asociadas al ticket
+        const reparaciones = await prisma.reparacion.findMany({
+          where: {
+            ticketId: ticket.id
+          }
+        });
+
+        for (const reparacion of reparaciones) {
+          // Eliminar piezas de reparación
+          await prisma.piezaReparacion.deleteMany({
+            where: {
+              reparacionId: reparacion.id
+            }
+          });
+        }
+
+        // Eliminar reparaciones
+        await prisma.reparacion.deleteMany({
+          where: {
+            ticketId: ticket.id
+          }
+        });
+
+        // Eliminar presupuestos
+        await prisma.presupuesto.deleteMany({
+          where: {
+            ticketId: ticket.id
+          }
+        });
+      }
+
+      // Eliminar tickets
+      await prisma.ticket.deleteMany({
+        where: {
+          modeloId: modelo.id
+        }
+      });
     }
 
-    // En lugar de eliminar físicamente, marcar como inactivo
-    await prisma.marca.update({
-      where: { id },
-      data: { activo: false }
+    // Eliminar modelos
+    await prisma.modelo.deleteMany({
+      where: {
+        marcaId: id
+      }
     });
 
-    return NextResponse.json({ success: true });
+    // Finalmente, eliminar la marca
+    await prisma.marca.delete({
+      where: {
+        id
+      }
+    });
+
+    return NextResponse.json({ message: 'Marca eliminada correctamente' });
   } catch (error) {
     console.error('Error al eliminar marca:', error);
     return NextResponse.json(
