@@ -18,7 +18,9 @@ import {
   HiX,
   HiViewList,
   HiCollection,
-  HiTag
+  HiTag,
+  HiDeviceMobile,
+  HiClipboardList
 } from 'react-icons/hi';
 import Link from 'next/link';
 
@@ -73,6 +75,9 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
 
   const catalogoLinks = [
     { href: '/dashboard/catalogo/tipo-servicio', icon: HiTag, text: 'Tipo de Servicio', active: title.includes('Tipo de Servicio') },
+    { href: '/dashboard/catalogo/marcas', icon: HiDeviceMobile, text: 'Marcas de Celulares', active: title.includes('Marcas de Celulares') },
+    { href: '/dashboard/catalogo/modelos', icon: HiPhone, text: 'Modelos de Celulares', active: title.includes('Modelos de Celulares') },
+    { href: '/dashboard/catalogo/status-reparacion', icon: HiClipboardList, text: 'Estados de Reparación', active: title.includes('Estados de Reparación') },
   ];
 
   return (
