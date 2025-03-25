@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,48 +7,45 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modelo de Usuario del sistema
 model Usuario {
-  id               Int              @id @default(autoincrement())
-  email            String           @unique
+  id               Int          @id @default(autoincrement())
+  email            String       @unique
   nombre           String
   apellidoPaterno  String
   apellidoMaterno  String?
   passwordHash     String
-  nivel            NivelUsuario     @default(TECNICO)
-  activo           Boolean          @default(true)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  ticketsCreados   Ticket[]         @relation("TicketCreador")
-  ticketsAsignados Ticket[]         @relation("TicketAsignado")
+  nivel            NivelUsuario @default(TECNICO)
+  activo           Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
   reparaciones     Reparacion[]
+  ticketsCreados   Ticket[]     @relation("TicketCreador")
+  ticketsAsignados Ticket[]     @relation("TicketAsignado")
 }
 
-// Modelo de Cliente
 model Cliente {
-  id                Int            @id @default(autoincrement())
-  nombre            String
-  apellidoPaterno   String
-  apellidoMaterno   String?
-  telefonoCelular   String
-  telefonoContacto  String?
-  email             String         @unique
-  calle             String
-  numeroExterior    String
-  numeroInterior    String?
-  colonia           String
-  ciudad            String
-  estado            String
-  codigoPostal      String
-  latitud           Float?
-  longitud          Float?
-  fuenteReferencia  String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  tickets           Ticket[]
+  id               Int      @id @default(autoincrement())
+  nombre           String
+  apellidoPaterno  String
+  apellidoMaterno  String?
+  telefonoCelular  String
+  telefonoContacto String?
+  email            String   @unique
+  calle            String
+  numeroExterior   String
+  numeroInterior   String?
+  colonia          String
+  ciudad           String
+  estado           String
+  codigoPostal     String
+  latitud          Float?
+  longitud         Float?
+  fuenteReferencia String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  tickets          Ticket[]
 }
 
-// Modelo de Servicio
 model TipoServicio {
   id          Int      @id @default(autoincrement())
   concepto    String   @unique
@@ -65,7 +56,6 @@ model TipoServicio {
   tickets     Ticket[]
 }
 
-// Modelo de Marca
 model Marca {
   id        Int      @id @default(autoincrement())
   nombre    String   @unique
@@ -76,175 +66,165 @@ model Marca {
   modelos   Modelo[]
 }
 
-// Modelo de Modelo
 model Modelo {
-  id              Int                @id @default(autoincrement())
+  id              Int              @id @default(autoincrement())
   nombre          String
   descripcion     String?
   imagen          String?
   marcaId         Int
-  marca           Marca              @relation(fields: [marcaId], references: [id])
-  activo          Boolean            @default(true)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  tickets         Ticket[]
+  activo          Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  marca           Marca            @relation(fields: [marcaId], references: [id])
   problemasModelo ProblemaModelo[]
+  tickets         Ticket[]
+
   @@unique([nombre, marcaId])
 }
 
-// Modelo de Problema Frecuente
 model ProblemaFrecuente {
-  id               Int               @id @default(autoincrement())
-  descripcion      String
-  solucion         String?
-  activo           Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  problemasModelo  ProblemaModelo[]
-  ticketProblemas  TicketProblema[]
+  id              Int              @id @default(autoincrement())
+  descripcion     String
+  solucion        String?
+  activo          Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  problemasModelo ProblemaModelo[]
+  ticketProblemas TicketProblema[]
 }
 
-// Relación entre Modelo y Problema
 model ProblemaModelo {
   id                  Int               @id @default(autoincrement())
   modeloId            Int
-  modelo              Modelo            @relation(fields: [modeloId], references: [id])
   problemaFrecuenteId Int
-  problemaFrecuente   ProblemaFrecuente @relation(fields: [problemaFrecuenteId], references: [id])
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
-  
+  modelo              Modelo            @relation(fields: [modeloId], references: [id])
+  problemaFrecuente   ProblemaFrecuente @relation(fields: [problemaFrecuenteId], references: [id])
+
   @@unique([modeloId, problemaFrecuenteId])
 }
 
-// Modelo de Estado de Reparación
 model EstatusReparacion {
-  id          Int       @id @default(autoincrement())
-  nombre      String    @unique
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
   descripcion String?
   orden       Int
   color       String?
-  activo      Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   tickets     Ticket[]
 }
 
-// Modelo de Pieza de Inventario
 model Pieza {
-  id                Int                 @id @default(autoincrement())
-  nombre            String
-  descripcion       String?
-  cantidad          Int                 @default(0)
-  precioCompra      Float
-  precioVenta       Float
-  unidadMedida      String?
-  ubicacion         String?
-  activo            Boolean             @default(true)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  piezasReparacion  PiezaReparacion[]
+  id               Int               @id @default(autoincrement())
+  nombre           String
+  descripcion      String?
+  cantidad         Int               @default(0)
+  precioCompra     Float
+  precioVenta      Float
+  unidadMedida     String?
+  ubicacion        String?
+  activo           Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  piezasReparacion PiezaReparacion[]
 }
 
-// Modelo de Ticket
 model Ticket {
-  id                  Int                @id @default(autoincrement())
-  numeroTicket        String             @unique
-  fechaRecepcion      DateTime           @default(now())
+  id                  Int               @id @default(autoincrement())
+  numeroTicket        String            @unique
+  fechaRecepcion      DateTime          @default(now())
   clienteId           Int
-  cliente             Cliente            @relation(fields: [clienteId], references: [id])
   tipoServicioId      Int
-  tipoServicio        TipoServicio       @relation(fields: [tipoServicioId], references: [id])
   modeloId            Int
-  modelo              Modelo             @relation(fields: [modeloId], references: [id])
   descripcion         String?
   estatusReparacionId Int
-  estatusReparacion   EstatusReparacion  @relation(fields: [estatusReparacionId], references: [id])
   creadorId           Int
-  creador             Usuario            @relation("TicketCreador", fields: [creadorId], references: [id])
   tecnicoAsignadoId   Int?
-  tecnicoAsignado     Usuario?           @relation("TicketAsignado", fields: [tecnicoAsignadoId], references: [id])
-  recogida            Boolean            @default(false)
+  recogida            Boolean           @default(false)
   fechaEntrega        DateTime?
-  entregado           Boolean            @default(false)
-  cancelado           Boolean            @default(false)
+  entregado           Boolean           @default(false)
+  cancelado           Boolean           @default(false)
   motivoCancelacion   String?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-  reparacion          Reparacion?
-  ticketProblemas     TicketProblema[]
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
   presupuesto         Presupuesto?
+  reparacion          Reparacion?
+  cliente             Cliente           @relation(fields: [clienteId], references: [id])
+  creador             Usuario           @relation("TicketCreador", fields: [creadorId], references: [id])
+  estatusReparacion   EstatusReparacion @relation(fields: [estatusReparacionId], references: [id])
+  modelo              Modelo            @relation(fields: [modeloId], references: [id])
+  tecnicoAsignado     Usuario?          @relation("TicketAsignado", fields: [tecnicoAsignadoId], references: [id])
+  tipoServicio        TipoServicio      @relation(fields: [tipoServicioId], references: [id])
+  ticketProblemas     TicketProblema[]
 }
 
-// Relación entre Ticket y Problema
 model TicketProblema {
   id                  Int               @id @default(autoincrement())
   ticketId            Int
-  ticket              Ticket            @relation(fields: [ticketId], references: [id])
   problemaFrecuenteId Int
-  problemaFrecuente   ProblemaFrecuente @relation(fields: [problemaFrecuenteId], references: [id])
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
+  problemaFrecuente   ProblemaFrecuente @relation(fields: [problemaFrecuenteId], references: [id])
+  ticket              Ticket            @relation(fields: [ticketId], references: [id])
 
   @@unique([ticketId, problemaFrecuenteId])
 }
 
-// Modelo de Diagnóstico y Reparación
 model Reparacion {
-  id              Int               @id @default(autoincrement())
-  ticketId        Int               @unique
-  ticket          Ticket            @relation(fields: [ticketId], references: [id])
-  tecnicoId       Int
-  tecnico         Usuario           @relation(fields: [tecnicoId], references: [id])
-  diagnostico     String
-  solucion        String?
-  observaciones   String?
-  fechaInicio     DateTime          @default(now())
-  fechaFinalizacion DateTime?
-  fotosEvidencia  String[]
-  videosEvidencia String[]
-  checklistCompletado Boolean       @default(false)
-  garantiaDias    Int               @default(0)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  piezasUsadas    PiezaReparacion[]
+  id                  Int               @id @default(autoincrement())
+  ticketId            Int               @unique
+  tecnicoId           Int
+  diagnostico         String
+  solucion            String?
+  observaciones       String?
+  fechaInicio         DateTime          @default(now())
+  fechaFinalizacion   DateTime?
+  fotosEvidencia      String[]
+  videosEvidencia     String[]
+  checklistCompletado Boolean           @default(false)
+  garantiaDias        Int               @default(0)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  piezasUsadas        PiezaReparacion[]
+  tecnico             Usuario           @relation(fields: [tecnicoId], references: [id])
+  ticket              Ticket            @relation(fields: [ticketId], references: [id])
 }
 
-// Relación entre Reparación y Piezas usadas
 model PiezaReparacion {
-  id              Int        @id @default(autoincrement())
-  reparacionId    Int
-  reparacion      Reparacion @relation(fields: [reparacionId], references: [id])
-  piezaId         Int
-  pieza           Pieza      @relation(fields: [piezaId], references: [id])
-  cantidad        Int
-  precioUnitario  Float
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id             Int        @id @default(autoincrement())
+  reparacionId   Int
+  piezaId        Int
+  cantidad       Int
+  precioUnitario Float
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  pieza          Pieza      @relation(fields: [piezaId], references: [id])
+  reparacion     Reparacion @relation(fields: [reparacionId], references: [id])
 
   @@unique([reparacionId, piezaId])
 }
 
-// Modelo de Presupuesto
 model Presupuesto {
-  id               Int       @id @default(autoincrement())
-  ticketId         Int       @unique
-  ticket           Ticket    @relation(fields: [ticketId], references: [id])
-  manoDeObra       Float
-  subtotal         Float
-  iva              Float
-  total            Float
-  aprobado         Boolean   @default(false)
-  fechaAprobacion  DateTime?
-  pagado           Boolean   @default(false)
-  metodoPago       MetodoPago?
-  comprobantePago  String?
-  fechaPago        DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id              Int         @id @default(autoincrement())
+  ticketId        Int         @unique
+  manoDeObra      Float
+  subtotal        Float
+  iva             Float
+  total           Float
+  aprobado        Boolean     @default(false)
+  fechaAprobacion DateTime?
+  pagado          Boolean     @default(false)
+  metodoPago      MetodoPago?
+  comprobantePago String?
+  fechaPago       DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  ticket          Ticket      @relation(fields: [ticketId], references: [id])
 }
 
-// Enumeraciones
 enum NivelUsuario {
   ADMINISTRADOR
   GERENTE

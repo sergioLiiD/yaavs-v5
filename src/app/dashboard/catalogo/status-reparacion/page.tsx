@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { HiPlus, HiPencilAlt, HiTrash, HiArrowUp, HiArrowDown } from 'react-icons/hi';
+import axios from 'axios';
 
 // Tipo para representar un estado de reparación
 interface EstadoReparacion {
@@ -12,38 +13,56 @@ interface EstadoReparacion {
   nombre: string;
   descripcion?: string;
   orden: number;
+  color?: string;
+  activo?: boolean;
 }
 
 export default function EstadoReparacionPage() {
   const { data: session } = useSession();
   
   // Estado para la lista de estados de reparación
-  const [estados, setEstados] = useState<EstadoReparacion[]>([
-    // Datos de ejemplo
-    { id: '1', nombre: 'Recepción del equipo', descripcion: 'Fase inicial cuando se recibe el dispositivo', orden: 1 },
-    { id: '2', nombre: 'En espera de inspección', descripcion: 'El dispositivo está en cola para ser revisado', orden: 2 },
-    { id: '3', nombre: 'Diagnóstico', descripcion: 'Determinando el problema del dispositivo', orden: 3 },
-    { id: '4', nombre: 'Presupuesto', descripcion: 'Enviando presupuesto al cliente', orden: 4 },
-    { id: '5', nombre: 'En reparación', descripcion: 'Trabajando en la solución del problema', orden: 5 },
-    { id: '6', nombre: 'Pruebas', descripcion: 'Verificando el correcto funcionamiento', orden: 6 },
-    { id: '7', nombre: 'Listo para entrega', descripcion: 'Reparación completada', orden: 7 },
-  ]);
+  const [estados, setEstados] = useState<EstadoReparacion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   
   // Estado para el modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentEstado, setCurrentEstado] = useState<Partial<EstadoReparacion>>({ 
     nombre: '', 
     descripcion: '',
-    orden: 0
+    orden: 0,
+    color: '#3498db'
   });
   const [isEditing, setIsEditing] = useState(false);
+
+  // Cargar los estados de reparación al montar el componente
+  useEffect(() => {
+    const fetchEstados = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get('/api/catalogo/estados-reparacion');
+        setEstados(response.data.map((estado: any) => ({
+          ...estado,
+          id: estado.id.toString()
+        })));
+        setError('');
+      } catch (err) {
+        console.error('Error al cargar estados de reparación:', err);
+        setError('Error al cargar los datos. Por favor, intente nuevamente.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEstados();
+  }, []);
 
   // Funciones para gestionar el formulario
   const openModal = () => {
     // Si es un nuevo estado, asignar el siguiente orden
     if (!isEditing) {
       const maxOrden = estados.length > 0 
-        ? Math.max(...estados.map(e => e.orden)) 
+        ? Math.max(...estados.map(e => parseInt(e.orden.toString()))) 
         : 0;
       setCurrentEstado({ ...currentEstado, orden: maxOrden + 1 });
     }
@@ -52,7 +71,7 @@ export default function EstadoReparacionPage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setCurrentEstado({ nombre: '', descripcion: '', orden: 0 });
+    setCurrentEstado({ nombre: '', descripcion: '', orden: 0, color: '#3498db' });
     setIsEditing(false);
   };
 
@@ -61,30 +80,32 @@ export default function EstadoReparacionPage() {
     setCurrentEstado({ ...currentEstado, [name]: value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!currentEstado.nombre) return;
-
-    if (isEditing && currentEstado.id) {
-      // Actualizar un estado existente
-      setEstados(estados.map(estado => 
-        estado.id === currentEstado.id 
-          ? { ...estado, ...currentEstado } as EstadoReparacion
-          : estado
-      ));
-    } else {
-      // Agregar un nuevo estado
-      const newEstado: EstadoReparacion = {
-        id: Date.now().toString(),
-        nombre: currentEstado.nombre!,
-        descripcion: currentEstado.descripcion,
-        orden: currentEstado.orden || (estados.length + 1)
-      };
-      setEstados([...estados, newEstado]);
-    }
     
-    closeModal();
+    try {
+      if (isEditing && currentEstado.id) {
+        // Actualizar un estado existente
+        const response = await axios.put(`/api/catalogo/estados-reparacion/${currentEstado.id}`, currentEstado);
+        setEstados(estados.map(estado => 
+          estado.id === currentEstado.id 
+            ? { ...response.data, id: response.data.id.toString() }
+            : estado
+        ));
+      } else {
+        // Agregar un nuevo estado
+        const response = await axios.post('/api/catalogo/estados-reparacion', currentEstado);
+        const newEstado = { ...response.data, id: response.data.id.toString() };
+        setEstados([...estados, newEstado]);
+      }
+      
+      closeModal();
+    } catch (err) {
+      console.error('Error al guardar estado:', err);
+      setError('Error al guardar los datos. Por favor, intente nuevamente.');
+    }
   };
 
   const handleEdit = (estado: EstadoReparacion) => {
@@ -93,43 +114,83 @@ export default function EstadoReparacionPage() {
     openModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('¿Está seguro que desea eliminar este estado?')) {
-      setEstados(estados.filter(estado => estado.id !== id));
+      try {
+        await axios.delete(`/api/catalogo/estados-reparacion/${id}`);
+        setEstados(estados.filter(estado => estado.id !== id));
+      } catch (err) {
+        console.error('Error al eliminar estado:', err);
+        setError('Error al eliminar el estado. Por favor, intente nuevamente.');
+      }
     }
   };
 
   // Funciones para reordenar los estados
-  const moveUp = (id: string) => {
-    const index = estados.findIndex(estado => estado.id === id);
-    if (index <= 0) return; // No se puede mover más arriba
-
-    const newEstados = [...estados];
-    // Intercambiar orden
-    const currentOrden = newEstados[index].orden;
-    const prevOrden = newEstados[index - 1].orden;
+  const handleMoveUp = async (id: string) => {
+    const index = estados.findIndex(e => e.id === id);
+    if (index <= 0) return;
     
-    newEstados[index].orden = prevOrden;
-    newEstados[index - 1].orden = currentOrden;
-    
-    // Reordenar el array
-    setEstados([...newEstados].sort((a, b) => a.orden - b.orden));
+    try {
+      const currentEstado = estados[index];
+      const prevEstado = estados[index - 1];
+      
+      // Intercambiar órdenes
+      await axios.put(`/api/catalogo/estados-reparacion/${currentEstado.id}`, {
+        ...currentEstado,
+        orden: prevEstado.orden
+      });
+      
+      await axios.put(`/api/catalogo/estados-reparacion/${prevEstado.id}`, {
+        ...prevEstado,
+        orden: currentEstado.orden
+      });
+      
+      // Actualizar estado local
+      const newEstados = [...estados];
+      const temp = newEstados[index].orden;
+      newEstados[index].orden = newEstados[index - 1].orden;
+      newEstados[index - 1].orden = temp;
+      
+      // Reordenar array
+      setEstados([...newEstados].sort((a, b) => a.orden - b.orden));
+    } catch (err) {
+      console.error('Error al reordenar:', err);
+      setError('Error al reordenar los estados. Por favor, intente nuevamente.');
+    }
   };
 
-  const moveDown = (id: string) => {
-    const index = estados.findIndex(estado => estado.id === id);
-    if (index >= estados.length - 1) return; // No se puede mover más abajo
-
-    const newEstados = [...estados];
-    // Intercambiar orden
-    const currentOrden = newEstados[index].orden;
-    const nextOrden = newEstados[index + 1].orden;
+  const handleMoveDown = async (id: string) => {
+    const index = estados.findIndex(e => e.id === id);
+    if (index >= estados.length - 1) return;
     
-    newEstados[index].orden = nextOrden;
-    newEstados[index + 1].orden = currentOrden;
-    
-    // Reordenar el array
-    setEstados([...newEstados].sort((a, b) => a.orden - b.orden));
+    try {
+      const currentEstado = estados[index];
+      const nextEstado = estados[index + 1];
+      
+      // Intercambiar órdenes
+      await axios.put(`/api/catalogo/estados-reparacion/${currentEstado.id}`, {
+        ...currentEstado,
+        orden: nextEstado.orden
+      });
+      
+      await axios.put(`/api/catalogo/estados-reparacion/${nextEstado.id}`, {
+        ...nextEstado,
+        orden: currentEstado.orden
+      });
+      
+      // Actualizar estado local
+      const newEstados = [...estados];
+      const temp = newEstados[index].orden;
+      newEstados[index].orden = newEstados[index + 1].orden;
+      newEstados[index + 1].orden = temp;
+      
+      // Reordenar array
+      setEstados([...newEstados].sort((a, b) => a.orden - b.orden));
+    } catch (err) {
+      console.error('Error al reordenar:', err);
+      setError('Error al reordenar los estados. Por favor, intente nuevamente.');
+    }
   };
 
   // Ordenar estados por el campo orden
@@ -198,7 +259,7 @@ export default function EstadoReparacionPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex justify-center space-x-2">
                           <button
-                            onClick={() => moveUp(estado.id)}
+                            onClick={() => handleMoveUp(estado.id)}
                             disabled={index === 0}
                             className={`p-1 rounded-md ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-100'}`}
                             title="Mover arriba"
@@ -206,7 +267,7 @@ export default function EstadoReparacionPage() {
                             <HiArrowUp className="w-5 h-5" />
                           </button>
                           <button
-                            onClick={() => moveDown(estado.id)}
+                            onClick={() => handleMoveDown(estado.id)}
                             disabled={index === estadosOrdenados.length - 1}
                             className={`p-1 rounded-md ${index === estadosOrdenados.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-100'}`}
                             title="Mover abajo"

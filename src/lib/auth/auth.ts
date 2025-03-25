@@ -55,67 +55,49 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Implementación simulada para pruebas iniciales
-        if (credentials.email === 'admin@example.com' && credentials.password === 'password') {
-          console.log('Test credentials matched, returning mock user');
-          const user = {
-            id: '1',
-            name: 'Administrador',
-            email: 'admin@example.com',
-            role: 'ADMINISTRADOR',
-          };
-          return user;
-        }
-
-        console.log('No matching user found');
-        return null;
-
-        /* 
         // Implementación real con base de datos
         const user = await prisma.usuario.findUnique({
           where: { email: credentials.email },
         });
 
         if (!user || !user.passwordHash || !user.activo) {
+          console.log('Usuario no encontrado o inactivo');
           return null;
         }
 
         const passwordValid = await compare(credentials.password, user.passwordHash);
 
         if (!passwordValid) {
+          console.log('Contraseña inválida');
           return null;
         }
-
+        
+        console.log('Usuario autenticado correctamente:', user.email);
         return {
           id: user.id.toString(),
           name: `${user.nombre} ${user.apellidoPaterno}`,
           email: user.email,
           role: user.nivel,
         };
-        */
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      console.log('JWT callback - token:', token);
-      console.log('JWT callback - user:', user);
-      
       if (user) {
-        token.role = user.role;
         token.id = user.id;
+        token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
-      console.log('Session callback - session:', session);
-      console.log('Session callback - token:', token);
-      
-      if (token && session.user) {
-        session.user.role = token.role;
+      if (token) {
         session.user.id = token.id;
+        session.user.role = token.role;
       }
       return session;
     },
   },
-}; 
+};
+
+export default authOptions; 
