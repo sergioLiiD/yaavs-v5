@@ -1,33 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { HiPlus, HiPencilAlt, HiTrash } from 'react-icons/hi';
+import axios from 'axios';
 
 // Tipo para representar una marca
 interface Marca {
   id: string;
   nombre: string;
-  descripcion?: string;
+  logo?: string;
+  activo?: boolean;
 }
 
 export default function MarcasPage() {
   const { data: session } = useSession();
-  const [marcas, setMarcas] = useState<Marca[]>([
-    // Datos de ejemplo
-    { id: '1', nombre: 'Apple', descripcion: 'Fabricante de iPhone, iPad y otros dispositivos' },
-    { id: '2', nombre: 'Samsung', descripcion: 'Fabricante de la serie Galaxy y otros dispositivos' },
-    { id: '3', nombre: 'Xiaomi', descripcion: 'Fabricante de teléfonos inteligentes y dispositivos inteligentes' },
-    { id: '4', nombre: 'Huawei', descripcion: '' },
-    { id: '5', nombre: 'Motorola', descripcion: 'Fabricante histórico de teléfonos celulares' },
-  ]);
+  
+  // Estado para la lista de marcas
+  const [marcas, setMarcas] = useState<Marca[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   
   // Estado para controlar el formulario de marca
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentMarca, setCurrentMarca] = useState<Partial<Marca>>({ nombre: '', descripcion: '' });
+  const [currentMarca, setCurrentMarca] = useState<Partial<Marca>>({ nombre: '', logo: '' });
   const [isEditing, setIsEditing] = useState(false);
+
+  // Cargar las marcas al montar el componente
+  useEffect(() => {
+    const fetchMarcas = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get('/api/catalogo/marcas');
+        setMarcas(response.data.map((marca: any) => ({
+          ...marca,
+          id: marca.id.toString()
+        })));
+        setError('');
+      } catch (err) {
+        console.error('Error al cargar marcas:', err);
+        setError('Error al cargar los datos. Por favor, intente nuevamente.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMarcas();
+  }, []);
 
   // Funciones para gestionar el formulario
   const openModal = () => {
@@ -36,7 +57,7 @@ export default function MarcasPage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setCurrentMarca({ nombre: '', descripcion: '' });
+    setCurrentMarca({ nombre: '', logo: '' });
     setIsEditing(false);
   };
 
@@ -45,29 +66,32 @@ export default function MarcasPage() {
     setCurrentMarca({ ...currentMarca, [name]: value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!currentMarca.nombre) return;
-
-    if (isEditing && currentMarca.id) {
-      // Actualizar una marca existente
-      setMarcas(marcas.map(marca => 
-        marca.id === currentMarca.id 
-          ? { ...marca, ...currentMarca } as Marca 
-          : marca
-      ));
-    } else {
-      // Agregar una nueva marca
-      const newMarca: Marca = {
-        id: Date.now().toString(),
-        nombre: currentMarca.nombre,
-        descripcion: currentMarca.descripcion
-      };
-      setMarcas([...marcas, newMarca]);
-    }
     
-    closeModal();
+    try {
+      if (isEditing && currentMarca.id) {
+        // Actualizar una marca existente
+        const response = await axios.put(`/api/catalogo/marcas/${currentMarca.id}`, currentMarca);
+        setMarcas(marcas.map(marca => 
+          marca.id === currentMarca.id 
+            ? { ...response.data, id: response.data.id.toString() }
+            : marca
+        ));
+      } else {
+        // Agregar una nueva marca
+        const response = await axios.post('/api/catalogo/marcas', currentMarca);
+        const newMarca = { ...response.data, id: response.data.id.toString() };
+        setMarcas([...marcas, newMarca]);
+      }
+      
+      closeModal();
+    } catch (err: any) {
+      console.error('Error al guardar marca:', err);
+      setError(err.response?.data?.error || 'Error al guardar los datos. Por favor, intente nuevamente.');
+    }
   };
 
   const handleEdit = (marca: Marca) => {
@@ -76,9 +100,19 @@ export default function MarcasPage() {
     openModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('¿Está seguro que desea eliminar esta marca?')) {
-      setMarcas(marcas.filter(marca => marca.id !== id));
+      try {
+        await axios.delete(`/api/catalogo/marcas/${id}`);
+        setMarcas(marcas.filter(marca => marca.id !== id));
+      } catch (err: any) {
+        console.error('Error al eliminar marca:', err);
+        if (err.response?.data?.error?.includes('tiene modelos asociados')) {
+          setError(`No se puede eliminar la marca porque tiene ${err.response.data.count} modelos asociados.`);
+        } else {
+          setError('Error al eliminar la marca. Por favor, intente nuevamente.');
+        }
+      }
     }
   };
 
@@ -97,61 +131,89 @@ export default function MarcasPage() {
             </button>
           </div>
 
-          {/* Tabla de marcas */}
-          <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nombre
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Descripción
-                    </th>
-                    <th scope="col" className="relative px-6 py-3">
-                      <span className="sr-only">Acciones</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {marcas.map((marca) => (
-                    <tr key={marca.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{marca.nombre}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-500">
-                          {marca.descripcion || <span className="text-gray-400 italic">Sin descripción</span>}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleEdit(marca)}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
-                        >
-                          <HiPencilAlt className="inline w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(marca.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <HiTrash className="inline w-5 h-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {marcas.length === 0 && (
-                    <tr>
-                      <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
-                        No hay marcas registradas
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+          {/* Mensaje de error */}
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Estado de carga */}
+          {isLoading ? (
+            <div className="text-center py-10">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-gray-500">Cargando marcas...</p>
+            </div>
+          ) : (
+            /* Tabla de marcas */
+            <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Nombre
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Logo
+                      </th>
+                      <th scope="col" className="relative px-6 py-3">
+                        <span className="sr-only">Acciones</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {marcas.map((marca) => (
+                      <tr key={marca.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{marca.nombre}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-500">
+                            {marca.logo ? (
+                              <span className="text-blue-600">URL del logo disponible</span>
+                            ) : (
+                              <span className="text-gray-400 italic">Sin logo</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => handleEdit(marca)}
+                            className="text-blue-600 hover:text-blue-900 mr-4"
+                          >
+                            <HiPencilAlt className="inline w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(marca.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <HiTrash className="inline w-5 h-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {marcas.length === 0 && !isLoading && (
+                      <tr>
+                        <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
+                          No hay marcas registradas
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal para agregar/editar marca */}
@@ -187,18 +249,18 @@ export default function MarcasPage() {
                       />
                     </div>
                     <div className="mb-4">
-                      <label htmlFor="descripcion" className="block text-sm font-medium text-gray-800">
-                        Descripción
+                      <label htmlFor="logo" className="block text-sm font-medium text-gray-800">
+                        URL de Logo
                       </label>
-                      <textarea
-                        name="descripcion"
-                        id="descripcion"
-                        rows={3}
-                        value={currentMarca.descripcion || ''}
+                      <input
+                        type="text"
+                        name="logo"
+                        id="logo"
+                        value={currentMarca.logo || ''}
                         onChange={handleInputChange}
                         className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
                       />
-                      <p className="mt-1 text-xs text-gray-600">Esta descripción es opcional</p>
+                      <p className="mt-1 text-xs text-gray-600">URL de la imagen del logo (opcional)</p>
                     </div>
                   </div>
                   <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
