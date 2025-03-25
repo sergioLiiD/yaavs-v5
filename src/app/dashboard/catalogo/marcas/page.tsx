@@ -11,8 +11,7 @@ import axios from 'axios';
 interface Marca {
   id: string;
   nombre: string;
-  logo?: string;
-  activo?: boolean;
+  descripcion?: string;
 }
 
 export default function MarcasPage() {
@@ -25,7 +24,7 @@ export default function MarcasPage() {
   
   // Estado para controlar el formulario de marca
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentMarca, setCurrentMarca] = useState<Partial<Marca>>({ nombre: '', logo: '' });
+  const [currentMarca, setCurrentMarca] = useState<Partial<Marca>>({ nombre: '', descripcion: '' });
   const [isEditing, setIsEditing] = useState(false);
 
   // Cargar las marcas al montar el componente
@@ -57,7 +56,7 @@ export default function MarcasPage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setCurrentMarca({ nombre: '', logo: '' });
+    setCurrentMarca({ nombre: '', descripcion: '' });
     setIsEditing(false);
   };
 
@@ -118,7 +117,7 @@ export default function MarcasPage() {
 
   return (
     <ProtectedRoute>
-      <AdminLayout title="Catálogo - Marcas de Celulares">
+      <AdminLayout title="Catálogo - Marcas">
         <div className="space-y-6">
           {/* Encabezado */}
           <div className="flex justify-between items-center">
@@ -164,7 +163,7 @@ export default function MarcasPage() {
                         Nombre
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Logo
+                        Descripción
                       </th>
                       <th scope="col" className="relative px-6 py-3">
                         <span className="sr-only">Acciones</span>
@@ -179,11 +178,7 @@ export default function MarcasPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-500">
-                            {marca.logo ? (
-                              <span className="text-blue-600">URL del logo disponible</span>
-                            ) : (
-                              <span className="text-gray-400 italic">Sin logo</span>
-                            )}
+                            {marca.descripcion || <span className="text-gray-400 italic">Sin descripción</span>}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -249,18 +244,17 @@ export default function MarcasPage() {
                       />
                     </div>
                     <div className="mb-4">
-                      <label htmlFor="logo" className="block text-sm font-medium text-gray-800">
-                        URL de Logo
+                      <label htmlFor="descripcion" className="block text-sm font-medium text-gray-800">
+                        Descripción
                       </label>
-                      <input
-                        type="text"
-                        name="logo"
-                        id="logo"
-                        value={currentMarca.logo || ''}
+                      <textarea
+                        name="descripcion"
+                        id="descripcion"
+                        rows={3}
+                        value={currentMarca.descripcion || ''}
                         onChange={handleInputChange}
                         className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
                       />
-                      <p className="mt-1 text-xs text-gray-600">URL de la imagen del logo (opcional)</p>
                     </div>
                   </div>
                   <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">

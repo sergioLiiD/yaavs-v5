@@ -6,41 +6,53 @@ import { authOptions } from '@/lib/auth/auth';
 // GET /api/catalogo/modelos
 export async function GET(req: NextRequest) {
   try {
-    // Verificar autenticación
+    console.log('GET /api/catalogo/modelos - Iniciando...');
+    
     const session = await getServerSession(authOptions);
-    if (!session) {
+    console.log('GET /api/catalogo/modelos - Session:', session?.user?.email);
+
+    if (!session?.user) {
+      console.log('GET /api/catalogo/modelos - No autorizado');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Obtener parámetros de consulta
     const { searchParams } = new URL(req.url);
     const marcaId = searchParams.get('marcaId');
-    
-    // Construir la consulta base
-    const whereClause = {
-      activo: true,
-      ...(marcaId ? { marcaId: Number(marcaId) } : {})
-    };
+    console.log('GET /api/catalogo/modelos - marcaId:', marcaId);
 
-    // Obtener todos los modelos según los filtros
-    const modelos = await prisma.modelo.findMany({
-      where: whereClause,
-      include: {
-        marca: {
-          select: {
-            id: true,
-            nombre: true
-          }
-        }
-      },
-      orderBy: { nombre: 'asc' }
+    if (!marcaId) {
+      console.log('GET /api/catalogo/modelos - marcaId no proporcionado');
+      return NextResponse.json({ error: 'ID de marca no proporcionado' }, { status: 400 });
+    }
+
+    // Verificar que la marca existe
+    const marca = await prisma.marca.findUnique({
+      where: { id: parseInt(marcaId) }
     });
-    
+
+    if (!marca) {
+      console.log('GET /api/catalogo/modelos - Marca no encontrada');
+      return NextResponse.json({ error: 'Marca no encontrada' }, { status: 404 });
+    }
+
+    const modelos = await prisma.modelo.findMany({
+      where: {
+        marcaId: parseInt(marcaId)
+      },
+      include: {
+        marca: true
+      },
+      orderBy: {
+        nombre: 'asc'
+      }
+    });
+
+    console.log('GET /api/catalogo/modelos - Modelos encontrados:', modelos.length);
     return NextResponse.json(modelos);
   } catch (error) {
-    console.error('Error al obtener modelos:', error);
+    console.error('GET /api/catalogo/modelos - Error:', error);
     return NextResponse.json(
-      { error: 'Error al procesar la solicitud' },
+      { error: 'Error al obtener los modelos' },
       { status: 500 }
     );
   }
@@ -49,58 +61,56 @@ export async function GET(req: NextRequest) {
 // POST /api/catalogo/modelos
 export async function POST(req: NextRequest) {
   try {
-    // Verificar autenticación
+    console.log('POST /api/catalogo/modelos - Iniciando...');
+    
     const session = await getServerSession(authOptions);
-    if (!session) {
+    console.log('POST /api/catalogo/modelos - Session:', session?.user?.email);
+
+    if (!session?.user) {
+      console.log('POST /api/catalogo/modelos - No autorizado');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Verificar rol de administrador/gerente
-    if (session.user.role !== 'ADMINISTRADOR' && session.user.role !== 'GERENTE') {
-      return NextResponse.json(
-        { error: 'No tiene permisos para realizar esta acción' },
-        { status: 403 }
-      );
-    }
+    const data = await req.json();
+    console.log('POST /api/catalogo/modelos - Datos recibidos:', data);
 
-    const body = await req.json();
-    
     // Validar datos requeridos
-    if (!body.nombre || !body.marcaId) {
+    if (!data.nombre || !data.marcaId) {
+      console.log('POST /api/catalogo/modelos - Datos incompletos:', { nombre: data.nombre, marcaId: data.marcaId });
       return NextResponse.json(
         { error: 'El nombre y la marca son obligatorios' },
         { status: 400 }
       );
     }
 
-    // Verificar si la marca existe
+    // Verificar que la marca existe
     const marca = await prisma.marca.findUnique({
-      where: { id: Number(body.marcaId) }
+      where: { id: parseInt(data.marcaId) }
     });
 
     if (!marca) {
-      return NextResponse.json(
-        { error: 'La marca seleccionada no existe' },
-        { status: 400 }
-      );
+      console.log('POST /api/catalogo/modelos - Marca no encontrada:', data.marcaId);
+      return NextResponse.json({ error: 'Marca no encontrada' }, { status: 404 });
     }
 
-    // Crear nuevo modelo
-    const nuevoModelo = await prisma.modelo.create({
+    // Crear el modelo
+    const modelo = await prisma.modelo.create({
       data: {
-        nombre: body.nombre,
-        descripcion: body.descripcion || null,
-        imagen: body.imagen || null,
-        marcaId: Number(body.marcaId),
-        activo: true
+        nombre: data.nombre,
+        descripcion: data.descripcion || null,
+        marcaId: parseInt(data.marcaId)
+      },
+      include: {
+        marca: true
       }
     });
-    
-    return NextResponse.json(nuevoModelo, { status: 201 });
+
+    console.log('POST /api/catalogo/modelos - Modelo creado:', modelo);
+    return NextResponse.json(modelo);
   } catch (error: any) {
-    console.error('Error al crear modelo:', error);
+    console.error('POST /api/catalogo/modelos - Error:', error);
     
-    // Manejar error de unicidad
+    // Manejar errores específicos de Prisma
     if (error.code === 'P2002') {
       return NextResponse.json(
         { error: 'Ya existe un modelo con ese nombre para la marca seleccionada' },
@@ -109,7 +119,7 @@ export async function POST(req: NextRequest) {
     }
     
     return NextResponse.json(
-      { error: 'Error al procesar la solicitud' },
+      { error: 'Error al crear el modelo' },
       { status: 500 }
     );
   }

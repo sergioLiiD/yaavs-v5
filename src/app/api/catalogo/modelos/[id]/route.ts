@@ -151,66 +151,73 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verificar autenticación
+    console.log('DELETE /api/catalogo/modelos/[id] - Iniciando...');
+    
     const session = await getServerSession(authOptions);
-    if (!session) {
+    console.log('DELETE /api/catalogo/modelos/[id] - Session:', session?.user?.email);
+
+    if (!session?.user) {
+      console.log('DELETE /api/catalogo/modelos/[id] - No autorizado');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Verificar rol de administrador/gerente
-    if (session.user.role !== 'ADMINISTRADOR' && session.user.role !== 'GERENTE') {
-      return NextResponse.json(
-        { error: 'No tiene permisos para realizar esta acción' },
-        { status: 403 }
-      );
-    }
+    const id = parseInt(params.id);
+    console.log('DELETE /api/catalogo/modelos/[id] - ID:', id);
 
-    const id = Number(params.id);
-    if (isNaN(id)) {
-      return NextResponse.json(
-        { error: 'ID inválido' },
-        { status: 400 }
-      );
-    }
-
-    // Verificar si tiene tickets asociados
-    const ticketsCount = await prisma.ticket.count({
-      where: { modeloId: id }
+    // Verificar que el modelo existe
+    const modelo = await prisma.modelo.findUnique({
+      where: { id },
+      include: {
+        tickets: true,
+        problemas: true,
+        productos: true
+      }
     });
 
-    if (ticketsCount > 0) {
+    if (!modelo) {
+      console.log('DELETE /api/catalogo/modelos/[id] - Modelo no encontrado');
+      return NextResponse.json({ error: 'Modelo no encontrado' }, { status: 404 });
+    }
+
+    // Verificar si tiene relaciones
+    if (modelo.tickets.length > 0) {
+      console.log('DELETE /api/catalogo/modelos/[id] - Modelo tiene tickets asociados');
       return NextResponse.json(
         { 
           error: 'No se puede eliminar el modelo porque tiene tickets asociados',
-          count: ticketsCount
+          count: modelo.tickets.length
         },
         { status: 400 }
       );
     }
 
-    // Verificar si tiene problemas frecuentes asociados
-    const problemasCount = await prisma.problemaModelo.count({
-      where: { modeloId: id }
-    });
-
-    if (problemasCount > 0) {
-      // Opcional: Si decide eliminar también los registros asociados
-      await prisma.problemaModelo.deleteMany({
-        where: { modeloId: id }
-      });
+    if (modelo.problemas.length > 0) {
+      console.log('DELETE /api/catalogo/modelos/[id] - Modelo tiene problemas asociados');
+      return NextResponse.json(
+        { error: 'No se puede eliminar el modelo porque tiene problemas asociados' },
+        { status: 400 }
+      );
     }
 
-    // En lugar de eliminar físicamente, marcar como inactivo
-    await prisma.modelo.update({
-      where: { id },
-      data: { activo: false }
+    if (modelo.productos.length > 0) {
+      console.log('DELETE /api/catalogo/modelos/[id] - Modelo tiene productos asociados');
+      return NextResponse.json(
+        { error: 'No se puede eliminar el modelo porque tiene productos asociados' },
+        { status: 400 }
+      );
+    }
+
+    // Eliminar el modelo
+    await prisma.modelo.delete({
+      where: { id }
     });
 
-    return NextResponse.json({ success: true });
+    console.log('DELETE /api/catalogo/modelos/[id] - Modelo eliminado');
+    return NextResponse.json({ message: 'Modelo eliminado correctamente' });
   } catch (error) {
-    console.error('Error al eliminar modelo:', error);
+    console.error('DELETE /api/catalogo/modelos/[id] - Error:', error);
     return NextResponse.json(
-      { error: 'Error al procesar la solicitud' },
+      { error: 'Error al eliminar el modelo' },
       { status: 500 }
     );
   }

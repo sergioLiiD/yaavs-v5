@@ -87,8 +87,7 @@ export async function PUT(
       where: { id },
       data: {
         nombre: body.nombre,
-        logo: body.logo || null,
-        activo: body.activo !== undefined ? body.activo : true
+        descripcion: body.descripcion || null
       }
     });
 

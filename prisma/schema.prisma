@@ -47,39 +47,42 @@ model Cliente {
 }
 
 model TipoServicio {
-  id          Int      @id @default(autoincrement())
-  concepto    String   @unique
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique
   descripcion String?
-  activo      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   tickets     Ticket[]
+  productos   Producto[]
+
+  @@map("tipos_servicio")
 }
 
 model Marca {
-  id        Int      @id @default(autoincrement())
-  nombre    String   @unique
-  logo      String?
-  activo    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  modelos   Modelo[]
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique
+  descripcion String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  modelos     Modelo[]
+  productos   Producto[]
+
+  @@map("marcas")
 }
 
 model Modelo {
-  id              Int              @id @default(autoincrement())
-  nombre          String
-  descripcion     String?
-  imagen          String?
-  marcaId         Int
-  activo          Boolean          @default(true)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  marca           Marca            @relation(fields: [marcaId], references: [id])
-  problemasModelo ProblemaModelo[]
-  tickets         Ticket[]
+  id          Int              @id @default(autoincrement())
+  nombre      String
+  descripcion String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  marcaId     Int
+  problemas   ProblemaModelo[]
+  tickets     Ticket[]
+  marca       Marca            @relation(fields: [marcaId], references: [id])
+  productos   Producto[]
 
-  @@unique([nombre, marcaId])
+  @@map("modelos")
 }
 
 model ProblemaFrecuente {
@@ -225,20 +228,62 @@ model Presupuesto {
   ticket          Ticket      @relation(fields: [ticketId], references: [id])
 }
 
+enum TipoProveedor {
+  FISICA
+  MORAL
+}
+
 model Proveedor {
-  id                  String   @id @default(cuid())
-  tipo                String   // FISICA o MORAL
-  nombre              String
-  personaResponsable  String
-  telefono            String
-  email               String
-  direccion           String
-  rfc                 String   @unique
-  banco               String
-  cuentaBancaria      String
-  clabeInterbancaria  String
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                Int           @id @default(autoincrement())
+  nombre           String
+  contacto         String
+  telefono         String
+  email            String?
+  direccion        String?
+  notas            String?
+  tipo             TipoProveedor @default(FISICA)
+  rfc              String
+  banco            String
+  cuentaBancaria   String
+  clabeInterbancaria String
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  productos        Producto[]
+
+  @@map("proveedores")
+}
+
+model Producto {
+  id             Int            @id @default(autoincrement())
+  sku            String         @unique
+  nombre         String
+  descripcion    String
+  notasInternas  String?
+  garantiaValor  Int
+  garantiaUnidad String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  categoriaId    Int
+  marcaId        Int
+  modeloId       Int
+  proveedorId    Int
+  fotos          FotoProducto[]
+  categoria      TipoServicio   @relation(fields: [categoriaId], references: [id])
+  marca          Marca          @relation(fields: [marcaId], references: [id])
+  modelo         Modelo         @relation(fields: [modeloId], references: [id])
+  proveedor      Proveedor      @relation(fields: [proveedorId], references: [id])
+
+  @@map("productos")
+}
+
+model FotoProducto {
+  id         Int      @id @default(autoincrement())
+  url        String
+  createdAt  DateTime @default(now())
+  productoId Int
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@map("fotos_producto")
 }
 
 enum NivelUsuario {

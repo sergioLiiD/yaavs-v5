@@ -75,9 +75,9 @@ export async function PUT(
     const body = await req.json();
     
     // Validar datos requeridos
-    if (!body.concepto) {
+    if (!body.nombre) {
       return NextResponse.json(
-        { error: 'El concepto es obligatorio' },
+        { error: 'El nombre es obligatorio' },
         { status: 400 }
       );
     }
@@ -86,9 +86,8 @@ export async function PUT(
     const tipoServicioActualizado = await prisma.tipoServicio.update({
       where: { id },
       data: {
-        concepto: body.concepto,
-        descripcion: body.descripcion || null,
-        activo: body.activo !== undefined ? body.activo : true
+        nombre: body.nombre,
+        descripcion: body.descripcion || null
       }
     });
 
@@ -122,7 +121,8 @@ export async function DELETE(
       );
     }
 
-    const id = Number(params.id);
+    // Validar ID
+    const id = parseInt(params.id);
     if (isNaN(id)) {
       return NextResponse.json(
         { error: 'ID inválido' },
@@ -130,13 +130,36 @@ export async function DELETE(
       );
     }
 
-    // En lugar de eliminar físicamente, marcar como inactivo
-    await prisma.tipoServicio.update({
+    // Verificar si el tipo de servicio existe
+    const tipoServicio = await prisma.tipoServicio.findUnique({
       where: { id },
-      data: { activo: false }
+      include: {
+        tickets: true,
+        productos: true
+      }
     });
 
-    return NextResponse.json({ success: true });
+    if (!tipoServicio) {
+      return NextResponse.json(
+        { error: 'Tipo de servicio no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Verificar si hay registros relacionados
+    if (tipoServicio.tickets.length > 0 || tipoServicio.productos.length > 0) {
+      return NextResponse.json(
+        { error: 'No se puede eliminar porque tiene registros relacionados' },
+        { status: 400 }
+      );
+    }
+
+    // Eliminar el tipo de servicio
+    await prisma.tipoServicio.delete({
+      where: { id }
+    });
+    
+    return NextResponse.json({ message: 'Tipo de servicio eliminado correctamente' });
   } catch (error) {
     console.error('Error al eliminar tipo de servicio:', error);
     return NextResponse.json(

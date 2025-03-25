@@ -10,7 +10,7 @@ import axios from 'axios';
 // Tipo para representar un tipo de servicio
 interface TipoServicio {
   id: string;
-  concepto: string;
+  nombre: string;
   descripcion?: string;
   activo?: boolean;
 }
@@ -25,7 +25,7 @@ export default function TipoServicioPage() {
   
   // Estado para controlar el formulario de tipo de servicio
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentTipoServicio, setCurrentTipoServicio] = useState<Partial<TipoServicio>>({ concepto: '', descripcion: '' });
+  const [currentTipoServicio, setCurrentTipoServicio] = useState<Partial<TipoServicio>>({ nombre: '', descripcion: '' });
   const [isEditing, setIsEditing] = useState(false);
 
   // Cargar los tipos de servicio al montar el componente
@@ -57,7 +57,7 @@ export default function TipoServicioPage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setCurrentTipoServicio({ concepto: '', descripcion: '' });
+    setCurrentTipoServicio({ nombre: '', descripcion: '' });
     setIsEditing(false);
   };
 
@@ -69,7 +69,7 @@ export default function TipoServicioPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentTipoServicio.concepto) return;
+    if (!currentTipoServicio.nombre) return;
     
     try {
       if (isEditing && currentTipoServicio.id) {
@@ -157,7 +157,7 @@ export default function TipoServicioPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Concepto
+                        Nombre
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Descripción
@@ -171,7 +171,7 @@ export default function TipoServicioPage() {
                     {tiposServicio.map((tipo) => (
                       <tr key={tipo.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{tipo.concepto}</div>
+                          <div className="text-sm font-medium text-gray-900">{tipo.nombre}</div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-500">
@@ -227,14 +227,14 @@ export default function TipoServicioPage() {
                       </h3>
                     </div>
                     <div className="mb-4">
-                      <label htmlFor="concepto" className="block text-sm font-medium text-gray-800">
-                        Concepto <span className="text-red-500">*</span>
+                      <label htmlFor="nombre" className="block text-sm font-medium text-gray-800">
+                        Nombre <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
-                        name="concepto"
-                        id="concepto"
-                        value={currentTipoServicio.concepto}
+                        name="nombre"
+                        id="nombre"
+                        value={currentTipoServicio.nombre}
                         onChange={handleInputChange}
                         className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
                         required

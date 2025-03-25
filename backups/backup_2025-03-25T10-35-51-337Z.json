@@ -1,0 +1,199 @@
+{
+  "tiposServicio": [
+    {
+      "id": 2,
+      "concepto": "Reparación de batería",
+      "descripcion": "Reemplazo de baterías con mal funcionamiento",
+      "activo": false,
+      "createdAt": "2025-03-25T00:57:52.835Z",
+      "updatedAt": "2025-03-25T01:15:01.798Z"
+    },
+    {
+      "id": 5,
+      "concepto": "Reparación de placa base",
+      "descripcion": "Reparación de componentes de la placa base",
+      "activo": false,
+      "createdAt": "2025-03-25T00:57:52.835Z",
+      "updatedAt": "2025-03-25T01:15:10.420Z"
+    },
+    {
+      "id": 4,
+      "concepto": "Reparación de cámara",
+      "descripcion": "Reparación de cámaras frontales o traseras",
+      "activo": false,
+      "createdAt": "2025-03-25T00:57:52.835Z",
+      "updatedAt": "2025-03-25T01:15:05.257Z"
+    },
+    {
+      "id": 1,
+      "concepto": "Reparación de pantalla",
+      "descripcion": "Reemplazo o reparación de pantallas dañadas",
+      "activo": false,
+      "createdAt": "2025-03-25T00:57:52.835Z",
+      "updatedAt": "2025-03-25T01:15:07.948Z"
+    },
+    {
+      "id": 6,
+      "concepto": "Reparación de Celulares",
+      "descripcion": null,
+      "activo": true,
+      "createdAt": "2025-03-25T01:15:17.921Z",
+      "updatedAt": "2025-03-25T01:15:17.921Z"
+    },
+    {
+      "id": 7,
+      "concepto": "Reparación de Computadoras",
+      "descripcion": null,
+      "activo": false,
+      "createdAt": "2025-03-25T09:05:10.239Z",
+      "updatedAt": "2025-03-25T09:54:49.070Z"
+    },
+    {
+      "id": 3,
+      "concepto": "Actualización de software",
+      "descripcion": "Actualización o reinstalación del sistema operativo",
+      "activo": false,
+      "createdAt": "2025-03-25T00:57:52.835Z",
+      "updatedAt": "2025-03-25T01:14:59.055Z"
+    }
+  ],
+  "marcas": [
+    {
+      "id": 1,
+      "nombre": "Apple",
+      "logo": null,
+      "activo": true,
+      "createdAt": "2025-03-25T00:57:52.814Z",
+      "updatedAt": "2025-03-25T00:57:52.814Z"
+    },
+    {
+      "id": 2,
+      "nombre": "Xiaomi",
+      "logo": null,
+      "activo": true,
+      "createdAt": "2025-03-25T00:57:52.814Z",
+      "updatedAt": "2025-03-25T00:57:52.814Z"
+    },
+    {
+      "id": 3,
+      "nombre": "Samsung",
+      "logo": null,
+      "activo": true,
+      "createdAt": "2025-03-25T00:57:52.814Z",
+      "updatedAt": "2025-03-25T00:57:52.814Z"
+    },
+    {
+      "id": 4,
+      "nombre": "Huawei",
+      "logo": null,
+      "activo": true,
+      "createdAt": "2025-03-25T00:57:52.814Z",
+      "updatedAt": "2025-03-25T00:57:52.814Z"
+    },
+    {
+      "id": 5,
+      "nombre": "Motorola",
+      "logo": null,
+      "activo": true,
+      "createdAt": "2025-03-25T00:57:52.814Z",
+      "updatedAt": "2025-03-25T00:57:52.814Z"
+    },
+    {
+      "id": 6,
+      "nombre": "Marca Propia",
+      "logo": null,
+      "activo": false,
+      "createdAt": "2025-03-25T01:24:28.601Z",
+      "updatedAt": "2025-03-25T09:07:10.785Z"
+    }
+  ],
+  "modelos": [
+    {
+      "id": 2,
+      "nombre": "Galaxy S23",
+      "descripcion": "Gama alta de Samsung",
+      "imagen": null,
+      "marcaId": 3,
+      "activo": true,
+      "createdAt": "2025-03-25T00:57:52.823Z",
+      "updatedAt": "2025-03-25T00:57:52.823Z"
+    },
+    {
+      "id": 5,
+      "nombre": "Redmi Note 12",
+      "descripcion": "Gama media de Xiaomi",
+      "imagen": null,
+      "marcaId": 2,
+      "activo": true,
+      "createdAt": "2025-03-25T00:57:52.824Z",
+      "updatedAt": "2025-03-25T00:57:52.824Z"
+    },
+    {
+      "id": 3,
+      "nombre": "iPhone 14",
+      "descripcion": "Generación anterior de iPhone",
+      "imagen": null,
+      "marcaId": 1,
+      "activo": true,
+      "createdAt": "2025-03-25T00:57:52.823Z",
+      "updatedAt": "2025-03-25T00:57:52.823Z"
+    },
+    {
+      "id": 1,
+      "nombre": "iPhone 15",
+      "descripcion": "Última generación de iPhone",
+      "imagen": null,
+      "marcaId": 1,
+      "activo": true,
+      "createdAt": "2025-03-25T00:57:52.823Z",
+      "updatedAt": "2025-03-25T00:57:52.823Z"
+    },
+    {
+      "id": 6,
+      "nombre": "iPhone 12",
+      "descripcion": null,
+      "imagen": null,
+      "marcaId": 1,
+      "activo": true,
+      "createdAt": "2025-03-25T01:27:55.654Z",
+      "updatedAt": "2025-03-25T01:27:55.654Z"
+    },
+    {
+      "id": 7,
+      "nombre": "iPhone 16 Pro Max",
+      "descripcion": null,
+      "imagen": null,
+      "marcaId": 1,
+      "activo": true,
+      "createdAt": "2025-03-25T01:28:04.043Z",
+      "updatedAt": "2025-03-25T01:28:04.043Z"
+    },
+    {
+      "id": 4,
+      "nombre": "Galaxy A54",
+      "descripcion": "Gama media de Samsung",
+      "imagen": null,
+      "marcaId": 3,
+      "activo": true,
+      "createdAt": "2025-03-25T00:57:52.823Z",
+      "updatedAt": "2025-03-25T00:57:52.823Z"
+    }
+  ],
+  "proveedores": [
+    {
+      "id": "cm8ob7ae500004ve9aa95l7nv",
+      "tipo": "FISICA",
+      "nombre": "Antonio Lopez Cantón",
+      "personaResponsable": "Antonio López Cantón",
+      "telefono": "5544335566",
+      "email": "alc@example.com",
+      "direccion": "Calle conocida #34",
+      "rfc": "FASF8722434g43",
+      "banco": "BBVA",
+      "cuentaBancaria": "123456789",
+      "clabeInterbancaria": "12345678910112",
+      "createdAt": "2025-03-25T09:44:32.830Z",
+      "updatedAt": "2025-03-25T09:44:32.830Z"
+    }
+  ]
+}

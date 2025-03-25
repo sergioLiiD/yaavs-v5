@@ -6,14 +6,17 @@ import { useRouter } from 'next/navigation';
 import { HiPlus, HiPencil, HiTrash, HiChevronDown, HiChevronUp, HiSearch } from 'react-icons/hi';
 import AdminLayout from '@/components/layout/AdminLayout';
 
+type TipoProveedor = 'FISICA' | 'MORAL';
+
 interface Proveedor {
   id: string;
-  tipo: 'FISICA' | 'MORAL';
   nombre: string;
-  personaResponsable: string;
+  contacto: string;
   telefono: string;
-  email: string;
-  direccion: string;
+  email: string | null;
+  direccion: string | null;
+  notas: string | null;
+  tipo: TipoProveedor;
   rfc: string;
   banco: string;
   cuentaBancaria: string;
@@ -29,12 +32,13 @@ export default function ProveedoresPage() {
   const [proveedorExpandido, setProveedorExpandido] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<Proveedor>>({
-    tipo: 'FISICA',
     nombre: '',
-    personaResponsable: '',
+    contacto: '',
     telefono: '',
     email: '',
     direccion: '',
+    notas: '',
+    tipo: 'FISICA',
     rfc: '',
     banco: '',
     cuentaBancaria: '',
@@ -51,9 +55,8 @@ export default function ProveedoresPage() {
   useEffect(() => {
     const filtrados = proveedores.filter(proveedor => 
       proveedor.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      proveedor.personaResponsable.toLowerCase().includes(busqueda.toLowerCase()) ||
-      proveedor.rfc.toLowerCase().includes(busqueda.toLowerCase()) ||
-      proveedor.email.toLowerCase().includes(busqueda.toLowerCase())
+      proveedor.contacto.toLowerCase().includes(busqueda.toLowerCase()) ||
+      (proveedor.email?.toLowerCase() || '').includes(busqueda.toLowerCase())
     );
     setProveedoresFiltrados(filtrados);
   }, [busqueda, proveedores]);
@@ -63,7 +66,10 @@ export default function ProveedoresPage() {
       const response = await fetch('/api/catalogo/proveedores');
       if (response.ok) {
         const data = await response.json();
+        console.log('Proveedores cargados:', data);
         setProveedores(data);
+      } else {
+        console.error('Error al cargar proveedores:', await response.text());
       }
     } catch (error) {
       console.error('Error al cargar proveedores:', error);
@@ -90,12 +96,13 @@ export default function ProveedoresPage() {
       if (response.ok) {
         setIsModalOpen(false);
         setFormData({
-          tipo: 'FISICA',
           nombre: '',
-          personaResponsable: '',
+          contacto: '',
           telefono: '',
           email: '',
           direccion: '',
+          notas: '',
+          tipo: 'FISICA',
           rfc: '',
           banco: '',
           cuentaBancaria: '',
@@ -103,6 +110,9 @@ export default function ProveedoresPage() {
         });
         setEditingId(null);
         fetchProveedores();
+      } else {
+        const errorData = await response.json();
+        console.error('Error al guardar proveedor:', errorData);
       }
     } catch (error) {
       console.error('Error al guardar proveedor:', error);
@@ -124,6 +134,9 @@ export default function ProveedoresPage() {
 
         if (response.ok) {
           fetchProveedores();
+        } else {
+          const errorData = await response.json();
+          console.error('Error al eliminar proveedor:', errorData);
         }
       } catch (error) {
         console.error('Error al eliminar proveedor:', error);
@@ -143,12 +156,13 @@ export default function ProveedoresPage() {
           <button
             onClick={() => {
               setFormData({
-                tipo: 'FISICA',
                 nombre: '',
-                personaResponsable: '',
+                contacto: '',
                 telefono: '',
                 email: '',
                 direccion: '',
+                notas: '',
+                tipo: 'FISICA',
                 rfc: '',
                 banco: '',
                 cuentaBancaria: '',
@@ -188,7 +202,7 @@ export default function ProveedoresPage() {
                   Nombre
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Persona Responsable
+                  Contacto
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Teléfono
@@ -215,13 +229,13 @@ export default function ProveedoresPage() {
                       {proveedor.nombre}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {proveedor.personaResponsable}
+                      {proveedor.contacto}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {proveedor.telefono}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {proveedor.email}
+                      {proveedor.email || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {proveedor.rfc}
@@ -256,20 +270,24 @@ export default function ProveedoresPage() {
                       <td colSpan={7} className="px-6 py-4 bg-gray-50">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <h4 className="text-sm font-medium text-gray-700">Dirección</h4>
-                            <p className="mt-1 text-sm text-gray-900">{proveedor.direccion}</p>
+                            <p className="text-sm font-medium text-gray-500">Dirección:</p>
+                            <p className="text-sm text-gray-900">{proveedor.direccion || '-'}</p>
                           </div>
                           <div>
-                            <h4 className="text-sm font-medium text-gray-700">Banco</h4>
-                            <p className="mt-1 text-sm text-gray-900">{proveedor.banco}</p>
+                            <p className="text-sm font-medium text-gray-500">Banco:</p>
+                            <p className="text-sm text-gray-900">{proveedor.banco}</p>
                           </div>
                           <div>
-                            <h4 className="text-sm font-medium text-gray-700">Cuenta Bancaria</h4>
-                            <p className="mt-1 text-sm text-gray-900">{proveedor.cuentaBancaria}</p>
+                            <p className="text-sm font-medium text-gray-500">Cuenta Bancaria:</p>
+                            <p className="text-sm text-gray-900">{proveedor.cuentaBancaria}</p>
                           </div>
                           <div>
-                            <h4 className="text-sm font-medium text-gray-700">CLABE Interbancaria</h4>
-                            <p className="mt-1 text-sm text-gray-900">{proveedor.clabeInterbancaria}</p>
+                            <p className="text-sm font-medium text-gray-500">CLABE Interbancaria:</p>
+                            <p className="text-sm text-gray-900">{proveedor.clabeInterbancaria}</p>
+                          </div>
+                          <div className="col-span-2">
+                            <p className="text-sm font-medium text-gray-500">Notas:</p>
+                            <p className="text-sm text-gray-900">{proveedor.notas || '-'}</p>
                           </div>
                         </div>
                       </td>
@@ -282,162 +300,144 @@ export default function ProveedoresPage() {
         </div>
 
         {isModalOpen && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-            <div className="relative top-20 mx-auto p-5 border w-[800px] shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  {editingId ? 'Editar Proveedor' : 'Nuevo Proveedor'}
-                </h3>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Tipo
-                      </label>
-                      <select
-                        value={formData.tipo}
-                        onChange={(e) => setFormData({ ...formData, tipo: e.target.value as 'FISICA' | 'MORAL' })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
-                      >
-                        <option value="FISICA">Persona Física</option>
-                        <option value="MORAL">Persona Moral</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Nombre
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.nombre}
-                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Persona Responsable
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.personaResponsable}
-                        onChange={(e) => setFormData({ ...formData, personaResponsable: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Teléfono
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.telefono}
-                        onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        RFC
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.rfc}
-                        onChange={(e) => setFormData({ ...formData, rfc: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
-                        required
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Dirección
-                      </label>
-                      <textarea
-                        value={formData.direccion}
-                        onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
-                        rows={3}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Banco
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.banco}
-                        onChange={(e) => setFormData({ ...formData, banco: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Cuenta Bancaria
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.cuentaBancaria}
-                        onChange={(e) => setFormData({ ...formData, cuentaBancaria: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        CLABE Interbancaria
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.clabeInterbancaria}
-                        onChange={(e) => setFormData({ ...formData, clabeInterbancaria: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end space-x-3 mt-6">
-                    <button
-                      type="button"
-                      onClick={() => setIsModalOpen(false)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 overflow-y-auto pt-20">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl my-4">
+              <h2 className="text-xl font-semibold mb-4">
+                {editingId ? 'Editar Proveedor' : 'Nuevo Proveedor'}
+              </h2>
+              <form onSubmit={handleSubmit}>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Tipo</label>
+                    <select
+                      name="tipo"
+                      value={formData.tipo}
+                      onChange={(e) => setFormData({ ...formData, tipo: e.target.value as TipoProveedor })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
                     >
-                      Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                    >
-                      {editingId ? 'Actualizar' : 'Guardar'}
-                    </button>
+                      <option value="FISICA">Persona Física</option>
+                      <option value="MORAL">Persona Moral</option>
+                    </select>
                   </div>
-                </form>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Nombre *</label>
+                    <input
+                      type="text"
+                      name="nombre"
+                      value={formData.nombre}
+                      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Contacto</label>
+                    <input
+                      type="text"
+                      name="contacto"
+                      value={formData.contacto}
+                      onChange={(e) => setFormData({ ...formData, contacto: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Teléfono *</label>
+                    <input
+                      type="tel"
+                      name="telefono"
+                      value={formData.telefono}
+                      onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email || ''}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">RFC</label>
+                    <input
+                      type="text"
+                      name="rfc"
+                      value={formData.rfc}
+                      onChange={(e) => setFormData({ ...formData, rfc: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700">Dirección</label>
+                    <textarea
+                      name="direccion"
+                      value={formData.direccion || ''}
+                      onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Banco</label>
+                    <input
+                      type="text"
+                      name="banco"
+                      value={formData.banco}
+                      onChange={(e) => setFormData({ ...formData, banco: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Cuenta Bancaria</label>
+                    <input
+                      type="text"
+                      name="cuentaBancaria"
+                      value={formData.cuentaBancaria}
+                      onChange={(e) => setFormData({ ...formData, cuentaBancaria: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">CLABE Interbancaria</label>
+                    <input
+                      type="text"
+                      name="clabeInterbancaria"
+                      value={formData.clabeInterbancaria}
+                      onChange={(e) => setFormData({ ...formData, clabeInterbancaria: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700">Notas</label>
+                    <textarea
+                      name="notas"
+                      value={formData.notas || ''}
+                      onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    {editingId ? 'Actualizar' : 'Guardar'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

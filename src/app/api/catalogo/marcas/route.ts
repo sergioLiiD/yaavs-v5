@@ -14,7 +14,6 @@ export async function GET(req: NextRequest) {
 
     // Obtener todas las marcas
     const marcas = await prisma.marca.findMany({
-      where: { activo: true },
       orderBy: { nombre: 'asc' }
     });
     
@@ -46,6 +45,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    console.log('Datos recibidos:', body);
+    console.log('Usuario autenticado:', session.user);
     
     // Validar datos requeridos
     if (!body.nombre) {
@@ -56,19 +57,43 @@ export async function POST(req: NextRequest) {
     }
 
     // Crear nueva marca
-    const nuevaMarca = await prisma.marca.create({
-      data: {
-        nombre: body.nombre,
-        logo: body.logo || null,
-        activo: true
-      }
+    console.log('Intentando crear marca con datos:', {
+      nombre: body.nombre,
+      descripcion: body.descripcion || null
     });
-    
-    return NextResponse.json(nuevaMarca, { status: 201 });
-  } catch (error) {
-    console.error('Error al crear marca:', error);
+
+    try {
+      const nuevaMarca = await prisma.marca.create({
+        data: {
+          nombre: body.nombre,
+          descripcion: body.descripcion || null
+        }
+      });
+      
+      console.log('Marca creada exitosamente:', nuevaMarca);
+      return NextResponse.json(nuevaMarca, { status: 201 });
+    } catch (dbError: any) {
+      console.error('Error de base de datos:', {
+        message: dbError.message,
+        code: dbError.code,
+        meta: dbError.meta
+      });
+      throw dbError;
+    }
+  } catch (error: any) {
+    console.error('Error al crear marca:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack
+    });
     return NextResponse.json(
-      { error: 'Error al procesar la solicitud' },
+      { 
+        error: 'Error al procesar la solicitud',
+        details: error.message,
+        code: error.code,
+        meta: error.meta
+      },
       { status: 500 }
     );
   }

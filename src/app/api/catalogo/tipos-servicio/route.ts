@@ -14,8 +14,7 @@ export async function GET(req: NextRequest) {
 
     // Obtener todos los tipos de servicio
     const tiposServicio = await prisma.tipoServicio.findMany({
-      where: { activo: true },
-      orderBy: { concepto: 'asc' }
+      orderBy: { nombre: 'asc' }
     });
     
     return NextResponse.json(tiposServicio);
@@ -48,9 +47,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     
     // Validar datos requeridos
-    if (!body.concepto) {
+    if (!body.nombre) {
       return NextResponse.json(
-        { error: 'El concepto es obligatorio' },
+        { error: 'El nombre es obligatorio' },
         { status: 400 }
       );
     }
@@ -58,9 +57,8 @@ export async function POST(req: NextRequest) {
     // Crear nuevo tipo de servicio
     const nuevoTipoServicio = await prisma.tipoServicio.create({
       data: {
-        concepto: body.concepto,
-        descripcion: body.descripcion || null,
-        activo: true
+        nombre: body.nombre,
+        descripcion: body.descripcion || null
       }
     });
     

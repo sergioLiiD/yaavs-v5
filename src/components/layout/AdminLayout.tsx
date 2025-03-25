@@ -20,7 +20,8 @@ import {
   HiCollection,
   HiTag,
   HiDeviceMobile,
-  HiClipboardList
+  HiClipboardList,
+  HiCube
 } from 'react-icons/hi';
 import Link from 'next/link';
 
@@ -36,6 +37,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [catalogoOpen, setCatalogoOpen] = useState(false);
+  const [inventarioOpen, setInventarioOpen] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -51,6 +53,10 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
 
   const toggleCatalogo = () => {
     setCatalogoOpen(!catalogoOpen);
+  };
+
+  const toggleInventario = () => {
+    setInventarioOpen(!inventarioOpen);
   };
 
   const handleSignOut = async () => {
@@ -79,6 +85,21 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
     { href: '/dashboard/catalogo/modelos', icon: HiPhone, text: 'Modelos de Celulares', active: title.includes('Modelos de Celulares') },
     { href: '/dashboard/catalogo/status-reparacion', icon: HiClipboardList, text: 'Estados de Reparación', active: title.includes('Estados de Reparación') },
     { href: '/dashboard/catalogo/proveedores', icon: HiShoppingBag, text: 'Proveedores', active: title.includes('Proveedores') },
+  ];
+
+  const inventarioLinks = [
+    {
+      route: '/dashboard/inventario/catalogo',
+      icon: HiShoppingBag,
+      text: 'Catálogo',
+      active: title.includes('Catálogo')
+    },
+    {
+      route: '/dashboard/inventario/stock',
+      icon: HiCube,
+      text: 'Stock',
+      active: title.includes('Stock')
+    }
   ];
 
   return (
@@ -113,6 +134,39 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                   </Link>
                 </li>
               ))}
+
+              {/* Menú de Inventario con submenús */}
+              <li>
+                <button
+                  type="button"
+                  className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
+                    title.includes('Inventario') && 'bg-gray-100'
+                  }`}
+                  onClick={toggleInventario}
+                >
+                  <HiShoppingBag className={`w-6 h-6 text-gray-500 transition duration-75 ${
+                    title.includes('Inventario') && 'text-blue-600'
+                  }`} />
+                  <span className="flex-1 ml-3 text-left whitespace-nowrap">Inventario</span>
+                  <svg className={`w-5 h-5 ${inventarioOpen ? 'rotate-180' : ''}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                  </svg>
+                </button>
+                <ul className={`${inventarioOpen ? 'block' : 'hidden'} py-2 space-y-2`}>
+                  {inventarioLinks.map((link, index) => (
+                    <li key={index}>
+                      <Link
+                        href={link.route}
+                        className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
+                          ${link.active ? 'text-blue-600' : 'text-gray-900'}`}
+                      >
+                        <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-blue-600' : 'text-gray-500'}`} />
+                        {link.text}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </li>
 
               {/* Menú de Catálogo con submenús */}
               <li>
@@ -297,28 +351,28 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                     </li>
                   ))}
                   
-                  {/* Menú de Catálogo con submenús para móvil */}
+                  {/* Menú de Inventario con submenús para móvil */}
                   <li>
                     <button
                       type="button"
                       className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
-                        title.includes('Catálogo') && 'bg-gray-100'
+                        title.includes('Inventario') && 'bg-gray-100'
                       }`}
-                      onClick={toggleCatalogo}
+                      onClick={toggleInventario}
                     >
-                      <HiCollection className={`w-6 h-6 text-gray-500 transition duration-75 ${
-                        title.includes('Catálogo') && 'text-blue-600'
+                      <HiShoppingBag className={`w-6 h-6 text-gray-500 transition duration-75 ${
+                        title.includes('Inventario') && 'text-blue-600'
                       }`} />
-                      <span className="flex-1 ml-3 text-left whitespace-nowrap">Catálogo</span>
-                      <svg className={`w-5 h-5 ${catalogoOpen ? 'rotate-180' : ''}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <span className="flex-1 ml-3 text-left whitespace-nowrap">Inventario</span>
+                      <svg className={`w-5 h-5 ${inventarioOpen ? 'rotate-180' : ''}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
                       </svg>
                     </button>
-                    <ul className={`${catalogoOpen ? 'block' : 'hidden'} py-2 space-y-2`}>
-                      {catalogoLinks.map((link, index) => (
+                    <ul className={`${inventarioOpen ? 'block' : 'hidden'} py-2 space-y-2`}>
+                      {inventarioLinks.map((link, index) => (
                         <li key={index}>
                           <Link
-                            href={link.href}
+                            href={link.route}
                             className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
                               ${link.active ? 'text-blue-600' : 'text-gray-900'}`}
                             onClick={() => setMobileMenuOpen(false)}

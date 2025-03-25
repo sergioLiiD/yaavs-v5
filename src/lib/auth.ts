@@ -1,11 +1,25 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { PrismaAdapter } from '@auth/prisma-adapter';
-import prisma from './prisma';
+import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
 
+declare module 'next-auth' {
+  interface User {
+    id: string;
+    email: string;
+    nombre: string;
+    nivel: string;
+  }
+
+  interface Session {
+    user: User & {
+      id: string;
+      nivel: string;
+    };
+  }
+}
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -37,12 +51,15 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        return {
+        const user = {
           id: usuario.id.toString(),
           email: usuario.email,
           nombre: `${usuario.nombre} ${usuario.apellidoPaterno}`,
           nivel: usuario.nivel
         };
+
+        console.log('Usuario autorizado:', user);
+        return user;
       }
     })
   ],
@@ -51,6 +68,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.nivel = user.nivel;
+        console.log('Token actualizado:', token);
       }
       return token;
     },
@@ -58,6 +76,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.nivel = token.nivel as string;
+        console.log('Sesión actualizada:', session);
       }
       return session;
     }
