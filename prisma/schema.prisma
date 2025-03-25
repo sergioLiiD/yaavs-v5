@@ -225,6 +225,22 @@ model Presupuesto {
   ticket          Ticket      @relation(fields: [ticketId], references: [id])
 }
 
+model Proveedor {
+  id                  String   @id @default(cuid())
+  tipo                String   // FISICA o MORAL
+  nombre              String
+  personaResponsable  String
+  telefono            String
+  email               String
+  direccion           String
+  rfc                 String   @unique
+  banco               String
+  cuentaBancaria      String
+  clabeInterbancaria  String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
 enum NivelUsuario {
   ADMINISTRADOR
   GERENTE
