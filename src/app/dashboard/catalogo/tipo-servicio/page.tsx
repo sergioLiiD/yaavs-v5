@@ -1,32 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { HiPlus, HiPencilAlt, HiTrash } from 'react-icons/hi';
+import axios from 'axios';
 
 // Tipo para representar un tipo de servicio
 interface TipoServicio {
   id: string;
-  nombre: string;
+  concepto: string;
   descripcion?: string;
+  activo?: boolean;
 }
 
 export default function TipoServicioPage() {
   const { data: session } = useSession();
-  const [tiposServicio, setTiposServicio] = useState<TipoServicio[]>([
-    // Datos de ejemplo
-    { id: '1', nombre: 'Reparación de pantalla', descripcion: 'Servicio para reparar pantallas de dispositivos móviles' },
-    { id: '2', nombre: 'Cambio de batería', descripcion: 'Reemplazo de batería de diversos dispositivos' },
-    { id: '3', nombre: 'Recuperación de datos', descripcion: '' },
-    { id: '4', nombre: 'Reparación de placa', descripcion: 'Servicio técnico especializado en reparación de placas base' },
-  ]);
+  
+  // Estado para la lista de tipos de servicio
+  const [tiposServicio, setTiposServicio] = useState<TipoServicio[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   
   // Estado para controlar el formulario de tipo de servicio
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentTipoServicio, setCurrentTipoServicio] = useState<Partial<TipoServicio>>({ nombre: '', descripcion: '' });
+  const [currentTipoServicio, setCurrentTipoServicio] = useState<Partial<TipoServicio>>({ concepto: '', descripcion: '' });
   const [isEditing, setIsEditing] = useState(false);
+
+  // Cargar los tipos de servicio al montar el componente
+  useEffect(() => {
+    const fetchTiposServicio = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get('/api/catalogo/tipos-servicio');
+        setTiposServicio(response.data.map((tipo: any) => ({
+          ...tipo,
+          id: tipo.id.toString()
+        })));
+        setError('');
+      } catch (err) {
+        console.error('Error al cargar tipos de servicio:', err);
+        setError('Error al cargar los datos. Por favor, intente nuevamente.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTiposServicio();
+  }, []);
 
   // Funciones para gestionar el formulario
   const openModal = () => {
@@ -35,7 +57,7 @@ export default function TipoServicioPage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setCurrentTipoServicio({ nombre: '', descripcion: '' });
+    setCurrentTipoServicio({ concepto: '', descripcion: '' });
     setIsEditing(false);
   };
 
@@ -44,29 +66,32 @@ export default function TipoServicioPage() {
     setCurrentTipoServicio({ ...currentTipoServicio, [name]: value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentTipoServicio.nombre) return;
-
-    if (isEditing && currentTipoServicio.id) {
-      // Actualizar un tipo de servicio existente
-      setTiposServicio(tiposServicio.map(tipo => 
-        tipo.id === currentTipoServicio.id 
-          ? { ...tipo, ...currentTipoServicio } as TipoServicio 
-          : tipo
-      ));
-    } else {
-      // Agregar un nuevo tipo de servicio
-      const newTipoServicio: TipoServicio = {
-        id: Date.now().toString(),
-        nombre: currentTipoServicio.nombre,
-        descripcion: currentTipoServicio.descripcion
-      };
-      setTiposServicio([...tiposServicio, newTipoServicio]);
-    }
+    if (!currentTipoServicio.concepto) return;
     
-    closeModal();
+    try {
+      if (isEditing && currentTipoServicio.id) {
+        // Actualizar un tipo de servicio existente
+        const response = await axios.put(`/api/catalogo/tipos-servicio/${currentTipoServicio.id}`, currentTipoServicio);
+        setTiposServicio(tiposServicio.map(tipo => 
+          tipo.id === currentTipoServicio.id 
+            ? { ...response.data, id: response.data.id.toString() }
+            : tipo
+        ));
+      } else {
+        // Agregar un nuevo tipo de servicio
+        const response = await axios.post('/api/catalogo/tipos-servicio', currentTipoServicio);
+        const newTipoServicio = { ...response.data, id: response.data.id.toString() };
+        setTiposServicio([...tiposServicio, newTipoServicio]);
+      }
+      
+      closeModal();
+    } catch (err) {
+      console.error('Error al guardar tipo de servicio:', err);
+      setError('Error al guardar los datos. Por favor, intente nuevamente.');
+    }
   };
 
   const handleEdit = (tipoServicio: TipoServicio) => {
@@ -75,9 +100,15 @@ export default function TipoServicioPage() {
     openModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('¿Está seguro que desea eliminar este tipo de servicio?')) {
-      setTiposServicio(tiposServicio.filter(tipo => tipo.id !== id));
+      try {
+        await axios.delete(`/api/catalogo/tipos-servicio/${id}`);
+        setTiposServicio(tiposServicio.filter(tipo => tipo.id !== id));
+      } catch (err) {
+        console.error('Error al eliminar tipo de servicio:', err);
+        setError('Error al eliminar el tipo de servicio. Por favor, intente nuevamente.');
+      }
     }
   };
 
@@ -96,61 +127,85 @@ export default function TipoServicioPage() {
             </button>
           </div>
 
-          {/* Tabla de tipos de servicio */}
-          <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nombre
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Descripción
-                    </th>
-                    <th scope="col" className="relative px-6 py-3">
-                      <span className="sr-only">Acciones</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {tiposServicio.map((tipo) => (
-                    <tr key={tipo.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{tipo.nombre}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-500">
-                          {tipo.descripcion || <span className="text-gray-400 italic">Sin descripción</span>}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleEdit(tipo)}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
-                        >
-                          <HiPencilAlt className="inline w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(tipo.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <HiTrash className="inline w-5 h-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {tiposServicio.length === 0 && (
-                    <tr>
-                      <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
-                        No hay tipos de servicio registrados
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+          {/* Mensaje de error */}
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Estado de carga */}
+          {isLoading ? (
+            <div className="text-center py-10">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-gray-500">Cargando tipos de servicio...</p>
+            </div>
+          ) : (
+            /* Tabla de tipos de servicio */
+            <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Concepto
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Descripción
+                      </th>
+                      <th scope="col" className="relative px-6 py-3">
+                        <span className="sr-only">Acciones</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {tiposServicio.map((tipo) => (
+                      <tr key={tipo.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{tipo.concepto}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-500">
+                            {tipo.descripcion || <span className="text-gray-400 italic">Sin descripción</span>}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => handleEdit(tipo)}
+                            className="text-blue-600 hover:text-blue-900 mr-4"
+                          >
+                            <HiPencilAlt className="inline w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(tipo.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <HiTrash className="inline w-5 h-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {tiposServicio.length === 0 && !isLoading && (
+                      <tr>
+                        <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
+                          No hay tipos de servicio registrados
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal para agregar/editar tipo de servicio */}
@@ -172,14 +227,14 @@ export default function TipoServicioPage() {
                       </h3>
                     </div>
                     <div className="mb-4">
-                      <label htmlFor="nombre" className="block text-sm font-medium text-gray-800">
-                        Nombre <span className="text-red-500">*</span>
+                      <label htmlFor="concepto" className="block text-sm font-medium text-gray-800">
+                        Concepto <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
-                        name="nombre"
-                        id="nombre"
-                        value={currentTipoServicio.nombre}
+                        name="concepto"
+                        id="concepto"
+                        value={currentTipoServicio.concepto}
                         onChange={handleInputChange}
                         className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
                         required
