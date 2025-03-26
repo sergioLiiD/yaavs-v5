@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { HiChevronDown, HiChevronRight } from 'react-icons/hi';
+import { ShoppingCart, Package, Boxes, AlertCircle } from 'lucide-react';
 
 interface MenuItem {
   name: string;
@@ -22,9 +23,14 @@ const menuItems: MenuItem[] = [
   { name: 'Clientes', href: '/clientes', icon: 'person' },
   { 
     name: 'Inventario', 
-    href: '/inventario', 
+    href: '/dashboard/inventario', 
     icon: 'inventory',
-    roles: ['ADMINISTRADOR', 'GERENTE', 'TECNICO'] 
+    roles: ['ADMINISTRADOR', 'GERENTE', 'TECNICO'],
+    submenu: [
+      { name: 'Catálogo', href: '/dashboard/inventario/catalogo', icon: 'inventory_2' },
+      { name: 'Stock', href: '/dashboard/inventario/stock', icon: 'inventory' },
+      { name: 'Inventarios Mínimos', href: '/dashboard/inventario/minimos', icon: 'warning' },
+    ]
   },
   { 
     name: 'Catálogos', 
@@ -50,7 +56,7 @@ const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
   const userRole = session?.user?.role || '';
-  const [openMenus, setOpenMenus] = useState<string[]>(['Catálogos']);
+  const [openMenus, setOpenMenus] = useState<string[]>(['Catálogos', 'Inventario']);
   
   // Filtrar elementos del menú según el rol del usuario
   const filteredMenuItems = menuItems.filter(item => {
@@ -77,7 +83,12 @@ const Sidebar: React.FC = () => {
         
         <nav className="mt-5 flex-1 px-2 bg-blue-800 space-y-1">
           {filteredMenuItems.map((item) => {
-            const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+            const isActive = pathname === item.href || 
+                           pathname?.startsWith(`${item.href}/`) ||
+                           (item.submenu?.some(subItem => 
+                             pathname === subItem.href || 
+                             pathname?.startsWith(`${subItem.href}/`)
+                           ));
             const hasSubmenu = item.submenu && item.submenu.length > 0;
             const isSubmenuOpen = openMenus.includes(item.name);
             

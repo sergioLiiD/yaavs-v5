@@ -121,6 +121,20 @@ const Navbar: React.FC = () => {
             >
               Inventario
             </Link>
+            <div className="pl-3 pr-4 py-2">
+              <Link
+                href="/dashboard/inventario"
+                className="block text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 focus:outline-none focus:text-gray-800 focus:bg-gray-50 transition duration-150 ease-in-out"
+              >
+                Gestión de Inventario
+              </Link>
+              <Link
+                href="/inventarios/minimos"
+                className="block text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 focus:outline-none focus:text-gray-800 focus:bg-gray-50 transition duration-150 ease-in-out"
+              >
+                Inventarios Mínimos
+              </Link>
+            </div>
             <Link
               href="/catalogos"
               className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:text-gray-800 focus:bg-gray-50 focus:border-gray-300 transition duration-150 ease-in-out"

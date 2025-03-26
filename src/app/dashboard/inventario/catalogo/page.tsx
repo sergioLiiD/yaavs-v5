@@ -502,267 +502,274 @@ export default function CatalogoPage() {
 
       {/* Modal de Producto */}
       {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-          <div className="relative top-20 mx-auto p-5 border w-[800px] shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">
-                {productoSeleccionado ? 'Editar Producto' : 'Nuevo Producto'}
-              </h3>
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setProductoSeleccionado(null);
-                  setFotos([]);
-                  setPreviewFotos([]);
-                }}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <HiX className="h-6 w-6" />
-              </button>
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" onClick={() => {
+              setShowModal(false);
+              setProductoSeleccionado(null);
+              setFotos([]);
+              setPreviewFotos([]);
+            }}>
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="tipo" className="block text-sm font-medium text-gray-700">
-                  Tipo
-                </label>
-                <select
-                  name="tipo"
-                  id="tipo"
-                  value={formData.tipo}
-                  onChange={(e) => {
-                    const tipo = e.target.value as 'PRODUCTO' | 'SERVICIO';
-                    setFormData({ 
-                      ...formData, 
-                      tipo,
-                      // Resetear campos no necesarios para servicios
-                      ...(tipo === 'SERVICIO' ? {
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen"></span>&#8203;
+
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+              <form onSubmit={handleSubmit}>
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="mb-4">
+                    <h3 className="text-xl font-semibold leading-6 text-gray-900">
+                      {productoSeleccionado ? 'Editar Producto' : 'Nuevo Producto'}
+                    </h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="tipo" className="block text-sm font-medium text-gray-800">
+                        Tipo <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="tipo"
+                        id="tipo"
+                        value={formData.tipo}
+                        onChange={(e) => {
+                          const tipo = e.target.value as 'PRODUCTO' | 'SERVICIO';
+                          setFormData({ 
+                            ...formData, 
+                            tipo,
+                            // Resetear campos no necesarios para servicios
+                            ...(tipo === 'SERVICIO' ? {
+                              marcaId: 0,
+                              modeloId: 0,
+                              proveedorId: 0,
+                              garantiaValor: 0,
+                              garantiaUnidad: 'dias'
+                            } : {})
+                          });
+                        }}
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                        required
+                      >
+                        <option value="PRODUCTO">Producto</option>
+                        <option value="SERVICIO">Servicio</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="nombre" className="block text-sm font-medium text-gray-800">
+                        Nombre <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="nombre"
+                        id="nombre"
+                        value={formData.nombre}
+                        onChange={handleInputChange}
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="sku" className="block text-sm font-medium text-gray-800">
+                        SKU
+                      </label>
+                      <input
+                        type="text"
+                        name="sku"
+                        id="sku"
+                        value={formData.sku}
+                        onChange={handleInputChange}
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="tipoServicio" className="block text-sm font-medium text-gray-800">
+                        Tipo de Servicio <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="tipoServicioId"
+                        id="tipoServicio"
+                        value={formData.tipoServicioId}
+                        onChange={handleInputChange}
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                        required
+                      >
+                        <option value="">Seleccione un tipo de servicio</option>
+                        {tiposServicio.map((tipo) => (
+                          <option key={tipo.id} value={tipo.id}>
+                            {tipo.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {formData.tipo === 'PRODUCTO' && (
+                      <>
+                        <div>
+                          <label htmlFor="marca" className="block text-sm font-medium text-gray-800">
+                            Marca <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="marcaId"
+                            id="marca"
+                            value={formData.marcaId}
+                            onChange={(e) => {
+                              handleInputChange(e);
+                              handleMarcaChange(e);
+                            }}
+                            className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                            required
+                          >
+                            <option value="">Seleccione una marca</option>
+                            {marcas.map((marca) => (
+                              <option key={marca.id} value={marca.id}>
+                                {marca.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label htmlFor="modelo" className="block text-sm font-medium text-gray-800">
+                            Modelo <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="modeloId"
+                            id="modelo"
+                            value={formData.modeloId}
+                            onChange={handleInputChange}
+                            className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                            required
+                            disabled={!marcaSeleccionada}
+                          >
+                            <option value="">Seleccione un modelo</option>
+                            {modelos.map((modelo) => (
+                              <option key={modelo.id} value={modelo.id}>
+                                {modelo.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label htmlFor="proveedor" className="block text-sm font-medium text-gray-800">
+                            Proveedor <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="proveedorId"
+                            id="proveedor"
+                            value={formData.proveedorId}
+                            onChange={handleInputChange}
+                            className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                            required
+                          >
+                            <option value="">Seleccione un proveedor</option>
+                            {proveedores.map((proveedor) => (
+                              <option key={proveedor.id} value={proveedor.id}>
+                                {proveedor.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </>
+                    )}
+
+                    {formData.tipo === 'PRODUCTO' && (
+                      <div>
+                        <label htmlFor="garantia" className="block text-sm font-medium text-gray-800">
+                          Garantía <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex space-x-2">
+                          <input
+                            type="number"
+                            name="garantiaValor"
+                            id="garantiaValor"
+                            value={formData.garantiaValor}
+                            onChange={handleInputChange}
+                            className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-24 shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                            required
+                          />
+                          <select
+                            name="garantiaUnidad"
+                            id="garantiaUnidad"
+                            value={formData.garantiaUnidad}
+                            onChange={handleInputChange}
+                            className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-32 shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                            required
+                          >
+                            <option value="dias">Días</option>
+                            <option value="meses">Meses</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <label htmlFor="descripcion" className="block text-sm font-medium text-gray-800">
+                        Descripción
+                      </label>
+                      <textarea
+                        name="descripcion"
+                        id="descripcion"
+                        value={formData.descripcion}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="notasInternas" className="block text-sm font-medium text-gray-800">
+                        Notas Internas
+                      </label>
+                      <textarea
+                        name="notasInternas"
+                        id="notasInternas"
+                        value={formData.notasInternas}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                  <button
+                    type="submit"
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  >
+                    {productoSeleccionado ? 'Actualizar' : 'Crear'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setProductoSeleccionado(null);
+                      setFormData({
+                        nombre: '',
+                        tipo: 'PRODUCTO',
+                        sku: '',
+                        descripcion: '',
+                        notasInternas: '',
+                        garantiaValor: 0,
+                        garantiaUnidad: 'dias',
+                        tipoServicioId: 0,
                         marcaId: 0,
                         modeloId: 0,
                         proveedorId: 0,
-                        garantiaValor: 0,
-                        garantiaUnidad: 'dias'
-                      } : {})
-                    });
-                  }}
-                  className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                  required
-                >
-                  <option value="PRODUCTO">Producto</option>
-                  <option value="SERVICIO">Servicio</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
-                  Nombre
-                </label>
-                <input
-                  type="text"
-                  name="nombre"
-                  id="nombre"
-                  value={formData.nombre}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="sku" className="block text-sm font-medium text-gray-700">
-                  SKU
-                </label>
-                <input
-                  type="text"
-                  name="sku"
-                  id="sku"
-                  value={formData.sku}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="tipoServicio" className="block text-sm font-medium text-gray-700">
-                  Tipo de Servicio
-                </label>
-                <select
-                  name="tipoServicioId"
-                  id="tipoServicio"
-                  value={formData.tipoServicioId}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                  required
-                >
-                  <option value="">Seleccione un tipo de servicio</option>
-                  {tiposServicio.map((tipo) => (
-                    <option key={tipo.id} value={tipo.id}>
-                      {tipo.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {formData.tipo === 'PRODUCTO' && (
-                <>
-                  <div>
-                    <label htmlFor="marca" className="block text-sm font-medium text-gray-700">
-                      Marca
-                    </label>
-                    <select
-                      name="marcaId"
-                      id="marca"
-                      value={formData.marcaId}
-                      onChange={(e) => {
-                        handleInputChange(e);
-                        handleMarcaChange(e);
-                      }}
-                      className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                      required
-                    >
-                      <option value="">Seleccione una marca</option>
-                      {marcas.map((marca) => (
-                        <option key={marca.id} value={marca.id}>
-                          {marca.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="modelo" className="block text-sm font-medium text-gray-700">
-                      Modelo
-                    </label>
-                    <select
-                      name="modeloId"
-                      id="modelo"
-                      value={formData.modeloId}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                      required
-                      disabled={!marcaSeleccionada}
-                    >
-                      <option value="">Seleccione un modelo</option>
-                      {modelos.map((modelo) => (
-                        <option key={modelo.id} value={modelo.id}>
-                          {modelo.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="proveedor" className="block text-sm font-medium text-gray-700">
-                      Proveedor
-                    </label>
-                    <select
-                      name="proveedorId"
-                      id="proveedor"
-                      value={formData.proveedorId}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                      required
-                    >
-                      <option value="">Seleccione un proveedor</option>
-                      {proveedores.map((proveedor) => (
-                        <option key={proveedor.id} value={proveedor.id}>
-                          {proveedor.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {formData.tipo === 'PRODUCTO' && (
-                <div>
-                  <label htmlFor="garantia" className="block text-sm font-medium text-gray-700">
-                    Garantía
-                  </label>
-                  <div className="flex space-x-2">
-                    <input
-                      type="number"
-                      name="garantiaValor"
-                      id="garantiaValor"
-                      value={formData.garantiaValor}
-                      onChange={handleInputChange}
-                      className="block w-24 rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                      required
-                    />
-                    <select
-                      name="garantiaUnidad"
-                      id="garantiaUnidad"
-                      value={formData.garantiaUnidad}
-                      onChange={handleInputChange}
-                      className="block w-32 rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                      required
-                    >
-                      <option value="dias">Días</option>
-                      <option value="meses">Meses</option>
-                    </select>
-                  </div>
+                      });
+                    }}
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  >
+                    Cancelar
+                  </button>
                 </div>
-              )}
-
-              <div>
-                <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700">
-                  Descripción
-                </label>
-                <textarea
-                  name="descripcion"
-                  id="descripcion"
-                  value={formData.descripcion}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="notasInternas" className="block text-sm font-medium text-gray-700">
-                  Notas Internas
-                </label>
-                <textarea
-                  name="notasInternas"
-                  id="notasInternas"
-                  value={formData.notasInternas}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setProductoSeleccionado(null);
-                    setFormData({
-                      nombre: '',
-                      tipo: 'PRODUCTO',
-                      sku: '',
-                      descripcion: '',
-                      notasInternas: '',
-                      garantiaValor: 0,
-                      garantiaUnidad: 'dias',
-                      tipoServicioId: 0,
-                      marcaId: 0,
-                      modeloId: 0,
-                      proveedorId: 0,
-                    });
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
-                >
-                  {productoSeleccionado ? 'Actualizar' : 'Crear'}
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       )}

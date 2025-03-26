@@ -278,8 +278,21 @@ model Producto {
   entradas         EntradaAlmacen[]
   salidas          SalidaAlmacen[]
   fotos            FotoProducto[]
+  inventarioMinimo InventarioMinimo?
 
   @@map("productos")
+}
+
+model InventarioMinimo {
+  id          Int       @id @default(autoincrement())
+  productoId  Int
+  cantidadMinima Int    @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  producto    Producto  @relation(fields: [productoId], references: [id])
+
+  @@unique([productoId])
+  @@map("inventarios_minimos")
 }
 
 model EntradaAlmacen {

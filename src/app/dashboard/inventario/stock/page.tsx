@@ -558,7 +558,7 @@ export default function StockPage() {
                 <p className="text-sm text-gray-600 mb-4">
                   Precio promedio: ${productoSeleccionado.precioPromedio.toFixed(2)}
                 </p>
-                {productoSeleccionado.entradas.length > 0 && (
+                {productoSeleccionado.entradas && productoSeleccionado.entradas.length > 0 && (
                   <div className="mb-4 p-3 bg-gray-50 rounded-md">
                     <p className="text-sm font-medium text-gray-900 mb-1">Última entrada:</p>
                     <p className="text-sm text-gray-600">

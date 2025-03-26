@@ -70,7 +70,6 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
     { href: '/dashboard/tickets', icon: HiTicket, text: 'Tickets', active: title.includes('Tickets') },
     { href: '/dashboard/clientes', icon: HiUsers, text: 'Clientes', active: title.includes('Clientes') },
     { href: '/dashboard/dispositivos', icon: HiPhone, text: 'Dispositivos', active: title.includes('Dispositivos') },
-    { href: '/dashboard/inventario', icon: HiShoppingBag, text: 'Inventario', active: title.includes('Inventario') },
     { href: '/dashboard/reportes', icon: HiClipboardCheck, text: 'Reportes', active: title.includes('Reportes') },
   ];
 
@@ -99,6 +98,12 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
       icon: HiCube,
       text: 'Stock',
       active: title.includes('Stock')
+    },
+    {
+      route: '/dashboard/inventario/minimos',
+      icon: HiAdjustments,
+      text: 'Inventarios Mínimos',
+      active: title.includes('Inventarios Mínimos')
     }
   ];
 
