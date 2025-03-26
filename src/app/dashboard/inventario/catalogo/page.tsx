@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   HiPlus,
   HiPencil,
@@ -17,11 +17,11 @@ interface Producto {
   notasInternas: string | null;
   garantiaValor: number;
   garantiaUnidad: 'dias' | 'meses';
-  categoriaId: number;
+  tipoServicioId: number;
   marcaId: number;
   modeloId: number;
   proveedorId: number;
-  categoria: {
+  tipoServicio: {
     id: number;
     nombre: string;
   };
@@ -73,7 +73,7 @@ interface FormData {
   notasInternas: string;
   garantiaValor: number;
   garantiaUnidad: 'dias' | 'meses';
-  categoriaId: number;
+  tipoServicioId: number;
   marcaId: number;
   modeloId: number;
   proveedorId: number;
@@ -96,7 +96,7 @@ export default function CatalogoPage() {
     notasInternas: '',
     garantiaValor: 0,
     garantiaUnidad: 'dias',
-    categoriaId: 0,
+    tipoServicioId: 0,
     marcaId: 0,
     modeloId: 0,
     proveedorId: 0,
@@ -248,6 +248,13 @@ export default function CatalogoPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Validar campos según el tipo
+      if (formData.tipo === 'PRODUCTO') {
+        if (!formData.marcaId || !formData.modeloId || !formData.proveedorId) {
+          throw new Error('Para productos, los campos marca, modelo y proveedor son obligatorios');
+        }
+      }
+
       const url = productoSeleccionado ? `/api/inventario/productos/${productoSeleccionado.id}` : '/api/inventario/productos';
       
       const method = productoSeleccionado ? 'PUT' : 'POST';
@@ -276,7 +283,7 @@ export default function CatalogoPage() {
         notasInternas: '',
         garantiaValor: 0,
         garantiaUnidad: 'dias',
-        categoriaId: 0,
+        tipoServicioId: 0,
         marcaId: 0,
         modeloId: 0,
         proveedorId: 0,
@@ -321,7 +328,7 @@ export default function CatalogoPage() {
       notasInternas: producto.notasInternas || '',
       garantiaValor: producto.garantiaValor,
       garantiaUnidad: producto.garantiaUnidad,
-      categoriaId: producto.categoriaId,
+      tipoServicioId: producto.tipoServicioId,
       marcaId: producto.marcaId,
       modeloId: producto.modeloId,
       proveedorId: producto.proveedorId,
@@ -402,8 +409,8 @@ export default function CatalogoPage() {
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {productos.map((producto) => (
-                <>
-                  <tr key={producto.id}>
+                <React.Fragment key={producto.id}>
+                  <tr>
                     <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         producto.tipo === 'PRODUCTO' 
@@ -423,7 +430,7 @@ export default function CatalogoPage() {
                       {producto.modelo?.nombre || '-'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {producto.categoria?.nombre || '-'}
+                      {producto.tipoServicio?.nombre || '-'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <button
@@ -449,7 +456,7 @@ export default function CatalogoPage() {
                     </td>
                   </tr>
                   {detallesVisibles[producto.id] && (
-                    <tr>
+                    <tr key={`detalles-${producto.id}`}>
                       <td colSpan={6} className="px-3 py-4 bg-gray-50">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -486,7 +493,7 @@ export default function CatalogoPage() {
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
@@ -523,7 +530,21 @@ export default function CatalogoPage() {
                   name="tipo"
                   id="tipo"
                   value={formData.tipo}
-                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value as 'PRODUCTO' | 'SERVICIO' })}
+                  onChange={(e) => {
+                    const tipo = e.target.value as 'PRODUCTO' | 'SERVICIO';
+                    setFormData({ 
+                      ...formData, 
+                      tipo,
+                      // Resetear campos no necesarios para servicios
+                      ...(tipo === 'SERVICIO' ? {
+                        marcaId: 0,
+                        modeloId: 0,
+                        proveedorId: 0,
+                        garantiaValor: 0,
+                        garantiaUnidad: 'dias'
+                      } : {})
+                    });
+                  }}
                   className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
                   required
                 >
@@ -561,18 +582,18 @@ export default function CatalogoPage() {
               </div>
 
               <div>
-                <label htmlFor="categoria" className="block text-sm font-medium text-gray-700">
-                  Categoría
+                <label htmlFor="tipoServicio" className="block text-sm font-medium text-gray-700">
+                  Tipo de Servicio
                 </label>
                 <select
-                  name="categoriaId"
-                  id="categoria"
-                  value={formData.categoriaId}
+                  name="tipoServicioId"
+                  id="tipoServicio"
+                  value={formData.tipoServicioId}
                   onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
                   required
                 >
-                  <option value="">Seleccione una categoría</option>
+                  <option value="">Seleccione un tipo de servicio</option>
                   {tiposServicio.map((tipo) => (
                     <option key={tipo.id} value={tipo.id}>
                       {tipo.nombre}
@@ -581,100 +602,106 @@ export default function CatalogoPage() {
                 </select>
               </div>
 
-              <div>
-                <label htmlFor="marca" className="block text-sm font-medium text-gray-700">
-                  Marca
-                </label>
-                <select
-                  name="marcaId"
-                  id="marca"
-                  value={formData.marcaId}
-                  onChange={(e) => {
-                    handleInputChange(e);
-                    handleMarcaChange(e);
-                  }}
-                  className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                  required
-                >
-                  <option value="">Seleccione una marca</option>
-                  {marcas.map((marca) => (
-                    <option key={marca.id} value={marca.id}>
-                      {marca.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {formData.tipo === 'PRODUCTO' && (
+                <>
+                  <div>
+                    <label htmlFor="marca" className="block text-sm font-medium text-gray-700">
+                      Marca
+                    </label>
+                    <select
+                      name="marcaId"
+                      id="marca"
+                      value={formData.marcaId}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        handleMarcaChange(e);
+                      }}
+                      className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
+                      required
+                    >
+                      <option value="">Seleccione una marca</option>
+                      {marcas.map((marca) => (
+                        <option key={marca.id} value={marca.id}>
+                          {marca.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label htmlFor="modelo" className="block text-sm font-medium text-gray-700">
-                  Modelo
-                </label>
-                <select
-                  name="modeloId"
-                  id="modelo"
-                  value={formData.modeloId}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                  required
-                  disabled={!marcaSeleccionada}
-                >
-                  <option value="">Seleccione un modelo</option>
-                  {modelos.map((modelo) => (
-                    <option key={modelo.id} value={modelo.id}>
-                      {modelo.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <div>
+                    <label htmlFor="modelo" className="block text-sm font-medium text-gray-700">
+                      Modelo
+                    </label>
+                    <select
+                      name="modeloId"
+                      id="modelo"
+                      value={formData.modeloId}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
+                      required
+                      disabled={!marcaSeleccionada}
+                    >
+                      <option value="">Seleccione un modelo</option>
+                      {modelos.map((modelo) => (
+                        <option key={modelo.id} value={modelo.id}>
+                          {modelo.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label htmlFor="proveedor" className="block text-sm font-medium text-gray-700">
-                  Proveedor
-                </label>
-                <select
-                  name="proveedorId"
-                  id="proveedor"
-                  value={formData.proveedorId}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                  required
-                >
-                  <option value="">Seleccione un proveedor</option>
-                  {proveedores.map((proveedor) => (
-                    <option key={proveedor.id} value={proveedor.id}>
-                      {proveedor.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <div>
+                    <label htmlFor="proveedor" className="block text-sm font-medium text-gray-700">
+                      Proveedor
+                    </label>
+                    <select
+                      name="proveedorId"
+                      id="proveedor"
+                      value={formData.proveedorId}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
+                      required
+                    >
+                      <option value="">Seleccione un proveedor</option>
+                      {proveedores.map((proveedor) => (
+                        <option key={proveedor.id} value={proveedor.id}>
+                          {proveedor.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
 
-              <div>
-                <label htmlFor="garantia" className="block text-sm font-medium text-gray-700">
-                  Garantía
-                </label>
-                <div className="flex space-x-2">
-                  <input
-                    type="number"
-                    name="garantiaValor"
-                    id="garantiaValor"
-                    value={formData.garantiaValor}
-                    onChange={handleInputChange}
-                    className="block w-24 rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                    required
-                  />
-                  <select
-                    name="garantiaUnidad"
-                    id="garantiaUnidad"
-                    value={formData.garantiaUnidad}
-                    onChange={handleInputChange}
-                    className="block w-32 rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
-                    required
-                  >
-                    <option value="dias">Días</option>
-                    <option value="meses">Meses</option>
-                  </select>
+              {formData.tipo === 'PRODUCTO' && (
+                <div>
+                  <label htmlFor="garantia" className="block text-sm font-medium text-gray-700">
+                    Garantía
+                  </label>
+                  <div className="flex space-x-2">
+                    <input
+                      type="number"
+                      name="garantiaValor"
+                      id="garantiaValor"
+                      value={formData.garantiaValor}
+                      onChange={handleInputChange}
+                      className="block w-24 rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
+                      required
+                    />
+                    <select
+                      name="garantiaUnidad"
+                      id="garantiaUnidad"
+                      value={formData.garantiaUnidad}
+                      onChange={handleInputChange}
+                      className="block w-32 rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 text-gray-900"
+                      required
+                    >
+                      <option value="dias">Días</option>
+                      <option value="meses">Meses</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700">
@@ -718,7 +745,7 @@ export default function CatalogoPage() {
                       notasInternas: '',
                       garantiaValor: 0,
                       garantiaUnidad: 'dias',
-                      categoriaId: 0,
+                      tipoServicioId: 0,
                       marcaId: 0,
                       modeloId: 0,
                       proveedorId: 0,

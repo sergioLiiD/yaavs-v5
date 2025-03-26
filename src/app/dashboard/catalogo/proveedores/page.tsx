@@ -333,8 +333,9 @@ export default function ProveedoresPage() {
                       name="nombre"
                       value={formData.nombre}
                       onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
                       required
+                      placeholder="Nombre del proveedor"
                     />
                   </div>
                   <div>
@@ -344,7 +345,8 @@ export default function ProveedoresPage() {
                       name="contacto"
                       value={formData.contacto}
                       onChange={(e) => setFormData({ ...formData, contacto: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                      placeholder="Nombre del contacto"
                     />
                   </div>
                   <div>
@@ -354,8 +356,9 @@ export default function ProveedoresPage() {
                       name="telefono"
                       value={formData.telefono}
                       onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
                       required
+                      placeholder="Teléfono del proveedor"
                     />
                   </div>
                   <div>
@@ -365,7 +368,8 @@ export default function ProveedoresPage() {
                       name="email"
                       value={formData.email || ''}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                      placeholder="correo@ejemplo.com"
                     />
                   </div>
                   <div>
@@ -375,7 +379,8 @@ export default function ProveedoresPage() {
                       name="rfc"
                       value={formData.rfc}
                       onChange={(e) => setFormData({ ...formData, rfc: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                      placeholder="RFC del proveedor"
                     />
                   </div>
                   <div className="col-span-2">
@@ -384,8 +389,9 @@ export default function ProveedoresPage() {
                       name="direccion"
                       value={formData.direccion || ''}
                       onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
                       rows={2}
+                      placeholder="Dirección completa del proveedor"
                     />
                   </div>
                   <div>
@@ -395,7 +401,8 @@ export default function ProveedoresPage() {
                       name="banco"
                       value={formData.banco}
                       onChange={(e) => setFormData({ ...formData, banco: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                      placeholder="Nombre del banco"
                     />
                   </div>
                   <div>
@@ -405,7 +412,8 @@ export default function ProveedoresPage() {
                       name="cuentaBancaria"
                       value={formData.cuentaBancaria}
                       onChange={(e) => setFormData({ ...formData, cuentaBancaria: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                      placeholder="Número de cuenta bancaria"
                     />
                   </div>
                   <div>
@@ -415,7 +423,8 @@ export default function ProveedoresPage() {
                       name="clabeInterbancaria"
                       value={formData.clabeInterbancaria}
                       onChange={(e) => setFormData({ ...formData, clabeInterbancaria: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                      placeholder="CLABE interbancaria"
                     />
                   </div>
                   <div className="col-span-2">
@@ -424,8 +433,9 @@ export default function ProveedoresPage() {
                       name="notas"
                       value={formData.notas || ''}
                       onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
                       rows={3}
+                      placeholder="Notas adicionales sobre el proveedor"
                     />
                   </div>
                 </div>

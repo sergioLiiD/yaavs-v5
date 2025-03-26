@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 // Definir el tipo de usuario extendido
 interface User {
@@ -28,10 +29,10 @@ export async function GET() {
 
     const productos = await prisma.producto.findMany({
       include: {
-        categoria: true,
         marca: true,
         modelo: true,
         proveedor: true,
+        categoria: true,
         fotos: true,
       },
     });
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
     if (!session?.user) {
       console.log('POST /api/inventario/productos - No autorizado');
       return NextResponse.json(
-        { error: 'No autorizado' },
+        { error: 'No autorizado. Por favor, inicia sesión.' },
         { status: 401 }
       );
     }
@@ -67,65 +68,88 @@ export async function POST(request: Request) {
     const data = await request.json();
     console.log('POST /api/inventario/productos - Datos recibidos:', data);
 
-    // Validar campos requeridos
-    if (!data.nombre || !data.categoriaId || !data.marcaId || 
-        !data.modeloId || !data.proveedorId) {
-      console.log('POST /api/inventario/productos - Campos requeridos faltantes:', {
-        nombre: !data.nombre,
-        categoriaId: !data.categoriaId,
-        marcaId: !data.marcaId,
-        modeloId: !data.modeloId,
-        proveedorId: !data.proveedorId
-      });
+    // Validar campos básicos requeridos
+    const camposFaltantes = [];
+    if (!data.nombre) camposFaltantes.push('nombre');
+    if (!data.tipoServicioId) camposFaltantes.push('tipo de servicio');
+
+    // Validar campos adicionales para productos físicos
+    if (data.tipo === 'PRODUCTO') {
+      if (!data.marcaId) camposFaltantes.push('marca');
+      if (!data.modeloId) camposFaltantes.push('modelo');
+      if (!data.proveedorId) camposFaltantes.push('proveedor');
+    }
+
+    if (camposFaltantes.length > 0) {
       return NextResponse.json(
-        { error: 'Los campos nombre, categoría, marca, modelo y proveedor son obligatorios' },
+        { 
+          error: 'Campos requeridos faltantes',
+          campos: camposFaltantes.join(', '),
+          mensaje: `Por favor, proporciona los siguientes campos: ${camposFaltantes.join(', ')}`
+        },
         { status: 400 }
       );
     }
 
-    // Verificar que las relaciones existan
-    const [categoria, marca, modelo, proveedor] = await Promise.all([
-      prisma.tipoServicio.findUnique({ where: { id: parseInt(data.categoriaId) } }),
-      prisma.marca.findUnique({ where: { id: parseInt(data.marcaId) } }),
-      prisma.modelo.findUnique({ where: { id: parseInt(data.modeloId) } }),
-      prisma.proveedor.findUnique({ where: { id: parseInt(data.proveedorId) } })
-    ]);
+    // Convertir IDs a números
+    const tipoServicioId = parseInt(data.tipoServicioId);
+    const marcaId = data.tipo === 'PRODUCTO' ? parseInt(data.marcaId) : undefined;
+    const modeloId = data.tipo === 'PRODUCTO' ? parseInt(data.modeloId) : undefined;
+    const proveedorId = data.tipo === 'PRODUCTO' ? parseInt(data.proveedorId) : undefined;
 
-    if (!categoria || !marca || !modelo || !proveedor) {
-      console.log('POST /api/inventario/productos - Relaciones no encontradas:', {
-        categoria: !!categoria,
-        marca: !!marca,
-        modelo: !!modelo,
-        proveedor: !!proveedor
-      });
-      return NextResponse.json(
-        { error: 'Una o más relaciones (categoría, marca, modelo, proveedor) no existen' },
-        { status: 400 }
-      );
-    }
+    // Crear el producto usando una transacción para asegurar la integridad de los datos
+    const nuevoProducto = await prisma.$transaction(async (tx) => {
+      // Verificar que existan todas las relaciones necesarias
+      const [tipoServicio, marca, modelo, proveedor] = await Promise.all([
+        tx.tipoServicio.findUnique({ where: { id: tipoServicioId } }),
+        data.tipo === 'PRODUCTO' ? tx.marca.findUnique({ where: { id: marcaId } }) : null,
+        data.tipo === 'PRODUCTO' ? tx.modelo.findUnique({ where: { id: modeloId } }) : null,
+        data.tipo === 'PRODUCTO' ? tx.proveedor.findUnique({ where: { id: proveedorId } }) : null
+      ]);
 
-    // Crear el producto
-    const nuevoProducto = await prisma.producto.create({
-      data: {
-        tipo: data.tipo,
-        sku: data.sku || null,
+      if (!tipoServicio) {
+        throw new Error('El tipo de servicio seleccionado no existe');
+      }
+
+      if (data.tipo === 'PRODUCTO') {
+        if (!marca) throw new Error('La marca seleccionada no existe');
+        if (!modelo) throw new Error('El modelo seleccionado no existe');
+        if (!proveedor) throw new Error('El proveedor seleccionado no existe');
+      }
+
+      // Preparar los datos para crear el producto
+      const createData = {
+        sku: data.sku || `SKU-${Date.now()}`,
         nombre: data.nombre,
         descripcion: data.descripcion || null,
         notasInternas: data.notasInternas || null,
-        garantiaValor: data.garantiaValor,
-        garantiaUnidad: data.garantiaUnidad,
-        categoriaId: parseInt(data.categoriaId),
-        marcaId: parseInt(data.marcaId),
-        modeloId: parseInt(data.modeloId),
-        proveedorId: parseInt(data.proveedorId),
-      },
-      include: {
-        categoria: true,
-        marca: true,
-        modelo: true,
-        proveedor: true,
-        fotos: true,
-      },
+        garantiaValor: data.garantiaValor || 0,
+        garantiaUnidad: data.garantiaUnidad || 'dias',
+        stock: 0,
+        precioPromedio: 0,
+        stockMaximo: data.stockMaximo || 0,
+        stockMinimo: data.stockMinimo || 0,
+        tipo: data.tipo || 'PRODUCTO',
+        tipoServicioId,
+        marcaId: data.tipo === 'PRODUCTO' ? marcaId! : 1,
+        modeloId: data.tipo === 'PRODUCTO' ? modeloId! : 1,
+        proveedorId: data.tipo === 'PRODUCTO' ? proveedorId! : 1,
+        categoriaId: data.categoriaId || null
+      } as const;
+
+      // Crear el producto
+      const producto = await tx.producto.create({
+        data: createData,
+        include: {
+          marca: true,
+          modelo: true,
+          proveedor: true,
+          categoria: true,
+          fotos: true,
+        },
+      });
+
+      return producto;
     });
 
     console.log('POST /api/inventario/productos - Producto creado:', nuevoProducto);
@@ -133,28 +157,44 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Error al crear producto:', error);
     
-    // Manejar errores específicos de Prisma
+    // Manejar errores específicos con mensajes más descriptivos
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'Ya existe un producto con el mismo SKU' },
+        { 
+          error: 'Conflicto de datos',
+          mensaje: 'Ya existe un producto con el mismo SKU. Por favor, utiliza un SKU diferente.'
+        },
         { status: 400 }
       );
     }
 
     if (error.code === 'P2003') {
       return NextResponse.json(
-        { error: 'Una o más relaciones (categoría, marca, modelo, proveedor) no existen' },
+        { 
+          error: 'Error de relaciones',
+          mensaje: 'Una o más relaciones no existen. Por favor, verifica que todos los IDs proporcionados sean válidos.'
+        },
         { status: 400 }
       );
     }
 
-    // Para otros errores, devolver más detalles
+    // Para errores personalizados de validación
+    if (error.message && !error.code) {
+      return NextResponse.json(
+        { 
+          error: 'Error de validación',
+          mensaje: error.message
+        },
+        { status: 400 }
+      );
+    }
+
+    // Para otros errores no manejados específicamente
     return NextResponse.json(
       { 
-        error: 'Error al crear el producto',
-        details: error.message,
-        code: error.code,
-        meta: error.meta
+        error: 'Error interno del servidor',
+        mensaje: 'Ha ocurrido un error al crear el producto. Por favor, inténtalo de nuevo.',
+        detalles: error.message
       },
       { status: 500 }
     );

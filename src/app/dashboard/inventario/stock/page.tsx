@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { HiPlus, HiSearch, HiChevronDown, HiChevronUp, HiExclamationCircle, HiSortAscending, HiSortDescending } from 'react-icons/hi';
+import { toast, Toaster } from 'react-hot-toast';
+import Modal from '@/components/Modal';
 
 interface Producto {
   id: number;
@@ -17,6 +19,7 @@ interface Producto {
   modelo: { nombre: string };
   sku?: string;
   descripcion?: string;
+  tipo: string;
 }
 
 interface EntradaAlmacen {
@@ -50,24 +53,69 @@ export default function StockPage() {
   const [filtroStock, setFiltroStock] = useState<'todos' | 'bajo' | 'alto'>('todos');
   const [isLoading, setIsLoading] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showSalidaModal, setShowSalidaModal] = useState(false);
+  const [formDataSalida, setFormDataSalida] = useState({
+    productoId: "",
+    cantidad: "",
+    razon: "",
+    tipo: "VENTA" as "VENTA" | "DANO" | "MERMA" | "OTRO",
+    referencia: "",
+  });
+  const [salidas, setSalidas] = useState<any[]>([]);
 
   useEffect(() => {
-    if (session?.user) {
-      fetchProductos();
-    }
-  }, [session]);
-
-  const fetchProductos = async () => {
-    try {
+    const fetchData = async () => {
       setIsLoading(true);
-      const response = await fetch('/api/inventario/stock');
+      try {
+        await Promise.all([
+          loadProductos(),
+          loadSalidas()
+        ]);
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+        toast.error('Error al cargar los datos');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const loadProductos = async () => {
+    try {
+      const response = await fetch('/api/inventario/productos');
       if (!response.ok) throw new Error('Error al cargar productos');
       const data = await response.json();
-      setProductos(data);
+      
+      // Filtrar solo productos físicos
+      const productosFisicos = data.filter((producto: Producto) => {
+        const esProducto = producto.tipo === 'PRODUCTO';
+        console.log(`Producto: ${producto.nombre}, Tipo: ${producto.tipo}, Es producto físico: ${esProducto}`);
+        return esProducto;
+      });
+      
+      console.log('Total de productos:', data.length);
+      console.log('Productos filtrados:', productosFisicos.length);
+      setProductos(productosFisicos);
     } catch (error) {
       console.error('Error:', error);
-    } finally {
-      setIsLoading(false);
+      toast.error('Error al cargar productos');
+    }
+  };
+
+  const loadSalidas = async (productoId?: string) => {
+    try {
+      const url = productoId 
+        ? `/api/inventario/stock/salidas?productoId=${productoId}`
+        : '/api/inventario/stock/salidas';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Error al cargar las salidas');
+      const data = await response.json();
+      setSalidas(data);
+    } catch (error) {
+      console.error('Error al cargar salidas:', error);
+      toast.error('Error al cargar el historial de salidas');
     }
   };
 
@@ -127,7 +175,7 @@ export default function StockPage() {
       setFormData({ cantidad: '', precioCompra: '', notas: '', productoId: '' });
       setProductoSeleccionado(null);
       setHasUnsavedChanges(false);
-      fetchProductos();
+      loadProductos();
       alert('Entrada registrada exitosamente');
     } catch (error) {
       console.error('Error en handleSubmit:', error);
@@ -210,8 +258,140 @@ export default function StockPage() {
     }
   };
 
+  const handleSalidaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const response = await fetch("/api/inventario/stock/salidas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formDataSalida),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error.error || "Error al registrar la salida");
+        return;
+      }
+
+      const data = await response.json();
+      toast.success("Salida registrada correctamente");
+      setShowSalidaModal(false);
+      setFormDataSalida({
+        productoId: "",
+        cantidad: "",
+        razon: "",
+        tipo: "VENTA",
+        referencia: "",
+      });
+      router.refresh();
+    } catch (error) {
+      console.error("Error al registrar salida:", error);
+      toast.error("Error al procesar la solicitud");
+    }
+  };
+
+  const renderDetalleProducto = (producto: Producto) => {
+    return (
+      <tr key={`detalle-${producto.id}`} className="bg-gray-50">
+        <td colSpan={6} className="px-6 py-4">
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-sm font-medium text-gray-900">Información de Stock</h4>
+              <div className="mt-2 grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Stock Mínimo</p>
+                  <p className="text-sm font-medium text-gray-900">{producto.stockMinimo}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Stock Máximo</p>
+                  <p className="text-sm font-medium text-gray-900">{producto.stockMaximo}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Precio Promedio</p>
+                  <p className="text-sm font-medium text-gray-900">${producto.precioPromedio.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-medium text-gray-900">Historial de Movimientos</h4>
+              <div className="mt-2">
+                <div className="flow-root">
+                  <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                    <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                      <table className="min-w-full divide-y divide-gray-300">
+                        <thead>
+                          <tr>
+                            <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
+                              Fecha
+                            </th>
+                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                              Tipo
+                            </th>
+                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                              Cantidad
+                            </th>
+                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                              Usuario
+                            </th>
+                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                              Razón
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {salidas
+                            .filter(salida => salida.productoId === producto.id)
+                            .map((salida) => (
+                              <tr key={salida.id}>
+                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-900 sm:pl-0">
+                                  {new Date(salida.fecha).toLocaleString()}
+                                </td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                  <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
+                                    salida.tipo === 'VENTA' ? 'bg-green-100 text-green-700' :
+                                    salida.tipo === 'DANO' ? 'bg-red-100 text-red-700' :
+                                    salida.tipo === 'MERMA' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {salida.tipo}
+                                  </span>
+                                </td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
+                                  {salida.cantidad}
+                                </td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
+                                  {`${salida.usuario.nombre} ${salida.usuario.apellidoPaterno}`}
+                                </td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
+                                  {salida.razon}
+                                  {salida.referencia && (
+                                    <span className="ml-2 text-gray-500">
+                                      (Ref: {salida.referencia})
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
   return (
     <div className="p-6">
+      <Toaster position="top-right" />
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Control de Stock</h1>
         <div className="flex items-center space-x-4">
@@ -243,6 +423,12 @@ export default function StockPage() {
           >
             <HiPlus className="h-5 w-5 mr-2" />
             Nueva Entrada
+          </button>
+          <button
+            onClick={() => setShowSalidaModal(true)}
+            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+          >
+            Nueva Salida
           </button>
         </div>
       </div>
@@ -345,47 +531,7 @@ export default function StockPage() {
                     </td>
                   </tr>
                   {productosExpandidos.has(producto.id) && (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-4 bg-gray-50">
-                        <div className="text-sm text-gray-900">
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <h4 className="font-medium mb-2">Información de Stock</h4>
-                              <p>Stock Mínimo: {producto.stockMinimo}</p>
-                              <p>Stock Máximo: {producto.stockMaximo}</p>
-                            </div>
-                            <div>
-                              <h4 className="font-medium mb-2">Información del Producto</h4>
-                              <p>SKU: {producto.sku || 'No especificado'}</p>
-                              <p>Descripción: {producto.descripcion || 'No especificada'}</p>
-                            </div>
-                          </div>
-                          <h4 className="font-medium mb-2">Historial de Entradas</h4>
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead>
-                              <tr>
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Notas</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {producto.entradas.map((entrada) => (
-                                <tr key={entrada.id}>
-                                  <td className="px-4 py-2 text-sm text-gray-900">
-                                    {new Date(entrada.fecha).toLocaleDateString()}
-                                  </td>
-                                  <td className="px-4 py-2 text-sm text-gray-900">{entrada.cantidad}</td>
-                                  <td className="px-4 py-2 text-sm text-gray-900">${entrada.precioCompra.toFixed(2)}</td>
-                                  <td className="px-4 py-2 text-sm text-gray-900">{entrada.notas || '-'}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </td>
-                    </tr>
+                    renderDetalleProducto(producto)
                   )}
                 </React.Fragment>
               ))}
@@ -504,6 +650,118 @@ export default function StockPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de Salida */}
+      <Modal
+        isOpen={showSalidaModal}
+        onClose={() => setShowSalidaModal(false)}
+        title="Registrar Salida de Almacén"
+      >
+        <form onSubmit={handleSalidaSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="productoSalida" className="block text-sm font-medium text-gray-900">
+              Producto
+            </label>
+            <select
+              id="productoSalida"
+              name="productoId"
+              value={formDataSalida.productoId}
+              onChange={(e) => setFormDataSalida({ ...formDataSalida, productoId: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900"
+              required
+            >
+              <option value="">Seleccionar producto</option>
+              {productos.map((producto) => (
+                <option key={producto.id} value={producto.id} className="text-gray-900">
+                  {producto.nombre} - Stock: {producto.stock}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="cantidadSalida" className="block text-sm font-medium text-gray-900">
+              Cantidad
+            </label>
+            <input
+              type="number"
+              id="cantidadSalida"
+              name="cantidad"
+              value={formDataSalida.cantidad}
+              onChange={(e) => setFormDataSalida({ ...formDataSalida, cantidad: e.target.value })}
+              className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900 px-4 [&::placeholder]:text-gray-700"
+              required
+              min="1"
+              placeholder="Ingresa la cantidad"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="tipoSalida" className="block text-sm font-medium text-gray-900">
+              Tipo de Salida
+            </label>
+            <select
+              id="tipoSalida"
+              name="tipo"
+              value={formDataSalida.tipo}
+              onChange={(e) => setFormDataSalida({ ...formDataSalida, tipo: e.target.value as "VENTA" | "DANO" | "MERMA" | "OTRO" })}
+              className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900 px-4"
+              required
+            >
+              <option value="VENTA" className="text-gray-900">Venta</option>
+              <option value="DANO" className="text-gray-900">Daño</option>
+              <option value="MERMA" className="text-gray-900">Merma</option>
+              <option value="OTRO" className="text-gray-900">Otro</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="razonSalida" className="block text-sm font-medium text-gray-900">
+              Razón
+            </label>
+            <textarea
+              id="razonSalida"
+              name="razon"
+              value={formDataSalida.razon}
+              onChange={(e) => setFormDataSalida({ ...formDataSalida, razon: e.target.value })}
+              className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-24 text-base text-gray-900 px-4 py-3 [&::placeholder]:text-gray-700"
+              required
+              placeholder="Ingresa la razón de la salida"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="referenciaSalida" className="block text-sm font-medium text-gray-900">
+              Referencia (opcional)
+            </label>
+            <input
+              type="text"
+              id="referenciaSalida"
+              name="referencia"
+              value={formDataSalida.referencia}
+              onChange={(e) => setFormDataSalida({ ...formDataSalida, referencia: e.target.value })}
+              className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900 px-4 [&::placeholder]:text-gray-700"
+              placeholder="Ingresa una referencia (opcional)"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowSalidaModal(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+            >
+              Registrar Salida
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 } 

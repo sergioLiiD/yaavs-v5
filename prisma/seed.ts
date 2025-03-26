@@ -18,37 +18,53 @@ async function main() {
       apellidoMaterno: null,
       passwordHash: adminPassword,
       nivel: 'ADMINISTRADOR',
-      activo: true,
     },
   });
   console.log('Usuario admin creado:', admin);
+
+  // Crear categorías
+  const categorias = await Promise.all([
+    prisma.categoria.create({
+      data: {
+        nombre: 'Smartphones',
+        descripcion: 'Teléfonos inteligentes',
+      },
+    }),
+    prisma.categoria.create({
+      data: {
+        nombre: 'Tablets',
+        descripcion: 'Tabletas',
+      },
+    }),
+  ]);
+  console.log('Categorías creadas:', categorias.length);
 
   // Crear marcas
   const marcas = await Promise.all([
     prisma.marca.upsert({
       where: { nombre: 'Apple' },
       update: {},
-      create: { nombre: 'Apple', activo: true },
+      create: { nombre: 'Apple' },
     }),
     prisma.marca.upsert({
       where: { nombre: 'Samsung' },
       update: {},
-      create: { nombre: 'Samsung', activo: true },
+      create: { nombre: 'Samsung' },
     }),
     prisma.marca.upsert({
       where: { nombre: 'Xiaomi' },
       update: {},
-      create: { nombre: 'Xiaomi', activo: true },
+      create: { nombre: 'Xiaomi' },
     }),
     prisma.marca.upsert({
       where: { nombre: 'Huawei' },
       update: {},
-      create: { nombre: 'Huawei', activo: true },
+      create: { nombre: 'Huawei' },
     }),
     prisma.marca.upsert({
       where: { nombre: 'Motorola' },
       update: {},
-      create: { nombre: 'Motorola', activo: true },
+      create: { nombre: 'Motorola' },
     }),
   ]);
   console.log('Marcas creadas:', marcas.length);
@@ -60,7 +76,6 @@ async function main() {
         nombre: 'iPhone 15',
         descripcion: 'Última generación de iPhone',
         marcaId: marcas[0].id,
-        activo: true,
       },
     }),
     prisma.modelo.create({
@@ -68,7 +83,6 @@ async function main() {
         nombre: 'iPhone 14',
         descripcion: 'Generación anterior de iPhone',
         marcaId: marcas[0].id,
-        activo: true,
       },
     }),
     prisma.modelo.create({
@@ -76,7 +90,6 @@ async function main() {
         nombre: 'Galaxy S23',
         descripcion: 'Gama alta de Samsung',
         marcaId: marcas[1].id,
-        activo: true,
       },
     }),
     prisma.modelo.create({
@@ -84,7 +97,6 @@ async function main() {
         nombre: 'Galaxy A54',
         descripcion: 'Gama media de Samsung',
         marcaId: marcas[1].id,
-        activo: true,
       },
     }),
     prisma.modelo.create({
@@ -92,7 +104,6 @@ async function main() {
         nombre: 'Redmi Note 12',
         descripcion: 'Gama media de Xiaomi',
         marcaId: marcas[2].id,
-        activo: true,
       },
     }),
   ]);
@@ -106,7 +117,6 @@ async function main() {
         descripcion: 'Fase inicial cuando se recibe el dispositivo',
         orden: 1,
         color: '#3498db', // Azul
-        activo: true,
       },
     }),
     prisma.estatusReparacion.create({
@@ -115,7 +125,6 @@ async function main() {
         descripcion: 'El dispositivo está en cola para ser revisado',
         orden: 2,
         color: '#f39c12', // Naranja
-        activo: true,
       },
     }),
     prisma.estatusReparacion.create({
@@ -124,7 +133,6 @@ async function main() {
         descripcion: 'Determinando el problema del dispositivo',
         orden: 3,
         color: '#9b59b6', // Morado
-        activo: true,
       },
     }),
     prisma.estatusReparacion.create({
@@ -133,7 +141,6 @@ async function main() {
         descripcion: 'Enviando presupuesto al cliente',
         orden: 4,
         color: '#1abc9c', // Verde-Azulado
-        activo: true,
       },
     }),
     prisma.estatusReparacion.create({
@@ -142,7 +149,6 @@ async function main() {
         descripcion: 'Trabajando en la solución del problema',
         orden: 5,
         color: '#e74c3c', // Rojo
-        activo: true,
       },
     }),
     prisma.estatusReparacion.create({
@@ -151,7 +157,6 @@ async function main() {
         descripcion: 'Verificando el correcto funcionamiento',
         orden: 6,
         color: '#f1c40f', // Amarillo
-        activo: true,
       },
     }),
     prisma.estatusReparacion.create({
@@ -160,7 +165,6 @@ async function main() {
         descripcion: 'Reparación completada',
         orden: 7,
         color: '#2ecc71', // Verde
-        activo: true,
       },
     }),
   ]);
@@ -170,37 +174,32 @@ async function main() {
   const servicios = await Promise.all([
     prisma.tipoServicio.create({
       data: {
-        concepto: 'Reparación de pantalla',
+        nombre: 'Reparación de pantalla',
         descripcion: 'Reemplazo o reparación de pantallas dañadas',
-        activo: true,
       },
     }),
     prisma.tipoServicio.create({
       data: {
-        concepto: 'Reparación de batería',
+        nombre: 'Reparación de batería',
         descripcion: 'Reemplazo de baterías con mal funcionamiento',
-        activo: true,
       },
     }),
     prisma.tipoServicio.create({
       data: {
-        concepto: 'Reparación de cámara',
+        nombre: 'Reparación de cámara',
         descripcion: 'Reparación de cámaras frontales o traseras',
-        activo: true,
       },
     }),
     prisma.tipoServicio.create({
       data: {
-        concepto: 'Reparación de placa base',
+        nombre: 'Reparación de placa base',
         descripcion: 'Reparación de componentes de la placa base',
-        activo: true,
       },
     }),
     prisma.tipoServicio.create({
       data: {
-        concepto: 'Actualización de software',
+        nombre: 'Actualización de software',
         descripcion: 'Actualización o reinstalación del sistema operativo',
-        activo: true,
       },
     }),
   ]);

@@ -8,19 +8,21 @@ datasource db {
 }
 
 model Usuario {
-  id               Int          @id @default(autoincrement())
-  email            String       @unique
+  id               Int              @id @default(autoincrement())
+  email            String           @unique
   nombre           String
   apellidoPaterno  String
   apellidoMaterno  String?
   passwordHash     String
-  nivel            NivelUsuario @default(TECNICO)
-  activo           Boolean      @default(true)
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  nivel            NivelUsuario     @default(TECNICO)
+  activo           Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
   reparaciones     Reparacion[]
-  ticketsCreados   Ticket[]     @relation("TicketCreador")
-  ticketsAsignados Ticket[]     @relation("TicketAsignado")
+  ticketsCreados   Ticket[]         @relation("TicketCreador")
+  ticketsAsignados Ticket[]         @relation("TicketAsignado")
+  entradas         EntradaAlmacen[]
+  salidas          SalidaAlmacen[]
 }
 
 model Cliente {
@@ -228,75 +230,70 @@ model Presupuesto {
   ticket          Ticket      @relation(fields: [ticketId], references: [id])
 }
 
-enum TipoProveedor {
-  FISICA
-  MORAL
-}
-
 model Proveedor {
-  id                Int           @id @default(autoincrement())
-  nombre           String
-  contacto         String
-  telefono         String
-  email            String?
-  direccion        String?
-  notas            String?
-  tipo             TipoProveedor @default(FISICA)
-  rfc              String
-  banco            String
-  cuentaBancaria   String
+  id                 Int           @id @default(autoincrement())
+  nombre             String
+  contacto           String
+  telefono           String
+  email              String?
+  direccion          String?
+  notas              String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  banco              String
   clabeInterbancaria String
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  productos        Producto[]
+  cuentaBancaria     String
+  rfc                String
+  tipo               TipoProveedor @default(FISICA)
+  productos          Producto[]
 
   @@map("proveedores")
 }
 
-enum TipoProducto {
-  PRODUCTO
-  SERVICIO
-}
-
 model Producto {
-  id               Int           @id @default(autoincrement())
-  tipo             TipoProducto  @default(PRODUCTO)
-  sku              String?
+  id               Int              @id @default(autoincrement())
+  sku              String           @unique
   nombre           String
   descripcion      String?
+  stock            Int              @default(0)
+  precioPromedio   Float            @default(0)
+  stockMaximo      Int              @default(0)
+  stockMinimo      Int              @default(0)
+  tipo             TipoProducto     @default(PRODUCTO)
   notasInternas    String?
-  garantiaValor    Int
+  garantiaValor    Int              @default(0)
   garantiaUnidad   String
-  categoriaId      Int
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  categoriaId      Int?
   marcaId          Int
   modeloId         Int
   proveedorId      Int
-  stock            Int           @default(0)
-  stockMinimo      Int           @default(0)
-  stockMaximo      Int           @default(0)
-  precioPromedio   Float         @default(0)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  categoria        TipoServicio  @relation(fields: [categoriaId], references: [id])
-  marca            Marca         @relation(fields: [marcaId], references: [id])
-  modelo           Modelo        @relation(fields: [modeloId], references: [id])
-  proveedor        Proveedor     @relation(fields: [proveedorId], references: [id])
-  fotos            FotoProducto[]
+  tipoServicioId   Int
+  categoria        Categoria?       @relation(fields: [categoriaId], references: [id])
+  marca            Marca            @relation(fields: [marcaId], references: [id])
+  modelo           Modelo           @relation(fields: [modeloId], references: [id])
+  proveedor        Proveedor        @relation(fields: [proveedorId], references: [id])
+  tipoServicio     TipoServicio     @relation(fields: [tipoServicioId], references: [id])
   entradas         EntradaAlmacen[]
+  salidas          SalidaAlmacen[]
+  fotos            FotoProducto[]
 
   @@map("productos")
 }
 
 model EntradaAlmacen {
-  id            Int       @id @default(autoincrement())
-  productoId    Int
-  producto      Producto  @relation(fields: [productoId], references: [id])
-  cantidad      Int
-  precioCompra  Float
-  notas         String?
-  fecha         DateTime  @default(now())
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           Int      @id @default(autoincrement())
+  productoId   Int
+  cantidad     Int
+  precioCompra Float
+  notas        String?
+  fecha        DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  usuarioId    Int
+  producto     Producto @relation(fields: [productoId], references: [id])
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id])
 
   @@map("entradas_almacen")
 }
@@ -309,6 +306,53 @@ model FotoProducto {
   producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
 
   @@map("fotos_producto")
+}
+
+model SalidaAlmacen {
+  id         Int        @id @default(autoincrement())
+  productoId Int
+  cantidad   Int
+  razon      String
+  tipo       TipoSalida
+  referencia String?
+  fecha      DateTime   @default(now())
+  usuarioId  Int
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  producto   Producto   @relation(fields: [productoId], references: [id])
+  usuario    Usuario    @relation(fields: [usuarioId], references: [id])
+
+  @@index([productoId])
+  @@index([usuarioId])
+  @@map("salidas_almacen")
+}
+
+model Categoria {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique
+  descripcion String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  productos   Producto[]
+
+  @@map("categorias")
+}
+
+enum TipoProveedor {
+  FISICA
+  MORAL
+}
+
+enum TipoProducto {
+  PRODUCTO
+  SERVICIO
+}
+
+enum TipoSalida {
+  VENTA
+  DANO
+  MERMA
+  OTRO
 }
 
 enum NivelUsuario {

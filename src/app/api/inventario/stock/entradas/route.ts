@@ -15,7 +15,12 @@ export async function POST(request: Request) {
 
     // Validar que el producto existe
     const producto = await prisma.producto.findUnique({
-      where: { id: Number(productoId) }
+      where: { id: Number(productoId) },
+      select: {
+        id: true,
+        stock: true,
+        precioPromedio: true,
+      },
     });
 
     if (!producto) {
@@ -23,8 +28,8 @@ export async function POST(request: Request) {
     }
 
     // Calcular el nuevo precio promedio
-    const nuevoStock = producto.stock + Number(cantidad);
-    const nuevoPrecioPromedio = ((producto.precioPromedio * producto.stock) + (Number(precioCompra) * Number(cantidad))) / nuevoStock;
+    const nuevoStock = (producto.stock || 0) + Number(cantidad);
+    const nuevoPrecioPromedio = ((producto.precioPromedio || 0) * (producto.stock || 0) + (Number(precioCompra) * Number(cantidad))) / nuevoStock;
 
     // Crear la entrada y actualizar el producto en una transacción
     const [entrada] = await prisma.$transaction([
@@ -33,7 +38,8 @@ export async function POST(request: Request) {
           productoId: Number(productoId),
           cantidad: Number(cantidad),
           precioCompra: Number(precioCompra),
-          notas
+          notas,
+          usuarioId: Number(session.user.id)
         }
       }),
       prisma.producto.update({

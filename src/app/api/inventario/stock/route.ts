@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return new NextResponse('No autorizado', { status: 401 });
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const productos = await prisma.producto.findMany({
@@ -25,17 +25,21 @@ export async function GET() {
         entradas: {
           orderBy: {
             fecha: 'desc'
-          }
+          },
+          take: 5
         }
       },
       orderBy: {
-        stock: 'asc'
+        nombre: 'asc'
       }
     });
 
     return NextResponse.json(productos);
   } catch (error) {
     console.error('Error al obtener productos:', error);
-    return new NextResponse('Error interno del servidor', { status: 500 });
+    return NextResponse.json(
+      { error: 'Error al procesar la solicitud' },
+      { status: 500 }
+    );
   }
 } 
