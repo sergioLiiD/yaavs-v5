@@ -381,3 +381,19 @@ enum MetodoPago {
   TRANSFERENCIA
   PAGO_ENTREGA
 }
+
+model PrecioVenta {
+  id                     String   @id @default(uuid())
+  tipo                   String
+  nombre                 String
+  marca                  String
+  modelo                 String
+  precio_compra_promedio Float
+  precio_venta          Float
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+  created_by            String
+  updated_by            String
+
+  @@map("precios_venta")
+}

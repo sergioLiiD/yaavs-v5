@@ -1,4 +1,4 @@
-export default function InventarioLayout({
+export default function CostosLayout({
   children,
 }: {
   children: React.ReactNode;

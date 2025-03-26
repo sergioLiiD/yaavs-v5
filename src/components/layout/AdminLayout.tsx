@@ -21,7 +21,8 @@ import {
   HiTag,
   HiDeviceMobile,
   HiClipboardList,
-  HiCube
+  HiCube,
+  HiCurrencyDollar
 } from 'react-icons/hi';
 import Link from 'next/link';
 
@@ -38,6 +39,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [catalogoOpen, setCatalogoOpen] = useState(false);
   const [inventarioOpen, setInventarioOpen] = useState(false);
+  const [costosOpen, setCostosOpen] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -57,6 +59,10 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
 
   const toggleInventario = () => {
     setInventarioOpen(!inventarioOpen);
+  };
+
+  const toggleCostos = () => {
+    setCostosOpen(!costosOpen);
   };
 
   const handleSignOut = async () => {
@@ -104,6 +110,15 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
       icon: HiAdjustments,
       text: 'Inventarios Mínimos',
       active: title.includes('Inventarios Mínimos')
+    }
+  ];
+
+  const costosLinks = [
+    {
+      route: '/dashboard/costos/precios-venta',
+      icon: HiCurrencyDollar,
+      text: 'Precios de Venta',
+      active: title.includes('Precios de Venta')
     }
   ];
 
@@ -195,6 +210,39 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                     <li key={index}>
                       <Link
                         href={link.href}
+                        className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
+                          ${link.active ? 'text-blue-600' : 'text-gray-900'}`}
+                      >
+                        <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-blue-600' : 'text-gray-500'}`} />
+                        {link.text}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+
+              {/* Menú de Costos con submenús */}
+              <li>
+                <button
+                  type="button"
+                  className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
+                    title.includes('Costos') && 'bg-gray-100'
+                  }`}
+                  onClick={toggleCostos}
+                >
+                  <HiCurrencyDollar className={`w-6 h-6 text-gray-500 transition duration-75 ${
+                    title.includes('Costos') && 'text-blue-600'
+                  }`} />
+                  <span className="flex-1 ml-3 text-left whitespace-nowrap">Costos</span>
+                  <svg className={`w-5 h-5 ${costosOpen ? 'rotate-180' : ''}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                  </svg>
+                </button>
+                <ul className={`${costosOpen ? 'block' : 'hidden'} py-2 space-y-2`}>
+                  {costosLinks.map((link, index) => (
+                    <li key={index}>
+                      <Link
+                        href={link.route}
                         className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
                           ${link.active ? 'text-blue-600' : 'text-gray-900'}`}
                       >
@@ -375,6 +423,40 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                     </button>
                     <ul className={`${inventarioOpen ? 'block' : 'hidden'} py-2 space-y-2`}>
                       {inventarioLinks.map((link, index) => (
+                        <li key={index}>
+                          <Link
+                            href={link.route}
+                            className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
+                              ${link.active ? 'text-blue-600' : 'text-gray-900'}`}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-blue-600' : 'text-gray-500'}`} />
+                            {link.text}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+
+                  {/* Menú de Costos con submenús para móvil */}
+                  <li>
+                    <button
+                      type="button"
+                      className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
+                        title.includes('Costos') && 'bg-gray-100'
+                      }`}
+                      onClick={toggleCostos}
+                    >
+                      <HiCurrencyDollar className={`w-6 h-6 text-gray-500 transition duration-75 ${
+                        title.includes('Costos') && 'text-blue-600'
+                      }`} />
+                      <span className="flex-1 ml-3 text-left whitespace-nowrap">Costos</span>
+                      <svg className={`w-5 h-5 ${costosOpen ? 'rotate-180' : ''}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                      </svg>
+                    </button>
+                    <ul className={`${costosOpen ? 'block' : 'hidden'} py-2 space-y-2`}>
+                      {costosLinks.map((link, index) => (
                         <li key={index}>
                           <Link
                             href={link.route}
