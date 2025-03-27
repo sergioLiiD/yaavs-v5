@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function GET() {
   try {
@@ -22,26 +23,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
+    
+    // Limpiamos los campos undefined para que no interfieran con los campos opcionales
+    const cleanedData = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined)
+    ) as Prisma.ClienteCreateInput;
+
     const cliente = await prisma.cliente.create({
-      data: {
-        nombre: data.nombre,
-        apellidoPaterno: data.apellidoPaterno,
-        apellidoMaterno: data.apellidoMaterno,
-        telefonoCelular: data.telefonoCelular,
-        telefonoContacto: data.telefonoContacto,
-        email: data.email,
-        rfc: data.rfc,
-        calle: data.calle,
-        numeroExterior: data.numeroExterior,
-        numeroInterior: data.numeroInterior,
-        colonia: data.colonia,
-        ciudad: data.ciudad,
-        estado: data.estado,
-        codigoPostal: data.codigoPostal,
-        latitud: data.latitud,
-        longitud: data.longitud,
-        fuenteReferencia: data.fuenteReferencia,
-      },
+      data: cleanedData,
     });
 
     return NextResponse.json(cliente);
