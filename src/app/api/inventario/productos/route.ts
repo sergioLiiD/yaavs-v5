@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     if (!data.nombre) camposFaltantes.push('nombre');
     if (!data.tipoServicioId) camposFaltantes.push('tipo de servicio');
 
-    // Validar campos adicionales para productos físicos
+    // Validar campos adicionales según el tipo
     if (data.tipo === 'PRODUCTO') {
       if (!data.marcaId) camposFaltantes.push('marca');
       if (!data.modeloId) camposFaltantes.push('modelo');
@@ -93,18 +93,18 @@ export async function POST(request: Request) {
 
     // Convertir IDs a números
     const tipoServicioId = parseInt(data.tipoServicioId);
-    const marcaId = data.tipo === 'PRODUCTO' ? parseInt(data.marcaId) : undefined;
-    const modeloId = data.tipo === 'PRODUCTO' ? parseInt(data.modeloId) : undefined;
-    const proveedorId = data.tipo === 'PRODUCTO' ? parseInt(data.proveedorId) : undefined;
+    const marcaId = data.tipo === 'PRODUCTO' ? parseInt(data.marcaId) : null;
+    const modeloId = data.tipo === 'PRODUCTO' ? parseInt(data.modeloId) : null;
+    const proveedorId = data.tipo === 'PRODUCTO' ? parseInt(data.proveedorId) : null;
 
     // Crear el producto usando una transacción para asegurar la integridad de los datos
     const nuevoProducto = await prisma.$transaction(async (tx) => {
       // Verificar que existan todas las relaciones necesarias
       const [tipoServicio, marca, modelo, proveedor] = await Promise.all([
         tx.tipoServicio.findUnique({ where: { id: tipoServicioId } }),
-        data.tipo === 'PRODUCTO' ? tx.marca.findUnique({ where: { id: marcaId } }) : null,
-        data.tipo === 'PRODUCTO' ? tx.modelo.findUnique({ where: { id: modeloId } }) : null,
-        data.tipo === 'PRODUCTO' ? tx.proveedor.findUnique({ where: { id: proveedorId } }) : null
+        data.tipo === 'PRODUCTO' ? tx.marca.findUnique({ where: { id: marcaId! } }) : null,
+        data.tipo === 'PRODUCTO' ? tx.modelo.findUnique({ where: { id: modeloId! } }) : null,
+        data.tipo === 'PRODUCTO' ? tx.proveedor.findUnique({ where: { id: proveedorId! } }) : null
       ]);
 
       if (!tipoServicio) {
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
 
       // Preparar los datos para crear el producto
       const createData = {
-        sku: data.sku || `SKU-${Date.now()}`,
+        sku: data.sku || `SKU-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         nombre: data.nombre,
         descripcion: data.descripcion || null,
         notasInternas: data.notasInternas || null,
@@ -131,9 +131,9 @@ export async function POST(request: Request) {
         stockMinimo: data.stockMinimo || 0,
         tipo: data.tipo || 'PRODUCTO',
         tipoServicioId,
-        marcaId: data.tipo === 'PRODUCTO' ? marcaId! : 1,
-        modeloId: data.tipo === 'PRODUCTO' ? modeloId! : 1,
-        proveedorId: data.tipo === 'PRODUCTO' ? proveedorId! : 1,
+        marcaId: data.tipo === 'PRODUCTO' ? marcaId : null,
+        modeloId: data.tipo === 'PRODUCTO' ? modeloId : null,
+        proveedorId: data.tipo === 'PRODUCTO' ? proveedorId : null,
         categoriaId: data.categoriaId || null
       } as const;
 

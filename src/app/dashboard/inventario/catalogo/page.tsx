@@ -77,6 +77,9 @@ interface FormData {
   marcaId: number;
   modeloId: number;
   proveedorId: number;
+  stockMaximo: number;
+  stockMinimo: number;
+  categoriaId: string;
 }
 
 export default function CatalogoPage() {
@@ -88,22 +91,31 @@ export default function CatalogoPage() {
   const [marcaSeleccionada, setMarcaSeleccionada] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState({
     nombre: '',
-    tipo: 'PRODUCTO',
     sku: '',
     descripcion: '',
     notasInternas: '',
     garantiaValor: 0,
     garantiaUnidad: 'dias',
-    tipoServicioId: 0,
-    marcaId: 0,
-    modeloId: 0,
-    proveedorId: 0,
+    stockMaximo: 0,
+    stockMinimo: 0,
+    tipo: 'PRODUCTO',
+    tipoServicioId: '',
+    marcaId: '',
+    modeloId: '',
+    proveedorId: '',
+    categoriaId: ''
   });
   const [fotos, setFotos] = useState<File[]>([]);
   const [previewFotos, setPreviewFotos] = useState<string[]>([]);
   const [detallesVisibles, setDetallesVisibles] = useState<Record<number, boolean>>({});
+  const [productoExistente, setProductoExistente] = useState<{
+    id: number;
+    nombre: string;
+    sku: string;
+    tipo: string;
+  } | null>(null);
   
   // Cargar datos cuando se monta el componente
   useEffect(() => {
@@ -116,6 +128,36 @@ export default function CatalogoPage() {
       cargarModelos(marcaSeleccionada);
     }
   }, [marcaSeleccionada]);
+
+  // Función para verificar si existe un producto
+  const verificarProductoExistente = async (nombre: string) => {
+    if (!nombre) {
+      setProductoExistente(null);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/inventario/productos/verificar?nombre=${encodeURIComponent(nombre)}`);
+      const data = await response.json();
+      
+      if (data.existe) {
+        setProductoExistente(data.producto);
+      } else {
+        setProductoExistente(null);
+      }
+    } catch (error) {
+      console.error('Error al verificar producto:', error);
+    }
+  };
+
+  // Debounce para la verificación
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      verificarProductoExistente(formData.nombre);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.nombre]);
 
   const cargarDatosIniciales = async () => {
     try {
@@ -241,7 +283,7 @@ export default function CatalogoPage() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'garantiaValor' ? parseInt(value) : value
+      [name]: value
     }));
   };
 
@@ -287,6 +329,9 @@ export default function CatalogoPage() {
         marcaId: 0,
         modeloId: 0,
         proveedorId: 0,
+        stockMaximo: 0,
+        stockMinimo: 0,
+        categoriaId: '',
       });
       setFotos([]);
       setPreviewFotos([]);
@@ -332,6 +377,9 @@ export default function CatalogoPage() {
       marcaId: producto.marcaId,
       modeloId: producto.modeloId,
       proveedorId: producto.proveedorId,
+      stockMaximo: 0,
+      stockMinimo: 0,
+      categoriaId: '',
     });
     setMarcaSeleccionada(producto.marcaId);
     setShowModal(true);
@@ -523,6 +571,35 @@ export default function CatalogoPage() {
                       {productoSeleccionado ? 'Editar Producto' : 'Nuevo Producto'}
                     </h3>
                   </div>
+
+                  {/* Sección de advertencias */}
+                  {productoExistente && (
+                    <div className="mb-4 p-4 bg-amber-50 border-l-4 border-amber-400">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-amber-800">
+                            Producto existente detectado
+                          </h3>
+                          <div className="mt-2 text-sm text-amber-700">
+                            <p>Ya existe un producto con este nombre:</p>
+                            <ul className="list-disc list-inside mt-1">
+                              <li>SKU: {productoExistente.sku}</li>
+                              <li>Tipo: {productoExistente.tipo}</li>
+                            </ul>
+                            <p className="mt-2">
+                              Si este es un producto diferente, considera agregar más detalles al nombre para distinguirlo.
+                              Por ejemplo: "Pantalla iPhone 13" en lugar de solo "Pantalla".
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     <div>
@@ -761,6 +838,9 @@ export default function CatalogoPage() {
                         marcaId: 0,
                         modeloId: 0,
                         proveedorId: 0,
+                        stockMaximo: 0,
+                        stockMinimo: 0,
+                        categoriaId: '',
                       });
                     }}
                     className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"

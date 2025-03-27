@@ -8,6 +8,8 @@ export interface PrecioVenta {
   modelo: string;
   precio_compra_promedio: number;
   precio_venta: number;
+  producto_id?: number | null;
+  servicio_id?: number | null;
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -21,6 +23,8 @@ export interface PrecioVentaInput {
   modelo: string;
   precio_compra_promedio: number;
   precio_venta: number;
+  producto_id?: number | null;
+  servicio_id?: number | null;
 }
 
 export interface PrecioVentaUpdate extends Partial<PrecioVentaInput> {

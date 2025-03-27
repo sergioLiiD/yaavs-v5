@@ -19,15 +19,15 @@ import { toast } from 'sonner';
 
 type ProductoConInventarioMinimo = Producto & {
   inventarioMinimo: InventarioMinimo | null;
-  marca: { nombre: string };
-  modelo: { nombre: string };
+  marca?: { nombre: string };
+  modelo?: { nombre: string };
+  proveedor?: { nombre: string };
 };
 
 export default function InventariosMinimosPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingProduct, setEditingProduct] = useState<ProductoConInventarioMinimo | null>(null);
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [newMinimo, setNewMinimo] = useState('0');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { data: productos, refetch } = useQuery<ProductoConInventarioMinimo[]>({
     queryKey: ['productos'],
@@ -53,6 +53,8 @@ export default function InventariosMinimosPage() {
       refetch();
     } catch (error) {
       toast.error('Error al actualizar el inventario mínimo');
+    } finally {
+      setEditingProductId(null);
     }
   };
 
@@ -74,19 +76,19 @@ export default function InventariosMinimosPage() {
   const filteredProductos = productos?.filter((producto) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      producto.marca.nombre.toLowerCase().includes(searchLower) ||
-      producto.modelo.nombre.toLowerCase().includes(searchLower) ||
-      producto.nombre.toLowerCase().includes(searchLower)
+      (producto.marca?.nombre?.toLowerCase() || '').includes(searchLower) ||
+      (producto.modelo?.nombre?.toLowerCase() || '').includes(searchLower) ||
+      (producto.nombre?.toLowerCase() || '').includes(searchLower)
     );
   });
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-6">Gestión de Inventarios Mínimos</h1>
+      <h1 className="text-2xl font-bold mb-6">Gestión de Inventarios Mínimos de Productos</h1>
       
       <div className="mb-6">
         <Input
-          placeholder="Buscar por marca, modelo o nombre..."
+          placeholder="Buscar producto por marca, modelo o nombre..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md"
@@ -116,6 +118,9 @@ export default function InventariosMinimosPage() {
                 Estado
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Proveedor
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acciones
               </th>
             </tr>
@@ -124,10 +129,10 @@ export default function InventariosMinimosPage() {
             {filteredProductos?.map((producto) => (
               <tr key={producto.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {producto.marca.nombre}
+                  {producto.marca?.nombre || '-'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {producto.modelo.nombre}
+                  {producto.modelo?.nombre || '-'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {producto.nombre}
@@ -149,17 +154,25 @@ export default function InventariosMinimosPage() {
                       : 'Stock Normal'}
                   </span>
                 </td>
+                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                  {producto.proveedor?.nombre || '-'}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex gap-2">
-                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <Dialog open={editingProductId === producto.id} onOpenChange={(open) => {
+                      if (!open) setEditingProductId(null);
+                      else {
+                        setEditingProductId(producto.id);
+                        setNewMinimo(producto.inventarioMinimo?.cantidadMinima.toString() || '0');
+                      }
+                    }}>
                       <DialogTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            setEditingProduct(producto);
+                            setEditingProductId(producto.id);
                             setNewMinimo(producto.inventarioMinimo?.cantidadMinima.toString() || '0');
-                            setIsDialogOpen(true);
                           }}
                         >
                           <Edit2 className="h-4 w-4" />
@@ -167,7 +180,9 @@ export default function InventariosMinimosPage() {
                       </DialogTrigger>
                       <DialogContent className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] z-50 w-full max-w-lg bg-white">
                         <DialogHeader className="px-6 pt-6 pb-4">
-                          <DialogTitle className="text-lg font-medium text-gray-900">Editar Inventario Mínimo</DialogTitle>
+                          <DialogTitle className="text-lg font-medium text-gray-900">
+                            Editar Inventario Mínimo - {producto.nombre}
+                          </DialogTitle>
                         </DialogHeader>
                         <div className="px-6 pb-4">
                           <div className="mb-4">
@@ -186,20 +201,16 @@ export default function InventariosMinimosPage() {
                             <Button
                               variant="outline"
                               onClick={() => {
-                                setEditingProduct(null);
+                                setEditingProductId(null);
                                 setNewMinimo('0');
-                                setIsDialogOpen(false);
                               }}
                               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             >
                               Cancelar
                             </Button>
                             <Button
-                              onClick={async () => {
-                                await handleEdit(producto.id, parseInt(newMinimo));
-                                setEditingProduct(null);
-                                setNewMinimo('0');
-                                setIsDialogOpen(false);
+                              onClick={() => {
+                                handleEdit(producto.id, parseInt(newMinimo));
                               }}
                               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             >

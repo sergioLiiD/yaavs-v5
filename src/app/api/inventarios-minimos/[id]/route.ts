@@ -9,18 +9,33 @@ export async function PUT(
     const { cantidadMinima } = await request.json();
     const productoId = parseInt(params.id);
 
-    const inventarioMinimo = await prisma.inventarioMinimo.upsert({
+    // Primero, buscar si existe un inventario mínimo para este producto
+    const inventarioExistente = await prisma.inventarioMinimo.findUnique({
       where: {
         productoId,
       },
-      update: {
-        cantidadMinima,
-      },
-      create: {
-        productoId,
-        cantidadMinima,
-      },
     });
+
+    let inventarioMinimo;
+    if (inventarioExistente) {
+      // Si existe, actualizar
+      inventarioMinimo = await prisma.inventarioMinimo.update({
+        where: {
+          id: inventarioExistente.id,
+        },
+        data: {
+          cantidadMinima,
+        },
+      });
+    } else {
+      // Si no existe, crear uno nuevo
+      inventarioMinimo = await prisma.inventarioMinimo.create({
+        data: {
+          productoId,
+          cantidadMinima,
+        },
+      });
+    }
 
     return NextResponse.json(inventarioMinimo);
   } catch (error) {
@@ -39,11 +54,21 @@ export async function DELETE(
   try {
     const productoId = parseInt(params.id);
 
-    await prisma.inventarioMinimo.delete({
+    // Primero, buscar si existe un inventario mínimo para este producto
+    const inventarioExistente = await prisma.inventarioMinimo.findUnique({
       where: {
         productoId,
       },
     });
+
+    if (inventarioExistente) {
+      // Si existe, eliminarlo
+      await prisma.inventarioMinimo.delete({
+        where: {
+          id: inventarioExistente.id,
+        },
+      });
+    }
 
     return NextResponse.json({ message: 'Inventario mínimo eliminado correctamente' });
   } catch (error) {

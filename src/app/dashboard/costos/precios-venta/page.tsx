@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { HiPencilAlt, HiSearch, HiFilter } from 'react-icons/hi';
 import axios from 'axios';
@@ -71,36 +71,37 @@ export default function PreciosVentaPage() {
   const [currentPrecio, setCurrentPrecio] = useState<PrecioVenta | null>(null);
 
   // Cargar los precios al montar el componente
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        // Cargar productos del catálogo
-        const productosResponse = await axios.get('/api/inventario/productos');
-        console.log('Estructura completa de productos:', JSON.stringify(productosResponse.data, null, 2));
-        setProductos(productosResponse.data);
+  const fetchData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      console.log('Iniciando carga de datos...');
+      
+      // Cargar productos del catálogo
+      const productosResponse = await axios.get('/api/inventario/productos');
+      console.log('Productos cargados:', productosResponse.data);
+      setProductos(productosResponse.data);
 
-        // Cargar precios de venta
-        const preciosResponse = await axios.get('/api/precios-venta');
-        console.log('Estructura completa de precios:', JSON.stringify(preciosResponse.data, null, 2));
-        setPrecios(preciosResponse.data);
+      // Cargar precios de venta
+      const preciosResponse = await axios.get('/api/precios-venta');
+      console.log('Precios cargados:', preciosResponse.data);
+      setPrecios(preciosResponse.data);
 
-        // Cargar precios de compra promedio desde stock
-        const stockResponse = await axios.get('/api/inventario/stock/precios-promedio');
-        const preciosPromedioData: PrecioPromedio[] = stockResponse.data;
-        console.log('Datos recibidos de la API de stock:', JSON.stringify(preciosPromedioData, null, 2));
-        console.log('Primeros 5 precios promedio:', preciosPromedioData.slice(0, 5));
-        setPreciosPromedio(preciosPromedioData);
-      } catch (err) {
-        console.error('Error al cargar datos:', err);
-        setError('Error al cargar los datos. Por favor, intente nuevamente.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
+      // Cargar precios de compra promedio desde stock
+      const stockResponse = await axios.get('/api/inventario/stock/precios-promedio');
+      const preciosPromedioData: PrecioPromedio[] = stockResponse.data;
+      console.log('Precios promedio cargados:', preciosPromedioData);
+      setPreciosPromedio(preciosPromedioData);
+    } catch (err) {
+      console.error('Error detallado al cargar datos:', err);
+      setError('Error al cargar los datos. Por favor, intente nuevamente.');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Funciones para gestionar el modal
   const openModal = (item: {
@@ -119,7 +120,8 @@ export default function PreciosVentaPage() {
       nombre: item.nombre,
       precio_venta: item.precio,
       tipo: item.tipo,
-      producto_id: item.id,
+      producto_id: item.tipo === 'PRODUCTO' ? item.id : undefined,
+      servicio_id: item.tipo === 'SERVICIO' ? item.id : undefined,
       precio_compra_promedio: item.precio_compra,
       marca: item.marca,
       modelo: item.modelo,
@@ -144,28 +146,35 @@ export default function PreciosVentaPage() {
     try {
       // Si no tiene ID, crear nuevo precio
       if (!currentPrecio.id) {
-        const response = await axios.post('/api/precios-venta', {
+        await axios.post('/api/precios-venta', {
           tipo: currentPrecio.tipo,
           nombre: currentPrecio.nombre,
           marca: currentPrecio.marca,
           modelo: currentPrecio.modelo,
           precio_compra_promedio: currentPrecio.precio_compra_promedio,
           precio_venta: currentPrecio.precio_venta,
+          producto_id: currentPrecio.tipo === 'PRODUCTO' ? currentPrecio.producto_id : null,
+          servicio_id: currentPrecio.tipo === 'SERVICIO' ? currentPrecio.servicio_id : null,
           created_by: session?.user?.email || '',
           updated_by: session?.user?.email || ''
         });
-        
-        setPrecios([...precios, response.data]);
       } else {
         // Si tiene ID, actualizar precio existente
         await axios.put(`/api/precios-venta/${currentPrecio.id}`, {
-          precio_venta: currentPrecio.precio_venta
+          tipo: currentPrecio.tipo,
+          nombre: currentPrecio.nombre,
+          marca: currentPrecio.marca,
+          modelo: currentPrecio.modelo,
+          precio_compra_promedio: currentPrecio.precio_compra_promedio,
+          precio_venta: currentPrecio.precio_venta,
+          producto_id: currentPrecio.tipo === 'PRODUCTO' ? currentPrecio.producto_id : null,
+          servicio_id: currentPrecio.tipo === 'SERVICIO' ? currentPrecio.servicio_id : null,
+          updated_by: session?.user?.email || ''
         });
-
-        setPrecios(precios.map(p => 
-          p.id === currentPrecio.id ? currentPrecio : p
-        ));
       }
+      
+      // Recargar los datos después de guardar
+      await fetchData();
       closeModal();
     } catch (err) {
       console.error('Error al guardar precio:', err);
@@ -174,33 +183,33 @@ export default function PreciosVentaPage() {
   };
 
   // Crear lista completa de productos y servicios con sus precios
-  const allItems = productos.map(item => {
-    // Buscar el precio de venta existente por nombre
-    const precio = precios.find(p => p.nombre === item.nombre);
-    // Obtener el precio promedio directamente de la tabla de stock
-    const precioPromedio = preciosPromedio.find(p => p.producto_id === item.id)?.precio_promedio || 0;
-    
-    console.log(`Producto: ${item.nombre}`);
-    console.log(`Precio encontrado:`, precio);
-    console.log(`Precio promedio:`, precioPromedio);
-    
-    return {
-      id: item.id,
-      nombre: String(item.nombre || ''),
-      tipo: item.tipo,
-      precio: precio ? Number(precio.precio_venta) : 0,
-      precio_id: precio ? Number(precio.id) : 0,
-      marca: item.tipo === 'PRODUCTO' ? String(item.marca?.nombre || '-') : '-',
-      modelo: item.tipo === 'PRODUCTO' ? String(item.modelo?.nombre || '-') : '-',
-      precio_compra: item.tipo === 'PRODUCTO' ? Number(precioPromedio) : 0,
-      updated_at: precio?.updated_at || ''
-    };
-  });
+  const allItems = useMemo(() => {
+    return productos.map(item => {
+      // Buscar el precio de venta existente por nombre
+      const precio = precios.find(p => p.nombre === item.nombre);
+      // Obtener el precio promedio directamente de la tabla de stock
+      const precioPromedio = preciosPromedio.find(p => p.producto_id === item.id)?.precio_promedio || 0;
+      
+      return {
+        id: item.id,
+        nombre: String(item.nombre || ''),
+        tipo: item.tipo,
+        precio: precio ? Number(precio.precio_venta) : 0,
+        precio_id: precio ? Number(precio.id) : 0,
+        marca: item.tipo === 'PRODUCTO' ? String(item.marca?.nombre || '-') : '-',
+        modelo: item.tipo === 'PRODUCTO' ? String(item.modelo?.nombre || '-') : '-',
+        precio_compra: item.tipo === 'PRODUCTO' ? Number(precioPromedio) : 0,
+        updated_at: precio?.updated_at || ''
+      };
+    });
+  }, [productos, precios, preciosPromedio]);
 
   // Filtrar items según el término de búsqueda
-  const filteredItems = allItems.filter(item => 
-    item.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredItems = useMemo(() => {
+    return allItems.filter(item => 
+      item.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [allItems, searchTerm]);
 
   const toggleDetalles = (id: string) => {
     setDetallesVisibles(prev => ({

@@ -267,14 +267,14 @@ model Producto {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   categoriaId      Int?
-  marcaId          Int
-  modeloId         Int
-  proveedorId      Int
+  marcaId          Int?
+  modeloId         Int?
+  proveedorId      Int?
   tipoServicioId   Int
   categoria        Categoria?       @relation(fields: [categoriaId], references: [id])
-  marca            Marca            @relation(fields: [marcaId], references: [id])
-  modelo           Modelo           @relation(fields: [modeloId], references: [id])
-  proveedor        Proveedor        @relation(fields: [proveedorId], references: [id])
+  marca            Marca?           @relation(fields: [marcaId], references: [id])
+  modelo           Modelo?          @relation(fields: [modeloId], references: [id])
+  proveedor        Proveedor?       @relation(fields: [proveedorId], references: [id])
   tipoServicio     TipoServicio     @relation(fields: [tipoServicioId], references: [id])
   entradas         EntradaAlmacen[]
   salidas          SalidaAlmacen[]
@@ -391,6 +391,8 @@ model PrecioVenta {
   modelo                 String
   precio_compra_promedio Float
   precio_venta          Float
+  producto_id           Int?
+  servicio_id           Int?
   created_at            DateTime @default(now())
   updated_at            DateTime @updatedAt
   created_by            String

@@ -25,6 +25,8 @@ export async function createPrecio(precio: any) {
       modelo: precio.modelo,
       precio_compra_promedio: precio.precio_compra_promedio,
       precio_venta: precio.precio_venta,
+      producto_id: precio.producto_id || null,
+      servicio_id: precio.servicio_id || null,
       created_by: 'system',
       updated_by: 'system'
     }
@@ -41,6 +43,8 @@ export async function updatePrecio(precio: any) {
       modelo: precio.modelo,
       precio_compra_promedio: precio.precio_compra_promedio,
       precio_venta: precio.precio_venta,
+      producto_id: precio.producto_id || null,
+      servicio_id: precio.servicio_id || null,
       updated_by: 'system'
     }
   });
