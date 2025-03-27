@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import AdminLayout from '@/components/layout/AdminLayout';
 import { HiPlus, HiPencilAlt, HiTrash } from 'react-icons/hi';
 import axios from 'axios';
 
@@ -101,181 +99,146 @@ export default function TipoServicioPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('¿Está seguro que desea eliminar este tipo de servicio?')) {
-      try {
-        await axios.delete(`/api/catalogo/tipos-servicio/${id}`);
-        setTiposServicio(tiposServicio.filter(tipo => tipo.id !== id));
-      } catch (err) {
-        console.error('Error al eliminar tipo de servicio:', err);
-        setError('Error al eliminar el tipo de servicio. Por favor, intente nuevamente.');
-      }
+    if (!window.confirm('¿Está seguro de que desea eliminar este tipo de servicio?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/catalogo/tipos-servicio/${id}`);
+      setTiposServicio(tiposServicio.filter(tipo => tipo.id !== id));
+    } catch (err) {
+      console.error('Error al eliminar tipo de servicio:', err);
+      setError('Error al eliminar el tipo de servicio. Por favor, intente nuevamente.');
     }
   };
 
   return (
-    <ProtectedRoute>
-      <AdminLayout title="Catálogo - Tipo de Servicio">
-        <div className="space-y-6">
-          {/* Encabezado */}
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-semibold text-gray-900">Tipos de Servicio</h1>
-            <button
-              onClick={openModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
-            >
-              <HiPlus className="mr-2" /> Nuevo Tipo de Servicio
-            </button>
+    <div className="space-y-6">
+      {/* Encabezado */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">Tipos de Servicio</h1>
+        <button
+          onClick={openModal}
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <HiPlus className="-ml-1 mr-2 h-5 w-5" />
+          Nuevo Tipo de Servicio
+        </button>
+      </div>
+
+      {/* Mensaje de error */}
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
           </div>
-
-          {/* Mensaje de error */}
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Estado de carga */}
-          {isLoading ? (
-            <div className="text-center py-10">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="mt-2 text-gray-500">Cargando tipos de servicio...</p>
-            </div>
-          ) : (
-            /* Tabla de tipos de servicio */
-            <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Nombre
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Descripción
-                      </th>
-                      <th scope="col" className="relative px-6 py-3">
-                        <span className="sr-only">Acciones</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {tiposServicio.map((tipo) => (
-                      <tr key={tipo.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{tipo.nombre}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-500">
-                            {tipo.descripcion || <span className="text-gray-400 italic">Sin descripción</span>}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => handleEdit(tipo)}
-                            className="text-blue-600 hover:text-blue-900 mr-4"
-                          >
-                            <HiPencilAlt className="inline w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(tipo.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <HiTrash className="inline w-5 h-5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {tiposServicio.length === 0 && !isLoading && (
-                      <tr>
-                        <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
-                          No hay tipos de servicio registrados
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
         </div>
+      )}
 
-        {/* Modal para agregar/editar tipo de servicio */}
-        {isModalOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <div className="fixed inset-0 transition-opacity" onClick={closeModal}>
-                <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-              </div>
-
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen"></span>&#8203;
-
-              <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form onSubmit={handleSubmit}>
-                  <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div className="mb-4">
-                      <h3 className="text-xl font-semibold leading-6 text-gray-900">
-                        {isEditing ? 'Editar Tipo de Servicio' : 'Nuevo Tipo de Servicio'}
-                      </h3>
-                    </div>
-                    <div className="mb-4">
-                      <label htmlFor="nombre" className="block text-sm font-medium text-gray-800">
-                        Nombre <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="nombre"
-                        id="nombre"
-                        value={currentTipoServicio.nombre}
-                        onChange={handleInputChange}
-                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
-                        required
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label htmlFor="descripcion" className="block text-sm font-medium text-gray-800">
-                        Descripción
-                      </label>
-                      <textarea
-                        name="descripcion"
-                        id="descripcion"
-                        rows={3}
-                        value={currentTipoServicio.descripcion || ''}
-                        onChange={handleInputChange}
-                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
-                      />
-                      <p className="mt-1 text-xs text-gray-600">Esta descripción es opcional</p>
-                    </div>
+      {/* Tabla de tipos de servicio */}
+      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul className="divide-y divide-gray-200">
+          {tiposServicio.map((tipo) => (
+            <li key={tipo.id}>
+              <div className="px-4 py-4 sm:px-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-blue-600 truncate">
+                      {tipo.nombre}
+                    </p>
+                    {tipo.descripcion && (
+                      <p className="mt-1 text-sm text-gray-500">
+                        {tipo.descripcion}
+                      </p>
+                    )}
                   </div>
-                  <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                  <div className="ml-4 flex-shrink-0 flex space-x-2">
                     <button
-                      type="submit"
-                      className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                      onClick={() => handleEdit(tipo)}
+                      className="text-blue-600 hover:text-blue-900"
                     >
-                      {isEditing ? 'Actualizar' : 'Guardar'}
+                      <HiPencilAlt className="h-5 w-5" />
                     </button>
                     <button
-                      type="button"
-                      onClick={closeModal}
-                      className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                      onClick={() => handleDelete(tipo.id)}
+                      className="text-red-600 hover:text-red-900"
                     >
-                      Cancelar
+                      <HiTrash className="h-5 w-5" />
                     </button>
                   </div>
-                </form>
+                </div>
               </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Modal de formulario */}
+      {isModalOpen && (
+        <div className="fixed z-10 inset-0 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <form onSubmit={handleSubmit}>
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="mb-4">
+                    <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
+                      Nombre
+                    </label>
+                    <input
+                      type="text"
+                      name="nombre"
+                      id="nombre"
+                      value={currentTipoServicio.nombre}
+                      onChange={handleInputChange}
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700">
+                      Descripción
+                    </label>
+                    <textarea
+                      name="descripcion"
+                      id="descripcion"
+                      rows={3}
+                      value={currentTipoServicio.descripcion}
+                      onChange={handleInputChange}
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                    />
+                  </div>
+                </div>
+                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                  <button
+                    type="submit"
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  >
+                    {isEditing ? 'Actualizar' : 'Crear'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        )}
-      </AdminLayout>
-    </ProtectedRoute>
+        </div>
+      )}
+    </div>
   );
 } 

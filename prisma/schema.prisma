@@ -26,26 +26,27 @@ model Usuario {
 }
 
 model Cliente {
-  id               Int      @id @default(autoincrement())
-  nombre           String
-  apellidoPaterno  String
-  apellidoMaterno  String?
-  telefonoCelular  String
+  id              Int      @id @default(autoincrement())
+  nombre          String
+  apellidoPaterno String
+  apellidoMaterno String?
+  telefonoCelular String
   telefonoContacto String?
-  email            String   @unique
-  calle            String
-  numeroExterior   String
-  numeroInterior   String?
-  colonia          String
-  ciudad           String
-  estado           String
-  codigoPostal     String
-  latitud          Float?
-  longitud         Float?
+  email           String
+  rfc             String?
+  calle           String?
+  numeroExterior  String?
+  numeroInterior  String?
+  colonia         String?
+  ciudad          String?
+  estado          String?
+  codigoPostal    String?
+  latitud         Float?
+  longitud        Float?
   fuenteReferencia String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  tickets          Ticket[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tickets         Ticket[]
 }
 
 model TipoServicio {
