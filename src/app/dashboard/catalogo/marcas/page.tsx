@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { HiPlus, HiPencilAlt, HiTrash } from 'react-icons/hi';
 import axios from 'axios';
+import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
 
 // Tipo para representar una marca
 interface Marca {
@@ -144,22 +145,21 @@ export default function MarcasPage() {
 
       {/* Tabla de marcas */}
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {marcas.map((marca) => (
-            <li key={marca.id}>
-              <div className="px-4 py-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-blue-600 truncate">
-                      {marca.nombre}
-                    </p>
-                    {marca.descripcion && (
-                      <p className="mt-1 text-sm text-gray-500">
-                        {marca.descripcion}
-                      </p>
-                    )}
-                  </div>
-                  <div className="ml-4 flex-shrink-0 flex space-x-2">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Descripción</TableHead>
+              <TableHead>Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {marcas.map((marca) => (
+              <TableRow key={marca.id}>
+                <TableCell>{marca.nombre}</TableCell>
+                <TableCell>{marca.descripcion || '-'}</TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(marca)}
                       className="text-blue-600 hover:text-blue-900"
@@ -173,11 +173,11 @@ export default function MarcasPage() {
                       <HiTrash className="h-5 w-5" />
                     </button>
                   </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Modal de formulario */}

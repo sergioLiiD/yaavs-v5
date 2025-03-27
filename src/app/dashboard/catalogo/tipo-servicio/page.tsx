@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { HiPlus, HiPencilAlt, HiTrash } from 'react-icons/hi';
 import axios from 'axios';
+import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
 
 // Tipo para representar un tipo de servicio
 interface TipoServicio {
@@ -144,22 +145,21 @@ export default function TipoServicioPage() {
 
       {/* Tabla de tipos de servicio */}
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {tiposServicio.map((tipo) => (
-            <li key={tipo.id}>
-              <div className="px-4 py-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-blue-600 truncate">
-                      {tipo.nombre}
-                    </p>
-                    {tipo.descripcion && (
-                      <p className="mt-1 text-sm text-gray-500">
-                        {tipo.descripcion}
-                      </p>
-                    )}
-                  </div>
-                  <div className="ml-4 flex-shrink-0 flex space-x-2">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Descripción</TableHead>
+              <TableHead>Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tiposServicio.map((tipo) => (
+              <TableRow key={tipo.id}>
+                <TableCell>{tipo.nombre}</TableCell>
+                <TableCell>{tipo.descripcion || '-'}</TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(tipo)}
                       className="text-blue-600 hover:text-blue-900"
@@ -173,26 +173,26 @@ export default function TipoServicioPage() {
                       <HiTrash className="h-5 w-5" />
                     </button>
                   </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Modal de formulario */}
       {isModalOpen && (
-        <div className="fixed z-10 inset-0 overflow-y-auto">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div className="fixed z-50 inset-0 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen p-4">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
 
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg">
               <form onSubmit={handleSubmit}>
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="bg-white px-6 pt-6 pb-4">
                   <div className="mb-4">
-                    <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">
                       Nombre
                     </label>
                     <input
@@ -201,12 +201,12 @@ export default function TipoServicioPage() {
                       id="nombre"
                       value={currentTipoServicio.nombre}
                       onChange={handleInputChange}
-                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-400 rounded-md h-12 px-4 text-gray-900"
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-1">
                       Descripción
                     </label>
                     <textarea
@@ -215,7 +215,7 @@ export default function TipoServicioPage() {
                       rows={3}
                       value={currentTipoServicio.descripcion}
                       onChange={handleInputChange}
-                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-400 rounded-md px-4 py-3 text-gray-900"
                     />
                   </div>
                 </div>
