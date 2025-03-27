@@ -9,6 +9,7 @@ import {
   searchPrecios,
   getPreciosByTipo,
 } from '@/lib/db';
+import prisma from '@/lib/db/prisma';
 
 export async function GET(request: Request) {
   try {
@@ -54,5 +55,35 @@ export async function PUT(request: Request) {
   } catch (error) {
     console.error('Error al actualizar precio:', error);
     return NextResponse.json({ error: 'Error al actualizar precio' }, { status: 500 });
+  }
+}
+
+export async function GETPreciosVenta() {
+  try {
+    const precios = await prisma.precioVenta.findMany({
+      select: {
+        id: true,
+        tipo: true,
+        nombre: true,
+        marca: true,
+        modelo: true,
+        precio_venta: true,
+        created_at: true,
+        updated_at: true,
+        created_by: true,
+        updated_by: true
+      },
+      orderBy: {
+        nombre: 'asc'
+      }
+    });
+
+    return NextResponse.json(precios);
+  } catch (error) {
+    console.error('Error al obtener precios de venta:', error);
+    return NextResponse.json(
+      { error: 'Error al obtener precios de venta' },
+      { status: 500 }
+    );
   }
 } 
