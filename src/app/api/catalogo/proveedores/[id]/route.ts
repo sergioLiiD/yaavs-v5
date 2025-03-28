@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function PUT(
   request: Request,
@@ -16,19 +16,20 @@ export async function PUT(
     const data = await request.json();
     const proveedor = await prisma.proveedor.update({
       where: {
-        id: params.id
+        id: parseInt(params.id)
       },
       data: {
         tipo: data.tipo,
         nombre: data.nombre,
-        personaResponsable: data.personaResponsable,
+        contacto: data.contacto,
         telefono: data.telefono,
         email: data.email,
         direccion: data.direccion,
         rfc: data.rfc,
         banco: data.banco,
         cuentaBancaria: data.cuentaBancaria,
-        clabeInterbancaria: data.clabeInterbancaria
+        clabeInterbancaria: data.clabeInterbancaria,
+        notas: data.notas
       }
     });
 
@@ -52,9 +53,37 @@ export async function DELETE(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
+    // Primero verificamos si el proveedor existe
+    const proveedor = await prisma.proveedor.findUnique({
+      where: {
+        id: parseInt(params.id)
+      }
+    });
+
+    if (!proveedor) {
+      return NextResponse.json(
+        { error: 'Proveedor no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Verificamos si el proveedor tiene productos asociados
+    const productos = await prisma.producto.findMany({
+      where: {
+        proveedorId: parseInt(params.id)
+      }
+    });
+
+    if (productos.length > 0) {
+      return NextResponse.json(
+        { error: 'No se puede eliminar el proveedor porque tiene productos asociados' },
+        { status: 400 }
+      );
+    }
+
     await prisma.proveedor.delete({
       where: {
-        id: params.id
+        id: parseInt(params.id)
       }
     });
 

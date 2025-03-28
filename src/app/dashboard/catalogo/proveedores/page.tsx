@@ -14,12 +14,14 @@ interface Proveedor {
   telefono: string;
   email: string | null;
   direccion: string | null;
-  notas: string | null;
   tipo: TipoProveedor;
   rfc: string;
   banco: string;
   cuentaBancaria: string;
   clabeInterbancaria: string;
+  createdAt: string;
+  updatedAt: string;
+  notas: string | null;
 }
 
 export default function ProveedoresPage() {
@@ -36,7 +38,6 @@ export default function ProveedoresPage() {
     telefono: '',
     email: '',
     direccion: '',
-    notas: '',
     tipo: 'FISICA',
     rfc: '',
     banco: '',
@@ -100,7 +101,6 @@ export default function ProveedoresPage() {
           telefono: '',
           email: '',
           direccion: '',
-          notas: '',
           tipo: 'FISICA',
           rfc: '',
           banco: '',
@@ -159,7 +159,6 @@ export default function ProveedoresPage() {
               telefono: '',
               email: '',
               direccion: '',
-              notas: '',
               tipo: 'FISICA',
               rfc: '',
               banco: '',
@@ -290,10 +289,6 @@ export default function ProveedoresPage() {
                             </div>
                           </dl>
                         </div>
-                        <div className="col-span-2">
-                          <h4 className="text-sm font-medium text-gray-900">Notas</h4>
-                          <p className="mt-2 text-sm text-gray-900">{proveedor.notas || '-'}</p>
-                        </div>
                       </div>
                     </td>
                   </tr>
@@ -383,13 +378,13 @@ export default function ProveedoresPage() {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-900">Dirección</label>
-                  <textarea
+                  <input
+                    type="text"
                     name="direccion"
                     value={formData.direccion || ''}
                     onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
-                    rows={2}
-                    placeholder="Dirección completa del proveedor"
+                    placeholder="Dirección del proveedor"
                   />
                 </div>
                 <div>
@@ -423,17 +418,6 @@ export default function ProveedoresPage() {
                     onChange={(e) => setFormData({ ...formData, clabeInterbancaria: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
                     placeholder="CLABE interbancaria"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-900">Notas</label>
-                  <textarea
-                    name="notas"
-                    value={formData.notas || ''}
-                    onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
-                    rows={3}
-                    placeholder="Notas adicionales sobre el proveedor"
                   />
                 </div>
               </div>

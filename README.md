@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# YAAS - Sistema de Gestión de Taller
 
-## Getting Started
+Este es un sistema de gestión para talleres de reparación de dispositivos móviles, desarrollado con Next.js 14 y TypeScript.
 
-First, run the development server:
+## Características
 
+- Gestión de inventario de productos y servicios
+- Catálogo de reparaciones frecuentes
+- Gestión de precios de venta
+- Gestión de proveedores
+- Gestión de marcas y modelos
+- Sistema de checklist para diagnóstico y reparación
+
+## Tecnologías Utilizadas
+
+- Next.js 14
+- TypeScript
+- Prisma ORM
+- PostgreSQL
+- Tailwind CSS
+- Shadcn/ui
+- NextAuth.js
+
+## Requisitos
+
+- Node.js 18 o superior
+- PostgreSQL
+- npm o yarn
+
+## Instalación
+
+1. Clonar el repositorio:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/tu-usuario/yaavs-v5.git
+cd yaavs-v5
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Instalar dependencias:
+```bash
+npm install
+# o
+yarn install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Configurar variables de entorno:
+```bash
+cp .env.example .env
+```
+Editar el archivo .env con tus credenciales de base de datos y otras configuraciones necesarias.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Ejecutar las migraciones de la base de datos:
+```bash
+npx prisma migrate dev
+```
 
-## Learn More
+5. Iniciar el servidor de desarrollo:
+```bash
+npm run dev
+# o
+yarn dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Estructura del Proyecto
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/                    # Rutas y páginas de la aplicación
+├── components/            # Componentes reutilizables
+├── lib/                   # Utilidades y configuraciones
+├── types/                # Definiciones de tipos TypeScript
+└── services/             # Servicios y lógica de negocio
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Licencia
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Este proyecto está bajo la Licencia MIT.

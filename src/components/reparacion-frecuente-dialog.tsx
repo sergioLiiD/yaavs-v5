@@ -125,7 +125,26 @@ export function ReparacionFrecuenteDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(form.getValues())
+    const formData = form.getValues()
+    
+    // Asegurar que los productos y pasos estén presentes
+    if (!formData.productos || formData.productos.length === 0) {
+      alert('Debe agregar al menos un producto')
+      return
+    }
+
+    if (!formData.pasos || formData.pasos.length === 0) {
+      alert('Debe agregar al menos un paso')
+      return
+    }
+
+    // Validar que todos los pasos tengan descripción
+    if (formData.pasos.some(paso => !paso.descripcion.trim())) {
+      alert('Todos los pasos deben tener una descripción')
+      return
+    }
+
+    onSubmit(formData)
   }
 
   if (!open) return null

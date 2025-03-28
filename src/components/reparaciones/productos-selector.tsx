@@ -128,12 +128,19 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
     if (field === 'productoId' && preciosVenta && catalogoProductos) {
       const productoSeleccionado = catalogoProductos.find((p: Producto) => p.id === value);
       if (productoSeleccionado) {
-        const precioVenta = preciosVenta.find(
-          (p: PrecioVenta) => 
-            p.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase() &&
-            p.marca.toLowerCase() === (productoSeleccionado.marca?.nombre.toLowerCase() || '') &&
-            p.modelo.toLowerCase() === (productoSeleccionado.modelo?.nombre.toLowerCase() || '')
-        );
+        // Buscar el precio de venta según el tipo de producto
+        const precioVenta = preciosVenta.find((p: PrecioVenta) => {
+          if (productoSeleccionado.tipo === 'SERVICIO') {
+            // Para servicios, solo comparar por nombre
+            return p.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase();
+          } else {
+            // Para productos, comparar por nombre, marca y modelo
+            return p.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase() &&
+                   p.marca.toLowerCase() === (productoSeleccionado.marca?.nombre.toLowerCase() || '') &&
+                   p.modelo.toLowerCase() === (productoSeleccionado.modelo?.nombre.toLowerCase() || '');
+          }
+        });
+
         if (precioVenta) {
           const producto = productoActualizado.find(p => p.id === id);
           if (producto) {

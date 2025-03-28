@@ -42,6 +42,11 @@ interface Producto {
     url: string;
   }[];
   tipo: 'PRODUCTO' | 'SERVICIO';
+  stock: number;
+  precioPromedio: number;
+  stockMaximo: number;
+  stockMinimo: number;
+  categoriaId?: number;
 }
 
 interface TipoServicio {
@@ -65,6 +70,11 @@ interface Proveedor {
   nombre: string;
 }
 
+interface Categoria {
+  id: number;
+  nombre: string;
+}
+
 interface FormData {
   nombre: string;
   tipo: 'PRODUCTO' | 'SERVICIO';
@@ -74,12 +84,14 @@ interface FormData {
   garantiaValor: number;
   garantiaUnidad: 'dias' | 'meses';
   tipoServicioId: number;
-  marcaId: number;
-  modeloId: number;
-  proveedorId: number;
+  marcaId: number | null;
+  modeloId: number | null;
+  proveedorId: number | null;
+  stock: number;
+  precioPromedio: number;
   stockMaximo: number;
   stockMinimo: number;
-  categoriaId: string;
+  categoriaId: number | null;
 }
 
 export default function CatalogoPage() {
@@ -88,24 +100,27 @@ export default function CatalogoPage() {
   const [marcas, setMarcas] = useState<{ id: number; nombre: string; }[]>([]);
   const [modelos, setModelos] = useState<{ id: number; nombre: string; }[]>([]);
   const [proveedores, setProveedores] = useState<{ id: number; nombre: string; }[]>([]);
+  const [categorias, setCategorias] = useState<{ id: number; nombre: string; }[]>([]);
   const [marcaSeleccionada, setMarcaSeleccionada] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     nombre: '',
     sku: '',
     descripcion: '',
     notasInternas: '',
     garantiaValor: 0,
     garantiaUnidad: 'dias',
+    tipo: 'PRODUCTO',
+    tipoServicioId: 0,
+    marcaId: null,
+    modeloId: null,
+    proveedorId: null,
+    stock: 0,
+    precioPromedio: 0,
     stockMaximo: 0,
     stockMinimo: 0,
-    tipo: 'PRODUCTO',
-    tipoServicioId: '',
-    marcaId: '',
-    modeloId: '',
-    proveedorId: '',
-    categoriaId: ''
+    categoriaId: null
   });
   const [fotos, setFotos] = useState<File[]>([]);
   const [previewFotos, setPreviewFotos] = useState<string[]>([]);
@@ -161,10 +176,11 @@ export default function CatalogoPage() {
 
   const cargarDatosIniciales = async () => {
     try {
-      const [tiposServicioRes, marcasRes, proveedoresRes, productosRes] = await Promise.all([
+      const [tiposServicioRes, marcasRes, proveedoresRes, categoriasRes, productosRes] = await Promise.all([
         fetch('/api/catalogo/tipos-servicio'),
         fetch('/api/catalogo/marcas'),
         fetch('/api/catalogo/proveedores'),
+        fetch('/api/catalogo/categorias'),
         fetch('/api/inventario/productos')
       ]);
 
@@ -178,6 +194,10 @@ export default function CatalogoPage() {
       if (!proveedoresRes.ok) {
         throw new Error(`Error al cargar proveedores: ${proveedoresRes.status}`);
       }
+      if (!categoriasRes.ok) {
+        console.warn('No se pudieron cargar las categorías:', categoriasRes.status);
+        setCategorias([]);
+      }
       if (!productosRes.ok) {
         const errorData = await productosRes.json().catch(() => null);
         if (productosRes.status === 500) {
@@ -187,10 +207,11 @@ export default function CatalogoPage() {
       }
 
       // Intentar obtener los datos de cada respuesta
-      const [tiposServicio, marcas, proveedores, productos] = await Promise.all([
+      const [tiposServicio, marcas, proveedores, categorias, productos] = await Promise.all([
         tiposServicioRes.json(),
         marcasRes.json(),
         proveedoresRes.json(),
+        categoriasRes.ok ? categoriasRes.json() : [],
         productosRes.json()
       ]);
 
@@ -212,6 +233,7 @@ export default function CatalogoPage() {
       setTiposServicio(tiposServicio);
       setMarcas(marcas);
       setProveedores(proveedores);
+      setCategorias(Array.isArray(categorias) ? categorias : []);
       setProductos(productos);
     } catch (error) {
       console.error('Error al cargar datos iniciales:', error);
@@ -252,90 +274,131 @@ export default function CatalogoPage() {
       }
       const data = await response.json();
       setModelos(Array.isArray(data) ? data : []);
+      setFormData(prev => ({ ...prev, modeloId: null }));
     } catch (error) {
       console.error('Error al cargar modelos:', error);
       alert('Error al cargar los modelos');
     }
   };
 
-  const handleMarcaChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const marcaId = parseInt(e.target.value);
+  const handleMarcaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const marcaId = e.target.value ? parseInt(e.target.value) : null;
     setMarcaSeleccionada(marcaId);
-    setModelos([]);
-    setFormData(prev => ({ ...prev, modeloId: 0 }));
-
     if (marcaId) {
-      try {
-        const response = await fetch(`/api/catalogo/modelos?marcaId=${marcaId}`);
-        if (!response.ok) {
-          throw new Error('Error al cargar los modelos');
-        }
-        const data = await response.json();
-        setModelos(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error('Error al cargar modelos:', error);
-        alert('Error al cargar los modelos');
-      }
+      cargarModelos(marcaId);
+    } else {
+      setModelos([]);
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    setFormData(prev => {
+      const newData = { ...prev };
+      
+      switch (name) {
+        case 'tipoServicioId':
+          newData[name] = parseInt(value) || 0;
+          break;
+        case 'marcaId':
+          newData[name] = value ? parseInt(value) : null;
+          break;
+        case 'modeloId':
+          newData[name] = value ? parseInt(value) : null;
+          break;
+        case 'proveedorId':
+          newData[name] = value ? parseInt(value) : null;
+          break;
+        case 'garantiaValor':
+          newData[name] = parseInt(value) || 0;
+          break;
+        case 'stock':
+          newData[name] = parseInt(value) || 0;
+          break;
+        case 'precioPromedio':
+          newData[name] = parseFloat(value) || 0;
+          break;
+        case 'stockMaximo':
+          newData[name] = parseInt(value) || 0;
+          break;
+        case 'stockMinimo':
+          newData[name] = parseInt(value) || 0;
+          break;
+        case 'categoriaId':
+          newData[name] = value ? parseInt(value) : null;
+          break;
+        default:
+          (newData[name as keyof FormData] as any) = value;
+      }
+      
+      return newData;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Validar campos según el tipo
+      // Validar campos requeridos
+      if (!formData.nombre || !formData.tipoServicioId) {
+        throw new Error('Por favor, complete los campos requeridos');
+      }
+
+      // Si es un producto, validar campos adicionales
       if (formData.tipo === 'PRODUCTO') {
         if (!formData.marcaId || !formData.modeloId || !formData.proveedorId) {
-          throw new Error('Para productos, los campos marca, modelo y proveedor son obligatorios');
+          throw new Error('Para productos, debe seleccionar marca, modelo y proveedor');
         }
       }
 
-      const url = productoSeleccionado ? `/api/inventario/productos/${productoSeleccionado.id}` : '/api/inventario/productos';
-      
-      const method = productoSeleccionado ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
+      const data = {
+        ...formData,
+        tipoServicioId: formData.tipoServicioId,
+        marcaId: formData.tipo === 'PRODUCTO' ? formData.marcaId : null,
+        modeloId: formData.tipo === 'PRODUCTO' ? formData.modeloId : null,
+        proveedorId: formData.tipo === 'PRODUCTO' ? formData.proveedorId : null,
+        garantiaValor: formData.garantiaValor,
+        stock: formData.stock,
+        precioPromedio: formData.precioPromedio,
+        stockMaximo: formData.stockMaximo,
+        stockMinimo: formData.stockMinimo,
+        categoriaId: formData.categoriaId || null
+      };
+
+      const response = await fetch('/api/inventario/productos', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al guardar el producto');
+        throw new Error(errorData.mensaje || 'Error de validación');
       }
 
-      setShowModal(false);
-      setProductoSeleccionado(null);
+      // Limpiar el formulario y recargar datos
       setFormData({
         nombre: '',
-        tipo: 'PRODUCTO',
         sku: '',
         descripcion: '',
         notasInternas: '',
         garantiaValor: 0,
         garantiaUnidad: 'dias',
+        tipo: 'PRODUCTO',
         tipoServicioId: 0,
-        marcaId: 0,
-        modeloId: 0,
-        proveedorId: 0,
+        marcaId: null,
+        modeloId: null,
+        proveedorId: null,
+        stock: 0,
+        precioPromedio: 0,
         stockMaximo: 0,
         stockMinimo: 0,
-        categoriaId: '',
+        categoriaId: null
       });
-      setFotos([]);
-      setPreviewFotos([]);
-      await cargarDatosIniciales();
+      setShowModal(false);
+      cargarDatosIniciales();
     } catch (error) {
       console.error('Error:', error);
       alert(error instanceof Error ? error.message : 'Error al guardar el producto');
@@ -367,21 +430,22 @@ export default function CatalogoPage() {
     setProductoSeleccionado(producto);
     setFormData({
       nombre: producto.nombre,
-      tipo: producto.tipo,
       sku: producto.sku,
-      descripcion: producto.descripcion,
+      descripcion: producto.descripcion || '',
       notasInternas: producto.notasInternas || '',
       garantiaValor: producto.garantiaValor,
       garantiaUnidad: producto.garantiaUnidad,
+      tipo: producto.tipo,
       tipoServicioId: producto.tipoServicioId,
       marcaId: producto.marcaId,
       modeloId: producto.modeloId,
       proveedorId: producto.proveedorId,
-      stockMaximo: 0,
-      stockMinimo: 0,
-      categoriaId: '',
+      stock: producto.stock,
+      precioPromedio: producto.precioPromedio,
+      stockMaximo: producto.stockMaximo,
+      stockMinimo: producto.stockMinimo,
+      categoriaId: producto.categoriaId || null
     });
-    setMarcaSeleccionada(producto.marcaId);
     setShowModal(true);
   };
 
@@ -617,9 +681,9 @@ export default function CatalogoPage() {
                             tipo,
                             // Resetear campos no necesarios para servicios
                             ...(tipo === 'SERVICIO' ? {
-                              marcaId: 0,
-                              modeloId: 0,
-                              proveedorId: 0,
+                              marcaId: null,
+                              modeloId: null,
+                              proveedorId: null,
                               garantiaValor: 0,
                               garantiaUnidad: 'dias'
                             } : {})
@@ -691,18 +755,17 @@ export default function CatalogoPage() {
                           </label>
                           <select
                             name="marcaId"
-                            id="marca"
-                            value={formData.marcaId}
+                            value={formData.marcaId?.toString() || ''}
                             onChange={(e) => {
                               handleInputChange(e);
                               handleMarcaChange(e);
                             }}
-                            className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
-                            required
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+                            required={formData.tipo === 'PRODUCTO'}
                           >
-                            <option value="">Seleccione una marca</option>
-                            {marcas.map((marca) => (
-                              <option key={marca.id} value={marca.id}>
+                            <option value="" className="pl-4">Seleccione una marca</option>
+                            {marcas.map(marca => (
+                              <option key={marca.id} value={marca.id} className="pl-4">
                                 {marca.nombre}
                               </option>
                             ))}
@@ -715,16 +778,15 @@ export default function CatalogoPage() {
                           </label>
                           <select
                             name="modeloId"
-                            id="modelo"
-                            value={formData.modeloId}
+                            value={formData.modeloId?.toString() || ''}
                             onChange={handleInputChange}
-                            className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
-                            required
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+                            required={formData.tipo === 'PRODUCTO'}
                             disabled={!marcaSeleccionada}
                           >
-                            <option value="">Seleccione un modelo</option>
-                            {modelos.map((modelo) => (
-                              <option key={modelo.id} value={modelo.id}>
+                            <option value="" className="pl-4">Seleccione un modelo</option>
+                            {modelos.map(modelo => (
+                              <option key={modelo.id} value={modelo.id} className="pl-4">
                                 {modelo.nombre}
                               </option>
                             ))}
@@ -737,15 +799,14 @@ export default function CatalogoPage() {
                           </label>
                           <select
                             name="proveedorId"
-                            id="proveedor"
-                            value={formData.proveedorId}
+                            value={formData.proveedorId?.toString() || ''}
                             onChange={handleInputChange}
-                            className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
-                            required
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+                            required={formData.tipo === 'PRODUCTO'}
                           >
-                            <option value="">Seleccione un proveedor</option>
-                            {proveedores.map((proveedor) => (
-                              <option key={proveedor.id} value={proveedor.id}>
+                            <option value="" className="pl-4">Seleccione un proveedor</option>
+                            {proveedores.map(proveedor => (
+                              <option key={proveedor.id} value={proveedor.id} className="pl-4">
                                 {proveedor.nombre}
                               </option>
                             ))}
@@ -811,6 +872,26 @@ export default function CatalogoPage() {
                         className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
                       />
                     </div>
+
+                    {/* Selector de categoría oculto */}
+                    <div className="hidden">
+                      <label htmlFor="categoria" className="block text-sm font-medium text-gray-800">
+                        Categoría
+                      </label>
+                      <select
+                        name="categoriaId"
+                        value={formData.categoriaId?.toString() || ''}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      >
+                        <option value="">Seleccione una categoría</option>
+                        {categorias.map(categoria => (
+                          <option key={categoria.id} value={categoria.id}>
+                            {categoria.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -835,12 +916,14 @@ export default function CatalogoPage() {
                         garantiaValor: 0,
                         garantiaUnidad: 'dias',
                         tipoServicioId: 0,
-                        marcaId: 0,
-                        modeloId: 0,
-                        proveedorId: 0,
+                        marcaId: null,
+                        modeloId: null,
+                        proveedorId: null,
+                        stock: 0,
+                        precioPromedio: 0,
                         stockMaximo: 0,
                         stockMinimo: 0,
-                        categoriaId: '',
+                        categoriaId: null
                       });
                     }}
                     className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"

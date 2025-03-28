@@ -97,6 +97,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
     { href: '/dashboard/catalogo/status-reparacion', icon: HiClipboardList, text: 'Estados de Reparación', active: title.includes('Estados de Reparación') },
     { href: '/dashboard/catalogo/proveedores', icon: HiShoppingBag, text: 'Proveedores', active: title.includes('Proveedores') },
     { href: '/dashboard/catalogo/reparaciones-frecuentes', icon: HiClipboardCheck, text: 'Reparaciones Frecuentes', active: title.includes('Reparaciones Frecuentes') },
+    { href: '/dashboard/catalogo/check-list', icon: HiClipboardCheck, text: 'Checklist de Verificación', active: title.includes('Checklist de Verificación') },
   ];
 
   const inventarioLinks = [

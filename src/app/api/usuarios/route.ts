@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { UsuarioService } from '@/services/usuarioService';
 import { CreateUsuarioDTO, NivelUsuario } from '@/types/usuario';
+import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 // GET /api/usuarios
 export async function GET() {
@@ -29,41 +31,46 @@ export async function GET() {
 // POST /api/usuarios
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== NivelUsuario.ADMINISTRADOR) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
+    const body = await request.json();
+    const { email, nombre, apellidoPaterno, apellidoMaterno, password, nivel } = body;
 
-    const data = await request.json();
+    // Verificar si el usuario ya existe
+    const usuarioExistente = await prisma.usuario.findUnique({
+      where: { email }
+    });
 
-    // Validar campos requeridos
-    const requiredFields = ['email', 'password', 'nombre', 'apellidoPaterno', 'nivel'];
-    const missingFields = requiredFields.filter(field => !data[field]);
-    if (missingFields.length > 0) {
-      return NextResponse.json(
-        { error: `Campos requeridos faltantes: ${missingFields.join(', ')}` },
-        { status: 400 }
-      );
-    }
-
-    // Verificar si el email ya existe
-    const emailExists = await UsuarioService.emailExists(data.email);
-    if (emailExists) {
+    if (usuarioExistente) {
       return NextResponse.json(
         { error: 'El email ya está registrado' },
         { status: 400 }
       );
     }
 
-    const newUser = await UsuarioService.create(data as CreateUsuarioDTO);
-    return NextResponse.json(newUser, { status: 201 });
+    // Encriptar la contraseña
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    // Crear el usuario
+    const usuario = await prisma.usuario.create({
+      data: {
+        email,
+        nombre,
+        apellidoPaterno,
+        apellidoMaterno,
+        passwordHash,
+        nivel: nivel || 'TECNICO',
+        activo: true
+      }
+    });
+
+    // Omitir el passwordHash de la respuesta
+    const { passwordHash: _, ...usuarioSinPassword } = usuario;
+
+    return NextResponse.json(usuarioSinPassword);
   } catch (error) {
     console.error('Error al crear usuario:', error);
     return NextResponse.json(
-      { error: 'Error al crear usuario' },
+      { error: 'Error al crear el usuario' },
       { status: 500 }
     );
   }
