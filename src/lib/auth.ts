@@ -1,20 +1,21 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { prisma } from './prisma';
+import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { NivelUsuario } from '@/types/usuario';
 
 declare module 'next-auth' {
   interface User {
     id: string;
     email: string;
     nombre: string;
-    nivel: string;
+    role: NivelUsuario;
   }
 
   interface Session {
     user: User & {
       id: string;
-      nivel: string;
+      role: NivelUsuario;
     };
   }
 }
@@ -32,13 +33,14 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const usuario = await prisma.usuario.findUnique({
+        const usuario = await prisma.usuario.findFirst({
           where: {
-            email: credentials.email
+            email: credentials.email,
+            activo: true
           }
         });
 
-        if (!usuario || !usuario.activo) {
+        if (!usuario) {
           return null;
         }
 
@@ -51,15 +53,12 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = {
-          id: usuario.id.toString(),
+        return {
+          id: usuario.id,
           email: usuario.email,
-          nombre: `${usuario.nombre} ${usuario.apellidoPaterno}`,
-          nivel: usuario.nivel
+          nombre: usuario.nombre,
+          role: usuario.nivel
         };
-
-        console.log('Usuario autorizado:', user);
-        return user;
       }
     })
   ],
@@ -67,22 +66,20 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.nivel = user.nivel;
-        console.log('Token actualizado:', token);
+        token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.nivel = token.nivel as string;
-        console.log('Sesión actualizada:', session);
+        session.user.role = token.role as NivelUsuario;
       }
       return session;
     }
   },
   pages: {
-    signIn: '/login'
+    signIn: '/auth/login'
   },
   session: {
     strategy: 'jwt'

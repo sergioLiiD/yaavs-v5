@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { HiArrowUp, HiArrowDown, HiOutlineInformationCircle } from 'react-icons/hi';
 
 export default function DashboardPage() {

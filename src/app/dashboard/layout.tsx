@@ -19,6 +19,7 @@ export default function DashboardLayout({
     if (pathname.includes('/costos')) return 'Costos';
     if (pathname.includes('/inventario')) return 'Inventario';
     if (pathname.includes('/catalogo')) return 'Catálogo';
+    if (pathname.includes('/usuarios')) return 'Usuarios';
     return 'Dashboard';
   };
 

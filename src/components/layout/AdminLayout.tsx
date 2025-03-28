@@ -40,6 +40,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
   const [catalogoOpen, setCatalogoOpen] = useState(false);
   const [inventarioOpen, setInventarioOpen] = useState(false);
   const [costosOpen, setCostosOpen] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -65,6 +66,10 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
     setCostosOpen(!costosOpen);
   };
 
+  const toggleConfig = () => {
+    setConfigOpen(!configOpen);
+  };
+
   const handleSignOut = async () => {
     await signOut({ redirect: false });
     router.push('/auth/login');
@@ -80,6 +85,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
   ];
 
   const configLinks = [
+    { href: '/dashboard/usuarios', icon: HiUsers, text: 'Usuarios', active: title.includes('Usuarios') },
     { href: '/dashboard/configuracion', icon: HiCog, text: 'Configuración', active: title.includes('Configuración') },
     { href: '/dashboard/perfil', icon: HiUser, text: 'Mi Perfil', active: title.includes('Perfil') },
   ];

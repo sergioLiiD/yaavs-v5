@@ -3,57 +3,40 @@
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import { NivelUsuario } from '@/types/usuario';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRoles?: string[];
+  requiredNivel?: NivelUsuario;
 }
 
-export default function ProtectedRoute({ 
-  children, 
-  requiredRoles = [] 
-}: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requiredNivel }: ProtectedRouteProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    console.log('ProtectedRoute - Current pathname:', pathname);
-    console.log('ProtectedRoute - Session status:', status);
-    console.log('ProtectedRoute - Session data:', session);
+    console.log('ProtectedRoute - Status:', status);
+    console.log('ProtectedRoute - Session:', session);
+    console.log('ProtectedRoute - Required Nivel:', requiredNivel);
+    console.log('ProtectedRoute - User:', session?.user);
+    console.log('ProtectedRoute - User Role:', session?.user?.role);
     
-    // Si se está cargando la sesión, no hacer nada aún
-    if (status === 'loading') {
-      console.log('ProtectedRoute - Session is loading');
-      return;
-    }
-    
-    // Si no hay sesión, redirigir a la página de login
     if (status === 'unauthenticated') {
-      console.log('ProtectedRoute - User is unauthenticated, redirecting to login');
-      router.push(`/auth/login?callbackUrl=${encodeURIComponent(pathname || '/dashboard')}`);
+      console.log('ProtectedRoute - No autenticado, redirigiendo a login');
+      const callbackUrl = encodeURIComponent(pathname || '/dashboard');
+      router.push(`/auth/login?callbackUrl=${callbackUrl}`);
       return;
     }
-    
-    // Verificar el rol si se requiere
-    if (
-      status === 'authenticated' && 
-      requiredRoles.length > 0 && 
-      session?.user?.role && 
-      !requiredRoles.includes(session.user.role)
-    ) {
-      console.log('ProtectedRoute - User does not have required role:', {
-        userRole: session.user.role,
-        requiredRoles
-      });
-      router.push('/unauthorized');
-      return;
-    }
-    
-    console.log('ProtectedRoute - Access granted');
-  }, [status, session, router, pathname, requiredRoles]);
 
-  // Mientras se carga la sesión, mostrar un indicador de carga
+    if (session?.user && requiredNivel && session.user.role !== requiredNivel) {
+      console.log('ProtectedRoute - Nivel insuficiente, redirigiendo a dashboard');
+      console.log('ProtectedRoute - Nivel actual:', session.user.role);
+      console.log('ProtectedRoute - Nivel requerido:', requiredNivel);
+      router.push('/dashboard');
+    }
+  }, [session, status, router, pathname, requiredNivel]);
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -62,20 +45,13 @@ export default function ProtectedRoute({
     );
   }
 
-  // Si no tiene sesión, no mostrar nada (la redirección se maneja en el useEffect)
-  if (status === 'unauthenticated') {
+  if (!session?.user) {
     return null;
   }
 
-  // Si tiene rol requerido o no se especifica rol, mostrar el contenido
-  if (
-    status === 'authenticated' && 
-    (requiredRoles.length === 0 || 
-     (session?.user?.role && requiredRoles.includes(session.user.role)))
-  ) {
-    return <>{children}</>;
+  if (requiredNivel && session.user.role !== requiredNivel) {
+    return null;
   }
 
-  // Caso no manejado, no mostrar nada
-  return null;
+  return <>{children}</>;
 } 
