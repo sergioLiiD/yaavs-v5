@@ -8,13 +8,14 @@ export async function GET(req: NextRequest) {
   try {
     console.log('GET /api/catalogo/modelos - Iniciando...');
     
-    const session = await getServerSession(authOptions);
-    console.log('GET /api/catalogo/modelos - Session:', session?.user?.email);
+    // Comentamos la validación de sesión para tickets
+    // const session = await getServerSession(authOptions);
+    // console.log('GET /api/catalogo/modelos - Session:', session?.user?.email);
 
-    if (!session?.user) {
-      console.log('GET /api/catalogo/modelos - No autorizado');
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
+    // if (!session?.user) {
+    //   console.log('GET /api/catalogo/modelos - No autorizado');
+    //   return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    // }
 
     const { searchParams } = new URL(req.url);
     const marcaId = searchParams.get('marcaId');
