@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { HiX } from "react-icons/hi"
+import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -67,20 +68,38 @@ export function ReparacionFrecuenteDialog({
   onSubmit,
   initialData,
 }: ReparacionFrecuenteDialogProps) {
+  const [pasos, setPasos] = useState<{ id: string; descripcion: string; orden: number }[]>(
+    initialData?.pasos || []
+  );
+  const [productos, setProductos] = useState<{ id: string; productoId: number; cantidad: number; precioVenta: number; conceptoExtra?: string; precioConceptoExtra?: number }[]>(
+    initialData?.productos || []
+  );
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
-      nombre: "",
-      descripcion: "",
-      activo: true,
-      productos: [],
-      pasos: [],
+    defaultValues: {
+      nombre: initialData?.nombre || '',
+      descripcion: initialData?.descripcion || '',
+      activo: initialData?.activo ?? true,
+      productos: initialData?.productos || [],
+      pasos: initialData?.pasos || [],
     },
-  })
+  });
 
-  const [pasos, setPasos] = React.useState<Array<{ id: string; descripcion: string; orden: number }>>(
-    initialData?.pasos || []
-  )
+  // Actualizar el formulario cuando cambia initialData
+  React.useEffect(() => {
+    if (initialData) {
+      form.reset({
+        nombre: initialData.nombre,
+        descripcion: initialData.descripcion,
+        activo: initialData.activo,
+        productos: initialData.productos,
+        pasos: initialData.pasos,
+      });
+      setPasos(initialData.pasos);
+      setProductos(initialData.productos);
+    }
+  }, [initialData, form]);
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return

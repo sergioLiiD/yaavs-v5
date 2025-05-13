@@ -12,12 +12,14 @@ interface ReparacionFrecuente {
   id: string;
   nombre: string;
   descripcion?: string;
-  activo?: boolean;
+  activo: boolean;
   productos: Array<{
     id: string;
     productoId: number;
     cantidad: number;
     precioVenta: number;
+    conceptoExtra?: string;
+    precioConceptoExtra?: number;
   }>;
   pasos: Array<{
     id: string;
@@ -36,7 +38,25 @@ export default function ReparacionesFrecuentesPage() {
   
   // Estado para controlar el modal
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentReparacion, setCurrentReparacion] = useState<Partial<ReparacionFrecuente>>({});
+  const [currentReparacion, setCurrentReparacion] = useState<{
+    id?: string;
+    nombre: string;
+    descripcion?: string;
+    activo: boolean;
+    productos: Array<{
+      id: string;
+      productoId: number;
+      cantidad: number;
+      precioVenta: number;
+      conceptoExtra?: string;
+      precioConceptoExtra?: number;
+    }>;
+    pasos: Array<{
+      id: string;
+      descripcion: string;
+      orden: number;
+    }>;
+  } | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(false);
 
   // Cargar las reparaciones frecuentes al montar el componente
@@ -68,12 +88,30 @@ export default function ReparacionesFrecuentesPage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setCurrentReparacion({});
+    setCurrentReparacion(undefined);
     setIsEditing(false);
   };
 
   const handleEdit = (reparacion: ReparacionFrecuente) => {
-    setCurrentReparacion(reparacion);
+    setCurrentReparacion({
+      id: reparacion.id,
+      nombre: reparacion.nombre,
+      descripcion: reparacion.descripcion || '',
+      activo: reparacion.activo,
+      productos: reparacion.productos.map(p => ({
+        id: p.id,
+        productoId: p.productoId,
+        cantidad: p.cantidad,
+        precioVenta: p.precioVenta,
+        conceptoExtra: p.conceptoExtra,
+        precioConceptoExtra: p.precioConceptoExtra
+      })),
+      pasos: reparacion.pasos.map(p => ({
+        id: p.id,
+        descripcion: p.descripcion,
+        orden: p.orden
+      }))
+    });
     setIsEditing(true);
     openModal();
   };
@@ -92,7 +130,7 @@ export default function ReparacionesFrecuentesPage() {
 
   const handleSubmit = async (data: any) => {
     try {
-      if (isEditing && currentReparacion.id) {
+      if (isEditing && currentReparacion?.id) {
         // Actualizar una reparación frecuente existente
         const response = await axios.put(`/api/reparaciones-frecuentes/${currentReparacion.id}`, data);
         setReparacionesFrecuentes(reparacionesFrecuentes.map(rep => 

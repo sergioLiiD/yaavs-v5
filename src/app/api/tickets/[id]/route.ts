@@ -1,126 +1,198 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    console.log('=== INICIO DE LA CONSULTA ===');
+    console.log('ID del ticket:', params.id);
+    
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      console.log('No hay sesión de usuario');
+      return new NextResponse('No autorizado', { status: 401 });
+    }
+    console.log('Usuario autenticado:', session.user);
+
+    // 1. Verificar el ticket básico
+    console.log('1. Verificando ticket básico...');
+    const ticketBasico = await prisma.ticket.findUnique({
+      where: { id: parseInt(params.id) },
+      select: {
+        id: true,
+        tecnicoAsignadoId: true
+      }
+    });
+    console.log('Ticket básico:', ticketBasico);
+
+    if (!ticketBasico) {
+      console.log('Ticket no encontrado');
+      return new NextResponse('Ticket no encontrado', { status: 404 });
+    }
+
+    // 2. Verificar la reparación
+    console.log('2. Verificando reparación...');
+    const reparacion = await prisma.reparacion.findUnique({
+      where: { ticketId: parseInt(params.id) },
+      include: {
+        tecnico: true
+      }
+    });
+    console.log('Reparación:', reparacion);
+
+    // 3. Obtener el ticket completo
+    console.log('3. Obteniendo ticket completo...');
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: parseInt(params.id) },
+      include: {
+        cliente: true,
+        tipoServicio: true,
+        modelo: {
+          include: {
+            marca: true,
+          },
+        },
+        estatusReparacion: true,
+        reparacion: {
+          include: {
+            tecnico: true,
+            checklistItems: true
+          }
+        },
+        tecnicoAsignado: true,
+        dispositivo: true,
+        creador: true,
+      },
+    });
+
+    console.log('=== FIN DE LA CONSULTA ===');
+    console.log('Ticket completo:', JSON.stringify(ticket, null, 2));
+
+    if (!ticket) {
+      console.log('Error al obtener el ticket completo');
+      return new NextResponse('Error al obtener el ticket', { status: 500 });
+    }
+
+    return NextResponse.json(ticket);
+  } catch (error) {
+    console.error('=== ERROR DETALLADO ===');
+    console.error('Error completo:', error);
+    
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error('Error de Prisma:', {
+        code: error.code,
+        message: error.message,
+        meta: error.meta
+      });
+      return new NextResponse(
+        `Error de base de datos: ${error.message}`,
+        { status: 500 }
+      );
+    }
+    
+    return new NextResponse(
+      `Error interno del servidor: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return new NextResponse('No autorizado', { status: 401 });
     }
 
-    const ticketId = params.id;
+    const body = await request.json();
+    const { 
+      descripcion,
+      tecnicoAsignadoId,
+      estatusReparacionId,
+      diagnostico,
+      imei,
+      capacidad,
+      color,
+      fechaCompra,
+      codigoDesbloqueo,
+      redCelular
+    } = body;
 
-    // Primero consultamos directamente la tabla de clientes para ver qué datos tenemos
-    const clienteQuery = `
-      SELECT c.id, c.nombre, c."apellidoPaterno", c."apellidoMaterno"
-      FROM "Cliente" c
-      INNER JOIN tickets t ON t.cliente_id = c.id
-      WHERE t.id = $1
-    `;
+    // Primero, obtener el ticket actual para verificar que existe
+    const ticketExistente = await prisma.ticket.findUnique({
+      where: { id: parseInt(params.id) },
+      include: {
+        dispositivo: true
+      }
+    });
 
-    const clienteResult = await db.query(clienteQuery, [ticketId]);
-    
-    if (clienteResult.rows.length > 0) {
-      console.log('DATOS DEL CLIENTE (CONSULTA DIRECTA):', JSON.stringify(clienteResult.rows[0], null, 2));
-    }
-
-    // Consulta para obtener información completa del ticket
-    // Concatenamos directamente el nombre completo en la consulta SQL
-    const query = `
-      SELECT 
-        t.*,
-        c.id as cliente_id,
-        c.nombre as cliente_nombre,
-        c."apellidoPaterno" as cliente_apellido_paterno,
-        c."apellidoMaterno" as cliente_apellido_materno,
-        CONCAT(c.nombre, ' ', c."apellidoPaterno", ' ', COALESCE(c."apellidoMaterno", '')) as nombre_completo,
-        tr.nombre as tipo_reparacion_nombre,
-        u.id as tecnico_id,
-        u.nombre as tecnico_nombre
-      FROM 
-        tickets t
-      LEFT JOIN 
-        "Cliente" c ON t.cliente_id = c.id
-      LEFT JOIN 
-        tipos_reparacion tr ON t.tipo_reparacion_id = tr.id
-      LEFT JOIN 
-        usuarios u ON t.tecnico_id = u.id
-      WHERE 
-        t.id = $1
-    `;
-
-    const result = await db.query(query, [ticketId]);
-
-    if (result.rows.length === 0) {
+    if (!ticketExistente) {
       return new NextResponse('Ticket no encontrado', { status: 404 });
     }
 
-    const ticket = result.rows[0];
-    
-    console.log('Datos del cliente en el resultado del ticket:');
-    console.log({
-      cliente_id: ticket.cliente_id,
-      cliente_nombre: ticket.cliente_nombre,
-      cliente_apellido_paterno: ticket.cliente_apellido_paterno,
-      cliente_apellido_materno: ticket.cliente_apellido_materno,
-      nombre_completo: ticket.nombre_completo
-    });
-    
-    // También hacemos una consulta adicional para verificar todos los clientes
-    const todosClientesQuery = `
-      SELECT id, nombre, "apellidoPaterno", "apellidoMaterno" 
-      FROM "Cliente" 
-      LIMIT 5
-    `;
-    
-    const todosClientesResult = await db.query(todosClientesQuery);
-    console.log('MUESTRA DE 5 CLIENTES EN LA BASE DE DATOS:');
-    todosClientesResult.rows.forEach((cliente, index) => {
-      console.log(`Cliente ${index + 1}:`, JSON.stringify(cliente, null, 2));
-    });
-    
-    // Construcción del nombre completo (importante para mostrar en dropdown)
-    const nombreCompleto = ticket.nombre_completo ? ticket.nombre_completo.trim() : (
-      `${ticket.cliente_nombre || ''} ${ticket.cliente_apellido_paterno || ''} ${ticket.cliente_apellido_materno || ''}`.trim()
-    );
-    
-    // Formatear la respuesta usando el nombre_completo generado
-    const formattedTicket = {
-      id: ticket.id,
-      cliente: {
-        id: ticket.cliente_id,
-        nombre: nombreCompleto, // Aquí usamos el nombre completo
-        // Mantener apellidos vacío, ya no lo usamos porque incluimos todo en nombre
-        apellidos: ''
+    // Actualizar el ticket
+    const ticket = await prisma.ticket.update({
+      where: { id: parseInt(params.id) },
+      data: {
+        descripcion,
+        tecnicoAsignadoId: parseInt(tecnicoAsignadoId),
+        estatusReparacionId: parseInt(estatusReparacionId),
       },
-      tipoReparacion: ticket.tipo_reparacion_nombre,
-      marca: ticket.marca,
-      modelo: ticket.modelo,
-      imei: ticket.imei,
-      capacidad: ticket.capacidad,
-      color: ticket.color,
-      fechaCompra: ticket.fecha_compra,
-      codigoDesbloqueo: ticket.codigo_desbloqueo,
-      redCelular: ticket.red_celular,
-      tecnico: {
-        id: ticket.tecnico_id,
-        nombre: ticket.tecnico_nombre
-      },
-      fechaEntrega: ticket.fecha_entrega,
-      prioridad: ticket.prioridad,
-      estado: ticket.estado
-    };
-
-    console.log('Ticket formateado para enviar:', {
-      id: formattedTicket.id,
-      cliente: formattedTicket.cliente
     });
 
-    return NextResponse.json(formattedTicket);
+    // Actualizar el dispositivo si existe, o crearlo si no existe
+    if (ticketExistente.dispositivo) {
+      await prisma.dispositivo.update({
+        where: { id: ticketExistente.dispositivo.id },
+        data: {
+          imei,
+          capacidad,
+          color,
+          fechaCompra: fechaCompra ? new Date(fechaCompra) : null,
+          codigoDesbloqueo,
+          redCelular,
+        },
+      });
+    } else {
+      await prisma.dispositivo.create({
+        data: {
+          imei,
+          capacidad,
+          color,
+          fechaCompra: fechaCompra ? new Date(fechaCompra) : null,
+          codigoDesbloqueo,
+          redCelular,
+          ticketId: ticket.id,
+        },
+      });
+    }
+
+    // Actualizar o crear la reparación si hay diagnóstico
+    if (diagnostico) {
+      await prisma.reparacion.upsert({
+        where: { ticketId: ticket.id },
+        update: {
+          diagnostico,
+        },
+        create: {
+          ticketId: ticket.id,
+          tecnicoId: parseInt(session.user.id),
+          diagnostico,
+        },
+      });
+    }
+
+    return NextResponse.json(ticket);
   } catch (error) {
-    console.error('Error al obtener el ticket:', error);
-    return new NextResponse('Error interno del servidor', { status: 500 });
+    console.error('Error al actualizar el ticket:', error);
+    return new NextResponse(`Error interno del servidor: ${error instanceof Error ? error.message : 'Error desconocido'}`, { status: 500 });
   }
 } 

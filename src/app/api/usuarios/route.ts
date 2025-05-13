@@ -7,17 +7,33 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
 // GET /api/usuarios
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== NivelUsuario.ADMINISTRADOR) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
+    if (!session) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const usuarios = await UsuarioService.getAll();
+    const { searchParams } = new URL(request.url);
+    const rol = searchParams.get('rol') as NivelUsuario;
+
+    const usuarios = await prisma.usuario.findMany({
+      where: rol ? {
+        nivel: rol
+      } : undefined,
+      select: {
+        id: true,
+        nombre: true,
+        apellidoPaterno: true,
+        apellidoMaterno: true,
+        email: true,
+        nivel: true
+      },
+      orderBy: {
+        nombre: 'asc'
+      }
+    });
+
     return NextResponse.json(usuarios);
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
