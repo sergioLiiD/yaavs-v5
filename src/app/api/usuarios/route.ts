@@ -27,7 +27,8 @@ export async function GET(request: Request) {
         apellidoPaterno: true,
         apellidoMaterno: true,
         email: true,
-        nivel: true
+        nivel: true,
+        activo: true
       },
       orderBy: {
         nombre: 'asc'

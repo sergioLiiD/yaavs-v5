@@ -3,56 +3,82 @@
 import { useSession } from 'next-auth/react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { HiArrowUp, HiArrowDown, HiOutlineInformationCircle } from 'react-icons/hi';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+interface Stat {
+  title: string;
+  value: string;
+  change: string;
+  isUp: boolean;
+  description: string;
+}
+
+interface RecentTicket {
+  id: number;
+  numeroTicket: string;
+  cliente: string;
+  modelo: string;
+  problema: string;
+  estado: string;
+}
+
+interface DashboardData {
+  stats: Stat[];
+  recentTickets: RecentTicket[];
+}
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Datos de ejemplo para tickets recientes
-  const recentTickets = [
-    { id: 'TK-2023-001', cliente: 'Juan Pérez', modelo: 'iPhone 13', problema: 'Pantalla rota', estado: 'En diagnóstico' },
-    { id: 'TK-2023-002', cliente: 'María Gómez', modelo: 'Samsung S21', problema: 'No carga', estado: 'Presupuesto enviado' },
-    { id: 'TK-2023-003', cliente: 'Carlos López', modelo: 'Xiaomi Mi 11', problema: 'Batería', estado: 'En reparación' },
-    { id: 'TK-2023-004', cliente: 'Ana Martínez', modelo: 'iPhone 12', problema: 'No enciende', estado: 'Reparado' },
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await fetch('/api/dashboard/stats');
+        if (!response.ok) {
+          throw new Error('Error al cargar los datos del dashboard');
+        }
+        const dashboardData = await response.json();
+        setData(dashboardData);
+      } catch (err) {
+        console.error('Error:', err);
+        setError('Error al cargar los datos del dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Datos de ejemplo para las estadísticas
-  const stats = [
-    { 
-      title: 'Tickets Abiertos', 
-      value: '24', 
-      change: '+12%', 
-      isUp: true,
-      description: 'Comparado con el mes anterior'
-    },
-    { 
-      title: 'En Reparación', 
-      value: '12', 
-      change: '+5%', 
-      isUp: true,
-      description: 'Comparado con el mes anterior'
-    },
-    { 
-      title: 'Reparados', 
-      value: '18', 
-      change: '-3%', 
-      isUp: false,
-      description: 'Comparado con el mes anterior'
-    },
-    { 
-      title: 'Por Entregar', 
-      value: '5', 
-      change: '+2%', 
-      isUp: true,
-      description: 'Comparado con el mes anterior'
-    },
-  ];
+    if (status === 'authenticated') {
+      fetchDashboardData();
+    }
+  }, [status]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-red-500">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <ProtectedRoute>
       <div className="space-y-6">
         {/* Stats cards */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat, index) => (
+          {data?.stats.map((stat, index) => (
             <div key={index} className="bg-white p-4 rounded-lg shadow">
               <div className="flex flex-col">
                 <div className="text-gray-500 text-sm">{stat.title}</div>
@@ -81,9 +107,12 @@ export default function DashboardPage() {
             <h5 className="text-xl font-bold leading-none text-gray-900">
               Tickets Recientes
             </h5>
-            <a href="/dashboard/tickets" className="px-3 py-1.5 text-xs text-gray-700 bg-gray-100 hover:bg-gray-200 rounded">
+            <button 
+              onClick={() => router.push('/dashboard/tickets')}
+              className="px-3 py-1.5 text-xs text-gray-700 bg-gray-100 hover:bg-gray-200 rounded"
+            >
               Ver todos
-            </a>
+            </button>
           </div>
           <div className="relative overflow-x-auto">
             <table className="w-full text-sm text-left text-gray-500">
@@ -100,10 +129,10 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {recentTickets.map((ticket) => (
+                {data?.recentTickets.map((ticket) => (
                   <tr key={ticket.id} className="bg-white border-b hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                      {ticket.id}
+                      {ticket.numeroTicket}
                     </td>
                     <td className="px-6 py-4">{ticket.cliente}</td>
                     <td className="px-6 py-4">{ticket.modelo}</td>
@@ -114,9 +143,12 @@ export default function DashboardPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <a href={`/dashboard/tickets/${ticket.id}`} className="font-medium text-blue-600 hover:underline">
+                      <button 
+                        onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
+                        className="font-medium text-blue-600 hover:underline"
+                      >
                         Ver
-                      </a>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -137,8 +169,10 @@ function getStatusClass(status: string): string {
       return 'bg-blue-100 text-blue-800';
     case 'En reparación':
       return 'bg-purple-100 text-purple-800';
-    case 'Reparado':
+    case 'Reparación Completada':
       return 'bg-green-100 text-green-800';
+    case 'Por Entregar':
+      return 'bg-orange-100 text-orange-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }

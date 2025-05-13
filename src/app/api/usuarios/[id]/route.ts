@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { UsuarioService } from '@/services/usuarioService';
-import { UpdateUsuarioDTO } from '@/types/usuario';
+import { UpdateUsuarioDTO, NivelUsuario } from '@/types/usuario';
 
 interface RouteParams {
   params: {
@@ -49,7 +49,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.nivel !== 'ADMINISTRADOR') {
+    if (!session || session.user.role !== NivelUsuario.ADMINISTRADOR) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
@@ -65,6 +65,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 
     const data = await request.json();
+    console.log('Datos recibidos para actualización:', data);
 
     // Verificar si el usuario existe
     const existingUser = await UsuarioService.getById(id);
@@ -86,7 +87,17 @@ export async function PUT(request: Request, { params }: RouteParams) {
       }
     }
 
-    const updatedUser = await UsuarioService.update(id, data as UpdateUsuarioDTO);
+    // Preparar los datos de actualización
+    const updateData = {
+      ...data,
+      activo: data.activo !== undefined ? data.activo : existingUser.activo
+    };
+
+    console.log('Datos a actualizar:', updateData);
+
+    const updatedUser = await UsuarioService.update(id, updateData as UpdateUsuarioDTO);
+    console.log('Usuario actualizado:', updatedUser);
+    
     return NextResponse.json(updatedUser);
   } catch (error) {
     console.error('Error al actualizar usuario:', error);

@@ -34,6 +34,7 @@ export function ToggleUsuarioStatusDialog({
         },
         credentials: 'include',
         body: JSON.stringify({
+          ...usuario,
           activo: !usuario.activo
         }),
       });
