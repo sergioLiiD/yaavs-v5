@@ -17,12 +17,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <QueryProvider>
-      <AuthProvider>
-        <div className={inter.className}>
-          {children}
-        </div>
-      </AuthProvider>
-    </QueryProvider>
+    <html lang="es">
+      <body className={inter.className}>
+        <QueryProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </QueryProvider>
+      </body>
+    </html>
   );
 }
