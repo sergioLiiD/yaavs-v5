@@ -3,6 +3,8 @@ import { ClienteService } from '@/services/clienteService';
 import { verify } from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // Obtener el token de la cookie

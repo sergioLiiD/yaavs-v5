@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const modeloId = searchParams.get('modeloId');
+    const modeloId = req.nextUrl.searchParams.get('modeloId');
 
     if (!modeloId) {
       return NextResponse.json(

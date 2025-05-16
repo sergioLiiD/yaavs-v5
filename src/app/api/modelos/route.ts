@@ -1,11 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 
 // GET: Obtener todos los modelos o filtrados por marca - Sin autenticación
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     // Obtener parámetros de consulta
-    const { searchParams } = new URL(request.url);
-    const marcaId = searchParams.get('marcaId');
+    const marcaId = request.nextUrl.searchParams.get('marcaId');
 
     console.log('API: Recibiendo solicitud de modelos. Parámetro marcaId:', marcaId);
 

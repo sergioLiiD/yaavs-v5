@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function ClienteLoginPage() {
+function ClienteLoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -123,5 +123,13 @@ export default function ClienteLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ClienteLoginPage() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <ClienteLoginForm />
+    </Suspense>
   );
 } 
