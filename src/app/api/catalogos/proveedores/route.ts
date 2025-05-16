@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       data: {
         tipo: data.tipo,
         nombre: data.nombre,
-        personaResponsable: data.personaResponsable,
+        contacto: data.personaResponsable || data.nombre,
         telefono: data.telefono,
         email: data.email,
         direccion: data.direccion,

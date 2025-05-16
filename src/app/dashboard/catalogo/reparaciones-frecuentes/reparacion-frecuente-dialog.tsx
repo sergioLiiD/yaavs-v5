@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { PlusIcon, TrashIcon, GripVertical } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, Bars3Icon } from '@heroicons/react/24/outline';
 import { ProductosSelector } from '@/components/reparaciones/productos-selector';
 
 const formSchema = z.object({
@@ -144,7 +144,7 @@ export function ReparacionFrecuenteDialog({ open, onOpenChange, reparacion }: Re
                               className="flex items-center gap-2 mb-2"
                             >
                               <div {...provided.dragHandleProps}>
-                                <GripVertical className="h-5 w-5 text-gray-400" />
+                                <Bars3Icon className="h-5 w-5 text-gray-400" />
                               </div>
                               <Input
                                 value={paso.descripcion}

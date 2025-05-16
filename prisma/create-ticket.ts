@@ -20,7 +20,7 @@ async function main() {
         clienteId: 1,
         tipoServicioId: 1,
         modeloId: 1,
-        descripcion: 'iPhone 16 Pro con pantalla rota',
+        descripcionProblema: 'iPhone 16 Pro con pantalla rota',
         estatusReparacionId: estadoRecibido.id,
         creadorId: 1,
         tecnicoAsignadoId: 1,

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/db/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function POST(
   request: Request,
@@ -22,7 +23,11 @@ export async function POST(
       where: { id: ticketId },
       include: {
         estatusReparacion: true,
-        entrega: true,
+        entrega: {
+          include: {
+            direccionEntrega: true
+          }
+        },
         direccion: true
       }
     });
@@ -62,8 +67,8 @@ export async function POST(
         ticketId: ticketId
       },
       create: {
-        ticketId: ticketId,
-        tipoEntrega: tipoEntrega,
+        ticket: { connect: { id: ticketId } },
+        tipoEntrega: tipoEntrega as 'DOMICILIO' | 'OFICINA',
         observaciones: body.observaciones,
         direccionEntrega: tipoEntrega === 'DOMICILIO' ? {
           create: {

@@ -120,7 +120,6 @@ export async function PUT(
       data: {
         nombre: body.nombre,
         descripcion: body.descripcion || null,
-        imagen: body.imagen || null,
         marcaId: Number(body.marcaId),
         activo: body.activo !== undefined ? body.activo : true
       }
@@ -169,7 +168,6 @@ export async function DELETE(
       where: { id },
       include: {
         tickets: true,
-        problemas: true,
         productos: true
       }
     });
@@ -187,14 +185,6 @@ export async function DELETE(
           error: 'No se puede eliminar el modelo porque tiene tickets asociados',
           count: modelo.tickets.length
         },
-        { status: 400 }
-      );
-    }
-
-    if (modelo.problemas.length > 0) {
-      console.log('DELETE /api/catalogo/modelos/[id] - Modelo tiene problemas asociados');
-      return NextResponse.json(
-        { error: 'No se puede eliminar el modelo porque tiene problemas asociados' },
         { status: 400 }
       );
     }

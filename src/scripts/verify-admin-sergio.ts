@@ -22,10 +22,10 @@ async function verifyAdminUser() {
     console.log('Activo:', usuario.activo);
 
     // Si no es administrador, actualizarlo
-    if (usuario.nivel !== NivelUsuario.ADMINISTRADOR) {
+    if (usuario.nivel !== 'ADMINISTRADOR') {
       await prisma.usuario.update({
         where: { id: usuario.id },
-        data: { nivel: NivelUsuario.ADMINISTRADOR }
+        data: { nivel: 'ADMINISTRADOR' }
       });
       console.log('\nUsuario actualizado a nivel ADMINISTRADOR');
     } else {

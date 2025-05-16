@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
         codigoPostal: body.direccion.codigoPostal,
         latitud: body.direccion.latitud,
         longitud: body.direccion.longitud,
-        ticketId: ticket.id
+        ticket: { connect: { id: ticket.id } }
       }
     });
 

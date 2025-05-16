@@ -132,6 +132,7 @@ export class ClienteService {
       });
 
       if (!cliente) return null;
+      if (!cliente.passwordHash) return null;
 
       const isValid = await bcrypt.compare(password, cliente.passwordHash);
       if (!isValid) return null;

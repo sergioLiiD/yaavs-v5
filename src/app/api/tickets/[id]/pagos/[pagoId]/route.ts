@@ -48,7 +48,7 @@ export async function DELETE(
 
       // Actualizar el presupuesto
       if (ticket.presupuesto) {
-        const totalPagos = await tx.$queryRaw`
+        const totalPagos = await tx.$queryRaw<{ total: number }[]>`
           SELECT COALESCE(SUM(monto), 0) as total
           FROM "pagos"
           WHERE "ticketId" = ${ticketId}

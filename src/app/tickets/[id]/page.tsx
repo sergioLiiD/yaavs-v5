@@ -17,13 +17,32 @@ interface PageProps {
 
 async function getTicket(id: string): Promise<Ticket | null> {
   const ticket = await prisma.ticket.findUnique({
-    where: {
-      id: parseInt(id),
-    },
+    where: { id: parseInt(id) },
     include: {
+      cliente: true,
+      tipoServicio: true,
+      modelo: {
+        include: {
+          marca: true
+        }
+      },
       estatusReparacion: true,
-      reparacion: true,
-    },
+      tecnicoAsignado: true,
+      dispositivo: true,
+      creador: true,
+      reparacion: {
+        include: {
+          tecnico: true,
+          checklistItems: true,
+          piezas: {
+            include: {
+              pieza: true
+            }
+          }
+        }
+      },
+      presupuesto: true
+    }
   });
 
   return ticket;
@@ -74,7 +93,7 @@ export default async function TicketPage({ params }: PageProps) {
           </TabsContent>
 
           <TabsContent value="presupuesto">
-            <PresupuestoSection ticket={ticket} onUpdate={() => {}} />
+            <PresupuestoSection ticketId={ticket.id} onUpdate={() => {}} />
           </TabsContent>
 
           <TabsContent value="reparacion">

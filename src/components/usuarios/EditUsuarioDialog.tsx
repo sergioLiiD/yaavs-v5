@@ -27,6 +27,8 @@ interface EditUsuarioDialogProps {
   onUsuarioUpdated: () => void;
 }
 
+const NIVELES_USUARIO = ['ADMINISTRADOR', 'GERENTE', 'TECNICO', 'RECEPCIONISTA'] as const;
+
 export function EditUsuarioDialog({
   usuario,
   open,
@@ -38,7 +40,7 @@ export function EditUsuarioDialog({
     apellidoPaterno: usuario?.apellidoPaterno || '',
     apellidoMaterno: usuario?.apellidoMaterno || '',
     email: usuario?.email || '',
-    nivel: usuario?.nivel || NivelUsuario.TECNICO,
+    nivel: usuario?.nivel || 'TECNICO',
     password: '',
     confirmPassword: '',
   });
@@ -145,10 +147,10 @@ export function EditUsuarioDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NivelUsuario.ADMINISTRADOR}>Administrador</SelectItem>
-                  <SelectItem value={NivelUsuario.GERENTE}>Gerente</SelectItem>
-                  <SelectItem value={NivelUsuario.TECNICO}>Técnico</SelectItem>
-                  <SelectItem value={NivelUsuario.ATENCION_CLIENTE}>Atención al Cliente</SelectItem>
+                  <SelectItem value="ADMINISTRADOR">Administrador</SelectItem>
+                  <SelectItem value="GERENTE">Gerente</SelectItem>
+                  <SelectItem value="TECNICO">Técnico</SelectItem>
+                  <SelectItem value="RECEPCIONISTA">Recepcionista</SelectItem>
                 </SelectContent>
               </Select>
             </div>

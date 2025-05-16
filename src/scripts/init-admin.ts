@@ -8,7 +8,7 @@ async function createAdminUser() {
     const password = 'Admin123!';
     const nombre = 'Administrador';
     const apellidoPaterno = 'Sistema';
-    const nivel = NivelUsuario.ADMINISTRADOR;
+    const nivel = 'ADMINISTRADOR';
 
     // Verificar si el usuario ya existe
     const existingUser = await prisma.usuario.findFirst({

@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { CreateUsuarioDTO, UpdateUsuarioDTO, Usuario } from '@/types/usuario';
 import bcrypt from 'bcryptjs';
+import { sql } from '@vercel/postgres';
+import { NivelUsuario } from '@prisma/client';
 
 export class UsuarioService {
   // Obtener todos los usuarios
@@ -66,7 +68,7 @@ export class UsuarioService {
         nombre: data.nombre,
         apellidoPaterno: data.apellidoPaterno,
         apellidoMaterno: data.apellidoMaterno,
-        nivel: data.nivel,
+        nivel: data.nivel as NivelUsuario,
         activo: data.activo ?? true
       },
       select: {

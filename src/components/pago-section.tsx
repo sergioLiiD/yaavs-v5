@@ -89,7 +89,7 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
   const calcularSaldo = () => {
     if (!presupuesto) return 0;
     const total = calcularTotal();
-    const pagosRealizados = pagos?.reduce((sum, pago) => sum + pago.monto, 0) || 0;
+    const pagosRealizados = pagos?.reduce((sum: number, pago: Pago) => sum + pago.monto, 0) || 0;
     return total - pagosRealizados;
   };
 
@@ -283,7 +283,7 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
               </div>
               <div className="flex justify-between">
                 <span>Pagado:</span>
-                <span>${(pagos?.reduce((sum, pago) => sum + pago.monto, 0) || 0).toFixed(2)}</span>
+                <span>${(pagos?.reduce((sum: number, pago: Pago) => sum + pago.monto, 0) || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-xl font-bold text-red-600">
                 <span>Saldo pendiente:</span>

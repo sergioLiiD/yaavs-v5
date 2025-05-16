@@ -1,9 +1,4 @@
-export enum NivelUsuario {
-  ADMINISTRADOR = 'ADMINISTRADOR',
-  GERENTE = 'GERENTE',
-  TECNICO = 'TECNICO',
-  ATENCION_CLIENTE = 'ATENCION_CLIENTE'
-}
+export type NivelUsuario = 'ADMINISTRADOR' | 'GERENTE' | 'TECNICO' | 'ATENCION_CLIENTE';
 
 export interface Usuario {
   id: number;

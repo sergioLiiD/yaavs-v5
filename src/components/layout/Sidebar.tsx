@@ -133,7 +133,7 @@ const Sidebar: React.FC = () => {
                 
                 {hasSubmenu && isSubmenuOpen && (
                   <div className="ml-4 mt-1 space-y-1">
-                    {item.submenu.map((subItem) => {
+                    {item.submenu?.map((subItem) => {
                       const isSubItemActive = pathname === subItem.href || pathname?.startsWith(`${subItem.href}/`);
                       return (
                         <Link

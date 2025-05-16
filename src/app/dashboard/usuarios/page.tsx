@@ -26,6 +26,8 @@ import {
 import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 
+const NIVELES_USUARIO = ['ADMINISTRADOR', 'GERENTE', 'TECNICO', 'RECEPCIONISTA'] as const;
+
 export default function UsuariosPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -42,7 +44,7 @@ export default function UsuariosPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    nivel: NivelUsuario.ATENCION_CLIENTE,
+    nivel: 'ATENCION_CLIENTE',
     activo: true
   });
   const [isEditing, setIsEditing] = useState(false);
@@ -55,7 +57,7 @@ export default function UsuariosPage() {
     }
 
     if (status === 'authenticated' && session?.user) {
-      if (session.user.role !== NivelUsuario.ADMINISTRADOR) {
+      if (session.user.role !== 'ADMINISTRADOR') {
         router.push('/dashboard');
         return;
       }
@@ -90,7 +92,7 @@ export default function UsuariosPage() {
       email: '',
       password: '',
       confirmPassword: '',
-      nivel: NivelUsuario.ATENCION_CLIENTE,
+      nivel: 'ATENCION_CLIENTE',
       activo: true
     });
   };
@@ -104,7 +106,7 @@ export default function UsuariosPage() {
       email: '',
       password: '',
       confirmPassword: '',
-      nivel: NivelUsuario.ATENCION_CLIENTE,
+      nivel: 'ATENCION_CLIENTE',
       activo: true
     });
   };
@@ -277,7 +279,7 @@ export default function UsuariosPage() {
                     <SelectValue placeholder="Seleccione un nivel" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.values(NivelUsuario).map((nivel) => (
+                    {NIVELES_USUARIO.map((nivel) => (
                       <SelectItem key={nivel} value={nivel}>
                         {nivel}
                       </SelectItem>

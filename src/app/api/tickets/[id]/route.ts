@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -175,11 +175,7 @@ export async function PUT(
         tecnicoAsignado: true,
         dispositivo: true,
         direccion: true,
-        presupuesto: {
-          include: {
-            conceptos: true
-          }
-        },
+        presupuesto: true,
         pagos: {
           orderBy: {
             fecha: 'desc'

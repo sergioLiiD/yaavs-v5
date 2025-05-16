@@ -13,7 +13,7 @@ interface RouteParams {
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.nivel !== 'ADMINISTRADOR') {
+    if (!session || session.user.role !== 'ADMINISTRADOR') {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
@@ -49,7 +49,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== NivelUsuario.ADMINISTRADOR) {
+    if (!session || session.user.role !== 'ADMINISTRADOR') {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
@@ -111,7 +111,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.nivel !== 'ADMINISTRADOR') {
+    if (!session || session.user.role !== 'ADMINISTRADOR') {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }

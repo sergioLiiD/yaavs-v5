@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
     const usuarios = await prisma.usuario.findMany({
       where: rol ? {
-        nivel: rol
+        nivel: rol as any
       } : undefined,
       select: {
         id: true,

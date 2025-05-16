@@ -17,15 +17,16 @@ export type ReparacionWithChecklist = {
   diagnostico: string | null;
   observaciones: string | null;
   fechaInicio: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  fechaDiagnostico: Date | null;
+  fechaPausa: Date | null;
+  fechaReanudacion: Date | null;
   fechaFin: Date | null;
-  fechaPresupuesto: Date | null;
-  piezasNecesarias: string | null;
-  presupuesto: number | null;
+  fotos: string[];
+  videos: string[];
+  checklist: any | null;
   saludBateria: number | null;
   versionSO: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   checklistItems: ChecklistDiagnostico[];
   tecnico: {
     id: number;
@@ -41,7 +42,7 @@ export type ReparacionWithChecklist = {
       id: number;
       nombre: string;
       descripcion: string | null;
-    };
+    } | null;
   }>;
 };
 
@@ -101,12 +102,14 @@ export type Ticket = {
   } | null;
   dispositivo: {
     id: number;
-    imei: string | null;
-    capacidad: string | null;
     color: string | null;
+    capacidad: string | null;
     fechaCompra: Date | null;
     codigoDesbloqueo: string | null;
     redCelular: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    ticketId: number | null;
   } | null;
   creador: {
     id: number;
@@ -114,4 +117,32 @@ export type Ticket = {
     apellidoPaterno: string;
     apellidoMaterno: string | null;
   };
+  presupuesto: {
+    id: number;
+    ticketId: number;
+    manoDeObra: number;
+    subtotal: number;
+    iva: number;
+    total: number;
+    aprobado: boolean;
+    fechaAprobacion: Date | null;
+    pagado: boolean;
+    metodoPago: string | null;
+    comprobantePago: string | null;
+    fechaPago: Date | null;
+    anticipo: number;
+    cuponDescuento: string | null;
+    descuento: number;
+    saldo: number;
+    conceptos?: Array<{
+      id: number;
+      presupuestoId: number;
+      descripcion: string;
+      cantidad: number;
+      precioUnitario: number;
+      subtotal: number;
+      createdAt: Date;
+      updatedAt: Date;
+    }>;
+  } | null;
 }; 

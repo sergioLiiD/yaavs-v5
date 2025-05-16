@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function PUT(
   request: Request,
@@ -18,12 +18,11 @@ export async function PUT(
     
     const proveedor = await prisma.proveedor.update({
       where: {
-        id: params.id
+        id: Number(params.id)
       },
       data: {
         tipo: data.tipo,
         nombre: data.nombre,
-        personaResponsable: data.personaResponsable,
         telefono: data.telefono,
         email: data.email,
         direccion: data.direccion,
@@ -57,7 +56,7 @@ export async function DELETE(
 
     await prisma.proveedor.delete({
       where: {
-        id: params.id
+        id: Number(params.id)
       }
     });
 

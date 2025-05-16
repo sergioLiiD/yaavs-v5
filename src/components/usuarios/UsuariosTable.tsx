@@ -49,7 +49,7 @@ export function UsuariosTable({ usuarios, onUsuarioUpdated }: UsuariosTableProps
                   <Badge variant="outline">{usuario.nivel}</Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={usuario.activo ? "success" : "destructive"}>
+                  <Badge variant={usuario.activo ? "default" : "destructive"}>
                     {usuario.activo ? 'Activo' : 'Inactivo'}
                   </Badge>
                 </TableCell>
