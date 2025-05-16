@@ -164,6 +164,17 @@ export function ReparacionFrecuenteDialog({
     }
 
     onSubmit(formData)
+    
+    // Limpiar el formulario después de guardar
+    form.reset({
+      nombre: '',
+      descripcion: '',
+      activo: true,
+      productos: [],
+      pasos: []
+    })
+    setPasos([])
+    setProductos([])
   }
 
   if (!open) return null

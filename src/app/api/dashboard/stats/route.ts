@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/db/prisma';
 
 export async function GET() {
   try {
@@ -18,7 +18,7 @@ export async function GET() {
     // Obtener tickets del mes actual
     const currentMonthTickets = await prisma.ticket.count({
       where: {
-        fechaRecepcion: {
+        createdAt: {
           gte: currentMonth
         }
       }
@@ -27,7 +27,7 @@ export async function GET() {
     // Obtener tickets del mes anterior
     const lastMonthTickets = await prisma.ticket.count({
       where: {
-        fechaRecepcion: {
+        createdAt: {
           gte: lastMonth,
           lt: currentMonth
         }
@@ -68,7 +68,7 @@ export async function GET() {
     const ticketsRecientes = await prisma.ticket.findMany({
       take: 5,
       orderBy: {
-        fechaRecepcion: 'desc'
+        createdAt: 'desc'
       },
       include: {
         cliente: true,
@@ -114,10 +114,9 @@ export async function GET() {
       ],
       recentTickets: ticketsRecientes.map(ticket => ({
         id: ticket.id,
-        numeroTicket: ticket.numeroTicket,
         cliente: `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno}`,
         modelo: `${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}`,
-        problema: ticket.descripcion,
+        problema: ticket.descripcionProblema,
         estado: ticket.estatusReparacion.nombre
       }))
     });

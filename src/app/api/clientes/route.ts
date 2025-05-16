@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 export async function GET() {
   try {
@@ -27,10 +28,15 @@ export async function GET() {
         ciudad: true,
         estado: true,
         codigoPostal: true,
-        rfc: true
+        rfc: true,
+        activo: true,
+        passwordHash: true,
+        createdAt: true,
+        updatedAt: true,
+        tipoRegistro: true
       },
       orderBy: {
-        nombre: 'asc'
+        createdAt: 'desc'
       }
     });
 
@@ -46,6 +52,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return new NextResponse('No autorizado', { status: 401 });
+    }
+
     const data = await request.json();
     
     // Limpiamos los campos undefined para que no interfieran con los campos opcionales
@@ -53,11 +64,24 @@ export async function POST(request: Request) {
       Object.entries(data).filter(([_, value]) => value !== undefined)
     ) as Prisma.ClienteCreateInput;
 
+    // Generar un passwordHash por defecto para clientes registrados en tienda
+    const salt = await bcrypt.genSalt(10);
+    const defaultPassword = Math.random().toString(36).slice(-8); // Genera una contraseña aleatoria
+    const passwordHash = await bcrypt.hash(defaultPassword, salt);
+
     const cliente = await prisma.cliente.create({
-      data: cleanedData,
+      data: {
+        ...cleanedData,
+        passwordHash,
+        activo: true,
+        tipoRegistro: 'Registro en tienda'
+      },
     });
 
-    return NextResponse.json(cliente);
+    // Omitir el passwordHash de la respuesta
+    const { passwordHash: _, ...clienteSinPassword } = cliente;
+
+    return NextResponse.json(clienteSinPassword);
   } catch (error) {
     console.error('Error al crear cliente:', error);
     return NextResponse.json(

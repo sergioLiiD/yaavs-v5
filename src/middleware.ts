@@ -1,63 +1,63 @@
-import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
-import { NivelUsuario } from '@/types/usuario';
+import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token;
-    console.log('Middleware - Token:', token);
-    console.log('Middleware - Path:', req.nextUrl.pathname);
-    
-    const isAuth = !!token;
-    const isApiRoute = req.nextUrl.pathname.startsWith('/api');
-    const isUsuariosRoute = req.nextUrl.pathname.startsWith('/dashboard/usuarios');
+// Rutas públicas que no requieren autenticación
+const publicPaths = [
+  '/auth/login',
+  '/cliente/login',
+  '/cliente/registro',
+  '/api/cliente/registro',
+];
 
-    console.log('Middleware - Is Auth:', isAuth);
-    console.log('Middleware - Is API Route:', isApiRoute);
-    console.log('Middleware - Is Usuarios Route:', isUsuariosRoute);
+// Rutas protegidas que requieren autenticación
+const protectedPaths = [
+  '/dashboard',
+  '/api/admin',
+  '/cliente/tickets',
+  '/cliente/nuevo-ticket',
+  '/cliente/perfil',
+];
 
-    // Si no está autenticado y no es una ruta de API, redirigir a login
-    if (!isAuth && !isApiRoute) {
-      console.log('Middleware - No autenticado, redirigiendo a login');
-      return NextResponse.redirect(new URL('/auth/login', req.url));
-    }
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-    // Si es una ruta de API y no está autenticado, devolver 401
-    if (!isAuth && isApiRoute) {
-      console.log('Middleware - No autenticado en API, devolviendo 401');
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
+  // Verificar si la ruta actual es pública
+  const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
 
-    // Si está autenticado y es una ruta protegida, verificar el rol
-    if (isAuth && ((isApiRoute && req.nextUrl.pathname.startsWith('/api/usuarios')) || isUsuariosRoute)) {
-      console.log('Middleware - Token Role:', token.role);
-      console.log('Middleware - Required Role:', NivelUsuario.ADMINISTRADOR);
-      
-      if (token.role !== NivelUsuario.ADMINISTRADOR) {
-        console.log('Middleware - Nivel insuficiente, redirigiendo a dashboard');
-        if (isApiRoute) {
-          return NextResponse.json(
-            { error: 'No autorizado' },
-            { status: 401 }
-          );
-        }
-        return NextResponse.redirect(new URL('/dashboard', req.url));
-      }
-    }
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => {
-        console.log('Middleware - Authorized Callback - Token:', token);
-        return true; // Permitir que la página se cargue y manejar la redirección en el componente
-      },
-    },
+  // Verificar si la ruta actual es protegida
+  const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
+
+  // Obtener el token de NextAuth
+  const token = await getToken({ req: request });
+  const clienteToken = request.cookies.get('cliente_token')?.value;
+
+  // Si es una ruta pública, permitir el acceso
+  if (isPublicPath) {
+    return NextResponse.next();
   }
-);
+
+  // Si es una ruta protegida y no hay token, redirigir al login correspondiente
+  if (isProtectedPath) {
+    if (!token && !clienteToken) {
+      const isClientePath = pathname.startsWith('/cliente');
+      const loginUrl = isClientePath ? '/cliente/login' : '/auth/login';
+      return NextResponse.redirect(new URL(loginUrl, request.url));
+    }
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/api/:path*'],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+  ],
 }; 

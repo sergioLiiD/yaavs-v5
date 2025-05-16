@@ -1,29 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/auth';
+import { authOptions } from '@/lib/auth';
 
 // GET /api/catalogo/estados-reparacion
 export async function GET(req: NextRequest) {
   try {
-    // Verificar autenticación (opcional, dependiendo de tus requisitos)
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    if (!session?.user) {
+      return new NextResponse('No autorizado', { status: 401 });
     }
 
-    // Obtener todos los estados de reparación ordenados por el campo 'orden'
     const estados = await prisma.estatusReparacion.findMany({
-      where: { activo: true },
-      orderBy: { orden: 'asc' }
+      orderBy: {
+        orden: 'asc'
+      }
     });
-    
+
     return NextResponse.json(estados);
   } catch (error) {
     console.error('Error al obtener estados de reparación:', error);
-    return NextResponse.json(
-      { error: 'Error al procesar la solicitud' },
-      { status: 500 }
+    return new NextResponse(
+      JSON.stringify({ error: 'Error al obtener estados de reparación' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }

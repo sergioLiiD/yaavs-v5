@@ -23,6 +23,7 @@ export async function GET() {
             nombre: true,
           },
         },
+        inventarioMinimo: true,
       },
       orderBy: {
         nombre: 'asc',

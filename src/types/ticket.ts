@@ -52,7 +52,7 @@ export type Ticket = {
   clienteId: number;
   tipoServicioId: number;
   modeloId: number;
-  descripcion: string | null;
+  descripcionProblema: string | null;
   estatusReparacionId: number;
   creadorId: number;
   tecnicoAsignadoId: number | null;

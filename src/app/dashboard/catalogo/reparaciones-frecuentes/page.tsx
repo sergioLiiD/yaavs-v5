@@ -28,6 +28,17 @@ interface ReparacionFrecuente {
   }>;
 }
 
+interface EstadoReparacion {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  orden: number;
+  color: string | null;
+  activo: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function ReparacionesFrecuentesPage() {
   const { data: session } = useSession();
   
@@ -59,6 +70,8 @@ export default function ReparacionesFrecuentesPage() {
   } | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(false);
 
+  const [estados, setEstados] = useState<EstadoReparacion[]>([]);
+
   // Cargar las reparaciones frecuentes al montar el componente
   useEffect(() => {
     const fetchReparacionesFrecuentes = async () => {
@@ -79,6 +92,24 @@ export default function ReparacionesFrecuentesPage() {
     };
 
     fetchReparacionesFrecuentes();
+  }, []);
+
+  useEffect(() => {
+    const fetchEstados = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get('/api/catalogo/estados-reparacion');
+        setEstados(response.data);
+        setError('');
+      } catch (err) {
+        console.error('Error al cargar estados:', err);
+        setError('Error al cargar los estados. Por favor, intente nuevamente.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEstados();
   }, []);
 
   // Funciones para gestionar el modal

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { HiPlus, HiPencilAlt, HiTrash, HiSearch } from 'react-icons/hi';
 import axios from 'axios';
+import React from 'react';
 
 interface Cliente {
   id: number;
@@ -24,6 +25,10 @@ interface Cliente {
   longitud?: number;
   fuenteReferencia?: string;
   rfc?: string;
+  activo: boolean;
+  tipoRegistro: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function ClientesPage() {
@@ -194,14 +199,23 @@ export default function ClientesPage() {
                   Email
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tipo de Registro
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Fecha Registro
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredClientes.map((cliente) => (
-                <>
-                  <tr key={cliente.id} className="hover:bg-gray-50">
+                <React.Fragment key={cliente.id}>
+                  <tr className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div>
@@ -216,6 +230,29 @@ export default function ClientesPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{cliente.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        cliente.tipoRegistro === 'Registro propio' 
+                          ? 'bg-purple-100 text-purple-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {cliente.tipoRegistro}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        cliente.activo 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {cliente.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {new Date(cliente.createdAt).toLocaleDateString()}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
@@ -240,7 +277,7 @@ export default function ClientesPage() {
                   </tr>
                   {expandedClientes.includes(cliente.id) && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-4 bg-gray-50">
+                      <td colSpan={7} className="px-6 py-4 bg-gray-50">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <h4 className="text-sm font-medium text-gray-500">Información de Contacto</h4>
@@ -250,6 +287,12 @@ export default function ClientesPage() {
                               </p>
                               <p className="text-sm text-gray-600">
                                 <span className="font-medium">RFC:</span> {cliente.rfc || 'No especificado'}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Fecha de Registro:</span> {new Date(cliente.createdAt).toLocaleString()}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Última Actualización:</span> {new Date(cliente.updatedAt).toLocaleString()}
                               </p>
                             </div>
                           </div>
@@ -283,7 +326,7 @@ export default function ClientesPage() {
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>

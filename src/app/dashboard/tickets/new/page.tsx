@@ -43,7 +43,6 @@ interface FormData {
   tipoServicioId: number;
   marca: string;
   modelo: number | null;
-  imei: string;
   capacidad: string;
   color: string;
   fechaCompra: string;
@@ -52,7 +51,7 @@ interface FormData {
   patronDesbloqueo: string[];
   redCelular: string;
   tecnicoId: number;
-  descripcion: string;
+  descripcionProblema: string;
 }
 
 export default function NewTicketPage() {
@@ -71,7 +70,6 @@ export default function NewTicketPage() {
     tipoServicioId: 0,
     marca: '',
     modelo: null,
-    imei: '',
     capacidad: '',
     color: '',
     fechaCompra: '',
@@ -80,7 +78,7 @@ export default function NewTicketPage() {
     patronDesbloqueo: [],
     redCelular: '',
     tecnicoId: 0,
-    descripcion: '',
+    descripcionProblema: '',
   });
 
   useEffect(() => {
@@ -168,9 +166,8 @@ export default function NewTicketPage() {
         clienteId: formData.clienteId,
         tipoServicioId: formData.tipoServicioId,
         modeloId: formData.modelo,
-        descripcion: formData.descripcion,
+        descripcionProblema: formData.descripcionProblema,
         tecnicoAsignadoId: formData.tecnicoId,
-        imei: formData.imei,
         capacidad: formData.capacidad,
         color: formData.color,
         fechaCompra: formData.fechaCompra,
@@ -180,6 +177,8 @@ export default function NewTicketPage() {
           : formData.patronDesbloqueo.join(","),
         redCelular: formData.redCelular,
       };
+
+      console.log('Datos a enviar:', dataToSubmit);
 
       const response = await fetch('/api/tickets', {
         method: 'POST',
@@ -334,16 +333,6 @@ export default function NewTicketPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="imei">IMEI</Label>
-              <Input
-                id="imei"
-                name="imei"
-                value={formData.imei}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="capacidad">Capacidad</Label>
               <Input
                 id="capacidad"
@@ -485,11 +474,11 @@ export default function NewTicketPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="descripcion">Descripción del Problema</Label>
+              <Label htmlFor="descripcionProblema">Descripción del Problema</Label>
               <Textarea
-                id="descripcion"
-                name="descripcion"
-                value={formData.descripcion}
+                id="descripcionProblema"
+                name="descripcionProblema"
+                value={formData.descripcionProblema}
                 onChange={handleInputChange}
                 placeholder="Describe el problema del dispositivo..."
               />

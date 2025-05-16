@@ -31,14 +31,15 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
   const [isEditing, setIsEditing] = useState(false);
   const [tecnicos, setTecnicos] = useState<Usuario[]>([]);
   const [formData, setFormData] = useState({
-    descripcion: ticket.descripcion || '',
-    imei: ticket.dispositivo?.imei || '',
+    descripcionProblema: ticket.descripcionProblema || '',
+    tecnicoAsignadoId: ticket.tecnicoAsignadoId?.toString() || '',
+    estatusReparacionId: ticket.estatusReparacionId?.toString() || '',
+    diagnostico: ticket.reparacion?.diagnostico || '',
     capacidad: ticket.dispositivo?.capacidad || '',
     color: ticket.dispositivo?.color || '',
     fechaCompra: ticket.dispositivo?.fechaCompra ? new Date(ticket.dispositivo.fechaCompra).toISOString().split('T')[0] : '',
     codigoDesbloqueo: ticket.dispositivo?.codigoDesbloqueo || '',
     redCelular: ticket.dispositivo?.redCelular || '',
-    tecnicoAsignadoId: ticket.tecnicoAsignadoId
   });
 
   useEffect(() => {
@@ -87,7 +88,14 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
   const handleTecnicoChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
-      tecnicoAsignadoId: parseInt(value)
+      tecnicoAsignadoId: value
+    }));
+  };
+
+  const handleEstatusChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      estatusReparacionId: value
     }));
   };
 
@@ -140,116 +148,107 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="descripcion">Descripción del Problema</Label>
-            <Textarea
-              id="descripcion"
-              name="descripcion"
-              value={formData.descripcion}
-              onChange={handleInputChange}
-              disabled={!isEditing}
-              required
-            />
-          </div>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="descripcionProblema">Descripción del Problema</Label>
+              <Textarea
+                id="descripcionProblema"
+                name="descripcionProblema"
+                value={formData.descripcionProblema}
+                onChange={handleInputChange}
+                placeholder="Describe el problema que presenta el dispositivo..."
+                className="min-h-[100px]"
+              />
+            </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="tecnico">Técnico Asignado</Label>
-              <div className="relative">
-                <Select
-                  value={formData.tecnicoAsignadoId ? formData.tecnicoAsignadoId.toString() : undefined}
-                  onValueChange={handleTecnicoChange}
-                  disabled={!isEditing}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue>
-                      {ticket.tecnicoAsignado ? 
-                        `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno} ${ticket.tecnicoAsignado.apellidoMaterno || ''}` : 
-                        'Seleccionar técnico'}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tecnicos.length > 0 ? (
-                      tecnicos.map((tecnico) => (
-                        <SelectItem key={tecnico.id} value={tecnico.id.toString()}>
-                          {tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm text-gray-500">
-                        No hay técnicos disponibles
-                      </div>
-                    )}
-                  </SelectContent>
-                </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="tecnico">Técnico Asignado</Label>
+                <div className="relative">
+                  <Select
+                    value={formData.tecnicoAsignadoId}
+                    onValueChange={handleTecnicoChange}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue>
+                        {ticket.tecnicoAsignado ? 
+                          `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno} ${ticket.tecnicoAsignado.apellidoMaterno}` : 
+                          'Seleccionar técnico'}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tecnicos.length > 0 ? (
+                        tecnicos.map((tecnico) => (
+                          <SelectItem key={tecnico.id} value={tecnico.id.toString()}>
+                            {tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm text-gray-500">
+                          No hay técnicos disponibles
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="imei">IMEI</Label>
-              <Input
-                id="imei"
-                name="imei"
-                value={formData.imei}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="capacidad">Capacidad</Label>
+                <Input
+                  id="capacidad"
+                  name="capacidad"
+                  value={formData.capacidad}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="capacidad">Capacidad</Label>
-              <Input
-                id="capacidad"
-                name="capacidad"
-                value={formData.capacidad}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="color">Color</Label>
+                <Input
+                  id="color"
+                  name="color"
+                  value={formData.color}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="color">Color</Label>
-              <Input
-                id="color"
-                name="color"
-                value={formData.color}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="fechaCompra">Fecha de Compra</Label>
+                <Input
+                  id="fechaCompra"
+                  name="fechaCompra"
+                  type="date"
+                  value={formData.fechaCompra}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="fechaCompra">Fecha de Compra</Label>
-              <Input
-                id="fechaCompra"
-                name="fechaCompra"
-                type="date"
-                value={formData.fechaCompra}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="codigoDesbloqueo">Código de Desbloqueo</Label>
+                <Input
+                  id="codigoDesbloqueo"
+                  name="codigoDesbloqueo"
+                  value={formData.codigoDesbloqueo}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="codigoDesbloqueo">Código de Desbloqueo</Label>
-              <Input
-                id="codigoDesbloqueo"
-                name="codigoDesbloqueo"
-                value={formData.codigoDesbloqueo}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="redCelular">Red Celular</Label>
-              <Input
-                id="redCelular"
-                name="redCelular"
-                value={formData.redCelular}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="redCelular">Red Celular</Label>
+                <Input
+                  id="redCelular"
+                  name="redCelular"
+                  value={formData.redCelular}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                />
+              </div>
             </div>
           </div>
 

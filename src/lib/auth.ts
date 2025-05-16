@@ -21,6 +21,16 @@ declare module 'next-auth' {
 }
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 días
+  },
+  pages: {
+    signIn: '/auth/login',
+    signOut: '/auth/logout',
+    error: '/auth/error',
+  },
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -54,10 +64,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: usuario.id,
+          id: usuario.id.toString(),
           email: usuario.email,
           nombre: usuario.nombre,
-          role: usuario.nivel
+          role: usuario.nivel as NivelUsuario
         };
       }
     })
@@ -77,11 +87,5 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     }
-  },
-  pages: {
-    signIn: '/auth/login'
-  },
-  session: {
-    strategy: 'jwt'
   }
 }; 

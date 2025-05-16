@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, NivelUsuario } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -153,6 +154,130 @@ async function main() {
       piezasData.map(pieza => prisma.pieza.create({ data: pieza }))
     );
     console.log('Piezas creadas:', piezas.length);
+
+    // Crear usuario administrador
+    const passwordHash = await bcrypt.hash('whoS5un0%', 10);
+    const admin = await prisma.usuario.create({
+      data: {
+        email: 'sergio@hoom.mx',
+        nombre: 'Sergio',
+        apellidoPaterno: 'Velazco',
+        passwordHash,
+        nivel: NivelUsuario.ADMINISTRADOR,
+        activo: true
+      }
+    });
+
+    console.log('Usuario administrador creado:', admin);
+
+    // Crear estados de reparación por defecto
+    const estadosReparacion = [
+      {
+        nombre: 'Recibido',
+        descripcion: 'El dispositivo ha sido recibido y está pendiente de diagnóstico',
+        orden: 1,
+        color: '#FFA500',
+        activo: true
+      },
+      {
+        nombre: 'En Diagnóstico',
+        descripcion: 'El dispositivo está siendo diagnosticado',
+        orden: 2,
+        color: '#FFD700',
+        activo: true
+      },
+      {
+        nombre: 'Diagnóstico Completado',
+        descripcion: 'El diagnóstico ha sido completado y se ha generado el presupuesto',
+        orden: 3,
+        color: '#87CEEB',
+        activo: true
+      },
+      {
+        nombre: 'Diagnóstico Pendiente',
+        descripcion: 'El diagnóstico está pendiente de aprobación del cliente',
+        orden: 4,
+        color: '#FFB6C1',
+        activo: true
+      },
+      {
+        nombre: 'Diagnóstico Aprobado',
+        descripcion: 'El cliente ha aprobado el diagnóstico',
+        orden: 5,
+        color: '#98FB98',
+        activo: true
+      },
+      {
+        nombre: 'Presupuesto Aprobado',
+        descripcion: 'El cliente ha aprobado el presupuesto',
+        orden: 6,
+        color: '#90EE90',
+        activo: true
+      },
+      {
+        nombre: 'En Reparación',
+        descripcion: 'El dispositivo está siendo reparado',
+        orden: 7,
+        color: '#FF69B4',
+        activo: true
+      },
+      {
+        nombre: 'Reparación Completada',
+        descripcion: 'La reparación ha sido completada',
+        orden: 8,
+        color: '#00FF00',
+        activo: true
+      },
+      {
+        nombre: 'Listo para Entrega',
+        descripcion: 'El dispositivo está listo para ser entregado al cliente',
+        orden: 9,
+        color: '#008000',
+        activo: true
+      },
+      {
+        nombre: 'Entregado',
+        descripcion: 'El dispositivo ha sido entregado al cliente',
+        orden: 10,
+        color: '#006400',
+        activo: true
+      },
+      {
+        nombre: 'Cancelado',
+        descripcion: 'El ticket ha sido cancelado',
+        orden: 11,
+        color: '#FF0000',
+        activo: true
+      }
+    ];
+
+    console.log('Creando estados de reparación...');
+    
+    // Usar upsert para cada estado para evitar duplicados
+    for (const estado of estadosReparacion) {
+      await prisma.estatusReparacion.upsert({
+        where: { nombre: estado.nombre },
+        update: estado,
+        create: estado
+      });
+    }
+
+    console.log('Estados de reparación creados exitosamente');
+
+    // Crear el estado "Presupuesto Generado"
+    const presupuestoGenerado = await prisma.estatusReparacion.upsert({
+      where: { nombre: 'Presupuesto Generado' },
+      update: {},
+      create: {
+        nombre: 'Presupuesto Generado',
+        descripcion: 'El presupuesto ha sido generado y está pendiente de aprobación',
+        orden: 3,
+        color: '#FFA500',
+        activo: true
+      },
+    });
+
+    console.log('Estado creado:', presupuestoGenerado);
 
     console.log('Datos de ejemplo creados exitosamente');
   } catch (error) {

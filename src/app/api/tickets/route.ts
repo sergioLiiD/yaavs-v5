@@ -7,62 +7,43 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      return new NextResponse('No autorizado', { status: 401 });
     }
 
     const body = await req.json();
-    const { 
-      clienteId, 
-      tipoServicioId, 
-      modeloId, 
-      descripcion, 
+    console.log('Datos recibidos en la API:', body);
+
+    const {
+      clienteId,
+      tipoServicioId,
+      modeloId,
+      descripcionProblema,
       tecnicoAsignadoId,
-      imei,
       capacidad,
       color,
       fechaCompra,
       codigoDesbloqueo,
-      redCelular
+      redCelular,
     } = body;
 
-    // Validar que todos los campos requeridos estén presentes
-    if (!clienteId || !tipoServicioId || !modeloId || !tecnicoAsignadoId) {
-      return NextResponse.json(
-        { error: 'Faltan campos requeridos' },
-        { status: 400 }
-      );
+    // Validar datos requeridos
+    if (!clienteId || !tipoServicioId || !modeloId) {
+      return new NextResponse('Faltan campos requeridos', { status: 400 });
     }
 
     // Convertir IDs a números
     const clienteIdNum = parseInt(clienteId);
     const tipoServicioIdNum = parseInt(tipoServicioId);
     const modeloIdNum = parseInt(modeloId);
-    const tecnicoAsignadoIdNum = parseInt(tecnicoAsignadoId);
+    const tecnicoAsignadoIdNum = tecnicoAsignadoId ? parseInt(tecnicoAsignadoId) : null;
 
-    // Validar que los IDs sean números válidos
-    if (
-      isNaN(clienteIdNum) ||
-      isNaN(tipoServicioIdNum) ||
-      isNaN(modeloIdNum) ||
-      isNaN(tecnicoAsignadoIdNum)
-    ) {
-      return NextResponse.json(
-        { error: 'IDs inválidos' },
-        { status: 400 }
-      );
-    }
-
-    // Verificar que el estatus de reparación existe
+    // Obtener el estado inicial
     const estatusReparacion = await prisma.estatusReparacion.findFirst({
-      where: { activo: true },
-      orderBy: { orden: 'asc' }
+      where: { nombre: 'Recibido' }
     });
 
     if (!estatusReparacion) {
-      return NextResponse.json(
-        { error: 'No se encontró ningún estatus de reparación activo' },
-        { status: 500 }
-      );
+      return new NextResponse('No se encontró el estado inicial', { status: 500 });
     }
 
     // Crear el ticket
@@ -72,7 +53,7 @@ export async function POST(req: Request) {
         clienteId: clienteIdNum,
         tipoServicioId: tipoServicioIdNum,
         modeloId: modeloIdNum,
-        descripcion,
+        descripcionProblema: descripcionProblema || '',
         estatusReparacionId: estatusReparacion.id,
         creadorId: Number(session.user.id),
         tecnicoAsignadoId: tecnicoAsignadoIdNum,
@@ -82,7 +63,6 @@ export async function POST(req: Request) {
     // Crear el dispositivo asociado al ticket
     await prisma.dispositivo.create({
       data: {
-        imei,
         capacidad,
         color,
         fechaCompra: fechaCompra ? new Date(fechaCompra) : null,

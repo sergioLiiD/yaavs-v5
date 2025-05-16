@@ -134,6 +134,34 @@ export async function POST(
 
     console.log('Presupuesto creado/actualizado:', presupuesto);
 
+    // Buscar el estado "Presupuesto Generado"
+    const estatusPresupuesto = await prisma.estatusReparacion.findFirst({
+      where: {
+        nombre: 'Presupuesto Generado'
+      }
+    });
+
+    if (!estatusPresupuesto) {
+      console.error('Estado "Presupuesto Generado" no encontrado');
+      return new NextResponse('Estado "Presupuesto Generado" no encontrado', { status: 404 });
+    }
+
+    // Actualizar el estado del ticket
+    const ticketActualizado = await prisma.ticket.update({
+      where: {
+        id: ticketId
+      },
+      data: {
+        estatusReparacionId: estatusPresupuesto.id
+      },
+      include: {
+        estatusReparacion: true,
+        presupuesto: true
+      }
+    });
+
+    console.log('Ticket actualizado:', ticketActualizado);
+
     // Crear o actualizar la reparación
     const reparacion = await prisma.reparacion.upsert({
       where: {
@@ -198,7 +226,7 @@ export async function POST(
       data: piezasData,
     });
 
-    return NextResponse.json(presupuesto);
+    return NextResponse.json(ticketActualizado);
   } catch (error: any) {
     console.error('Error al guardar presupuesto:', error);
     return new NextResponse(`Error interno del servidor: ${error.message}`, { status: 500 });
