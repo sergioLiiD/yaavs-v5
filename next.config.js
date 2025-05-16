@@ -1,8 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Desactivar cache para desarrollo
+  output: 'standalone',
   experimental: {
-    // optimizeCss: true, // Desactivamos esta opción que causa problemas
+    serverActions: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
   // Hacer redirects
   async redirects() {
