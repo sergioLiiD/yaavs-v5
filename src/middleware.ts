@@ -5,9 +5,14 @@ import { getToken } from 'next-auth/jwt';
 // Rutas públicas que no requieren autenticación
 const publicPaths = [
   '/auth/login',
+  '/auth/error',
+  '/auth/signin',
+  '/auth/signout',
   '/cliente/login',
   '/cliente/registro',
   '/api/cliente/registro',
+  '/api/auth',
+  '/api/cliente/login',
 ];
 
 // Rutas protegidas que requieren autenticación

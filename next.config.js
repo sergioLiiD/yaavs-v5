@@ -20,9 +20,19 @@ const nextConfig = {
     return [
       {
         source: '/',
-        destination: '/login',
+        destination: '/auth/login',
         permanent: true,
       },
+      {
+        source: '/login',
+        destination: '/auth/login',
+        permanent: true,
+      },
+      {
+        source: '/login/:path*',
+        destination: '/auth/login',
+        permanent: true,
+      }
     ];
   },
   // Configuración del servidor
