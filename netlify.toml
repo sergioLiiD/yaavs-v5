@@ -1,9 +1,9 @@
 [build]
   command = "rm -rf node_modules && npm install && npm run build"
   publish = ".next"
-  environment = { NODE_VERSION = "18" }
 
 [build.environment]
+  NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
   NODE_ENV = "production"
   PRISMA_CLIENT_ENGINE_TYPE = "binary"
