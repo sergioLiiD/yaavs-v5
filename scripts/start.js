@@ -47,10 +47,10 @@ async function checkServerHealth(port, retries = 5, delay = 2000) {
 async function start() {
   try {
     console.log('Generando cliente de Prisma...');
-    execSync('npx prisma generate --omit=dev', { stdio: 'inherit' });
+    execSync('npx prisma generate', { stdio: 'inherit' });
 
     console.log('Ejecutando migraciones...');
-    execSync('npx prisma migrate deploy --omit=dev', { stdio: 'inherit' });
+    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
 
     const port = process.env.PORT || '8080';
     console.log('Configuración del entorno:');
