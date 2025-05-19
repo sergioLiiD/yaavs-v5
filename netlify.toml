@@ -9,7 +9,4 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200 
+# Eliminamos los redirects ya que el plugin de Next.js los maneja automáticamente 
