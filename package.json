@@ -4,15 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "prisma migrate deploy && next start",
-    "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "db:seed": "prisma db seed",
     "db:migrate": "ts-node src/db/migrate.ts",
-    "db:setup": "prisma generate && prisma migrate deploy && prisma db seed"
+    "db:setup": "prisma generate && prisma migrate deploy && prisma db seed",
+    "build": "npm run prisma:generate && next build",
+    "start": "npm run prisma:generate && prisma migrate deploy && next start",
+    "lint": "next lint"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.8.0",
