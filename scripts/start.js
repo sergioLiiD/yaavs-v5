@@ -8,7 +8,7 @@ async function checkServerHealth(port, retries = 5, delay = 2000) {
       console.log(`Intento ${i + 1} de verificar el servidor en el puerto ${port}...`);
       
       const response = await new Promise((resolve, reject) => {
-        const req = http.get(`http://localhost:${port}/api/health`, (res) => {
+        const req = http.get(`http://0.0.0.0:${port}/api/health`, (res) => {
           let data = '';
           res.on('data', (chunk) => data += chunk);
           res.on('end', () => {
