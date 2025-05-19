@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm run build"
+buildCommand = "npm run build && node scripts/setup-db.js"
 
 [deploy]
 startCommand = "node .next/standalone/server.js"
