@@ -17,4 +17,8 @@ retries = 3
 startPeriod = "40s"
 
 [deploy.start]
-command = "node .next/standalone/server.js" 
+command = "node .next/standalone/server.js"
+
+[deploy.proxy]
+port = 8080
+target = "http://localhost:8080" 
