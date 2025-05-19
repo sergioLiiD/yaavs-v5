@@ -15,6 +15,10 @@
   "dependencies": {
     "@auth/core": "0.34.2",
     "@auth/prisma-adapter": "2.8.0",
+    "@googlemaps/js-api-loader": "1.16.2",
+    "@headlessui/react": "1.7.18",
+    "@hello-pangea/dnd": "16.5.0",
+    "@heroicons/react": "2.1.1",
     "@hookform/resolvers": "3.10.0",
     "@prisma/client": "5.22.0",
     "@radix-ui/primitive": "1.1.2",
