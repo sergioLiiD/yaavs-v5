@@ -44,13 +44,24 @@ async function checkServerHealth(port, retries = 5, delay = 2000) {
   return false;
 }
 
-async function start() {
+async function runPrismaCommands() {
   try {
     console.log('Generando cliente de Prisma...');
     execSync('npx prisma generate', { stdio: 'inherit' });
+    console.log('Cliente de Prisma generado exitosamente');
 
     console.log('Ejecutando migraciones...');
     execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+    console.log('Migraciones ejecutadas exitosamente');
+  } catch (error) {
+    console.error('Error en comandos de Prisma:', error);
+    throw error;
+  }
+}
+
+async function start() {
+  try {
+    await runPrismaCommands();
 
     const port = process.env.PORT || '8080';
     console.log('Configuración del entorno:');
