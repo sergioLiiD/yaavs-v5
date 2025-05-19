@@ -11,7 +11,8 @@
     "db:migrate": "ts-node src/db/migrate.ts",
     "db:setup": "prisma generate && prisma migrate deploy && prisma db seed",
     "build": "npm run prisma:generate && next build",
-    "start": "npm run prisma:generate && prisma migrate deploy && next start",
+    "start": "prisma generate && prisma migrate deploy && next start",
+    "start:prod": "prisma generate && prisma migrate deploy && next start -p ${PORT:-3000} -H 0.0.0.0",
     "lint": "next lint"
   },
   "dependencies": {
