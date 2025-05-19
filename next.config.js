@@ -20,7 +20,7 @@ const nextConfig = {
     return [
       {
         source: '/',
-        destination: '/auth/login',
+        destination: '/login',
         permanent: true,
       },
     ];
@@ -28,6 +28,10 @@ const nextConfig = {
   // Configuración del servidor
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client'],
+  },
+  server: {
+    hostname: '0.0.0.0',
+    port: process.env.PORT || 8080,
   },
 };
 

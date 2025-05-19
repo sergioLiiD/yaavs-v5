@@ -8,6 +8,7 @@ healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicy = "on-failure"
 restartPolicyMaxRetries = 10
+port = 8080
 
 [deploy.healthcheck]
 interval = "30s"

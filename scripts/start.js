@@ -9,8 +9,9 @@ async function start() {
     console.log('Ejecutando migraciones...');
     execSync('npx prisma migrate deploy', { stdio: 'inherit' });
 
+    const port = process.env.PORT || '8080';
     console.log('Configuración del entorno:');
-    console.log('PORT:', process.env.PORT || '3000');
+    console.log('PORT:', port);
     console.log('NODE_ENV:', process.env.NODE_ENV);
     console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Configurada' : 'No configurada');
     console.log('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
@@ -20,7 +21,7 @@ async function start() {
       stdio: 'inherit',
       env: {
         ...process.env,
-        PORT: process.env.PORT || '3000',
+        PORT: port,
         HOSTNAME: '0.0.0.0',
         NODE_ENV: 'production'
       }
