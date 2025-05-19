@@ -35,6 +35,6 @@
   PRISMA_CLIENT_ENGINE_TYPE = true
   PRISMA_CLI_QUERY_ENGINE_TYPE = true
   NODE_VERSION = true
-  NEXT_PUBLIC_* = true
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = true
 
 # Eliminamos los redirects ya que el plugin de Next.js los maneja automáticamente 
