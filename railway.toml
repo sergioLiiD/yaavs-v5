@@ -4,7 +4,7 @@ buildCommand = "npm install && npm run prisma:generate && npm run build"
 
 [deploy]
 startCommand = "npm run start:prod"
-healthcheckPath = "/"
+healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicy = "on-failure"
 restartPolicyMaxRetries = 10

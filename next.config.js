@@ -25,6 +25,10 @@ const nextConfig = {
       },
     ];
   },
+  // Configuración del servidor
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client'],
+  },
 };
 
 module.exports = nextConfig;
