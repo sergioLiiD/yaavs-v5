@@ -2,7 +2,7 @@ const { execSync } = require('child_process');
 const { spawn } = require('child_process');
 const http = require('http');
 
-async function checkServerHealth(port, retries = 5, delay = 2000) {
+async function checkServerHealth(port, retries = 10, delay = 5000) {
   for (let i = 0; i < retries; i++) {
     try {
       console.log(`Intento ${i + 1} de verificar el servidor en el puerto ${port}...`);
@@ -25,7 +25,7 @@ async function checkServerHealth(port, retries = 5, delay = 2000) {
           reject(error);
         });
         
-        req.setTimeout(5000, () => {
+        req.setTimeout(10000, () => {
           req.destroy();
           reject(new Error('Timeout al conectar con el servidor'));
         });
@@ -60,6 +60,8 @@ async function runPrismaCommands() {
 }
 
 async function start() {
+  let server;
+  
   try {
     await runPrismaCommands();
 
@@ -71,7 +73,7 @@ async function start() {
     console.log('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
 
     console.log('Iniciando servidor...');
-    const server = spawn('node', ['.next/standalone/server.js'], {
+    server = spawn('node', ['.next/standalone/server.js'], {
       stdio: 'inherit',
       env: {
         ...process.env,
@@ -89,6 +91,7 @@ async function start() {
     
     if (!isHealthy) {
       console.error('El servidor no está respondiendo después de varios intentos');
+      if (server) server.kill('SIGTERM');
       process.exit(1);
     }
 
@@ -101,20 +104,28 @@ async function start() {
 
     server.on('exit', (code, signal) => {
       console.log(`Servidor terminado con código ${code} y señal ${signal}`);
+      if (code !== 0) {
+        process.exit(code);
+      }
     });
 
-    process.on('SIGTERM', () => {
-      console.log('Recibida señal SIGTERM, cerrando servidor...');
-      server.kill('SIGTERM');
-    });
+    // Manejar señales de terminación
+    const handleSignal = async (signal) => {
+      console.log(`Recibida señal ${signal}, cerrando servidor...`);
+      if (server) {
+        server.kill(signal);
+        // Esperar a que el servidor se cierre
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+      process.exit(0);
+    };
 
-    process.on('SIGINT', () => {
-      console.log('Recibida señal SIGINT, cerrando servidor...');
-      server.kill('SIGINT');
-    });
+    process.on('SIGTERM', () => handleSignal('SIGTERM'));
+    process.on('SIGINT', () => handleSignal('SIGINT'));
 
   } catch (error) {
     console.error('Error durante el inicio:', error);
+    if (server) server.kill('SIGTERM');
     process.exit(1);
   }
 }
