@@ -29,7 +29,7 @@
 [build.processing.images]
   compress = true
 
-[build.processing.skip_processing]
+[build.processing.ignore]
   - "NODE_ENV"
   - "NEXT_TELEMETRY_DISABLED"
   - "PRISMA_CLIENT_ENGINE_TYPE"
