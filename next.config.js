@@ -29,10 +29,6 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client'],
   },
-  server: {
-    hostname: '0.0.0.0',
-    port: process.env.PORT || 8080,
-  },
 };
 
 module.exports = nextConfig;
