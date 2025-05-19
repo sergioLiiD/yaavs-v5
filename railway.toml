@@ -1,9 +1,8 @@
 [build]
-builder = "nixpacks"
-buildCommand = "npm run build && node scripts/setup-db.js"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "node .next/standalone/server.js"
 healthcheckPath = "/"
 healthcheckTimeout = 300
 restartPolicy = "on-failure"
