@@ -30,11 +30,11 @@
   compress = true
 
 [build.processing.ignore]
-  - "NODE_ENV"
-  - "NEXT_TELEMETRY_DISABLED"
-  - "PRISMA_CLIENT_ENGINE_TYPE"
-  - "PRISMA_CLI_QUERY_ENGINE_TYPE"
-  - "NODE_VERSION"
-  - "NEXT_PUBLIC_*"
+  NODE_ENV = true
+  NEXT_TELEMETRY_DISABLED = true
+  PRISMA_CLIENT_ENGINE_TYPE = true
+  PRISMA_CLI_QUERY_ENGINE_TYPE = true
+  NODE_VERSION = true
+  NEXT_PUBLIC_* = true
 
 # Eliminamos los redirects ya que el plugin de Next.js los maneja automáticamente 
