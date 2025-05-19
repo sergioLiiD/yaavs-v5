@@ -15,6 +15,11 @@ const nextConfig = {
       },
     ],
   },
+  // Configuración del servidor
+  server: {
+    host: '0.0.0.0',
+    port: 3000,
+  },
   // Hacer redirects
   async redirects() {
     return [

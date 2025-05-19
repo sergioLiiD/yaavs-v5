@@ -19,6 +19,8 @@ COPY . .
 # Configurar variables de entorno
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
 
 # Generar el cliente Prisma
 RUN npx prisma generate
