@@ -10,20 +10,21 @@ export async function GET() {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
-      return new NextResponse('No autorizado', { status: 401 });
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
     }
 
-    // Obtenemos el cliente directamente usando el email del usuario
-    const cliente = await prisma.cliente.findFirst({
-      where: {
-        email: session.user.email
-      },
+    const cliente = await prisma.cliente.findUnique({
+      where: { email: session.user.email },
       select: {
         id: true,
         nombre: true,
         apellidoPaterno: true,
         apellidoMaterno: true,
         telefonoCelular: true,
+        telefonoContacto: true,
         email: true,
         calle: true,
         numeroExterior: true,
@@ -33,17 +34,29 @@ export async function GET() {
         estado: true,
         codigoPostal: true,
         latitud: true,
-        longitud: true
+        longitud: true,
+        fuenteReferencia: true,
+        rfc: true,
+        activo: true,
+        tipoRegistro: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
 
     if (!cliente) {
-      return new NextResponse('Cliente no encontrado', { status: 404 });
+      return NextResponse.json(
+        { error: 'Cliente no encontrado' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(cliente);
   } catch (error) {
     console.error('Error al obtener perfil del cliente:', error);
-    return new NextResponse('Error interno del servidor', { status: 500 });
+    return NextResponse.json(
+      { error: 'Error al obtener el perfil del cliente' },
+      { status: 500 }
+    );
   }
 } 

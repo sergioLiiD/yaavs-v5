@@ -1,37 +1,47 @@
 import { NextResponse } from 'next/server';
-import { ClienteService } from '@/services/clienteService';
-import { verify } from 'jsonwebtoken';
-import { cookies } from 'next/headers';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // Obtener el token de la cookie
-    const token = cookies().get('cliente_token')?.value;
-
-    if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
     }
 
-    // Verificar el token
-    const decoded = verify(
-      token,
-      process.env.JWT_SECRET || 'tu_secreto_seguro_para_jwt_aqui'
-    ) as { id: number; email: string; tipo: string };
-
-    if (decoded.tipo !== 'CLIENTE') {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-
-    // Obtener el cliente
-    const cliente = await ClienteService.getById(decoded.id);
+    const cliente = await prisma.cliente.findUnique({
+      where: { email: session.user.email },
+      select: {
+        id: true,
+        nombre: true,
+        apellidoPaterno: true,
+        apellidoMaterno: true,
+        telefonoCelular: true,
+        telefonoContacto: true,
+        email: true,
+        calle: true,
+        numeroExterior: true,
+        numeroInterior: true,
+        colonia: true,
+        ciudad: true,
+        estado: true,
+        codigoPostal: true,
+        latitud: true,
+        longitud: true,
+        fuenteReferencia: true,
+        rfc: true,
+        activo: true,
+        tipoRegistro: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
 
     if (!cliente) {
       return NextResponse.json(
@@ -40,14 +50,11 @@ export async function GET() {
       );
     }
 
-    // Omitir el passwordHash de la respuesta
-    const { passwordHash, ...clienteSinPassword } = cliente;
-
-    return NextResponse.json(clienteSinPassword);
+    return NextResponse.json(cliente);
   } catch (error) {
-    console.error('Error al verificar sesión:', error);
+    console.error('Error al obtener información del cliente:', error);
     return NextResponse.json(
-      { error: 'Error al verificar la sesión' },
+      { error: 'Error al obtener la información del cliente' },
       { status: 500 }
     );
   }

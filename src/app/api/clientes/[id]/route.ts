@@ -30,6 +30,30 @@ export async function PUT(
         longitud: data.longitud,
         fuenteReferencia: data.fuenteReferencia,
       },
+      select: {
+        id: true,
+        nombre: true,
+        apellidoPaterno: true,
+        apellidoMaterno: true,
+        telefonoCelular: true,
+        telefonoContacto: true,
+        email: true,
+        calle: true,
+        numeroExterior: true,
+        numeroInterior: true,
+        colonia: true,
+        ciudad: true,
+        estado: true,
+        codigoPostal: true,
+        latitud: true,
+        longitud: true,
+        fuenteReferencia: true,
+        rfc: true,
+        activo: true,
+        tipoRegistro: true,
+        createdAt: true,
+        updatedAt: true
+      }
     });
     return NextResponse.json(cliente);
   } catch (error) {
