@@ -107,7 +107,6 @@ export async function POST(request: Request) {
     }
     const marcaId = data.tipo === 'PRODUCTO' ? parseInt(data.marcaId) : null;
     const modeloId = data.tipo === 'PRODUCTO' ? parseInt(data.modeloId) : null;
-    const proveedorId = data.tipo === 'PRODUCTO' ? parseInt(data.proveedorId) : null;
 
     // Crear el producto usando una transacción para asegurar la integridad de los datos
     const nuevoProducto = await prisma.$transaction(async (tx) => {
@@ -124,13 +123,11 @@ export async function POST(request: Request) {
 
       let marca = null;
       let modelo = null;
-      let proveedor = null;
 
-      if (data.tipo === 'PRODUCTO') {
-        [marca, modelo, proveedor] = await Promise.all([
-          tx.marca.findUnique({ where: { id: marcaId! } }),
-          tx.modelo.findUnique({ where: { id: modeloId! } }),
-          tx.proveedor.findUnique({ where: { id: proveedorId! } })
+      if (data.tipo === 'PRODUCTO' && marcaId && modeloId) {
+        [marca, modelo] = await Promise.all([
+          tx.marca.findUnique({ where: { id: marcaId } }),
+          tx.modelo.findUnique({ where: { id: modeloId } })
         ]);
       }
 
@@ -139,9 +136,8 @@ export async function POST(request: Request) {
       }
 
       if (data.tipo === 'PRODUCTO') {
-        if (!marca) throw new Error('La marca seleccionada no existe');
-        if (!modelo) throw new Error('El modelo seleccionado no existe');
-        if (!proveedor) throw new Error('El proveedor seleccionado no existe');
+        if (!marcaId || !marca) throw new Error('La marca seleccionada no existe');
+        if (!modeloId || !modelo) throw new Error('El modelo seleccionado no existe');
       }
 
       // Preparar los datos para crear el producto
@@ -160,7 +156,6 @@ export async function POST(request: Request) {
         tipoServicioId,
         marcaId: data.tipo === 'PRODUCTO' ? marcaId : null,
         modeloId: data.tipo === 'PRODUCTO' ? modeloId : null,
-        proveedorId: data.tipo === 'PRODUCTO' ? proveedorId : null,
         categoriaId: data.categoriaId || null
       } as const;
 
