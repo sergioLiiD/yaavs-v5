@@ -33,8 +33,13 @@ export default function InventariosMinimosPage() {
     queryKey: ['productos'],
     queryFn: async () => {
       const response = await fetch('/api/productos');
-      return response.json();
+      if (!response.ok) {
+        throw new Error('Error al cargar productos');
+      }
+      const data = await response.json();
+      return data;
     },
+    staleTime: 0, // Forzar que siempre se obtengan datos frescos
   });
 
   const handleEdit = async (productoId: number, cantidadMinima: number) => {
@@ -56,8 +61,11 @@ export default function InventariosMinimosPage() {
 
       const data = await response.json();
       console.log('Respuesta exitosa:', data);
+      
+      // Forzar una recarga inmediata de los datos
+      await refetch();
+      
       toast.success('Inventario mínimo actualizado correctamente');
-      refetch();
     } catch (error) {
       console.error('Error al actualizar inventario mínimo:', error);
       toast.error(error instanceof Error ? error.message : 'Error al actualizar el inventario mínimo');
