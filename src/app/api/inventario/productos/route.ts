@@ -34,6 +34,7 @@ export async function GET() {
         proveedor: true,
         categoria: true,
         fotos: true,
+        inventarioMinimo: true,
       },
     });
 

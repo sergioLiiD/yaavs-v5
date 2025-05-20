@@ -18,8 +18,12 @@ interface Producto {
   sku?: string;
   descripcion?: string;
   tipo: string;
-  inventarioMinimo?: {
+  inventarioMinimo: {
+    id: number;
     cantidadMinima: number;
+    productoId: number;
+    createdAt: string;
+    updatedAt: string;
   } | null;
 }
 
@@ -308,7 +312,9 @@ export default function StockPage() {
               <div className="mt-2 grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Stock Mínimo</p>
-                  <p className="text-sm font-medium text-gray-900">{producto.inventarioMinimo?.cantidadMinima || 0}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {producto.inventarioMinimo?.cantidadMinima || 0}
+                  </p>
                 </div>
               </div>
             </div>
