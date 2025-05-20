@@ -68,6 +68,7 @@ export async function POST(request: Request) {
 
     const data = await request.json();
     console.log('POST /api/inventario/productos - Datos recibidos:', data);
+    console.log('tipoServicioId recibido:', data.tipoServicioId, typeof data.tipoServicioId);
 
     // Validar campos básicos requeridos
     const camposFaltantes = [];

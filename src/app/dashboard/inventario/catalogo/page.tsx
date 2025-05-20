@@ -318,6 +318,8 @@ export default function CatalogoPage() {
         }
       }
 
+      console.log('tipoServicioId antes de enviar:', formData.tipoServicioId, typeof formData.tipoServicioId);
+
       const data = {
         ...formData,
         tipoServicioId: formData.tipoServicioId,
