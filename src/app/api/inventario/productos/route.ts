@@ -122,11 +122,17 @@ export async function POST(request: Request) {
 
       console.log('Resultado de la consulta tipoServicio:', tipoServicio);
 
-      const [marca, modelo, proveedor] = await Promise.all([
-        data.tipo === 'PRODUCTO' ? tx.marca.findUnique({ where: { id: marcaId! } }) : null,
-        data.tipo === 'PRODUCTO' ? tx.modelo.findUnique({ where: { id: modeloId! } }) : null,
-        data.tipo === 'PRODUCTO' ? tx.proveedor.findUnique({ where: { id: proveedorId! } }) : null
-      ]);
+      let marca = null;
+      let modelo = null;
+      let proveedor = null;
+
+      if (data.tipo === 'PRODUCTO') {
+        [marca, modelo, proveedor] = await Promise.all([
+          tx.marca.findUnique({ where: { id: marcaId! } }),
+          tx.modelo.findUnique({ where: { id: modeloId! } }),
+          tx.proveedor.findUnique({ where: { id: proveedorId! } })
+        ]);
+      }
 
       if (!tipoServicio) {
         throw new Error('El tipo de servicio seleccionado no existe');
