@@ -29,9 +29,9 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     console.log('Body recibido:', body);
-    const { productoId, cantidad, precioCompra, notas } = body;
+    const { productoId, cantidad, precioCompra, notas, proveedorId } = body;
 
-    if (!productoId || !cantidad || !precioCompra) {
+    if (!productoId || !cantidad || !precioCompra || !proveedorId) {
       console.log('Faltan campos requeridos');
       return new NextResponse('Faltan campos requeridos', { status: 400 });
     }
@@ -53,6 +53,16 @@ export async function POST(request: Request) {
       return new NextResponse('Producto no encontrado', { status: 404 });
     }
 
+    // Validar que el proveedor existe
+    const proveedor = await prisma.proveedor.findUnique({
+      where: { id: Number(proveedorId) },
+    });
+
+    if (!proveedor) {
+      console.log('Proveedor no encontrado');
+      return new NextResponse('Proveedor no encontrado', { status: 404 });
+    }
+
     // Calcular el nuevo precio promedio
     const nuevoStock = (producto.stock || 0) + Number(cantidad);
     const nuevoPrecioPromedio = ((producto.precioPromedio || 0) * (producto.stock || 0) + (Number(precioCompra) * Number(cantidad))) / nuevoStock;
@@ -69,7 +79,8 @@ export async function POST(request: Request) {
             cantidad: Number(cantidad),
             precioCompra: Number(precioCompra),
             notas,
-            usuarioId: parseInt(session.user.id)
+            usuarioId: parseInt(session.user.id),
+            proveedorId: Number(proveedorId)
           }
         }),
         prisma.producto.update({

@@ -65,11 +65,6 @@ interface Modelo {
   marcaId: number;
 }
 
-interface Proveedor {
-  id: number;
-  nombre: string;
-}
-
 interface Categoria {
   id: number;
   nombre: string;
@@ -98,7 +93,6 @@ export default function CatalogoPage() {
   const [tiposServicio, setTiposServicio] = useState<{ id: number; nombre: string; }[]>([]);
   const [marcas, setMarcas] = useState<{ id: number; nombre: string; }[]>([]);
   const [modelos, setModelos] = useState<{ id: number; nombre: string; }[]>([]);
-  const [proveedores, setProveedores] = useState<{ id: number; nombre: string; }[]>([]);
   const [categorias, setCategorias] = useState<{ id: number; nombre: string; }[]>([]);
   const [marcaSeleccionada, setMarcaSeleccionada] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -174,10 +168,9 @@ export default function CatalogoPage() {
 
   const cargarDatosIniciales = async () => {
     try {
-      const [tiposServicioRes, marcasRes, proveedoresRes, categoriasRes, productosRes] = await Promise.all([
+      const [tiposServicioRes, marcasRes, categoriasRes, productosRes] = await Promise.all([
         fetch('/api/catalogo/tipos-servicio'),
         fetch('/api/catalogo/marcas'),
-        fetch('/api/catalogo/proveedores'),
         fetch('/api/catalogo/categorias'),
         fetch('/api/inventario/productos')
       ]);
@@ -188,9 +181,6 @@ export default function CatalogoPage() {
       }
       if (!marcasRes.ok) {
         throw new Error(`Error al cargar marcas: ${marcasRes.status}`);
-      }
-      if (!proveedoresRes.ok) {
-        throw new Error(`Error al cargar proveedores: ${proveedoresRes.status}`);
       }
       if (!categoriasRes.ok) {
         console.warn('No se pudieron cargar las categorías:', categoriasRes.status);
@@ -205,10 +195,9 @@ export default function CatalogoPage() {
       }
 
       // Intentar obtener los datos de cada respuesta
-      const [tiposServicio, marcas, proveedores, categorias, productos] = await Promise.all([
+      const [tiposServicio, marcas, categorias, productos] = await Promise.all([
         tiposServicioRes.json(),
         marcasRes.json(),
-        proveedoresRes.json(),
         categoriasRes.ok ? categoriasRes.json() : [],
         productosRes.json()
       ]);
@@ -220,9 +209,6 @@ export default function CatalogoPage() {
       if (!Array.isArray(marcas)) {
         throw new Error('El formato de marcas no es válido');
       }
-      if (!Array.isArray(proveedores)) {
-        throw new Error('El formato de proveedores no es válido');
-      }
       if (!Array.isArray(productos)) {
         throw new Error('El formato de productos no es válido');
       }
@@ -230,7 +216,6 @@ export default function CatalogoPage() {
       // Actualizar el estado con los datos validados
       setTiposServicio(tiposServicio);
       setMarcas(marcas);
-      setProveedores(proveedores);
       setCategorias(Array.isArray(categorias) ? categorias : []);
       setProductos(productos);
     } catch (error) {
@@ -321,6 +306,9 @@ export default function CatalogoPage() {
           newData[name] = parseInt(value) || 0;
           break;
         case 'categoriaId':
+          newData[name] = value ? parseInt(value) : null;
+          break;
+        case 'proveedorId':
           newData[name] = value ? parseInt(value) : null;
           break;
         default:
@@ -764,21 +752,36 @@ export default function CatalogoPage() {
                         </div>
 
                         <div>
-                          <label htmlFor="modelo" className="block text-sm font-medium text-gray-800">
-                            Modelo <span className="text-red-500">*</span>
-                          </label>
+                          <label className="block text-sm font-medium text-gray-900">Modelo *</label>
                           <select
                             name="modeloId"
-                            value={formData.modeloId?.toString() || ''}
+                            value={formData.modeloId || ''}
                             onChange={handleInputChange}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-700"
                             required={formData.tipo === 'PRODUCTO'}
-                            disabled={!marcaSeleccionada}
+                            disabled={!formData.marcaId}
                           >
-                            <option value="" className="pl-4">Seleccione un modelo</option>
-                            {modelos.map(modelo => (
-                              <option key={modelo.id} value={modelo.id} className="pl-4">
+                            <option value="">Selecciona un modelo</option>
+                            {modelos.map((modelo) => (
+                              <option key={modelo.id} value={modelo.id}>
                                 {modelo.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900">Categoría</label>
+                          <select
+                            name="categoriaId"
+                            value={formData.categoriaId?.toString() || ''}
+                            onChange={handleInputChange}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          >
+                            <option value="">Seleccione una categoría</option>
+                            {categorias.map(categoria => (
+                              <option key={categoria.id} value={categoria.id}>
+                                {categoria.nombre}
                               </option>
                             ))}
                           </select>
@@ -788,9 +791,7 @@ export default function CatalogoPage() {
 
                     {formData.tipo === 'PRODUCTO' && (
                       <div>
-                        <label htmlFor="garantia" className="block text-sm font-medium text-gray-800">
-                          Garantía <span className="text-red-500">*</span>
-                        </label>
+                        <label className="block text-sm font-medium text-gray-900">Garantía</label>
                         <div className="flex space-x-2">
                           <input
                             type="number"
@@ -842,26 +843,6 @@ export default function CatalogoPage() {
                         rows={3}
                         className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
                       />
-                    </div>
-
-                    {/* Selector de categoría oculto */}
-                    <div className="hidden">
-                      <label htmlFor="categoria" className="block text-sm font-medium text-gray-800">
-                        Categoría
-                      </label>
-                      <select
-                        name="categoriaId"
-                        value={formData.categoriaId?.toString() || ''}
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      >
-                        <option value="">Seleccione una categoría</option>
-                        {categorias.map(categoria => (
-                          <option key={categoria.id} value={categoria.id}>
-                            {categoria.nombre}
-                          </option>
-                        ))}
-                      </select>
                     </div>
                   </div>
                 </div>

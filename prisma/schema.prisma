@@ -381,21 +381,22 @@ model ConceptoPresupuesto {
 }
 
 model Proveedor {
-  id                 Int           @id @default(autoincrement())
+  id                 Int               @id @default(autoincrement())
   nombre             String
   contacto           String
   telefono           String
   email              String?
   direccion          String?
   notas              String?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
   banco              String
   clabeInterbancaria String
   cuentaBancaria     String
   rfc                String
-  tipo               TipoProveedor @default(FISICA)
+  tipo               TipoProveedor     @default(FISICA)
   productos          Producto[]
+  entradas           EntradaAlmacen[]
 
   @@map("proveedores")
 }
@@ -446,17 +447,19 @@ model InventarioMinimo {
 }
 
 model EntradaAlmacen {
-  id           Int      @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   productoId   Int
   cantidad     Int
   precioCompra Float
   notas        String?
-  fecha        DateTime @default(now())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  fecha        DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   usuarioId    Int
-  producto     Producto @relation(fields: [productoId], references: [id])
-  usuario      Usuario  @relation(fields: [usuarioId], references: [id])
+  proveedorId  Int?
+  producto     Producto   @relation(fields: [productoId], references: [id])
+  usuario      Usuario    @relation(fields: [usuarioId], references: [id])
+  proveedor    Proveedor? @relation(fields: [proveedorId], references: [id])
 
   @@map("entradas_almacen")
 }

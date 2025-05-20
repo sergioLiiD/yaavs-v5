@@ -78,7 +78,6 @@ export async function POST(request: Request) {
     if (data.tipo === 'PRODUCTO') {
       if (!data.marcaId) camposFaltantes.push('marca');
       if (!data.modeloId) camposFaltantes.push('modelo');
-      if (!data.proveedorId) camposFaltantes.push('proveedor');
     }
 
     if (camposFaltantes.length > 0) {

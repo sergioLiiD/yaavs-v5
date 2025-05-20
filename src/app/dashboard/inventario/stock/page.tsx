@@ -33,6 +33,10 @@ interface EntradaAlmacen {
   precioCompra: number;
   fecha: string;
   notas?: string;
+  proveedorId: number;
+  proveedor?: {
+    nombre: string;
+  };
 }
 
 type Ordenamiento = {
@@ -48,10 +52,10 @@ export default function StockPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [formData, setFormData] = useState({
-    cantidad: '',
-    precioCompra: '',
+    cantidad: 0,
+    precioCompra: 0,
     notas: '',
-    productoId: '',
+    proveedorId: 0
   });
   const [productosExpandidos, setProductosExpandidos] = useState<Set<number>>(new Set());
   const [ordenamiento, setOrdenamiento] = useState<Ordenamiento>({ campo: 'stock', direccion: 'asc' });
@@ -60,13 +64,13 @@ export default function StockPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showSalidaModal, setShowSalidaModal] = useState(false);
   const [formDataSalida, setFormDataSalida] = useState({
-    productoId: "",
-    cantidad: "",
-    razon: "",
-    tipo: "VENTA" as "VENTA" | "DANO" | "MERMA" | "OTRO",
-    referencia: "",
+    cantidad: '',
+    razon: '',
+    tipo: 'VENTA' as const,
+    referencia: ''
   });
   const [salidas, setSalidas] = useState<any[]>([]);
+  const [proveedores, setProveedores] = useState<{ id: number; nombre: string; }[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,7 +78,8 @@ export default function StockPage() {
       try {
         await Promise.all([
           loadProductos(),
-          loadSalidas()
+          loadSalidas(),
+          loadProveedores()
         ]);
       } catch (error) {
         console.error('Error al cargar datos:', error);
@@ -124,36 +129,24 @@ export default function StockPage() {
     }
   };
 
+  const loadProveedores = async () => {
+    try {
+      const response = await fetch('/api/catalogo/proveedores');
+      if (!response.ok) throw new Error('Error al cargar proveedores');
+      const data = await response.json();
+      setProveedores(data);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al cargar proveedores');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('handleSubmit iniciado');
-    console.log('productoSeleccionado:', productoSeleccionado);
-    console.log('formData:', formData);
-
-    if (!productoSeleccionado) {
-      console.log('No hay producto seleccionado');
-      return;
-    }
-
-    const cantidad = parseFloat(formData.cantidad);
-    const precioCompra = parseFloat(formData.precioCompra);
-
-    console.log('Valores convertidos:', { cantidad, precioCompra });
-
-    if (cantidad <= 0 || precioCompra <= 0) {
-      console.log('Valores inválidos');
-      alert('La cantidad y el precio de compra deben ser mayores a 0');
-      return;
-    }
-
-    if (!confirm('¿Estás seguro de registrar esta entrada?')) {
-      console.log('Usuario canceló la operación');
-      return;
-    }
+    if (!productoSeleccionado) return;
 
     try {
-      console.log('Iniciando petición a la API');
-      const response = await fetch(`/api/inventario/stock/entradas`, {
+      const response = await fetch('/api/inventario/stock/entradas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -163,28 +156,28 @@ export default function StockPage() {
           cantidad: formData.cantidad,
           precioCompra: formData.precioCompra,
           notas: formData.notas,
+          proveedorId: formData.proveedorId
         }),
       });
 
-      console.log('Respuesta de la API:', response.status);
-
       if (!response.ok) {
-        console.log('Error en la respuesta:', await response.text());
         throw new Error('Error al registrar entrada');
       }
 
-      const data = await response.json();
-      console.log('Datos recibidos:', data);
+      // Limpiar el formulario
+      setFormData({
+        cantidad: 0,
+        precioCompra: 0,
+        notas: '',
+        proveedorId: 0
+      });
 
-      setIsModalOpen(false);
-      setFormData({ cantidad: '', precioCompra: '', notas: '', productoId: '' });
-      setProductoSeleccionado(null);
-      setHasUnsavedChanges(false);
+      // Recargar los datos
       loadProductos();
-      alert('Entrada registrada exitosamente');
+      loadSalidas(productoSeleccionado.id.toString());
     } catch (error) {
-      console.error('Error en handleSubmit:', error);
-      alert('Error al registrar entrada');
+      console.error('Error:', error);
+      toast.error('Error al registrar entrada');
     }
   };
 
@@ -241,21 +234,24 @@ export default function StockPage() {
     }));
   };
 
-  const handleModalClose = () => {
-    if (hasUnsavedChanges) {
-      if (!confirm('Tienes cambios sin guardar. ¿Estás seguro de cerrar?')) {
-        return;
-      }
-    }
+  const handleCloseModal = () => {
     setIsModalOpen(false);
     setProductoSeleccionado(null);
-    setFormData({ cantidad: '', precioCompra: '', notas: '', productoId: '' });
+    setFormData({
+      cantidad: 0,
+      precioCompra: 0,
+      notas: '',
+      proveedorId: 0
+    });
     setHasUnsavedChanges(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'cantidad' || name === 'precioCompra' || name === 'proveedorId' ? Number(value) : value
+    }));
     setHasUnsavedChanges(true);
 
     // Si es el select de producto, actualizar productoSeleccionado
@@ -267,38 +263,49 @@ export default function StockPage() {
     }
   };
 
-  const handleSalidaSubmit = async (e: React.FormEvent) => {
+  const handleInputChangeSalida = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormDataSalida(prev => ({ ...prev, [name]: value }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSubmitSalida = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!productoSeleccionado) return;
+
     try {
-      const response = await fetch("/api/inventario/stock/salidas", {
-        method: "POST",
+      const response = await fetch('/api/inventario/stock/salidas', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formDataSalida),
+        body: JSON.stringify({
+          productoId: productoSeleccionado.id,
+          cantidad: formDataSalida.cantidad,
+          tipo: formDataSalida.tipo,
+          razon: formDataSalida.razon,
+          referencia: formDataSalida.referencia
+        }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        toast.error(error.error || "Error al registrar la salida");
-        return;
+        throw new Error('Error al registrar salida');
       }
 
-      const data = await response.json();
-      toast.success("Salida registrada correctamente");
-      setShowSalidaModal(false);
+      // Limpiar el formulario
       setFormDataSalida({
-        productoId: "",
-        cantidad: "",
-        razon: "",
-        tipo: "VENTA",
-        referencia: "",
+        cantidad: '',
+        razon: '',
+        tipo: 'VENTA',
+        referencia: ''
       });
-      router.refresh();
+
+      // Recargar los datos
+      loadProductos();
+      loadSalidas(productoSeleccionado.id.toString());
     } catch (error) {
-      console.error("Error al registrar salida:", error);
-      toast.error("Error al procesar la solicitud");
+      console.error('Error:', error);
+      toast.error('Error al registrar salida');
     }
   };
 
@@ -341,6 +348,9 @@ export default function StockPage() {
                               Usuario
                             </th>
                             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                              Proveedor
+                            </th>
+                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                               Detalles
                             </th>
                           </tr>
@@ -369,6 +379,9 @@ export default function StockPage() {
                                 </td>
                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
                                   {`${movimiento.usuario.nombre} ${movimiento.usuario.apellidoPaterno}`}
+                                </td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
+                                  {movimiento.tipo === 'ENTRADA' ? movimiento.proveedor?.nombre || '-' : '-'}
                                 </td>
                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
                                   {movimiento.tipo === 'ENTRADA' ? (
@@ -632,6 +645,23 @@ export default function StockPage() {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-900">Proveedor *</label>
+                  <select
+                    name="proveedorId"
+                    value={formData.proveedorId}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-700"
+                    required
+                  >
+                    <option value="">Selecciona un proveedor</option>
+                    {proveedores.map((proveedor) => (
+                      <option key={proveedor.id} value={proveedor.id}>
+                        {proveedor.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-900">Notas</label>
                   <textarea
                     name="notas"
@@ -646,7 +676,7 @@ export default function StockPage() {
               <div className="mt-6 flex justify-end space-x-3">
                 <button
                   type="button"
-                  onClick={handleModalClose}
+                  onClick={handleCloseModal}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   Cancelar
@@ -669,38 +699,17 @@ export default function StockPage() {
         onClose={() => setShowSalidaModal(false)}
         title="Registrar Salida de Almacén"
       >
-        <form onSubmit={handleSalidaSubmit} className="space-y-4">
+        <form onSubmit={handleSubmitSalida} className="space-y-4">
           <div>
-            <label htmlFor="productoSalida" className="block text-sm font-medium text-gray-900">
-              Producto
-            </label>
-            <select
-              id="productoSalida"
-              name="productoId"
-              value={formDataSalida.productoId}
-              onChange={(e) => setFormDataSalida({ ...formDataSalida, productoId: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900"
-              required
-            >
-              <option value="">Seleccionar producto</option>
-              {productos.map((producto) => (
-                <option key={producto.id} value={producto.id} className="text-gray-900">
-                  {producto.nombre} - Stock: {producto.stock}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="cantidadSalida" className="block text-sm font-medium text-gray-900">
+            <label htmlFor="cantidad" className="block text-sm font-medium text-gray-900">
               Cantidad
             </label>
             <input
               type="number"
-              id="cantidadSalida"
+              id="cantidad"
               name="cantidad"
               value={formDataSalida.cantidad}
-              onChange={(e) => setFormDataSalida({ ...formDataSalida, cantidad: e.target.value })}
+              onChange={handleInputChangeSalida}
               className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900 px-4 [&::placeholder]:text-gray-700"
               required
               min="1"
@@ -709,33 +718,33 @@ export default function StockPage() {
           </div>
 
           <div>
-            <label htmlFor="tipoSalida" className="block text-sm font-medium text-gray-900">
+            <label htmlFor="tipo" className="block text-sm font-medium text-gray-900">
               Tipo de Salida
             </label>
             <select
-              id="tipoSalida"
+              id="tipo"
               name="tipo"
               value={formDataSalida.tipo}
-              onChange={(e) => setFormDataSalida({ ...formDataSalida, tipo: e.target.value as "VENTA" | "DANO" | "MERMA" | "OTRO" })}
+              onChange={handleInputChangeSalida}
               className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900 px-4"
               required
             >
-              <option value="VENTA" className="text-gray-900">Venta</option>
-              <option value="DANO" className="text-gray-900">Daño</option>
-              <option value="MERMA" className="text-gray-900">Merma</option>
-              <option value="OTRO" className="text-gray-900">Otro</option>
+              <option value="VENTA">Venta</option>
+              <option value="DANO">Daño</option>
+              <option value="MERMA">Merma</option>
+              <option value="OTRO">Otro</option>
             </select>
           </div>
 
           <div>
-            <label htmlFor="razonSalida" className="block text-sm font-medium text-gray-900">
+            <label htmlFor="razon" className="block text-sm font-medium text-gray-900">
               Razón
             </label>
             <textarea
-              id="razonSalida"
+              id="razon"
               name="razon"
               value={formDataSalida.razon}
-              onChange={(e) => setFormDataSalida({ ...formDataSalida, razon: e.target.value })}
+              onChange={handleInputChangeSalida}
               className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-24 text-base text-gray-900 px-4 py-3 [&::placeholder]:text-gray-700"
               required
               placeholder="Ingresa la razón de la salida"
@@ -743,21 +752,21 @@ export default function StockPage() {
           </div>
 
           <div>
-            <label htmlFor="referenciaSalida" className="block text-sm font-medium text-gray-900">
-              Referencia (opcional)
+            <label htmlFor="referencia" className="block text-sm font-medium text-gray-900">
+              Referencia
             </label>
             <input
               type="text"
-              id="referenciaSalida"
+              id="referencia"
               name="referencia"
               value={formDataSalida.referencia}
-              onChange={(e) => setFormDataSalida({ ...formDataSalida, referencia: e.target.value })}
+              onChange={handleInputChangeSalida}
               className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900 px-4 [&::placeholder]:text-gray-700"
               placeholder="Ingresa una referencia (opcional)"
             />
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end space-x-3">
             <button
               type="button"
               onClick={() => setShowSalidaModal(false)}
@@ -767,7 +776,7 @@ export default function StockPage() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
             >
               Registrar Salida
             </button>
