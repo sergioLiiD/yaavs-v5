@@ -42,17 +42,17 @@ export async function GET(request: Request) {
     // Obtener entradas
     const entradas = await prisma.entradaAlmacen.findMany({
       where,
-      select: {
-        id: true,
-        productoId: true,
-        cantidad: true,
-        precioCompra: true,
-        notas: true,
-        fecha: true,
+      include: {
         usuario: {
           select: {
             nombre: true,
             apellidoPaterno: true,
+          },
+        },
+        proveedor: {
+          select: {
+            id: true,
+            nombre: true,
           },
         },
       },
