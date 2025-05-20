@@ -85,7 +85,6 @@ interface FormData {
   precioPromedio: number;
   stockMaximo: number;
   stockMinimo: number;
-  categoriaId: number | null;
 }
 
 export default function CatalogoPage() {
@@ -111,8 +110,7 @@ export default function CatalogoPage() {
     stock: 0,
     precioPromedio: 0,
     stockMaximo: 0,
-    stockMinimo: 0,
-    categoriaId: null
+    stockMinimo: 0
   });
   const [fotos, setFotos] = useState<File[]>([]);
   const [previewFotos, setPreviewFotos] = useState<string[]>([]);
@@ -168,10 +166,9 @@ export default function CatalogoPage() {
 
   const cargarDatosIniciales = async () => {
     try {
-      const [tiposServicioRes, marcasRes, categoriasRes, productosRes] = await Promise.all([
+      const [tiposServicioRes, marcasRes, productosRes] = await Promise.all([
         fetch('/api/catalogo/tipos-servicio'),
         fetch('/api/catalogo/marcas'),
-        fetch('/api/catalogo/categorias'),
         fetch('/api/inventario/productos')
       ]);
 
@@ -182,10 +179,6 @@ export default function CatalogoPage() {
       if (!marcasRes.ok) {
         throw new Error(`Error al cargar marcas: ${marcasRes.status}`);
       }
-      if (!categoriasRes.ok) {
-        console.warn('No se pudieron cargar las categorías:', categoriasRes.status);
-        setCategorias([]);
-      }
       if (!productosRes.ok) {
         const errorData = await productosRes.json().catch(() => null);
         if (productosRes.status === 500) {
@@ -195,10 +188,9 @@ export default function CatalogoPage() {
       }
 
       // Intentar obtener los datos de cada respuesta
-      const [tiposServicio, marcas, categorias, productos] = await Promise.all([
+      const [tiposServicio, marcas, productos] = await Promise.all([
         tiposServicioRes.json(),
         marcasRes.json(),
-        categoriasRes.ok ? categoriasRes.json() : [],
         productosRes.json()
       ]);
 
@@ -216,7 +208,6 @@ export default function CatalogoPage() {
       // Actualizar el estado con los datos validados
       setTiposServicio(tiposServicio);
       setMarcas(marcas);
-      setCategorias(Array.isArray(categorias) ? categorias : []);
       setProductos(productos);
     } catch (error) {
       console.error('Error al cargar datos iniciales:', error);
@@ -305,12 +296,6 @@ export default function CatalogoPage() {
         case 'stockMinimo':
           newData[name] = parseInt(value) || 0;
           break;
-        case 'categoriaId':
-          newData[name] = value ? parseInt(value) : null;
-          break;
-        case 'proveedorId':
-          newData[name] = value ? parseInt(value) : null;
-          break;
         default:
           (newData[name as keyof FormData] as any) = value;
       }
@@ -343,8 +328,7 @@ export default function CatalogoPage() {
         stock: formData.stock,
         precioPromedio: formData.precioPromedio,
         stockMaximo: formData.stockMaximo,
-        stockMinimo: formData.stockMinimo,
-        categoriaId: formData.categoriaId || null
+        stockMinimo: formData.stockMinimo
       };
 
       const response = await fetch('/api/inventario/productos', {
@@ -375,8 +359,7 @@ export default function CatalogoPage() {
         stock: 0,
         precioPromedio: 0,
         stockMaximo: 0,
-        stockMinimo: 0,
-        categoriaId: null
+        stockMinimo: 0
       });
       setShowModal(false);
       cargarDatosIniciales();
@@ -423,8 +406,7 @@ export default function CatalogoPage() {
       stock: producto.stock,
       precioPromedio: producto.precioPromedio,
       stockMaximo: producto.stockMaximo,
-      stockMinimo: producto.stockMinimo,
-      categoriaId: producto.categoriaId || null
+      stockMinimo: producto.stockMinimo
     });
     setShowModal(true);
   };
@@ -769,53 +751,34 @@ export default function CatalogoPage() {
                             ))}
                           </select>
                         </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-900">Categoría</label>
-                          <select
-                            name="categoriaId"
-                            value={formData.categoriaId?.toString() || ''}
-                            onChange={handleInputChange}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                          >
-                            <option value="">Seleccione una categoría</option>
-                            {categorias.map(categoria => (
-                              <option key={categoria.id} value={categoria.id}>
-                                {categoria.nombre}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
                       </>
                     )}
 
-                    {formData.tipo === 'PRODUCTO' && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900">Garantía</label>
-                        <div className="flex space-x-2">
-                          <input
-                            type="number"
-                            name="garantiaValor"
-                            id="garantiaValor"
-                            value={formData.garantiaValor}
-                            onChange={handleInputChange}
-                            className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-24 shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
-                            required
-                          />
-                          <select
-                            name="garantiaUnidad"
-                            id="garantiaUnidad"
-                            value={formData.garantiaUnidad}
-                            onChange={handleInputChange}
-                            className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-32 shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
-                            required
-                          >
-                            <option value="dias">Días</option>
-                            <option value="meses">Meses</option>
-                          </select>
-                        </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900">Garantía</label>
+                      <div className="flex space-x-2">
+                        <input
+                          type="number"
+                          name="garantiaValor"
+                          id="garantiaValor"
+                          value={formData.garantiaValor}
+                          onChange={handleInputChange}
+                          className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-24 shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                          required
+                        />
+                        <select
+                          name="garantiaUnidad"
+                          id="garantiaUnidad"
+                          value={formData.garantiaUnidad}
+                          onChange={handleInputChange}
+                          className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-32 shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                          required
+                        >
+                          <option value="dias">Días</option>
+                          <option value="meses">Meses</option>
+                        </select>
                       </div>
-                    )}
+                    </div>
 
                     <div>
                       <label htmlFor="descripcion" className="block text-sm font-medium text-gray-800">
@@ -873,8 +836,7 @@ export default function CatalogoPage() {
                         stock: 0,
                         precioPromedio: 0,
                         stockMaximo: 0,
-                        stockMinimo: 0,
-                        categoriaId: null
+                        stockMinimo: 0
                       });
                     }}
                     className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
