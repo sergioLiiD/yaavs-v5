@@ -92,9 +92,11 @@ export default function InventariosMinimosPage() {
   const filteredProductos = productos?.filter((producto) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      (producto.marca?.nombre?.toLowerCase() || '').includes(searchLower) ||
-      (producto.modelo?.nombre?.toLowerCase() || '').includes(searchLower) ||
-      (producto.nombre?.toLowerCase() || '').includes(searchLower)
+      producto.tipo === 'PRODUCTO' && (
+        (producto.marca?.nombre?.toLowerCase() || '').includes(searchLower) ||
+        (producto.modelo?.nombre?.toLowerCase() || '').includes(searchLower) ||
+        (producto.nombre?.toLowerCase() || '').includes(searchLower)
+      )
     );
   });
 
@@ -173,7 +175,7 @@ export default function InventariosMinimosPage() {
                             : 'Stock Normal'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {producto.proveedor?.nombre || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
