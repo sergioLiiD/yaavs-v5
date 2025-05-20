@@ -320,6 +320,9 @@ export default function ClientesPage() {
                               <p className="text-sm text-gray-600">
                                 <span className="font-medium">Código Postal:</span> {cliente.codigoPostal || 'No especificado'}
                               </p>
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Coordenadas:</span> {cliente.latitud && cliente.longitud ? `${cliente.latitud}, ${cliente.longitud}` : 'No especificadas'}
+                              </p>
                             </div>
                           </div>
                         </div>
