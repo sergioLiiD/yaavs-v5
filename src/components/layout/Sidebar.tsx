@@ -39,7 +39,7 @@ const menuItems: MenuItem[] = [
     roles: ['ADMINISTRADOR', 'GERENTE'],
     submenu: [
       { name: 'Marcas', href: '/dashboard/catalogo/marcas', icon: 'branding' },
-      { name: 'Modelos', href: '/dashboard/catalogo/modelos', icon: 'phone_iphone' },
+      { name: 'Modelos', href: '/dashboard/catalogo/modelos', icon: 'inventory_2' },
       { name: 'Tipos de Servicio', href: '/dashboard/catalogo/tipo-servicio', icon: 'build' },
       { name: 'Proveedores', href: '/dashboard/catalogo/proveedores', icon: 'business' }
     ]
