@@ -18,14 +18,18 @@ export async function GET(request: Request) {
 
     const salidas = await prisma.salidaAlmacen.findMany({
       where,
-      include: {
-        producto: true,
+      select: {
+        id: true,
+        productoId: true,
+        cantidad: true,
+        razon: true,
+        tipo: true,
+        referencia: true,
+        fecha: true,
         usuario: {
           select: {
-            id: true,
             nombre: true,
             apellidoPaterno: true,
-            apellidoMaterno: true,
           },
         },
       },
