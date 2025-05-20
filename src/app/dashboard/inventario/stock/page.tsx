@@ -11,8 +11,6 @@ interface Producto {
   id: number;
   nombre: string;
   stock: number;
-  stockMinimo: number;
-  stockMaximo: number;
   precioPromedio: number;
   entradas: EntradaAlmacen[];
   marca: { nombre: string };
@@ -20,6 +18,9 @@ interface Producto {
   sku?: string;
   descripcion?: string;
   tipo: string;
+  inventarioMinimo?: {
+    cantidadMinima: number;
+  } | null;
 }
 
 interface EntradaAlmacen {
@@ -206,9 +207,11 @@ export default function StockPage() {
         case 'precioPromedio':
           return factor * (a.precioPromedio - b.precioPromedio);
         case 'stockMinimo':
-          return factor * (a.stockMinimo - b.stockMinimo);
+          const minA = a.inventarioMinimo?.cantidadMinima || 0;
+          const minB = b.inventarioMinimo?.cantidadMinima || 0;
+          return factor * (minA - minB);
         case 'stockMaximo':
-          return factor * (a.stockMaximo - b.stockMaximo);
+          return factor * (a.stock - b.stock);
         default:
           return 0;
       }
@@ -219,8 +222,8 @@ export default function StockPage() {
     return productos.filter(producto => {
       const cumpleBusqueda = producto.nombre.toLowerCase().includes(searchTerm.toLowerCase());
       const cumpleFiltroStock = filtroStock === 'todos' ||
-        (filtroStock === 'bajo' && producto.stock <= producto.stockMinimo) ||
-        (filtroStock === 'alto' && producto.stock >= producto.stockMaximo);
+        (filtroStock === 'bajo' && producto.stock <= (producto.inventarioMinimo?.cantidadMinima || 0)) ||
+        (filtroStock === 'alto' && producto.stock >= producto.stock);
       return cumpleBusqueda && cumpleFiltroStock;
     });
   };
@@ -305,11 +308,7 @@ export default function StockPage() {
               <div className="mt-2 grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Stock Mínimo</p>
-                  <p className="text-sm font-medium text-gray-900">{producto.stockMinimo}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Stock Máximo</p>
-                  <p className="text-sm font-medium text-gray-900">{producto.stockMaximo}</p>
+                  <p className="text-sm font-medium text-gray-900">{producto.inventarioMinimo?.cantidadMinima || 0}</p>
                 </div>
               </div>
             </div>
@@ -499,16 +498,11 @@ export default function StockPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`text-sm ${
-                        producto.stock <= producto.stockMinimo 
+                        producto.stock <= (producto.inventarioMinimo?.cantidadMinima || 0) 
                           ? 'text-red-600' 
-                          : producto.stock >= producto.stockMaximo 
-                            ? 'text-green-600' 
-                            : 'text-gray-900'
+                          : 'text-gray-900'
                       }`}>
                         {producto.stock}
-                        {producto.stock <= producto.stockMinimo && (
-                          <HiExclamationCircle className="inline-block ml-1 text-red-500" title="Stock bajo" />
-                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
