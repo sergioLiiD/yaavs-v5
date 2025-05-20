@@ -80,11 +80,13 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
     { href: '/dashboard', icon: HiChartPie, text: 'Dashboard', active: title === 'Dashboard' },
     { href: '/dashboard/tickets', icon: HiTicket, text: 'Tickets', active: title.includes('Tickets') },
     { href: '/dashboard/clientes', icon: HiUsers, text: 'Clientes', active: title.includes('Clientes') },
+    { href: '/dashboard/dispositivos', icon: HiPhone, text: 'Dispositivos', active: title.includes('Dispositivos') },
     { href: '/dashboard/reportes', icon: HiClipboardCheck, text: 'Reportes', active: title.includes('Reportes') },
   ];
 
   const configLinks = [
     { href: '/dashboard/usuarios', icon: HiUsers, text: 'Usuarios', active: title.includes('Usuarios') },
+    { href: '/dashboard/configuracion', icon: HiCog, text: 'Configuración', active: title.includes('Configuración') },
     { href: '/dashboard/perfil', icon: HiUser, text: 'Mi Perfil', active: title.includes('Perfil') },
   ];
 
@@ -349,6 +351,12 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                         </Link>
                       </li>
                       <li>
+                        <Link href="/dashboard/configuracion" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                          <HiCog className="mr-2 h-5 w-5" />
+                          Configuración
+                        </Link>
+                      </li>
+                      <li>
                         <button 
                           onClick={handleSignOut}
                           className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
@@ -364,6 +372,11 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
             </div>
           </div>
         </header>
+
+        {/* Contenido de la página */}
+        <main className="flex-1 overflow-y-auto p-4">
+          {children}
+        </main>
 
         {/* Menú móvil */}
         <div className={`lg:hidden fixed inset-0 z-30 bg-gray-800 bg-opacity-30 transition-opacity duration-200 ${
