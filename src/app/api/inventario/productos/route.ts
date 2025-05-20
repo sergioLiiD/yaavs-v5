@@ -94,6 +94,8 @@ export async function POST(request: Request) {
 
     // Convertir IDs a números
     const tipoServicioId = Number(data.tipoServicioId);
+    console.log('tipoServicioId después de la conversión:', tipoServicioId, typeof tipoServicioId);
+    
     if (isNaN(tipoServicioId)) {
       return NextResponse.json(
         { 
@@ -112,12 +114,15 @@ export async function POST(request: Request) {
       // Verificar que existan todas las relaciones necesarias
       console.log('tipoServicioId antes de la consulta:', tipoServicioId, typeof tipoServicioId);
       
-      const [tipoServicio, marca, modelo, proveedor] = await Promise.all([
-        tx.tipoServicio.findUnique({ 
-          where: { 
-            id: Number(tipoServicioId) 
-          } 
-        }),
+      const tipoServicio = await tx.tipoServicio.findUnique({ 
+        where: { 
+          id: tipoServicioId 
+        } 
+      });
+
+      console.log('Resultado de la consulta tipoServicio:', tipoServicio);
+
+      const [marca, modelo, proveedor] = await Promise.all([
         data.tipo === 'PRODUCTO' ? tx.marca.findUnique({ where: { id: marcaId! } }) : null,
         data.tipo === 'PRODUCTO' ? tx.modelo.findUnique({ where: { id: modeloId! } }) : null,
         data.tipo === 'PRODUCTO' ? tx.proveedor.findUnique({ where: { id: proveedorId! } }) : null
