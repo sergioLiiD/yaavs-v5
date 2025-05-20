@@ -5,6 +5,22 @@ import { UsuarioService } from '@/services/usuarioService';
 import { CreateUsuarioDTO, NivelUsuario } from '@/types/usuario';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
+
+// Esquema de validación para el registro de usuarios
+const usuarioSchema = z.object({
+  email: z.string().email('Email inválido'),
+  nombre: z.string().min(1, 'El nombre es requerido'),
+  apellidoPaterno: z.string().min(1, 'El apellido paterno es requerido'),
+  apellidoMaterno: z.string().optional(),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  confirmPassword: z.string(),
+  nivel: z.enum(['ADMINISTRADOR', 'TECNICO', 'ATENCION_CLIENTE'] as const),
+  activo: z.boolean().optional().default(true)
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Las contraseñas no coinciden",
+  path: ["confirmPassword"],
+});
 
 // GET /api/usuarios
 export async function GET(request: Request) {
@@ -48,15 +64,25 @@ export async function GET(request: Request) {
 // POST /api/usuarios
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const body = await request.json();
-    const { email, nombre, apellidoPaterno, apellidoMaterno, password, nivel } = body;
+    console.log('Datos recibidos:', { ...body, password: '[REDACTED]' });
+
+    // Validar datos con el esquema
+    const validatedData = usuarioSchema.parse(body);
+    console.log('Datos validados correctamente');
 
     // Verificar si el usuario ya existe
     const usuarioExistente = await prisma.usuario.findUnique({
-      where: { email }
+      where: { email: validatedData.email }
     });
 
     if (usuarioExistente) {
+      console.log('Email ya registrado:', validatedData.email);
       return NextResponse.json(
         { error: 'El email ya está registrado' },
         { status: 400 }
@@ -65,27 +91,52 @@ export async function POST(request: Request) {
 
     // Encriptar la contraseña
     const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const passwordHash = await bcrypt.hash(validatedData.password, salt);
 
     // Crear el usuario
+    console.log('Creando usuario...');
     const usuario = await prisma.usuario.create({
       data: {
-        email,
-        nombre,
-        apellidoPaterno,
-        apellidoMaterno,
+        email: validatedData.email,
+        nombre: validatedData.nombre,
+        apellidoPaterno: validatedData.apellidoPaterno,
+        apellidoMaterno: validatedData.apellidoMaterno || '',
         passwordHash,
-        nivel: nivel || 'TECNICO',
-        activo: true
+        nivel: validatedData.nivel,
+        activo: validatedData.activo
+      },
+      select: {
+        id: true,
+        email: true,
+        nombre: true,
+        apellidoPaterno: true,
+        apellidoMaterno: true,
+        nivel: true,
+        activo: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
+    console.log('Usuario creado:', usuario.id);
 
-    // Omitir el passwordHash de la respuesta
-    const { passwordHash: _, ...usuarioSinPassword } = usuario;
-
-    return NextResponse.json(usuarioSinPassword);
+    return NextResponse.json(usuario);
   } catch (error) {
     console.error('Error al crear usuario:', error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Datos inválidos', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Error al crear el usuario' },
       { status: 500 }

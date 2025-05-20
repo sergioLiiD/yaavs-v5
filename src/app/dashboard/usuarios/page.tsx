@@ -26,7 +26,7 @@ import {
 import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 
-const NIVELES_USUARIO = ['ADMINISTRADOR', 'GERENTE', 'TECNICO', 'RECEPCIONISTA'] as const;
+const NIVELES_USUARIO = ['ADMINISTRADOR', 'TECNICO', 'ATENCION_CLIENTE'] as const;
 
 export default function UsuariosPage() {
   const router = useRouter();
