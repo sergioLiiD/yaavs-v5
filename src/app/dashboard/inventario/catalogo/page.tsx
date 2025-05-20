@@ -229,11 +229,6 @@ export default function CatalogoPage() {
       const marcasRes = await fetch('/api/catalogo/marcas');
       const marcasData = await marcasRes.json();
       setMarcas(marcasData);
-
-      // Cargar proveedores
-      const proveedoresRes = await fetch('/api/catalogo/proveedores');
-      const proveedoresData = await proveedoresRes.json();
-      setProveedores(proveedoresData);
     } catch (error) {
       console.error('Error al cargar datos:', error);
     }
@@ -472,9 +467,6 @@ export default function CatalogoPage() {
                   Modelo
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  Tipo de Servicio
-                </th>
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                   Detalles
                 </th>
                 <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
@@ -503,9 +495,6 @@ export default function CatalogoPage() {
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {producto.modelo?.nombre || '-'}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {producto.tipoServicio?.nombre || '-'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <button
