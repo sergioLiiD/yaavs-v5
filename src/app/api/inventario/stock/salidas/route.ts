@@ -42,17 +42,18 @@ export async function GET(request: Request) {
     // Obtener entradas
     const entradas = await prisma.entradaAlmacen.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        productoId: true,
+        cantidad: true,
+        precioCompra: true,
+        notas: true,
+        fecha: true,
+        proveedorId: true,
         usuario: {
           select: {
             nombre: true,
             apellidoPaterno: true,
-          },
-        },
-        proveedor: {
-          select: {
-            id: true,
-            nombre: true,
           },
         },
       },
@@ -61,10 +62,33 @@ export async function GET(request: Request) {
       },
     });
 
+    // Obtener los proveedores para las entradas
+    const proveedoresIds = entradas
+      .filter(e => e.proveedorId)
+      .map(e => e.proveedorId as number);
+
+    const proveedores = await prisma.proveedor.findMany({
+      where: {
+        id: {
+          in: proveedoresIds
+        }
+      },
+      select: {
+        id: true,
+        nombre: true,
+      },
+    });
+
+    // Combinar entradas con proveedores
+    const entradasConProveedor = entradas.map(entrada => ({
+      ...entrada,
+      proveedor: entrada.proveedorId ? proveedores.find(p => p.id === entrada.proveedorId) : null
+    }));
+
     // Combinar y ordenar por fecha
     const historial = [
       ...salidas.map(s => ({ ...s, tipo: 'SALIDA' })),
-      ...entradas.map(e => ({ ...e, tipo: 'ENTRADA' }))
+      ...entradasConProveedor.map(e => ({ ...e, tipo: 'ENTRADA' }))
     ].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 
     return NextResponse.json(historial);
