@@ -80,13 +80,11 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
     { href: '/dashboard', icon: HiChartPie, text: 'Dashboard', active: title === 'Dashboard' },
     { href: '/dashboard/tickets', icon: HiTicket, text: 'Tickets', active: title.includes('Tickets') },
     { href: '/dashboard/clientes', icon: HiUsers, text: 'Clientes', active: title.includes('Clientes') },
-    { href: '/dashboard/dispositivos', icon: HiPhone, text: 'Dispositivos', active: title.includes('Dispositivos') },
     { href: '/dashboard/reportes', icon: HiClipboardCheck, text: 'Reportes', active: title.includes('Reportes') },
   ];
 
   const configLinks = [
     { href: '/dashboard/usuarios', icon: HiUsers, text: 'Usuarios', active: title.includes('Usuarios') },
-    { href: '/dashboard/configuracion', icon: HiCog, text: 'Configuración', active: title.includes('Configuración') },
     { href: '/dashboard/perfil', icon: HiUser, text: 'Mi Perfil', active: title.includes('Perfil') },
   ];
 
@@ -351,12 +349,6 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                         </Link>
                       </li>
                       <li>
-                        <Link href="/dashboard/configuracion" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                          <HiCog className="mr-2 h-5 w-5" />
-                          Configuración
-                        </Link>
-                      </li>
-                      <li>
                         <button 
                           onClick={handleSignOut}
                           className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
@@ -436,7 +428,6 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                             href={link.route}
                             className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
                               ${link.active ? 'text-blue-600' : 'text-gray-900'}`}
-                            onClick={() => setMobileMenuOpen(false)}
                           >
                             <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-blue-600' : 'text-gray-500'}`} />
                             {link.text}
@@ -444,83 +435,13 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                         </li>
                       ))}
                     </ul>
-                  </li>
-
-                  {/* Menú de Costos con submenús para móvil */}
-                  <li>
-                    <button
-                      type="button"
-                      className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
-                        title.includes('Costos') && 'bg-gray-100'
-                      }`}
-                      onClick={toggleCostos}
-                    >
-                      <HiCurrencyDollar className={`w-6 h-6 text-gray-500 transition duration-75 ${
-                        title.includes('Costos') && 'text-blue-600'
-                      }`} />
-                      <span className="flex-1 ml-3 text-left whitespace-nowrap">Costos</span>
-                      <svg className={`w-5 h-5 ${costosOpen ? 'rotate-180' : ''}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
-                      </svg>
-                    </button>
-                    <ul className={`${costosOpen ? 'block' : 'hidden'} py-2 space-y-2`}>
-                      {costosLinks.map((link, index) => (
-                        <li key={index}>
-                          <Link
-                            href={link.route}
-                            className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
-                              ${link.active ? 'text-blue-600' : 'text-gray-900'}`}
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
-                            <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-blue-600' : 'text-gray-500'}`} />
-                            {link.text}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                </ul>
-                
-                <hr className="my-2 border-gray-200" />
-                
-                {/* Enlaces de configuración */}
-                <ul className="space-y-2">
-                  {configLinks.map((link, index) => (
-                    <li key={index}>
-                      <Link 
-                        href={link.href}
-                        className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-gray-100
-                          ${link.active ? 'bg-gray-100 text-blue-600' : 'text-gray-900'}`}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <link.icon className={`w-6 h-6 ${link.active ? 'text-blue-600' : 'text-gray-500'}`} />
-                        <span className="ml-3">{link.text}</span>
-                      </Link>
-                    </li>
-                  ))}
-                  <li>
-                    <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        handleSignOut();
-                      }}
-                      className="flex w-full items-center p-2 text-base font-normal text-red-600 rounded-lg hover:bg-red-50"
-                    >
-                      <HiLogout className="w-6 h-6 text-red-500" />
-                      <span className="ml-3">Cerrar Sesión</span>
-                    </button>
                   </li>
                 </ul>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Contenido de la página */}
-        <main className="flex-1 overflow-y-auto p-4 bg-gray-50">
-          {children}
-        </main>
       </div>
     </div>
   );
-} 
+}
