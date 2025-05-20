@@ -92,7 +92,6 @@ export default function CatalogoPage() {
   const [tiposServicio, setTiposServicio] = useState<{ id: number; nombre: string; }[]>([]);
   const [marcas, setMarcas] = useState<{ id: number; nombre: string; }[]>([]);
   const [modelos, setModelos] = useState<{ id: number; nombre: string; }[]>([]);
-  const [categorias, setCategorias] = useState<{ id: number; nombre: string; }[]>([]);
   const [marcaSeleccionada, setMarcaSeleccionada] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
