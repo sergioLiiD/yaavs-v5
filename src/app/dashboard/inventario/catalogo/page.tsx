@@ -86,7 +86,6 @@ interface FormData {
   tipoServicioId: number;
   marcaId: number | null;
   modeloId: number | null;
-  proveedorId: number | null;
   stock: number;
   precioPromedio: number;
   stockMaximo: number;
@@ -115,7 +114,6 @@ export default function CatalogoPage() {
     tipoServicioId: 0,
     marcaId: null,
     modeloId: null,
-    proveedorId: null,
     stock: 0,
     precioPromedio: 0,
     stockMaximo: 0,
@@ -307,9 +305,6 @@ export default function CatalogoPage() {
         case 'modeloId':
           newData[name] = value ? parseInt(value) : null;
           break;
-        case 'proveedorId':
-          newData[name] = value ? parseInt(value) : null;
-          break;
         case 'garantiaValor':
           newData[name] = parseInt(value) || 0;
           break;
@@ -346,8 +341,8 @@ export default function CatalogoPage() {
 
       // Si es un producto, validar campos adicionales
       if (formData.tipo === 'PRODUCTO') {
-        if (!formData.marcaId || !formData.modeloId || !formData.proveedorId) {
-          throw new Error('Para productos, debe seleccionar marca, modelo y proveedor');
+        if (!formData.marcaId || !formData.modeloId) {
+          throw new Error('Para productos, debe seleccionar marca y modelo');
         }
       }
 
@@ -356,7 +351,6 @@ export default function CatalogoPage() {
         tipoServicioId: formData.tipoServicioId,
         marcaId: formData.tipo === 'PRODUCTO' ? formData.marcaId : null,
         modeloId: formData.tipo === 'PRODUCTO' ? formData.modeloId : null,
-        proveedorId: formData.tipo === 'PRODUCTO' ? formData.proveedorId : null,
         garantiaValor: formData.garantiaValor,
         stock: formData.stock,
         precioPromedio: formData.precioPromedio,
@@ -390,7 +384,6 @@ export default function CatalogoPage() {
         tipoServicioId: 0,
         marcaId: null,
         modeloId: null,
-        proveedorId: null,
         stock: 0,
         precioPromedio: 0,
         stockMaximo: 0,
@@ -439,7 +432,6 @@ export default function CatalogoPage() {
       tipoServicioId: producto.tipoServicioId,
       marcaId: producto.marcaId,
       modeloId: producto.modeloId,
-      proveedorId: producto.proveedorId,
       stock: producto.stock,
       precioPromedio: producto.precioPromedio,
       stockMaximo: producto.stockMaximo,
@@ -683,7 +675,6 @@ export default function CatalogoPage() {
                             ...(tipo === 'SERVICIO' ? {
                               marcaId: null,
                               modeloId: null,
-                              proveedorId: null,
                               garantiaValor: 0,
                               garantiaUnidad: 'dias'
                             } : {})
@@ -788,26 +779,6 @@ export default function CatalogoPage() {
                             {modelos.map(modelo => (
                               <option key={modelo.id} value={modelo.id} className="pl-4">
                                 {modelo.nombre}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label htmlFor="proveedor" className="block text-sm font-medium text-gray-800">
-                            Proveedor <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            name="proveedorId"
-                            value={formData.proveedorId?.toString() || ''}
-                            onChange={handleInputChange}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
-                            required={formData.tipo === 'PRODUCTO'}
-                          >
-                            <option value="" className="pl-4">Seleccione un proveedor</option>
-                            {proveedores.map(proveedor => (
-                              <option key={proveedor.id} value={proveedor.id} className="pl-4">
-                                {proveedor.nombre}
                               </option>
                             ))}
                           </select>
@@ -918,7 +889,6 @@ export default function CatalogoPage() {
                         tipoServicioId: 0,
                         marcaId: null,
                         modeloId: null,
-                        proveedorId: null,
                         stock: 0,
                         precioPromedio: 0,
                         stockMaximo: 0,
