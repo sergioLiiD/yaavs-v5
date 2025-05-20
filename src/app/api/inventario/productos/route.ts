@@ -93,7 +93,16 @@ export async function POST(request: Request) {
     }
 
     // Convertir IDs a números
-    const tipoServicioId = parseInt(data.tipoServicioId);
+    const tipoServicioId = Number(data.tipoServicioId);
+    if (isNaN(tipoServicioId)) {
+      return NextResponse.json(
+        { 
+          error: 'Error de validación',
+          mensaje: 'El ID del tipo de servicio debe ser un número válido'
+        },
+        { status: 400 }
+      );
+    }
     const marcaId = data.tipo === 'PRODUCTO' ? parseInt(data.marcaId) : null;
     const modeloId = data.tipo === 'PRODUCTO' ? parseInt(data.modeloId) : null;
     const proveedorId = data.tipo === 'PRODUCTO' ? parseInt(data.proveedorId) : null;
@@ -101,8 +110,14 @@ export async function POST(request: Request) {
     // Crear el producto usando una transacción para asegurar la integridad de los datos
     const nuevoProducto = await prisma.$transaction(async (tx) => {
       // Verificar que existan todas las relaciones necesarias
+      console.log('tipoServicioId antes de la consulta:', tipoServicioId, typeof tipoServicioId);
+      
       const [tipoServicio, marca, modelo, proveedor] = await Promise.all([
-        tx.tipoServicio.findUnique({ where: { id: tipoServicioId } }),
+        tx.tipoServicio.findUnique({ 
+          where: { 
+            id: Number(tipoServicioId) 
+          } 
+        }),
         data.tipo === 'PRODUCTO' ? tx.marca.findUnique({ where: { id: marcaId! } }) : null,
         data.tipo === 'PRODUCTO' ? tx.modelo.findUnique({ where: { id: modeloId! } }) : null,
         data.tipo === 'PRODUCTO' ? tx.proveedor.findUnique({ where: { id: proveedorId! } }) : null
