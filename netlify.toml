@@ -1,5 +1,5 @@
 [build]
-  command = "rm -rf node_modules && npm install --save-dev typescript@5.8.3 @types/node@22.15.19 @types/react@19.1.4 @types/react-dom@19.1.5 && npm install && npm run build"
+  command = "rm -rf node_modules && npm install && npm run build"
   publish = ".next"
 
 [build.environment]
