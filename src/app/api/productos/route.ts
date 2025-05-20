@@ -24,6 +24,12 @@ export async function GET() {
           },
         },
         inventarioMinimo: true,
+        proveedor: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
       },
       orderBy: {
         nombre: 'asc',
