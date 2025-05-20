@@ -10,7 +10,8 @@
     "lint": "next lint",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate deploy",
-    "prisma:studio": "npx prisma studio"
+    "prisma:studio": "npx prisma studio",
+    "migrate-data": "NODE_ENV=migration ts-node --project tsconfig.migration.json scripts/migrate-data.ts"
   },
   "dependencies": {
     "@auth/core": "0.34.2",
@@ -52,7 +53,6 @@
     "@tanstack/react-table": "8.21.2",
     "@types/bcryptjs": "2.4.6",
     "@types/jsonwebtoken": "9.0.6",
-    "@types/node": "20.17.27",
     "@types/pg": "8.11.2",
     "@types/react": "18.3.20",
     "@types/react-dom": "18.3.5",
@@ -66,6 +66,7 @@
     "cmdk": "0.2.1",
     "cookie": "0.7.2",
     "date-fns": "4.1.0",
+    "dotenv": "16.5.0",
     "eslint": "8.57.1",
     "eslint-config-next": "14.2.25",
     "jose": "4.15.9",
@@ -87,14 +88,16 @@
     "tailwind-merge": "3.0.2",
     "tailwindcss": "3.4.17",
     "tailwindcss-animate": "1.0.7",
-    "typescript": "5.8.2",
-    "uuid": "9.0.1",
     "use-sync-external-store": "1.4.0",
+    "uuid": "9.0.1",
     "zod": "3.24.2"
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "5.11.1",
-    "prisma": "5.22.0"
+    "@types/node": "22.15.19",
+    "prisma": "5.22.0",
+    "ts-node": "10.9.2",
+    "typescript": "5.8.3"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

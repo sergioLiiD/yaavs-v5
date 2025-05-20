@@ -189,6 +189,8 @@ export default function StockPage() {
       nuevosExpandidos.delete(productoId);
     } else {
       nuevosExpandidos.add(productoId);
+      // Cargar las salidas cuando se expanden los detalles
+      loadSalidas(productoId.toString());
     }
     setProductosExpandidos(nuevosExpandidos);
   };
