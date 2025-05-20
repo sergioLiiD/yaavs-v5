@@ -297,12 +297,12 @@ export default function StockPage() {
 
   const renderDetalleProducto = (producto: Producto) => {
     return (
-      <tr key={`detalle-${producto.id}`} className="bg-gray-50">
+      <tr>
         <td colSpan={6} className="px-6 py-4">
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
               <h4 className="text-sm font-medium text-gray-900">Información de Stock</h4>
-              <div className="mt-2 grid grid-cols-3 gap-4">
+              <div className="mt-2 grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Stock Mínimo</p>
                   <p className="text-sm font-medium text-gray-900">{producto.stockMinimo}</p>
@@ -310,10 +310,6 @@ export default function StockPage() {
                 <div>
                   <p className="text-sm text-gray-500">Stock Máximo</p>
                   <p className="text-sm font-medium text-gray-900">{producto.stockMaximo}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Precio Promedio</p>
-                  <p className="text-sm font-medium text-gray-900">${producto.precioPromedio.toFixed(2)}</p>
                 </div>
               </div>
             </div>
@@ -340,40 +336,54 @@ export default function StockPage() {
                               Usuario
                             </th>
                             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                              Razón
+                              Detalles
                             </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {salidas
-                            .filter(salida => salida.productoId === producto.id)
-                            .map((salida) => (
-                              <tr key={salida.id}>
+                            .filter(movimiento => movimiento.productoId === producto.id)
+                            .map((movimiento) => (
+                              <tr key={movimiento.id}>
                                 <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-900 sm:pl-0">
-                                  {new Date(salida.fecha).toLocaleString()}
+                                  {new Date(movimiento.fecha).toLocaleString()}
                                 </td>
                                 <td className="whitespace-nowrap px-3 py-4 text-sm">
                                   <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
-                                    salida.tipo === 'VENTA' ? 'bg-green-100 text-green-700' :
-                                    salida.tipo === 'DANO' ? 'bg-red-100 text-red-700' :
-                                    salida.tipo === 'MERMA' ? 'bg-yellow-100 text-yellow-700' :
+                                    movimiento.tipo === 'ENTRADA' ? 'bg-green-100 text-green-700' :
+                                    movimiento.tipo === 'SALIDA' && movimiento.tipo === 'VENTA' ? 'bg-blue-100 text-blue-700' :
+                                    movimiento.tipo === 'SALIDA' && movimiento.tipo === 'DANO' ? 'bg-red-100 text-red-700' :
+                                    movimiento.tipo === 'SALIDA' && movimiento.tipo === 'MERMA' ? 'bg-yellow-100 text-yellow-700' :
                                     'bg-gray-100 text-gray-700'
                                   }`}>
-                                    {salida.tipo}
+                                    {movimiento.tipo === 'ENTRADA' ? 'ENTRADA' : movimiento.tipo}
                                   </span>
                                 </td>
                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                  {salida.cantidad}
+                                  {movimiento.cantidad}
                                 </td>
                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                  {`${salida.usuario.nombre} ${salida.usuario.apellidoPaterno}`}
+                                  {`${movimiento.usuario.nombre} ${movimiento.usuario.apellidoPaterno}`}
                                 </td>
                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                  {salida.razon}
-                                  {salida.referencia && (
-                                    <span className="ml-2 text-gray-500">
-                                      (Ref: {salida.referencia})
-                                    </span>
+                                  {movimiento.tipo === 'ENTRADA' ? (
+                                    <>
+                                      Precio: ${movimiento.precioCompra}
+                                      {movimiento.notas && (
+                                        <span className="ml-2 text-gray-500">
+                                          ({movimiento.notas})
+                                        </span>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <>
+                                      {movimiento.razon}
+                                      {movimiento.referencia && (
+                                        <span className="ml-2 text-gray-500">
+                                          (Ref: {movimiento.referencia})
+                                        </span>
+                                      )}
+                                    </>
                                   )}
                                 </td>
                               </tr>

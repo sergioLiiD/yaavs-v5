@@ -16,6 +16,7 @@ export async function GET(request: Request) {
 
     const where = productoId ? { productoId: Number(productoId) } : {};
 
+    // Obtener salidas
     const salidas = await prisma.salidaAlmacen.findMany({
       where,
       select: {
@@ -38,9 +39,37 @@ export async function GET(request: Request) {
       },
     });
 
-    return NextResponse.json(salidas);
+    // Obtener entradas
+    const entradas = await prisma.entradaAlmacen.findMany({
+      where,
+      select: {
+        id: true,
+        productoId: true,
+        cantidad: true,
+        precioCompra: true,
+        notas: true,
+        fecha: true,
+        usuario: {
+          select: {
+            nombre: true,
+            apellidoPaterno: true,
+          },
+        },
+      },
+      orderBy: {
+        fecha: 'desc',
+      },
+    });
+
+    // Combinar y ordenar por fecha
+    const historial = [
+      ...salidas.map(s => ({ ...s, tipo: 'SALIDA' })),
+      ...entradas.map(e => ({ ...e, tipo: 'ENTRADA' }))
+    ].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+    return NextResponse.json(historial);
   } catch (error) {
-    console.error('Error al obtener salidas:', error);
+    console.error('Error al obtener historial:', error);
     return new NextResponse('Error interno del servidor', { status: 500 });
   }
 }
