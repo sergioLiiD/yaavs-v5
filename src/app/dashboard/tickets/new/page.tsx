@@ -417,7 +417,7 @@ export default function NewTicketPage() {
                   <Input
                     id="codigoDesbloqueo"
                     name="codigoDesbloqueo"
-                    type="password"
+                    type="text"
                     value={formData.codigoDesbloqueo}
                     onChange={handleInputChange}
                     placeholder="Ingresa el PIN"
