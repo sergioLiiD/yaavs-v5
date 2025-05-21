@@ -51,35 +51,43 @@ export async function PUT(
     let inventario;
     if (inventarioExistente) {
       console.log('Actualizando inventario existente');
-      inventario = await prisma.inventarioMinimo.update({
-        where: { productoId },
-        data: { cantidadMinima },
-        include: {
-          producto: {
-            include: {
-              marca: true,
-              modelo: true,
-              proveedor: true,
+      inventario = await prisma.$transaction(async (tx) => {
+        const updated = await tx.inventarioMinimo.update({
+          where: { productoId },
+          data: { cantidadMinima },
+          include: {
+            producto: {
+              include: {
+                marca: true,
+                modelo: true,
+                proveedor: true,
+                inventarioMinimo: true,
+              },
             },
           },
-        },
+        });
+        return updated;
       });
     } else {
       console.log('Creando nuevo inventario');
-      inventario = await prisma.inventarioMinimo.create({
-        data: {
-          productoId,
-          cantidadMinima,
-        },
-        include: {
-          producto: {
-            include: {
-              marca: true,
-              modelo: true,
-              proveedor: true,
+      inventario = await prisma.$transaction(async (tx) => {
+        const created = await tx.inventarioMinimo.create({
+          data: {
+            productoId,
+            cantidadMinima,
+          },
+          include: {
+            producto: {
+              include: {
+                marca: true,
+                modelo: true,
+                proveedor: true,
+                inventarioMinimo: true,
+              },
             },
           },
-        },
+        });
+        return created;
       });
     }
 

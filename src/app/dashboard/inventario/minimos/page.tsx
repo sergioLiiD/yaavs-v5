@@ -65,17 +65,17 @@ export default function InventariosMinimosPage() {
       const data = await response.json();
       console.log('Respuesta exitosa:', data);
       
-      // Forzar una recarga inmediata de los datos
-      await refetch();
-      
       // Cerrar el modal y limpiar el estado
       setEditingProductId(null);
       setNewMinimo('0');
       
+      // Forzar una recarga inmediata de los datos
+      await refetch();
+      
       // Forzar una recarga adicional después de un breve retraso
       setTimeout(async () => {
         await refetch();
-      }, 1000);
+      }, 500);
       
       toast.success('Inventario mínimo actualizado correctamente');
     } catch (error) {
@@ -99,8 +99,16 @@ export default function InventariosMinimosPage() {
 
       const data = await response.json();
       console.log('Respuesta exitosa:', data);
+      
+      // Forzar una recarga inmediata de los datos
+      await refetch();
+      
+      // Forzar una recarga adicional después de un breve retraso
+      setTimeout(async () => {
+        await refetch();
+      }, 500);
+      
       toast.success('Inventario mínimo eliminado correctamente');
-      refetch();
     } catch (error) {
       console.error('Error al eliminar inventario mínimo:', error);
       toast.error(error instanceof Error ? error.message : 'Error al eliminar el inventario mínimo');
