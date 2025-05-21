@@ -421,10 +421,10 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
                           const yaSeleccionado = productos.some(p => p.nombre === nombreCompleto);
                           
                           return (
-                            <div
+                            <CommandItem
                               key={precio.id}
-                              className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center justify-between ${yaSeleccionado ? 'bg-gray-50' : ''}`}
-                              onClick={() => {
+                              value={nombreCompleto}
+                              onSelect={() => {
                                 if (!yaSeleccionado) {
                                   setProductos([
                                     ...productos,
@@ -444,16 +444,18 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
                                 }
                               }}
                             >
-                              <div className="flex items-center space-x-2">
-                                {yaSeleccionado && (
-                                  <Check className="h-4 w-4 text-green-500" />
-                                )}
-                                <span>{nombreCompleto}</span>
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center space-x-2">
+                                  {yaSeleccionado && (
+                                    <Check className="h-4 w-4 text-green-500" />
+                                  )}
+                                  <span>{nombreCompleto}</span>
+                                </div>
+                                <span className="text-sm text-gray-500">
+                                  ${precio.precio_venta}
+                                </span>
                               </div>
-                              <span className="text-sm text-gray-500">
-                                ${precio.precio_venta}
-                              </span>
-                            </div>
+                            </CommandItem>
                           );
                         })}
                       </CommandGroup>
