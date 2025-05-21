@@ -98,12 +98,6 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
       setIsLoading(true);
       const total = calcularTotal();
       const saldo = calcularSaldo();
-      const anticipoMinimo = total * 0.5;
-
-      if (anticipo < anticipoMinimo) {
-        toast.error(`El anticipo debe ser al menos el 50% del total ($${anticipoMinimo.toFixed(2)})`);
-        return;
-      }
 
       const dataToSend = {
         total,
@@ -131,6 +125,22 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
 
       const responseData = await response.json();
       console.log('Respuesta del servidor:', responseData);
+
+      // Actualizar los datos inmediatamente
+      await Promise.all([
+        // Refrescar el presupuesto
+        fetch(`/api/tickets/${ticketId}/presupuesto`, {
+          credentials: 'include',
+        }).then(res => res.json()),
+        // Refrescar los pagos
+        fetch(`/api/tickets/${ticketId}/pagos`, {
+          credentials: 'include',
+        }).then(res => res.json())
+      ]);
+
+      // Limpiar el formulario
+      setAnticipo(0);
+      setMetodoPago('EFECTIVO');
 
       toast.success('Pago guardado correctamente');
       if (onUpdate) {
@@ -248,7 +258,7 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
 
             {/* Anticipo */}
             <div className="space-y-2">
-              <Label>Anticipo (50% recomendado)</Label>
+              <Label>Anticipo</Label>
               <Input
                 type="number"
                 min="0"

@@ -43,18 +43,6 @@ export async function POST(
     const saldoActual = data.total - data.anticipo;
     console.log('Saldo calculado:', saldoActual);
 
-    // Verificar que el anticipo sea al menos el 50% del total
-    const anticipoMinimo = data.total * 0.5;
-    if (data.anticipo < anticipoMinimo) {
-      return new NextResponse(
-        JSON.stringify({
-          error: 'El anticipo debe ser al menos el 50% del total',
-          anticipoMinimo,
-        }),
-        { status: 400 }
-      );
-    }
-
     // Usar una transacción para asegurar la integridad de los datos
     const presupuestoActualizado = await prisma.$transaction(async (tx) => {
       // Registrar el pago en el historial
