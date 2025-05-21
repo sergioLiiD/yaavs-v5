@@ -67,6 +67,11 @@ export async function GET(
         tecnicoAsignado: true,
         dispositivo: true,
         creador: true,
+        pagos: {
+          orderBy: {
+            fecha: 'desc'
+          }
+        }
       },
     });
 

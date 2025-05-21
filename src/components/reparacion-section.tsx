@@ -46,6 +46,14 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
   const totalPaid = ticket.pagos?.reduce((sum, pago) => sum + pago.monto, 0) || 0;
   const hasValidPayment = hasPayments;
 
+  console.log('Estado del ticket:', {
+    ticketId: ticket.id,
+    pagos: ticket.pagos,
+    hasPayments,
+    totalPaid,
+    hasValidPayment
+  });
+
   // Obtener items del checklist para reparación
   const { data: checklistItems } = useQuery({
     queryKey: ['checklistReparacion'],
