@@ -32,6 +32,7 @@ export default function InventariosMinimosPage() {
   const { data: productos, refetch } = useQuery<ProductoConInventarioMinimo[]>({
     queryKey: ['productos'],
     queryFn: async () => {
+      console.log('Cargando productos...');
       const response = await fetch('/api/productos');
       if (!response.ok) {
         throw new Error('Error al cargar productos');
@@ -43,6 +44,8 @@ export default function InventariosMinimosPage() {
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
+    refetchOnReconnect: true,
+    gcTime: 0,
   });
 
   const handleEdit = async (productoId: number, cantidadMinima: number) => {
@@ -65,18 +68,12 @@ export default function InventariosMinimosPage() {
       const data = await response.json();
       console.log('Respuesta exitosa:', data);
 
-      // Actualizar el estado local con los nuevos datos
-      if (data.producto) {
-        const productosActualizados = productos?.map(p => 
-          p.id === productoId ? data.producto : p
-        );
-        // Forzar una actualización del estado
-        await refetch();
-      }
-
       // Cerrar el modal y limpiar el estado
       setEditingProductId(null);
       setNewMinimo('0');
+
+      // Forzar una recarga completa de los datos
+      await refetch();
       
       toast.success('Inventario mínimo actualizado correctamente');
     } catch (error) {
