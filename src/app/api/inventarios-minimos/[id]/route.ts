@@ -83,7 +83,13 @@ export async function PUT(
     });
 
     console.log('Inventario actualizado/creado:', inventario);
-    return NextResponse.json(inventario);
+    console.log('Producto actualizado:', productoActualizado);
+    
+    // Devolver tanto el inventario como el producto actualizado
+    return NextResponse.json({
+      inventario,
+      producto: productoActualizado,
+    });
   } catch (error) {
     console.error('Error en PUT /api/inventarios-minimos/[id]:', error);
     return NextResponse.json(

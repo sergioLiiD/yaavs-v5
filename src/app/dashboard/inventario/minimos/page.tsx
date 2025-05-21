@@ -65,30 +65,17 @@ export default function InventariosMinimosPage() {
       const data = await response.json();
       console.log('Respuesta exitosa:', data);
 
-      // Actualizar el estado local con los nuevos datos
-      if (productos) {
-        const updatedProductos = productos.map(p => {
-          if (p.id === productoId) {
-            return {
-              ...p,
-              inventarioMinimo: {
-                id: data.id,
-                productoId: data.productoId,
-                cantidadMinima: data.cantidadMinima,
-                createdAt: data.createdAt,
-                updatedAt: data.updatedAt,
-              },
-            };
-          }
-          return p;
-        });
-        // Forzar una actualización del estado
-        await refetch();
-      }
-      
       // Cerrar el modal y limpiar el estado
       setEditingProductId(null);
       setNewMinimo('0');
+
+      // Forzar una recarga completa de los datos
+      await refetch();
+      
+      // Esperar un momento y forzar otra recarga para asegurar que los datos estén actualizados
+      setTimeout(async () => {
+        await refetch();
+      }, 100);
       
       toast.success('Inventario mínimo actualizado correctamente');
     } catch (error) {
@@ -113,20 +100,13 @@ export default function InventariosMinimosPage() {
       const data = await response.json();
       console.log('Respuesta exitosa:', data);
 
-      // Actualizar el estado local
-      if (productos) {
-        const updatedProductos = productos.map(p => {
-          if (p.id === productoId) {
-            return {
-              ...p,
-              inventarioMinimo: null,
-            };
-          }
-          return p;
-        });
-        // Forzar una actualización del estado
+      // Forzar una recarga completa de los datos
+      await refetch();
+      
+      // Esperar un momento y forzar otra recarga para asegurar que los datos estén actualizados
+      setTimeout(async () => {
         await refetch();
-      }
+      }, 100);
       
       toast.success('Inventario mínimo eliminado correctamente');
     } catch (error) {
