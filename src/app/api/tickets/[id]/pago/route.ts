@@ -22,7 +22,10 @@ export async function POST(
     // Verificar que el ticket existe
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
-      include: { presupuesto: true },
+      include: { 
+        presupuesto: true,
+        pagos: true 
+      },
     });
 
     if (!ticket) {
@@ -35,6 +38,10 @@ export async function POST(
 
     const presupuestoId = ticket.presupuesto.id;
     console.log('Presupuesto actual:', ticket.presupuesto);
+
+    // Calcular el saldo correcto
+    const saldoActual = data.total - data.anticipo;
+    console.log('Saldo calculado:', saldoActual);
 
     // Verificar que el anticipo sea al menos el 50% del total
     const anticipoMinimo = data.total * 0.5;
@@ -51,42 +58,36 @@ export async function POST(
     // Usar una transacción para asegurar la integridad de los datos
     const presupuestoActualizado = await prisma.$transaction(async (tx) => {
       // Registrar el pago en el historial
-      await tx.$executeRaw`
-        INSERT INTO "pagos" (
-          "ticketId",
-          "monto",
-          "fecha",
-          "metodoPago",
-          "createdAt",
-          "updatedAt"
-        ) VALUES (
-          ${ticketId},
-          ${data.anticipo},
-          NOW(),
-          ${data.metodoPago},
-          NOW(),
-          NOW()
-        )
-      `;
+      const pago = await tx.pago.create({
+        data: {
+          ticketId: ticketId,
+          monto: data.anticipo,
+          fecha: new Date(),
+          metodoPago: data.metodoPago,
+        }
+      });
+
+      console.log('Pago registrado:', pago);
 
       // Actualizar el presupuesto
-      await tx.$executeRaw`
-        UPDATE "Presupuesto"
-        SET 
-          "total" = ${data.total},
-          "anticipo" = ${data.anticipo},
-          "saldo" = ${data.saldo},
-          "cuponDescuento" = ${data.cuponDescuento},
-          "descuento" = ${data.descuento},
-          "metodoPago" = ${data.metodoPago}::text::"MetodoPago",
-          "pagado" = ${data.saldo === 0},
-          "fechaPago" = ${data.saldo === 0 ? new Date() : null},
-          "updatedAt" = NOW()
-        WHERE id = ${presupuestoId}
-      `;
+      const presupuestoActualizado = await tx.presupuesto.update({
+        where: { id: presupuestoId },
+        data: {
+          total: data.total,
+          anticipo: data.anticipo,
+          saldo: saldoActual,
+          cuponDescuento: data.cuponDescuento,
+          descuento: data.descuento,
+          metodoPago: data.metodoPago as MetodoPago,
+          pagado: saldoActual === 0,
+          fechaPago: saldoActual === 0 ? new Date() : null,
+        }
+      });
+
+      console.log('Presupuesto actualizado:', presupuestoActualizado);
 
       // Si el saldo es 0, actualizar el estado del ticket a PAGADO
-      if (data.saldo === 0) {
+      if (saldoActual === 0) {
         await tx.ticket.update({
           where: { id: ticketId },
           data: {
@@ -95,15 +96,10 @@ export async function POST(
         });
       }
 
-      // Obtener el presupuesto actualizado
-      const presupuesto = await tx.presupuesto.findUnique({
-        where: { id: presupuestoId }
-      });
-
-      return presupuesto;
+      return presupuestoActualizado;
     });
 
-    console.log('Presupuesto actualizado:', presupuestoActualizado);
+    console.log('Transacción completada. Presupuesto final:', presupuestoActualizado);
 
     return NextResponse.json(presupuestoActualizado);
   } catch (error) {
