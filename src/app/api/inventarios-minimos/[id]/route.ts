@@ -55,16 +55,6 @@ export async function PUT(
         const updated = await tx.inventarioMinimo.update({
           where: { productoId },
           data: { cantidadMinima },
-          include: {
-            producto: {
-              include: {
-                marca: true,
-                modelo: true,
-                proveedor: true,
-                inventarioMinimo: true,
-              },
-            },
-          },
         });
         return updated;
       });
@@ -76,20 +66,21 @@ export async function PUT(
             productoId,
             cantidadMinima,
           },
-          include: {
-            producto: {
-              include: {
-                marca: true,
-                modelo: true,
-                proveedor: true,
-                inventarioMinimo: true,
-              },
-            },
-          },
         });
         return created;
       });
     }
+
+    // Obtener el producto actualizado con su inventario mínimo
+    const productoActualizado = await prisma.producto.findUnique({
+      where: { id: productoId },
+      include: {
+        marca: true,
+        modelo: true,
+        proveedor: true,
+        inventarioMinimo: true,
+      },
+    });
 
     console.log('Inventario actualizado/creado:', inventario);
     return NextResponse.json(inventario);
