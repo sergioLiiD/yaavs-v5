@@ -25,42 +25,78 @@ const usuarioSchema = z.object({
 // GET /api/usuarios
 export async function GET(request: Request) {
   try {
+    console.log('Iniciando GET /api/usuarios');
+    
     const session = await getServerSession(authOptions);
+    console.log('Sesión:', session ? 'Autenticado' : 'No autenticado');
+    
     if (!session) {
+      console.log('Usuario no autenticado');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const rol = searchParams.get('rol');
+    console.log('Rol filtrado:', rol);
 
-    const where: Prisma.UsuarioWhereInput = {};
-    if (rol && ['ADMINISTRADOR', 'TECNICO', 'ATENCION_CLIENTE'].includes(rol)) {
-      where.nivel = rol as NivelUsuario;
-    }
+    try {
+      const usuarios = await prisma.usuario.findMany({
+        where: rol ? {
+          nivel: rol as NivelUsuario
+        } : undefined,
+        select: {
+          id: true,
+          nombre: true,
+          apellidoPaterno: true,
+          apellidoMaterno: true,
+          email: true,
+          nivel: true,
+          activo: true
+        },
+        orderBy: {
+          nombre: 'asc'
+        }
+      });
 
-    const usuarios = await prisma.usuario.findMany({
-      where,
-      select: {
-        id: true,
-        nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true,
-        email: true,
-        nivel: true,
-        activo: true
-      },
-      orderBy: {
-        nombre: 'asc'
+      console.log(`Usuarios encontrados: ${usuarios.length}`);
+      return NextResponse.json(usuarios);
+    } catch (dbError) {
+      console.error('Error en consulta a la base de datos:', dbError);
+      if (dbError instanceof Prisma.PrismaClientKnownRequestError) {
+        return NextResponse.json(
+          { 
+            error: 'Error en la base de datos', 
+            code: dbError.code,
+            message: dbError.message,
+            meta: dbError.meta
+          },
+          { status: 500 }
+        );
       }
-    });
-
-    return NextResponse.json(usuarios);
+      throw dbError;
+    }
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
     
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       return NextResponse.json(
-        { error: 'Error en la base de datos', code: error.code },
+        { 
+          error: 'Error en la base de datos', 
+          code: error.code,
+          message: error.message,
+          meta: error.meta
+        },
+        { status: 500 }
+      );
+    }
+
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { 
+          error: 'Error al obtener usuarios',
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        },
         { status: 500 }
       );
     }
@@ -75,8 +111,13 @@ export async function GET(request: Request) {
 // POST /api/usuarios
 export async function POST(request: Request) {
   try {
+    console.log('Iniciando POST /api/usuarios');
+    
     const session = await getServerSession(authOptions);
+    console.log('Sesión:', session ? 'Autenticado' : 'No autenticado');
+    
     if (!session) {
+      console.log('Usuario no autenticado');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -143,14 +184,23 @@ export async function POST(request: Request) {
 
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       return NextResponse.json(
-        { error: 'Error en la base de datos', code: error.code },
+        { 
+          error: 'Error en la base de datos', 
+          code: error.code,
+          message: error.message,
+          meta: error.meta
+        },
         { status: 500 }
       );
     }
 
     if (error instanceof Error) {
       return NextResponse.json(
-        { error: error.message },
+        { 
+          error: 'Error al crear usuario',
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        },
         { status: 500 }
       );
     }
