@@ -102,12 +102,36 @@ export function TicketsTable() {
         setTickets(data);
       } catch (error) {
         console.error('Error:', error);
+        toast.error('Error al cargar los tickets');
       } finally {
         setLoading(false);
       }
     };
 
     fetchTickets();
+
+    // Agregar un intervalo para actualizar los datos cada 30 segundos
+    const interval = setInterval(fetchTickets, 30000);
+
+    // Limpiar el intervalo cuando el componente se desmonte
+    return () => clearInterval(interval);
+  }, [session?.user?.id, session?.user?.role]);
+
+  // Agregar un efecto para actualizar cuando la ventana recupera el foco
+  useEffect(() => {
+    const handleFocus = () => {
+      const url = session?.user?.role === 'TECNICO' 
+        ? `/api/tickets?tecnicoId=${session.user.id}`
+        : '/api/tickets';
+        
+      fetch(url)
+        .then(response => response.json())
+        .then(data => setTickets(data))
+        .catch(error => console.error('Error al actualizar tickets:', error));
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [session?.user?.id, session?.user?.role]);
 
   const filteredTickets = tickets.filter(ticket => {
