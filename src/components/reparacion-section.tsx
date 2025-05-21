@@ -44,7 +44,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
   // Verificar si hay pagos realizados
   const hasPayments = ticket.pagos && ticket.pagos.length > 0;
   const totalPaid = ticket.pagos?.reduce((sum, pago) => sum + pago.monto, 0) || 0;
-  const hasValidPayment = totalPaid > 0;
+  const hasValidPayment = hasPayments;
 
   // Obtener items del checklist para reparación
   const { data: checklistItems } = useQuery({
@@ -226,7 +226,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                 </div>
                 <div className="ml-3">
                   <p className="text-sm text-yellow-700">
-                    No se puede iniciar la reparación hasta que se haya registrado un pago. Total pagado: ${totalPaid.toFixed(2)}
+                    No se puede iniciar la reparación hasta que se haya registrado al menos un pago.
                   </p>
                 </div>
               </div>
