@@ -145,4 +145,10 @@ export type Ticket = {
       updatedAt: Date;
     }>;
   } | null;
+  pagos?: Array<{
+    id: number;
+    monto: number;
+    fecha: Date;
+    metodoPago: string;
+  }>;
 }; 

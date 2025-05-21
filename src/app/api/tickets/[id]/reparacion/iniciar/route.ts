@@ -23,7 +23,10 @@ export async function POST(
     // Verificar si el ticket existe
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
-      include: { reparacion: true }
+      include: { 
+        reparacion: true,
+        pagos: true
+      }
     });
 
     if (!ticket) {
@@ -32,6 +35,13 @@ export async function POST(
     }
 
     console.log('Ticket encontrado:', ticket);
+
+    // Verificar si hay pagos realizados
+    const totalPagado = ticket.pagos.reduce((sum, pago) => sum + pago.monto, 0);
+    if (totalPagado <= 0) {
+      console.log('No hay pagos registrados');
+      return new NextResponse('No se puede iniciar la reparación sin un pago registrado', { status: 400 });
+    }
 
     // Si ya existe una reparación, actualizar la fecha de inicio
     if (ticket.reparacion) {
