@@ -226,7 +226,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                 </div>
                 <div className="ml-3">
                   <p className="text-sm text-yellow-700">
-                    No se puede iniciar la reparación hasta que se haya registrado un pago.
+                    No se puede iniciar la reparación hasta que se haya registrado un pago. Total pagado: ${totalPaid.toFixed(2)}
                   </p>
                 </div>
               </div>
