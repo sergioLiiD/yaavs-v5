@@ -65,17 +65,18 @@ export default function InventariosMinimosPage() {
       const data = await response.json();
       console.log('Respuesta exitosa:', data);
 
+      // Actualizar el estado local con los nuevos datos
+      if (data.producto) {
+        const productosActualizados = productos?.map(p => 
+          p.id === productoId ? data.producto : p
+        );
+        // Forzar una actualización del estado
+        await refetch();
+      }
+
       // Cerrar el modal y limpiar el estado
       setEditingProductId(null);
       setNewMinimo('0');
-
-      // Forzar una recarga completa de los datos
-      await refetch();
-      
-      // Esperar un momento y forzar otra recarga para asegurar que los datos estén actualizados
-      setTimeout(async () => {
-        await refetch();
-      }, 100);
       
       toast.success('Inventario mínimo actualizado correctamente');
     } catch (error) {
