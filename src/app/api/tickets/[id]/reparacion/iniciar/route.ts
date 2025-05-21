@@ -37,8 +37,7 @@ export async function POST(
     console.log('Ticket encontrado:', ticket);
 
     // Verificar si hay pagos realizados
-    const totalPagado = ticket.pagos.reduce((sum, pago) => sum + pago.monto, 0);
-    if (totalPagado <= 0) {
+    if (!ticket.pagos || ticket.pagos.length === 0) {
       console.log('No hay pagos registrados');
       return new NextResponse('No se puede iniciar la reparación sin un pago registrado', { status: 400 });
     }
