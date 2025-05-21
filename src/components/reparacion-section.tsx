@@ -38,7 +38,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
   }>>([]);
   const [fotos, setFotos] = useState<string[]>(ticket.reparacion?.fotos || []);
   const [videos, setVideos] = useState<string[]>(ticket.reparacion?.videos || []);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [isTimerRunning, setIsTimerRunning] = useState(!!ticket.reparacion?.fechaInicio);
   const [isPaused, setIsPaused] = useState(false);
 
   // Verificar si hay pagos realizados
@@ -51,7 +51,10 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     pagos: ticket.pagos,
     hasPayments,
     totalPaid,
-    hasValidPayment
+    hasValidPayment,
+    reparacion: ticket.reparacion,
+    isTimerRunning,
+    isPaused
   });
 
   // Obtener items del checklist para reparación
@@ -99,7 +102,10 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
 
   const handleStartTimer = async () => {
     try {
+      console.log('Iniciando reparación...');
       const response = await axios.post(`/api/tickets/${ticket.id}/reparacion/iniciar`);
+      console.log('Respuesta del servidor:', response.data);
+      
       if (response.data.fechaInicio) {
         setIsTimerRunning(true);
         setIsPaused(false);
