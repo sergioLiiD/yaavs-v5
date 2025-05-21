@@ -37,11 +37,12 @@ export default function InventariosMinimosPage() {
         throw new Error('Error al cargar productos');
       }
       const data = await response.json();
+      console.log('Datos cargados:', data);
       return data;
     },
-    staleTime: 0, // Forzar que siempre se obtengan datos frescos
-    refetchOnWindowFocus: true, // Recargar cuando la ventana recupera el foco
-    refetchOnMount: true, // Recargar cuando el componente se monta
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const handleEdit = async (productoId: number, cantidadMinima: number) => {
@@ -70,6 +71,11 @@ export default function InventariosMinimosPage() {
       // Cerrar el modal y limpiar el estado
       setEditingProductId(null);
       setNewMinimo('0');
+      
+      // Forzar una recarga adicional después de un breve retraso
+      setTimeout(async () => {
+        await refetch();
+      }, 1000);
       
       toast.success('Inventario mínimo actualizado correctamente');
     } catch (error) {

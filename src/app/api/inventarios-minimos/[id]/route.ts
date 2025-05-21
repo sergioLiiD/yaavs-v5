@@ -54,6 +54,15 @@ export async function PUT(
       inventario = await prisma.inventarioMinimo.update({
         where: { productoId },
         data: { cantidadMinima },
+        include: {
+          producto: {
+            include: {
+              marca: true,
+              modelo: true,
+              proveedor: true,
+            },
+          },
+        },
       });
     } else {
       console.log('Creando nuevo inventario');
@@ -61,6 +70,15 @@ export async function PUT(
         data: {
           productoId,
           cantidadMinima,
+        },
+        include: {
+          producto: {
+            include: {
+              marca: true,
+              modelo: true,
+              proveedor: true,
+            },
+          },
         },
       });
     }

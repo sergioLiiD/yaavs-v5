@@ -23,7 +23,14 @@ export async function GET() {
             nombre: true,
           },
         },
-        inventarioMinimo: true,
+        inventarioMinimo: {
+          select: {
+            id: true,
+            cantidadMinima: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
         proveedor: {
           select: {
             id: true,
