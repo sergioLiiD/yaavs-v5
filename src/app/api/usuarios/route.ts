@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { UsuarioService } from '@/services/usuarioService';
 import { CreateUsuarioDTO, NivelUsuario } from '@/types/usuario';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 
 // Esquema de validación para el registro de usuarios
 const usuarioSchema = z.object({
@@ -31,12 +31,15 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const rol = searchParams.get('rol') as NivelUsuario;
+    const rol = searchParams.get('rol');
+
+    const where: Prisma.UsuarioWhereInput = {};
+    if (rol && ['ADMINISTRADOR', 'TECNICO', 'ATENCION_CLIENTE'].includes(rol)) {
+      where.nivel = rol as NivelUsuario;
+    }
 
     const usuarios = await prisma.usuario.findMany({
-      where: rol ? {
-        nivel: rol as any
-      } : undefined,
+      where,
       select: {
         id: true,
         nombre: true,
@@ -54,6 +57,14 @@ export async function GET(request: Request) {
     return NextResponse.json(usuarios);
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
+    
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(
+        { error: 'Error en la base de datos', code: error.code },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Error al obtener usuarios' },
       { status: 500 }
@@ -127,6 +138,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Datos inválidos', details: error.errors },
         { status: 400 }
+      );
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(
+        { error: 'Error en la base de datos', code: error.code },
+        { status: 500 }
       );
     }
 

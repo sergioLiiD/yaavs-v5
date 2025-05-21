@@ -6,7 +6,7 @@ import { NivelUsuario } from '@/types/usuario';
 
 declare module 'next-auth' {
   interface User {
-    id: string;
+    id: number;
     email: string;
     nombre: string;
     role: NivelUsuario;
@@ -14,7 +14,7 @@ declare module 'next-auth' {
 
   interface Session {
     user: User & {
-      id: string;
+      id: number;
       role: NivelUsuario;
     };
   }
@@ -64,10 +64,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: usuario.id.toString(),
+          id: usuario.id,
           email: usuario.email,
           nombre: usuario.nombre,
-          role: usuario.nivel as NivelUsuario
+          role: usuario.nivel
         };
       }
     })
@@ -82,7 +82,7 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
+        session.user.id = token.id as number;
         session.user.role = token.role as NivelUsuario;
       }
       return session;
