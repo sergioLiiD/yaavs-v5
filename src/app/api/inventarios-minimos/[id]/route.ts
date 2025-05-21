@@ -82,14 +82,19 @@ export async function PUT(
       },
     });
 
+    if (!productoActualizado) {
+      console.error('No se pudo obtener el producto actualizado');
+      return NextResponse.json(
+        { error: 'Error al obtener el producto actualizado' },
+        { status: 500 }
+      );
+    }
+
     console.log('Inventario actualizado/creado:', inventario);
     console.log('Producto actualizado:', productoActualizado);
     
-    // Devolver tanto el inventario como el producto actualizado
-    return NextResponse.json({
-      inventario,
-      producto: productoActualizado,
-    });
+    // Devolver el producto actualizado
+    return NextResponse.json(productoActualizado);
   } catch (error) {
     console.error('Error en PUT /api/inventarios-minimos/[id]:', error);
     return NextResponse.json(
