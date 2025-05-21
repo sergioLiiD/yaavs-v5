@@ -56,7 +56,6 @@ export async function POST(
           "ticketId",
           "monto",
           "fecha",
-          "concepto",
           "metodoPago",
           "createdAt",
           "updatedAt"
@@ -64,8 +63,7 @@ export async function POST(
           ${ticketId},
           ${data.anticipo},
           NOW(),
-          ${`Anticipo - ${data.metodoPago}`},
-          ${data.metodoPago}::text::"MetodoPago",
+          ${data.metodoPago},
           NOW(),
           NOW()
         )
