@@ -173,8 +173,13 @@ export default function StockPage() {
       });
 
       // Recargar los datos
-      loadProductos();
-      loadSalidas(productoSeleccionado.id.toString());
+      await loadProductos();
+      await loadSalidas(productoSeleccionado.id.toString());
+
+      // Cerrar el modal
+      setIsModalOpen(false);
+      setProductoSeleccionado(null);
+      toast.success('Entrada registrada exitosamente');
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al registrar entrada');
