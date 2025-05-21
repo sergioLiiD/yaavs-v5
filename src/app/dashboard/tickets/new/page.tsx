@@ -24,6 +24,8 @@ interface Cliente {
 interface Tecnico {
   id: string;
   nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno?: string;
   email?: string;
 }
 
@@ -80,7 +82,7 @@ export default function NewTicketPage() {
     redCelular: '',
     tecnicoId: 0,
     descripcionProblema: '',
-    esReparacionDirecta: false,
+    esReparacionDirecta: true,
   });
 
   useEffect(() => {
@@ -88,7 +90,7 @@ export default function NewTicketPage() {
       try {
         const [clientesRes, tecnicosRes, marcasRes] = await Promise.all([
           fetch('/api/clientes'),
-          fetch('/api/usuarios?nivel=TECNICO'),
+          fetch('/api/usuarios/tecnicos'),
           fetch('/api/catalogo/marcas'),
         ]);
 
@@ -229,6 +231,28 @@ export default function NewTicketPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Tipo de Reparación */}
+        <div className="p-4 border rounded-lg bg-gray-50">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="esReparacionDirecta"
+              checked={formData.esReparacionDirecta}
+              onChange={(e) => setFormData({
+                ...formData,
+                esReparacionDirecta: e.target.checked
+              })}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="esReparacionDirecta" className="text-sm font-medium text-gray-700">
+              Reparación Directa (sin presupuesto)
+            </label>
+          </div>
+          <p className="mt-1 text-sm text-gray-500">
+            Marca esta opción si el cliente ha autorizado la reparación directamente en el centro de servicio.
+          </p>
+        </div>
+
         {/* Asignación de Técnico */}
         <div className="space-y-4">
           <h2 className="text-lg font-medium">Asignación de Técnico</h2>
@@ -244,7 +268,7 @@ export default function NewTicketPage() {
               <SelectContent>
                 {tecnicos.map((tecnico) => (
                   <SelectItem key={tecnico.id} value={tecnico.id}>
-                    {tecnico.nombre}
+                    {`${tecnico.nombre} ${tecnico.apellidoPaterno} ${tecnico.apellidoMaterno || ''}`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -487,23 +511,6 @@ export default function NewTicketPage() {
               />
             </div>
           </div>
-        </div>
-
-        {/* Agregar el campo de reparación directa */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="esReparacionDirecta"
-            checked={formData.esReparacionDirecta}
-            onChange={(e) => setFormData({
-              ...formData,
-              esReparacionDirecta: e.target.checked
-            })}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label htmlFor="esReparacionDirecta" className="text-sm font-medium text-gray-700">
-            Reparación Directa (sin presupuesto)
-          </label>
         </div>
       </form>
     </div>
