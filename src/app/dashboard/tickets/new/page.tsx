@@ -52,6 +52,7 @@ interface FormData {
   redCelular: string;
   tecnicoId: number;
   descripcionProblema: string;
+  esReparacionDirecta: boolean;
 }
 
 export default function NewTicketPage() {
@@ -79,6 +80,7 @@ export default function NewTicketPage() {
     redCelular: '',
     tecnicoId: 0,
     descripcionProblema: '',
+    esReparacionDirecta: false,
   });
 
   useEffect(() => {
@@ -176,6 +178,7 @@ export default function NewTicketPage() {
           ? formData.codigoDesbloqueo 
           : formData.patronDesbloqueo.join(","),
         redCelular: formData.redCelular,
+        esReparacionDirecta: formData.esReparacionDirecta,
       };
 
       console.log('Datos a enviar:', dataToSubmit);
@@ -484,6 +487,23 @@ export default function NewTicketPage() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Agregar el campo de reparación directa */}
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="esReparacionDirecta"
+            checked={formData.esReparacionDirecta}
+            onChange={(e) => setFormData({
+              ...formData,
+              esReparacionDirecta: e.target.checked
+            })}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="esReparacionDirecta" className="text-sm font-medium text-gray-700">
+            Reparación Directa (sin presupuesto)
+          </label>
         </div>
       </form>
     </div>

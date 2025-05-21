@@ -24,6 +24,7 @@ export async function POST(req: Request) {
       fechaCompra,
       codigoDesbloqueo,
       redCelular,
+      esReparacionDirecta = false,
     } = body;
 
     // Validar datos requeridos
@@ -37,9 +38,11 @@ export async function POST(req: Request) {
     const modeloIdNum = parseInt(modeloId);
     const tecnicoAsignadoIdNum = tecnicoAsignadoId ? parseInt(tecnicoAsignadoId) : null;
 
-    // Obtener el estado inicial
+    // Obtener el estado inicial según el tipo de reparación
     const estatusReparacion = await prisma.estatusReparacion.findFirst({
-      where: { nombre: 'Recibido' }
+      where: { 
+        nombre: esReparacionDirecta ? 'En Reparación' : 'Recibido'
+      }
     });
 
     if (!estatusReparacion) {
@@ -71,6 +74,17 @@ export async function POST(req: Request) {
         ticketId: ticket.id,
       },
     });
+
+    // Si es reparación directa, crear la reparación inmediatamente
+    if (esReparacionDirecta) {
+      await prisma.reparacion.create({
+        data: {
+          ticketId: ticket.id,
+          tecnicoId: Number(session.user.id),
+          fechaInicio: new Date(),
+        },
+      });
+    }
 
     return NextResponse.json(ticket);
   } catch (error) {

@@ -24,7 +24,8 @@ export async function POST(
       where: { id: ticketId },
       include: { 
         presupuesto: true,
-        pagos: true 
+        pagos: true,
+        estatusReparacion: true
       },
     });
 
@@ -43,66 +44,60 @@ export async function POST(
     const saldoActual = data.total - data.anticipo;
     console.log('Saldo calculado:', saldoActual);
 
-    // Usar una transacción para asegurar la integridad de los datos
-    const presupuestoActualizado = await prisma.$transaction(async (tx) => {
-      // Registrar el pago en el historial
+    // Iniciar transacción
+    const resultado = await prisma.$transaction(async (tx) => {
+      // Registrar el pago
       const pago = await tx.pago.create({
         data: {
-          ticketId: ticketId,
           monto: data.anticipo,
           fecha: new Date(),
           metodoPago: data.metodoPago,
-        }
+          ticketId: ticketId,
+        },
       });
-
-      console.log('Pago registrado:', pago);
 
       // Actualizar el presupuesto
       const presupuestoActualizado = await tx.presupuesto.update({
         where: { id: presupuestoId },
         data: {
-          total: data.total,
-          anticipo: data.anticipo,
           saldo: saldoActual,
-          cuponDescuento: data.cuponDescuento,
-          descuento: data.descuento,
-          metodoPago: data.metodoPago as MetodoPago,
-          pagado: saldoActual === 0,
-          fechaPago: saldoActual === 0 ? new Date() : null,
-        }
+          pagado: saldoActual <= 0,
+        },
       });
 
-      console.log('Presupuesto actualizado:', presupuestoActualizado);
-
-      // Si el saldo es 0, actualizar el estado del ticket a PAGADO
-      if (saldoActual === 0) {
-        await tx.ticket.update({
-          where: { id: ticketId },
-          data: {
-            estatusReparacionId: 5, // ID del estado PAGADO
-          },
+      // Determinar el nuevo estado del ticket
+      let nuevoEstado;
+      if (saldoActual <= 0) {
+        // Si el saldo es 0, buscar el estado "Reparación Completada"
+        nuevoEstado = await tx.estatusReparacion.findFirst({
+          where: { nombre: 'Reparación Completada' }
+        });
+      } else if (ticket.estatusReparacion.nombre === 'Presupuesto Generado') {
+        // Si hay saldo pendiente y estaba en "Presupuesto Generado", mover a "En Reparación"
+        nuevoEstado = await tx.estatusReparacion.findFirst({
+          where: { nombre: 'En Reparación' }
         });
       }
 
-      return presupuestoActualizado;
+      // Actualizar el estado del ticket si es necesario
+      if (nuevoEstado) {
+        await tx.ticket.update({
+          where: { id: ticketId },
+          data: {
+            estatusReparacionId: nuevoEstado.id
+          }
+        });
+      }
+
+      return { pago, presupuestoActualizado };
     });
 
-    console.log('Transacción completada. Presupuesto final:', presupuestoActualizado);
-
-    return NextResponse.json(presupuestoActualizado);
+    return NextResponse.json(resultado);
   } catch (error) {
     console.error('Error al procesar el pago:', error);
     return new NextResponse(
-      JSON.stringify({ 
-        error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Error desconocido'
-      }), 
-      { 
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      `Error al procesar el pago: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+      { status: 500 }
     );
   }
 } 
