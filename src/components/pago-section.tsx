@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,7 @@ interface Pago {
 }
 
 export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
+  const queryClient = useQueryClient();
   const [anticipo, setAnticipo] = useState(0);
   // const [cuponDescuento, setCuponDescuento] = useState('');
   // const [descuento, setDescuento] = useState(0);
@@ -126,16 +127,11 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
       const responseData = await response.json();
       console.log('Respuesta del servidor:', responseData);
 
-      // Actualizar los datos inmediatamente
+      // Invalidar y refetch los datos
       await Promise.all([
-        // Refrescar el presupuesto
-        fetch(`/api/tickets/${ticketId}/presupuesto`, {
-          credentials: 'include',
-        }).then(res => res.json()),
-        // Refrescar los pagos
-        fetch(`/api/tickets/${ticketId}/pagos`, {
-          credentials: 'include',
-        }).then(res => res.json())
+        queryClient.invalidateQueries({ queryKey: ['presupuesto', ticketId] }),
+        queryClient.invalidateQueries({ queryKey: ['pagos', ticketId] }),
+        queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] })
       ]);
 
       // Limpiar el formulario
