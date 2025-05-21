@@ -67,6 +67,28 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     }
   }, [checklistItems]);
 
+  // Timer para el tiempo de reparación
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (isTimerRunning && !isPaused) {
+      const fechaInicio = ticket.reparacion?.fechaInicio 
+        ? new Date(ticket.reparacion.fechaInicio).getTime()
+        : new Date().getTime();
+      const ahora = new Date().getTime();
+      const tiempoInicial = Math.floor((ahora - fechaInicio) / 1000);
+      setTiempoTranscurrido(tiempoInicial);
+
+      interval = setInterval(() => {
+        setTiempoTranscurrido(prev => prev + 1);
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerRunning, isPaused, ticket.reparacion?.fechaInicio]);
+
   const handleStartTimer = async () => {
     try {
       const response = await axios.post(`/api/tickets/${ticket.id}/reparacion/iniciar`);
@@ -116,28 +138,6 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
       toast.error('Error al reanudar la reparación');
     }
   };
-
-  // Timer para el tiempo de reparación
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if ((ticket.reparacion?.fechaInicio && !ticket.reparacion?.fechaFin && !isPaused) || (isTimerRunning && !isPaused)) {
-      const fechaInicio = ticket.reparacion?.fechaInicio 
-        ? new Date(ticket.reparacion.fechaInicio).getTime()
-        : new Date().getTime();
-      const ahora = new Date().getTime();
-      const tiempoInicial = Math.floor((ahora - fechaInicio) / 1000);
-      setTiempoTranscurrido(tiempoInicial);
-
-      interval = setInterval(() => {
-        setTiempoTranscurrido(prev => prev + 1);
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [ticket.reparacion?.fechaInicio, ticket.reparacion?.fechaFin, isTimerRunning, isPaused]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -240,7 +240,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
               <span className="text-lg font-mono">{formatTime(tiempoTranscurrido)}</span>
             </div>
             <div className="flex items-center space-x-4">
-              {!ticket.reparacion?.fechaInicio && !isTimerRunning && (
+              {!isTimerRunning && (
                 <Button
                   onClick={handleStartTimer}
                   className="bg-blue-600 hover:bg-blue-700"
@@ -249,7 +249,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                   Iniciar Reparación
                 </Button>
               )}
-              {ticket.reparacion?.fechaInicio && !ticket.reparacion?.fechaFin && !isPaused && (
+              {isTimerRunning && !isPaused && (
                 <Button
                   onClick={handlePauseTimer}
                   className="bg-yellow-600 hover:bg-yellow-700"
