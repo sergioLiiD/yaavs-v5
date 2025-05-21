@@ -104,7 +104,13 @@ export async function GET(request: Request) {
             marca: true,
           },
         },
-        estatusReparacion: true,
+        estatusReparacion: {
+          select: {
+            id: true,
+            nombre: true,
+            color: true
+          }
+        },
         creador: true,
         tecnicoAsignado: true,
         presupuesto: true,

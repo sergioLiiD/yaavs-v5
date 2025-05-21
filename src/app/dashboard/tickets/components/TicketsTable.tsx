@@ -55,6 +55,7 @@ interface Ticket {
   estatusReparacion: {
     nombre: string;
     id: number;
+    color: string;
   };
   tecnicoAsignado: {
     nombre: string;
@@ -348,7 +349,7 @@ export function TicketsTable() {
                         <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
                           ticket.cancelado 
                             ? 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20'
-                            : 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20'
+                            : `bg-[${ticket.estatusReparacion.color}]/10 text-[${ticket.estatusReparacion.color}] ring-1 ring-inset ring-[${ticket.estatusReparacion.color}]/20`
                         }`}>
                           {ticket.estatusReparacion.nombre}
                         </span>
