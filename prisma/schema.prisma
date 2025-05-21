@@ -93,7 +93,7 @@ model Usuario {
   ticketsCreados   Ticket[]         @relation("TicketCreador")
   ticketsAsignados Ticket[]         @relation("TicketTecnico")
 
-  @@map("usuarios")
+  @@map("Usuario")
 }
 
 model Cliente {
