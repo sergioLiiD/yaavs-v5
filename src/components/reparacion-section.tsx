@@ -30,6 +30,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
   const [observaciones, setObservaciones] = useState(ticket.reparacion?.observaciones || '');
   const [isLoading, setIsLoading] = useState(false);
   const [tiempoTranscurrido, setTiempoTranscurrido] = useState(0);
+  const [tiempoPausado, setTiempoPausado] = useState(0);
   const [checklist, setChecklist] = useState<Array<{
     id: number;
     item: string;
@@ -54,7 +55,9 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     hasValidPayment,
     reparacion: ticket.reparacion,
     isTimerRunning,
-    isPaused
+    isPaused,
+    tiempoTranscurrido,
+    tiempoPausado
   });
 
   // Obtener items del checklist para reparación
@@ -83,10 +86,6 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     let interval: NodeJS.Timeout;
     
     if (isTimerRunning && !isPaused) {
-      const ahora = new Date().getTime();
-      const tiempoInicial = 0;
-      setTiempoTranscurrido(tiempoInicial);
-
       interval = setInterval(() => {
         setTiempoTranscurrido(prev => prev + 1);
       }, 1000);
@@ -107,6 +106,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
         setIsTimerRunning(true);
         setIsPaused(false);
         setTiempoTranscurrido(0);
+        setTiempoPausado(0);
         toast.success('Reparación iniciada');
         if (onUpdate) {
           onUpdate();
@@ -123,6 +123,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
       const response = await axios.post(`/api/tickets/${ticket.id}/reparacion/pausar`);
       if (response.data.fechaPausa) {
         setIsPaused(true);
+        setTiempoPausado(tiempoTranscurrido);
         toast.success('Reparación pausada');
         if (onUpdate) {
           onUpdate();
@@ -139,6 +140,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
       const response = await axios.post(`/api/tickets/${ticket.id}/reparacion/reanudar`);
       if (response.data.fechaReanudacion) {
         setIsPaused(false);
+        setTiempoTranscurrido(tiempoPausado);
         toast.success('Reparación reanudada');
         if (onUpdate) {
           onUpdate();
