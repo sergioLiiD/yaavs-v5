@@ -29,7 +29,14 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
   const router = useRouter();
   const [observaciones, setObservaciones] = useState(ticket.reparacion?.observaciones || '');
   const [isLoading, setIsLoading] = useState(false);
-  const [tiempoTranscurrido, setTiempoTranscurrido] = useState(0);
+  const [tiempoTranscurrido, setTiempoTranscurrido] = useState(() => {
+    if (ticket.reparacion?.fechaInicio) {
+      const fechaInicio = new Date(ticket.reparacion.fechaInicio).getTime();
+      const ahora = new Date().getTime();
+      return Math.floor((ahora - fechaInicio) / 1000);
+    }
+    return 0;
+  });
   const [tiempoPausado, setTiempoPausado] = useState(0);
   const [checklist, setChecklist] = useState<Array<{
     id: number;
@@ -39,7 +46,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
   }>>([]);
   const [fotos, setFotos] = useState<string[]>(ticket.reparacion?.fotos || []);
   const [videos, setVideos] = useState<string[]>(ticket.reparacion?.videos || []);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [isTimerRunning, setIsTimerRunning] = useState(!!ticket.reparacion?.fechaInicio && !ticket.reparacion?.fechaFin);
   const [isPaused, setIsPaused] = useState(false);
 
   // Verificar si hay pagos realizados
