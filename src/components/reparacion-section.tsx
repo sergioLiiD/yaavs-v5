@@ -38,7 +38,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
   }>>([]);
   const [fotos, setFotos] = useState<string[]>(ticket.reparacion?.fotos || []);
   const [videos, setVideos] = useState<string[]>(ticket.reparacion?.videos || []);
-  const [isTimerRunning, setIsTimerRunning] = useState(!!ticket.reparacion?.fechaInicio);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
   // Verificar si hay pagos realizados
@@ -83,11 +83,8 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     let interval: NodeJS.Timeout;
     
     if (isTimerRunning && !isPaused) {
-      const fechaInicio = ticket.reparacion?.fechaInicio 
-        ? new Date(ticket.reparacion.fechaInicio).getTime()
-        : new Date().getTime();
       const ahora = new Date().getTime();
-      const tiempoInicial = Math.floor((ahora - fechaInicio) / 1000);
+      const tiempoInicial = 0;
       setTiempoTranscurrido(tiempoInicial);
 
       interval = setInterval(() => {
@@ -98,7 +95,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isTimerRunning, isPaused, ticket.reparacion?.fechaInicio]);
+  }, [isTimerRunning, isPaused]);
 
   const handleStartTimer = async () => {
     try {
