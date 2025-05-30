@@ -39,12 +39,15 @@ export async function GET(
       const modelo = await prisma.modelo.findUnique({
         where: { id },
         include: {
-          marca: {
+          marcas: {
             select: {
               id: true,
               nombre: true
             }
-          }
+          },
+          productos: true,
+          ProblemaModelo: true,
+          piezas: true
         }
       });
 
@@ -259,8 +262,9 @@ export async function DELETE(
       const modelo = await prisma.modelo.findUnique({
         where: { id },
         include: {
-          tickets: true,
-          productos: true
+          productos: true,
+          ProblemaModelo: true,
+          piezas: true
         }
       });
 
@@ -269,29 +273,79 @@ export async function DELETE(
         return NextResponse.json({ error: 'Modelo no encontrado' }, { status: 404 });
       }
 
-      // Verificar si tiene relaciones
-      if (modelo.tickets.length > 0) {
-        console.log('DELETE /api/catalogo/modelos/[id] - Modelo tiene tickets asociados');
-        return NextResponse.json(
-          { 
-            error: 'No se puede eliminar el modelo porque tiene tickets asociados',
-            count: modelo.tickets.length
-          },
-          { status: 400 }
-        );
+      // Obtener tickets asociados al modelo
+      const tickets = await prisma.ticket.findMany({
+        where: {
+          modeloId: id
+        }
+      });
+
+      // Para cada ticket, eliminar sus relaciones
+      for (const ticket of tickets) {
+        // Eliminar reparaciones asociadas al ticket
+        const reparaciones = await prisma.reparacion.findMany({
+          where: {
+            ticketId: ticket.id
+          }
+        });
+
+        for (const reparacion of reparaciones) {
+          // Eliminar piezas de reparación
+          await prisma.piezas_reparacion.deleteMany({
+            where: {
+              reparacionId: reparacion.id
+            }
+          });
+        }
+
+        // Eliminar reparaciones
+        await prisma.reparacion.deleteMany({
+          where: {
+            ticketId: ticket.id
+          }
+        });
+
+        // Eliminar presupuestos
+        await prisma.presupuesto.deleteMany({
+          where: {
+            ticketId: ticket.id
+          }
+        });
       }
 
-      if (modelo.productos.length > 0) {
-        console.log('DELETE /api/catalogo/modelos/[id] - Modelo tiene productos asociados');
-        return NextResponse.json(
-          { error: 'No se puede eliminar el modelo porque tiene productos asociados' },
-          { status: 400 }
-        );
-      }
+      // Eliminar tickets
+      await prisma.ticket.deleteMany({
+        where: {
+          modeloId: id
+        }
+      });
 
-      // Eliminar el modelo
+      // Eliminar productos asociados
+      await prisma.producto.deleteMany({
+        where: {
+          modeloId: id
+        }
+      });
+
+      // Eliminar problemas de modelo
+      await prisma.problemaModelo.deleteMany({
+        where: {
+          modeloId: id
+        }
+      });
+
+      // Eliminar piezas asociadas
+      await prisma.piezas.deleteMany({
+        where: {
+          modeloId: id
+        }
+      });
+
+      // Finalmente, eliminar el modelo
       await prisma.modelo.delete({
-        where: { id }
+        where: {
+          id
+        }
       });
 
       console.log('DELETE /api/catalogo/modelos/[id] - Modelo eliminado');
