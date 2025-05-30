@@ -16,7 +16,7 @@ export async function GET(
     const piezaId = parseInt(params.id);
     console.log('Buscando pieza:', piezaId);
 
-    const pieza = await prisma.pieza.findUnique({
+    const pieza = await prisma.piezas.findUnique({
       where: {
         id: piezaId,
       },
