@@ -25,7 +25,7 @@ export async function GET(
     }
 
     // Obtener el historial de pagos
-    const pagos = await prisma.pago.findMany({
+    const pagos = await prisma.pagos.findMany({
       where: { ticketId },
       orderBy: { fecha: 'desc' },
     });
