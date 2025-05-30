@@ -27,14 +27,6 @@ export async function GET(
       },
       include: {
         direcciones: true,
-        tipos_servicio: true,
-        modelo: {
-          include: {
-            marcas: true,
-          },
-        },
-        estatusReparacion: true,
-        tecnicoAsignado: true,
         dispositivos: true,
         Presupuesto: {
           include: {
