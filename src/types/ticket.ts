@@ -68,6 +68,99 @@ export type Ticket = {
   fechaFinReparacion: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  fechaCancelacion: Date | null;
+  direccionId: number | null;
+  Presupuesto: {
+    id: number;
+    ticketId: number;
+    manoDeObra: number;
+    subtotal: number;
+    iva: number;
+    total: number;
+    aprobado: boolean;
+    fechaAprobacion: Date | null;
+    pagado: boolean;
+    metodoPago: string | null;
+    comprobantePago: string | null;
+    fechaPago: Date | null;
+    anticipo: number;
+    cuponDescuento: string | null;
+    descuento: number;
+    saldo: number;
+  } | null;
+  Reparacion: {
+    id: number;
+    ticketId: number;
+    tecnicoId: number;
+    observaciones: string | null;
+    fechaInicio: Date | null;
+    fechaFin: Date | null;
+    checklist: any | null;
+    fechaPausa: Date | null;
+    fechaReanudacion: Date | null;
+    fotos: string[];
+    videos: string[];
+    diagnostico: string | null;
+    saludBateria: number | null;
+    versionSO: string | null;
+    checklist_diagnostico: Array<{
+      id: number;
+      reparacionId: number;
+      item: string;
+      respuesta: boolean;
+      observacion: string | null;
+    }>;
+    piezas_reparacion: Array<{
+      id: number;
+      cantidad: number;
+      precioUnitario: number;
+      piezas: {
+        id: number;
+        nombre: string;
+        descripcion: string | null;
+      };
+    }>;
+  } | null;
+  dispositivos: {
+    id: number;
+    color: string | null;
+    capacidad: string | null;
+    fechaCompra: Date | null;
+    codigoDesbloqueo: string | null;
+    redCelular: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    ticketId: number | null;
+  } | null;
+  entregas: {
+    id: number;
+    ticketId: number;
+    fecha: Date;
+    tipo: string;
+    notas: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
+  pagos: Array<{
+    id: number;
+    monto: number;
+    fecha: Date;
+    metodoPago: string;
+  }>;
+  direcciones: {
+    id: number;
+    calle: string;
+    numeroExterior: string;
+    numeroInterior: string | null;
+    colonia: string;
+    ciudad: string;
+    estado: string;
+    codigoPostal: string;
+    latitud: number | null;
+    longitud: number | null;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
   cliente: {
     id: number;
     nombre: string;
@@ -93,23 +186,11 @@ export type Ticket = {
     nombre: string;
     color: string | null;
   };
-  reparacion: ReparacionWithChecklist | null;
   tecnicoAsignado: {
     id: number;
     nombre: string;
     apellidoPaterno: string;
     apellidoMaterno: string | null;
-  } | null;
-  dispositivo: {
-    id: number;
-    color: string | null;
-    capacidad: string | null;
-    fechaCompra: Date | null;
-    codigoDesbloqueo: string | null;
-    redCelular: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-    ticketId: number | null;
   } | null;
   creador: {
     id: number;
@@ -117,38 +198,4 @@ export type Ticket = {
     apellidoPaterno: string;
     apellidoMaterno: string | null;
   };
-  presupuesto: {
-    id: number;
-    ticketId: number;
-    manoDeObra: number;
-    subtotal: number;
-    iva: number;
-    total: number;
-    aprobado: boolean;
-    fechaAprobacion: Date | null;
-    pagado: boolean;
-    metodoPago: string | null;
-    comprobantePago: string | null;
-    fechaPago: Date | null;
-    anticipo: number;
-    cuponDescuento: string | null;
-    descuento: number;
-    saldo: number;
-    conceptos?: Array<{
-      id: number;
-      presupuestoId: number;
-      descripcion: string;
-      cantidad: number;
-      precioUnitario: number;
-      subtotal: number;
-      createdAt: Date;
-      updatedAt: Date;
-    }>;
-  } | null;
-  pagos?: Array<{
-    id: number;
-    monto: number;
-    fecha: Date;
-    metodoPago: string;
-  }>;
 }; 

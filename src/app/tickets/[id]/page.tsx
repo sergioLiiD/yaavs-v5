@@ -19,29 +19,21 @@ async function getTicket(id: string): Promise<Ticket | null> {
   const ticket = await prisma.ticket.findUnique({
     where: { id: parseInt(id) },
     include: {
-      cliente: true,
-      tipoServicio: true,
-      modelo: {
+      Presupuesto: true,
+      Reparacion: {
         include: {
-          marca: true
-        }
-      },
-      estatusReparacion: true,
-      tecnicoAsignado: true,
-      dispositivo: true,
-      creador: true,
-      reparacion: {
-        include: {
-          tecnico: true,
-          checklistItems: true,
-          piezas: {
+          checklist_diagnostico: true,
+          piezas_reparacion: {
             include: {
-              pieza: true
+              piezas: true
             }
           }
         }
       },
-      presupuesto: true
+      dispositivos: true,
+      entregas: true,
+      pagos: true,
+      direcciones: true
     }
   });
 
