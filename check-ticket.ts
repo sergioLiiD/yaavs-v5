@@ -6,8 +6,8 @@ async function main() {
   const ticket = await prisma.ticket.findUnique({
     where: { id: 2 },
     include: {
-      reparacion: true,
-      dispositivo: true
+      Reparacion: true,
+      dispositivos: true
     }
   });
 
@@ -20,9 +20,9 @@ async function main() {
   console.log('Reparaciones encontradas:', reparaciones);
 
   // Verificar si hay registros en la tabla de checklist
-  const checklist = await prisma.checklistDiagnostico.findMany({
+  const checklist = await prisma.checklist_diagnostico.findMany({
     where: {
-      reparacion: {
+      Reparacion: {
         ticketId: 2
       }
     }
