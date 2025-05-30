@@ -62,6 +62,7 @@ export async function POST(request: Request) {
         apellidoMaterno: validatedData.apellidoMaterno || '',
         passwordHash: hashedPassword,
         nivel: 'ATENCION_CLIENTE',
+        updatedAt: new Date()
       },
     });
     console.log('Usuario creado:', usuario.id);
@@ -89,6 +90,7 @@ export async function POST(request: Request) {
         fuenteReferencia: validatedData.fuenteReferencia || '',
         passwordHash: hashedPassword,
         tipoRegistro: 'DIRECTO',
+        updatedAt: new Date()
       },
       select: {
         id: true,
