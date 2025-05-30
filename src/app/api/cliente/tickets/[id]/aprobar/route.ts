@@ -15,19 +15,16 @@ export async function POST(
     }
 
     // Obtener el ticket
-    const ticket = await prisma.ticket.findFirst({
+    const ticket = await prisma.ticket.findUnique({
       where: {
-        id: parseInt(params.id),
-        clienteId: Number(session.user.id)
+        id: parseInt(params.id)
       },
       include: {
-        estatusReparacion: true,
-        presupuesto: true
+        Presupuesto: true
       }
     });
 
     console.log('Ticket encontrado:', ticket);
-    console.log('Estado actual:', ticket?.estatusReparacion);
 
     if (!ticket) {
       return NextResponse.json(
@@ -36,18 +33,9 @@ export async function POST(
       );
     }
 
-    if (!ticket.presupuesto) {
+    if (!ticket.Presupuesto) {
       return NextResponse.json(
         { error: 'El ticket no tiene presupuesto' },
-        { status: 400 }
-      );
-    }
-
-    console.log('Estado del ticket:', ticket.estatusReparacion.nombre);
-
-    if (ticket.estatusReparacion.nombre !== 'Presupuesto Generado') {
-      return NextResponse.json(
-        { error: 'El ticket no está en estado de presupuesto generado' },
         { status: 400 }
       );
     }
@@ -66,6 +54,20 @@ export async function POST(
       );
     }
 
+    // Verificar el estado actual
+    const estatusActual = await prisma.estatusReparacion.findUnique({
+      where: {
+        id: ticket.estatusReparacionId
+      }
+    });
+
+    if (!estatusActual || estatusActual.nombre !== 'Presupuesto Generado') {
+      return NextResponse.json(
+        { error: 'El ticket no está en estado de presupuesto generado' },
+        { status: 400 }
+      );
+    }
+
     // Actualizar el ticket y el presupuesto
     const ticketActualizado = await prisma.ticket.update({
       where: {
@@ -73,7 +75,7 @@ export async function POST(
       },
       data: {
         estatusReparacionId: estatusAprobado.id,
-        presupuesto: {
+        Presupuesto: {
           update: {
             aprobado: true,
             fechaAprobacion: new Date()
@@ -81,23 +83,7 @@ export async function POST(
         }
       },
       include: {
-        cliente: true,
-        tipoServicio: true,
-        modelo: {
-          include: {
-            marca: true,
-          },
-        },
-        estatusReparacion: true,
-        tecnicoAsignado: true,
-        dispositivo: true,
-        direccion: true,
-        presupuesto: true,
-        pagos: {
-          orderBy: {
-            fecha: 'desc'
-          }
-        }
+        Presupuesto: true
       }
     });
 
