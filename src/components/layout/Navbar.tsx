@@ -27,13 +27,22 @@ const Navbar: React.FC = () => {
           
           <div className="flex items-center">
             <div className="md:hidden flex-shrink-0 flex items-center">
-              <span className="text-blue-800 text-xl font-semibold">YAAVS</span>
+              <img
+                className="h-40 w-auto"
+                src="/images/logo.png"
+                alt="Logo de la empresa"
+              />
             </div>
           </div>
           
           <div className="hidden md:flex items-center">
             <div className="flex-shrink-0">
-              <span className="text-gray-900 text-lg">Sistema de Reparación de Celulares</span>
+              <img
+                className="h-40 w-auto mr-4"
+                src="/images/logo.png"
+                alt="Logo de la empresa"
+              />
+              <span className="text-lg font-medium text-gray-900">Sistema de Reparación de Celulares</span>
             </div>
           </div>
           
