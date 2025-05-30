@@ -9,73 +9,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Brand {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  models      Model[]
-
-  @@map("brands")
-}
-
-model Model {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  brandId     Int
-  brand       Brand    @relation(fields: [brandId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  catalogItems CatalogItemModel[]
-
-  @@map("models")
-}
-
-model Provider {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("providers")
-}
-
-model ServiceType {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("service_types")
-}
-
-model CatalogItem {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  models      CatalogItemModel[]
-
-  @@map("catalog_items")
-}
-
-model CatalogItemModel {
-  id             Int         @id @default(autoincrement())
-  catalogItemId  Int
-  modelId        Int
-  catalogItem    CatalogItem @relation(fields: [catalogItemId], references: [id])
-  model          Model       @relation(fields: [modelId], references: [id])
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-
-  @@map("catalog_item_models")
-}
-
 model Usuario {
   id               Int              @id @default(autoincrement())
   email            String           @unique
@@ -125,14 +58,14 @@ model Cliente {
 
 model TipoServicio {
   id          Int        @id @default(autoincrement())
-  nombre      String     @unique
-  descripcion String?
+  name        String     @unique
+  description String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   productos   Producto[]
   tickets     Ticket[]
 
-  @@map("tipos_servicio")
+  @@map("service_types")
 }
 
 model Marca {
