@@ -48,9 +48,7 @@ export async function GET() {
     // Obtener tickets en reparación
     const ticketsEnReparacion = await prisma.ticket.count({
       where: {
-        estatusReparacion: {
-          nombre: 'En Reparación'
-        }
+        estatusReparacionId: 2 // ID para "En Reparación"
       }
     }).catch(error => {
       console.error('Error al contar tickets en reparación:', error);
@@ -60,9 +58,7 @@ export async function GET() {
     // Obtener tickets reparados
     const ticketsReparados = await prisma.ticket.count({
       where: {
-        estatusReparacion: {
-          nombre: 'Reparación Completada'
-        }
+        estatusReparacionId: 3 // ID para "Reparación Completada"
       }
     }).catch(error => {
       console.error('Error al contar tickets reparados:', error);
@@ -72,9 +68,7 @@ export async function GET() {
     // Obtener tickets por entregar
     const ticketsPorEntregar = await prisma.ticket.count({
       where: {
-        estatusReparacion: {
-          nombre: 'Por Entregar'
-        }
+        estatusReparacionId: 4 // ID para "Por Entregar"
       }
     }).catch(error => {
       console.error('Error al contar tickets por entregar:', error);
@@ -88,13 +82,12 @@ export async function GET() {
         createdAt: 'desc'
       },
       include: {
-        cliente: true,
-        modelo: {
+        direcciones: true,
+        dispositivos: {
           include: {
-            marca: true
+            marcas: true
           }
-        },
-        estatusReparacion: true
+        }
       }
     }).catch(error => {
       console.error('Error al obtener tickets recientes:', error);
@@ -134,10 +127,10 @@ export async function GET() {
       ],
       recentTickets: ticketsRecientes.map(ticket => ({
         id: ticket.id,
-        cliente: `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno}`,
-        modelo: `${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}`,
+        cliente: `${ticket.direcciones?.nombre || ''} ${ticket.direcciones?.apellidoPaterno || ''}`,
+        modelo: `${ticket.dispositivos?.marcas?.nombre || ''} ${ticket.dispositivos?.modelo || ''}`,
         problema: ticket.descripcionProblema,
-        estado: ticket.estatusReparacion.nombre
+        estado: `Estatus ID: ${ticket.estatusReparacionId}`
       }))
     });
   } catch (error) {
