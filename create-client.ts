@@ -10,6 +10,7 @@ async function main() {
       apellidoMaterno: 'Test',
       telefonoCelular: '1234567890',
       email: 'cliente@ejemplo.com',
+      updatedAt: new Date()
     },
   });
 
