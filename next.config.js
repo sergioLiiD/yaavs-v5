@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   output: 'standalone',
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   images: {
     remotePatterns: [
@@ -14,25 +15,21 @@ const nextConfig = {
         hostname: '**',
       },
     ],
+    domains: ['arreglamx.netlify.app'],
   },
   // Hacer redirects
   async redirects() {
     return [
       {
-        source: '/',
-        destination: '/auth/login',
+        source: '/auth/signin',
+        destination: '/login',
         permanent: true,
       },
       {
-        source: '/login',
-        destination: '/auth/login',
+        source: '/auth/signout',
+        destination: '/logout',
         permanent: true,
       },
-      {
-        source: '/login/:path*',
-        destination: '/auth/login',
-        permanent: true,
-      }
     ];
   },
   // Configuración del servidor
@@ -44,6 +41,10 @@ const nextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': require('path').resolve(__dirname, 'src'),
+    };
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
     };
     return config;
   },

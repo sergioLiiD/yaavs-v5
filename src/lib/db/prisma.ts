@@ -13,4 +13,15 @@ export const prisma =
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
+// Manejar errores de conexión
+prisma.$on('query' as any, (e: any) => {
+  console.log('Query:', e.query);
+  console.log('Params:', e.params);
+  console.log('Duration:', `${e.duration}ms`);
+});
+
+prisma.$on('error' as any, (e: any) => {
+  console.error('Error de Prisma:', e);
+});
+
 export default prisma; 

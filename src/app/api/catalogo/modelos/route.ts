@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
   console.log('GET /api/catalogo/modelos - Iniciando...');
   console.log('URL de la solicitud:', req.url);
   console.log('Método de la solicitud:', req.method);
+  console.log('Headers de la solicitud:', Object.fromEntries(req.headers.entries()));
   
   try {
     // Manejar solicitud OPTIONS para CORS
@@ -84,11 +85,39 @@ export async function GET(req: NextRequest) {
       console.error('GET /api/catalogo/modelos - Error en la consulta:', error);
       
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        console.error('Error de Prisma:', {
+          code: error.code,
+          message: error.message,
+          meta: error.meta
+        });
+        
         return NextResponse.json(
           { 
             error: 'Error en la base de datos',
             code: error.code,
             message: error.message
+          },
+          { status: 500, headers }
+        );
+      }
+
+      if (error instanceof Prisma.PrismaClientUnknownRequestError) {
+        console.error('Error desconocido de Prisma:', error.message);
+        return NextResponse.json(
+          { 
+            error: 'Error en la base de datos',
+            message: 'Error desconocido en la base de datos'
+          },
+          { status: 500, headers }
+        );
+      }
+
+      if (error instanceof Prisma.PrismaClientRustPanicError) {
+        console.error('Error crítico de Prisma:', error.message);
+        return NextResponse.json(
+          { 
+            error: 'Error crítico en la base de datos',
+            message: 'Error interno del servidor'
           },
           { status: 500, headers }
         );

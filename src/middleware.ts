@@ -4,54 +4,40 @@ import { getToken } from 'next-auth/jwt';
 
 // Rutas públicas que no requieren autenticación
 const publicPaths = [
-  '/auth/login',
-  '/auth/error',
-  '/auth/signin',
-  '/auth/signout',
-  '/cliente/login',
-  '/cliente/registro',
-  '/api/cliente/registro',
+  '/login',
+  '/register',
   '/api/auth',
   '/api/cliente/login',
+  '/api/cliente/register',
 ];
 
 // Rutas protegidas que requieren autenticación
 const protectedPaths = [
   '/dashboard',
-  '/api/admin',
   '/api/catalogo',
-  '/api/tickets',
   '/api/usuarios',
-  '/api/inventario',
-  '/cliente/tickets',
-  '/cliente/nuevo-ticket',
-  '/cliente/perfil',
+  '/api/tickets',
+  '/api/reparaciones',
+  '/api/almacen',
+  '/api/clientes',
 ];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Verificar si la ruta actual es pública
-  const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
-
-  // Verificar si la ruta actual es protegida
-  const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
-
-  // Obtener el token de NextAuth
-  const token = await getToken({ req: request });
-  const clienteToken = request.cookies.get('cliente_token')?.value;
-
-  // Si es una ruta pública, permitir el acceso
-  if (isPublicPath) {
+  // Verificar si la ruta es pública
+  if (publicPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
   }
 
-  // Si es una ruta protegida y no hay token, redirigir al login correspondiente
-  if (isProtectedPath) {
-    if (!token && !clienteToken) {
-      const isClientePath = pathname.startsWith('/cliente') || pathname.startsWith('/api/cliente');
-      const loginUrl = isClientePath ? '/cliente/login' : '/auth/login';
-      return NextResponse.redirect(new URL(loginUrl, request.url));
+  // Verificar si la ruta es protegida
+  if (protectedPaths.some(path => pathname.startsWith(path))) {
+    const token = await getToken({ req: request });
+    
+    if (!token) {
+      const url = new URL('/login', request.url);
+      url.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(url);
     }
   }
 
@@ -67,6 +53,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
   ],
 }; 
