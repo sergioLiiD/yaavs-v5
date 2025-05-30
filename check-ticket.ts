@@ -6,7 +6,7 @@ async function main() {
   const ticket = await prisma.ticket.findUnique({
     where: { id: 2 },
     include: {
-      Reparacion: true,
+      reparacion: true,
       dispositivo: true
     }
   });
