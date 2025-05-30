@@ -69,7 +69,7 @@ export async function POST(
       const url = await saveFoto(foto, productoId);
 
       // Crear registro en la base de datos
-      const fotoProducto = await prisma.fotoProducto.create({
+      const fotoProducto = await prisma.fotos_producto.create({
         data: {
           url,
           productoId,
@@ -113,7 +113,7 @@ export async function DELETE(
     }
 
     // Obtener la foto
-    const foto = await prisma.fotoProducto.findFirst({
+    const foto = await prisma.fotos_producto.findFirst({
       where: {
         id: parseInt(fotoId),
         productoId: parseInt(params.id),
@@ -132,7 +132,7 @@ export async function DELETE(
     await unlink(absolutePath);
 
     // Eliminar registro de la base de datos
-    await prisma.fotoProducto.delete({
+    await prisma.fotos_producto.delete({
       where: { id: parseInt(fotoId) },
     });
 
