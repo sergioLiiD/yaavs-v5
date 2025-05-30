@@ -62,7 +62,7 @@ export function PasosEditor({ pasos, onPasosChange }: PasosEditorProps) {
           value={nuevoPaso}
           onChange={(e) => setNuevoPaso(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleAgregarPaso()}
-          className="flex-1 block rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          className="flex-1 block rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm"
         />
         <Button 
           onClick={handleAgregarPaso}
@@ -105,7 +105,7 @@ export function PasosEditor({ pasos, onPasosChange }: PasosEditorProps) {
                             };
                             onPasosChange(nuevosPasos);
                           }}
-                          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm"
                         />
                       </div>
                       <button

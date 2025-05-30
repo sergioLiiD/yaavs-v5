@@ -22,7 +22,7 @@ export function YesNoRadio({ id, label, value, onChange, className }: YesNoRadio
             value="yes"
             checked={value === "yes"}
             onChange={() => onChange("yes")}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+            className="h-4 w-4 text-[#FEBF19] focus:ring-[#FEBF19] border-gray-300"
           />
           <Label htmlFor={`${id}-yes`} className="text-sm font-medium text-gray-700">
             Sí
@@ -36,7 +36,7 @@ export function YesNoRadio({ id, label, value, onChange, className }: YesNoRadio
             value="no"
             checked={value === "no"}
             onChange={() => onChange("no")}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+            className="h-4 w-4 text-[#FEBF19] focus:ring-[#FEBF19] border-gray-300"
           />
           <Label htmlFor={`${id}-no`} className="text-sm font-medium text-gray-700">
             No

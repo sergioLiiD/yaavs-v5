@@ -195,7 +195,7 @@ export default function ReparacionesFrecuentesPage() {
     <div className="container mx-auto py-10">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Reparaciones Frecuentes</h1>
-        <Button onClick={openModal} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={openModal} className="bg-[#FEBF19] hover:bg-[#FEBF19]/90">
           <HiPlus className="mr-2 h-5 w-5" />
           Nueva Reparación
         </Button>

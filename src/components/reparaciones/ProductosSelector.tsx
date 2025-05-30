@@ -68,7 +68,7 @@ export function ProductosSelector({ productos, onProductosChange }: ProductosSel
             placeholder="Nombre del producto o servicio"
             value={nuevoProducto.nombre}
             onChange={(e) => setNuevoProducto({ ...nuevoProducto, nombre: e.target.value })}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm"
           />
         </div>
         <div>
@@ -77,7 +77,7 @@ export function ProductosSelector({ productos, onProductosChange }: ProductosSel
             placeholder="Cantidad"
             value={nuevoProducto.cantidad}
             onChange={(e) => setNuevoProducto({ ...nuevoProducto, cantidad: parseInt(e.target.value) })}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm"
           />
         </div>
         <div>
@@ -86,13 +86,13 @@ export function ProductosSelector({ productos, onProductosChange }: ProductosSel
             placeholder="Precio"
             value={nuevoProducto.precio}
             onChange={(e) => setNuevoProducto({ ...nuevoProducto, precio: parseFloat(e.target.value) })}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm"
           />
         </div>
       </div>
       <Button 
         onClick={handleAgregarProducto} 
-        className="w-full inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        className="w-full inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
       >
         Agregar Producto/Servicio
       </Button>
@@ -141,7 +141,7 @@ export function ProductosSelector({ productos, onProductosChange }: ProductosSel
                     type="number"
                     value={producto.cantidad}
                     onChange={(e) => handleCantidadChange(producto.id, parseInt(e.target.value))}
-                    className="w-20 block rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    className="w-20 block rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm"
                   />
                 </td>
                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -155,7 +155,7 @@ export function ProductosSelector({ productos, onProductosChange }: ProductosSel
                     onClick={() => handleEliminarProducto(producto.id)}
                     className="text-red-600 hover:text-red-900"
                   >
-                    <HiTrash className="h-5 w-5" />
+                    <HiTrash className="h-4 w-4 text-[#FEBF19] focus:ring-[#FEBF19] border-gray-300" />
                   </button>
                 </td>
               </tr>

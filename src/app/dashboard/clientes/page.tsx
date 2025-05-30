@@ -360,7 +360,7 @@ export default function ClientesPage() {
                         name="nombre"
                         value={currentCliente.nombre}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                         placeholder="Ingrese el nombre"
                         required
                       />
@@ -374,7 +374,7 @@ export default function ClientesPage() {
                         name="apellidoPaterno"
                         value={currentCliente.apellidoPaterno}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                         placeholder="Ingrese el apellido paterno"
                         required
                       />
@@ -388,7 +388,7 @@ export default function ClientesPage() {
                         name="apellidoMaterno"
                         value={currentCliente.apellidoMaterno}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                         placeholder="Ingrese el apellido materno"
                       />
                     </div>
@@ -401,7 +401,7 @@ export default function ClientesPage() {
                         name="telefonoCelular"
                         value={currentCliente.telefonoCelular}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                         placeholder="Ingrese el teléfono celular"
                         required
                       />
@@ -415,7 +415,7 @@ export default function ClientesPage() {
                         name="telefonoContacto"
                         value={currentCliente.telefonoContacto}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                         placeholder="Ingrese el teléfono de contacto"
                       />
                     </div>
@@ -428,7 +428,7 @@ export default function ClientesPage() {
                         name="email"
                         value={currentCliente.email}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                         placeholder="Ingrese el correo electrónico"
                         required
                       />
@@ -442,7 +442,7 @@ export default function ClientesPage() {
                         name="rfc"
                         value={currentCliente.rfc}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                         placeholder="Ingrese el RFC"
                       />
                     </div>
@@ -455,7 +455,7 @@ export default function ClientesPage() {
                         name="calle"
                         value={currentCliente.calle}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                         placeholder="Ingrese la calle"
                       />
                     </div>
@@ -469,7 +469,7 @@ export default function ClientesPage() {
                           name="numeroExterior"
                           value={currentCliente.numeroExterior}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                           placeholder="Número exterior"
                         />
                       </div>
@@ -482,7 +482,7 @@ export default function ClientesPage() {
                           name="numeroInterior"
                           value={currentCliente.numeroInterior}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                           placeholder="Número interior"
                         />
                       </div>
@@ -496,7 +496,7 @@ export default function ClientesPage() {
                         name="colonia"
                         value={currentCliente.colonia}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                         placeholder="Ingrese la colonia"
                       />
                     </div>
@@ -510,7 +510,7 @@ export default function ClientesPage() {
                           name="ciudad"
                           value={currentCliente.ciudad}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                           placeholder="Ciudad"
                         />
                       </div>
@@ -523,7 +523,7 @@ export default function ClientesPage() {
                           name="estado"
                           value={currentCliente.estado}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                           placeholder="Estado"
                         />
                       </div>
@@ -536,7 +536,7 @@ export default function ClientesPage() {
                           name="codigoPostal"
                           value={currentCliente.codigoPostal}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-10 px-4 text-gray-900"
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
                           placeholder="Código postal"
                         />
                       </div>
@@ -546,14 +546,14 @@ export default function ClientesPage() {
                 <div className="bg-gray-50 px-6 py-4 sm:flex sm:flex-row-reverse">
                   <button
                     type="submit"
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#FEBF19] text-base font-medium text-gray-900 hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19] sm:ml-3 sm:w-auto sm:text-sm"
                   >
                     {isEditing ? 'Actualizar' : 'Guardar'}
                   </button>
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19] sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                   >
                     Cancelar
                   </button>

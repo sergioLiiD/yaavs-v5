@@ -24,7 +24,7 @@ export function YesNoRadioGroup({ id, label, value, onChange }: YesNoRadioGroupP
             value="yes"
             checked={value === "yes"}
             onChange={() => handleChange("yes")}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+            className="h-4 w-4 text-[#FEBF19] focus:ring-[#FEBF19] border-gray-300"
           />
           <Label htmlFor={`${id}-yes`} className="text-sm font-medium text-gray-700">
             Sí
@@ -38,7 +38,7 @@ export function YesNoRadioGroup({ id, label, value, onChange }: YesNoRadioGroupP
             value="no"
             checked={value === "no"}
             onChange={() => handleChange("no")}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+            className="h-4 w-4 text-[#FEBF19] focus:ring-[#FEBF19] border-gray-300"
           />
           <Label htmlFor={`${id}-no`} className="text-sm font-medium text-gray-700">
             No
