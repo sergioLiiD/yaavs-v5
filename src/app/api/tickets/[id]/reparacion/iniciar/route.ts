@@ -24,7 +24,7 @@ export async function POST(
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
       include: { 
-        reparacion: true,
+        Reparacion: true,
         pagos: true
       }
     });
@@ -43,12 +43,13 @@ export async function POST(
     }
 
     // Si ya existe una reparación, actualizar la fecha de inicio
-    if (ticket.reparacion) {
+    if (ticket.Reparacion) {
       console.log('Actualizando reparación existente');
       const reparacion = await prisma.reparacion.update({
         where: { ticketId },
         data: {
           fechaInicio: new Date(),
+          updatedAt: new Date(),
         }
       });
       console.log('Reparación actualizada:', reparacion);
@@ -60,8 +61,9 @@ export async function POST(
     const reparacion = await prisma.reparacion.create({
       data: {
         ticketId,
-        tecnicoId: parseInt(session.user.id),
+        tecnicoId: session.user.id,
         fechaInicio: new Date(),
+        updatedAt: new Date(),
       }
     });
     console.log('Nueva reparación creada:', reparacion);
