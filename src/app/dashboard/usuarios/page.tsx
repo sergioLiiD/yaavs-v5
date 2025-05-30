@@ -22,9 +22,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 const NIVELES_USUARIO = ['ADMINISTRADOR', 'TECNICO', 'ATENCION_CLIENTE'] as const;
 
@@ -122,6 +125,8 @@ export default function UsuariosPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('Enviando datos:', { ...currentUsuario, password: '[REDACTED]' });
+      
       if (isEditing && editingId) {
         const updateData: UpdateUsuarioDTO = {
           ...currentUsuario,
@@ -134,9 +139,11 @@ export default function UsuariosPage() {
           delete updateData.confirmPassword;
         }
 
+        console.log('Actualizando usuario:', { ...updateData, password: '[REDACTED]' });
         await axios.put(`/api/usuarios/${editingId}`, updateData);
         toast.success('Usuario actualizado correctamente');
       } else {
+        console.log('Creando usuario:', { ...currentUsuario, password: '[REDACTED]' });
         await axios.post('/api/usuarios', currentUsuario as CreateUsuarioDTO);
         toast.success('Usuario creado correctamente');
       }
@@ -196,11 +203,12 @@ export default function UsuariosPage() {
               Nuevo Usuario
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader>
-              <DialogTitle>
-                {isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}
-              </DialogTitle>
+              <DialogTitle>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
+              <DialogDescription>
+                {isEditing ? 'Modifica los datos del usuario.' : 'Ingresa los datos del nuevo usuario.'}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -243,58 +251,61 @@ export default function UsuariosPage() {
                   required
                 />
               </div>
+              {!isEditing && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Contraseña</Label>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      value={currentUsuario.password}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      value={currentUsuario.confirmPassword}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </>
+              )}
               <div className="space-y-2">
-                <Label htmlFor="password">
-                  {isEditing ? 'Nueva Contraseña (opcional)' : 'Contraseña'}
-                </Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={currentUsuario.password}
-                  onChange={handleInputChange}
-                  required={!isEditing}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">
-                  {isEditing ? 'Confirmar Nueva Contraseña (opcional)' : 'Confirmar Contraseña'}
-                </Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={currentUsuario.confirmPassword}
-                  onChange={handleInputChange}
-                  required={!isEditing}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nivel">Nivel</Label>
+                <Label htmlFor="nivel">Nivel de Usuario</Label>
                 <Select
+                  name="nivel"
                   value={currentUsuario.nivel}
                   onValueChange={(value) => setCurrentUsuario(prev => ({ ...prev, nivel: value as NivelUsuario }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccione un nivel" />
+                    <SelectValue placeholder="Selecciona un nivel" />
                   </SelectTrigger>
                   <SelectContent>
-                    {NIVELES_USUARIO.map((nivel) => (
-                      <SelectItem key={nivel} value={nivel}>
-                        {nivel}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="ADMINISTRADOR">Administrador</SelectItem>
+                    <SelectItem value="TECNICO">Técnico</SelectItem>
+                    <SelectItem value="ATENCION_CLIENTE">Atención a Clientes</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={closeModal}>
-                  Cancelar
+              <DialogFooter>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isEditing ? 'Actualizando...' : 'Creando...'}
+                    </>
+                  ) : (
+                    isEditing ? 'Actualizar' : 'Crear'
+                  )}
                 </Button>
-                <Button type="submit">
-                  {isEditing ? 'Actualizar' : 'Crear'}
-                </Button>
-              </div>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
@@ -320,22 +331,14 @@ export default function UsuariosPage() {
           <TableBody>
             {usuarios.map((usuario) => (
               <TableRow key={usuario.id}>
-                <TableCell>
-                  {usuario.nombre} {usuario.apellidoPaterno} {usuario.apellidoMaterno || ''}
-                </TableCell>
+                <TableCell>{usuario.nombre} {usuario.apellidoPaterno} {usuario.apellidoMaterno}</TableCell>
                 <TableCell>{usuario.email}</TableCell>
                 <TableCell>
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                    {usuario.nivel}
-                  </span>
+                  {usuario.nivel === 'ADMINISTRADOR' ? 'Administrador' :
+                   usuario.nivel === 'TECNICO' ? 'Técnico' :
+                   usuario.nivel === 'ATENCION_CLIENTE' ? 'Atención a Clientes' : usuario.nivel}
                 </TableCell>
-                <TableCell>
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    usuario.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {usuario.activo ? 'Activo' : 'Inactivo'}
-                  </span>
-                </TableCell>
+                <TableCell>{usuario.activo ? 'Activo' : 'Inactivo'}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end space-x-2">
                     <Button
