@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
           activo: true
         },
         include: {
-          marca: true
+          marcas: true
         },
         orderBy: {
           nombre: 'asc'
@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
           activo: true
         },
         include: {
-          marca: true
+          marcas: true
         }
       });
 
