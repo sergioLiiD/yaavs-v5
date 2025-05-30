@@ -26,8 +26,7 @@ export async function POST(
 
     // Verificar que el ticket existe
     const ticket = await prisma.ticket.findUnique({
-      where: { id: ticketId },
-      include: { tecnicoAsignado: true }
+      where: { id: ticketId }
     });
 
     if (!ticket) {
@@ -48,16 +47,18 @@ export async function POST(
         observaciones,
         fotos: fotos || [],
         videos: videos || [],
-        fechaFin: completar ? new Date() : undefined
+        fechaFin: completar ? new Date() : undefined,
+        updatedAt: new Date()
       },
       create: {
         ticketId,
-        tecnicoId: parseInt(session.user.id),
+        tecnicoId: session.user.id,
         observaciones,
         fotos: fotos || [],
         videos: videos || [],
         fechaInicio: new Date(),
-        fechaFin: completar ? new Date() : undefined
+        fechaFin: completar ? new Date() : undefined,
+        updatedAt: new Date()
       }
     });
 
@@ -72,7 +73,10 @@ export async function POST(
       if (estatusCompletado) {
         await prisma.ticket.update({
           where: { id: ticketId },
-          data: { estatusReparacionId: estatusCompletado.id }
+          data: { 
+            estatusReparacionId: estatusCompletado.id,
+            updatedAt: new Date()
+          }
         });
         console.log('Estatus del ticket actualizado a:', estatusCompletado.nombre);
       }
