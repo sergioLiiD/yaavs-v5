@@ -15,13 +15,13 @@ export async function GET() {
     console.log('Usuario autenticado:', session.user);
     console.log('Buscando piezas activas...');
 
-    const piezas = await prisma.pieza.findMany({
+    const piezas = await prisma.piezas.findMany({
       where: {
         activo: true
       },
       include: {
-        marca: true,
-        modelo: true
+        marcas: true,
+        Modelo: true
       }
     });
 
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     console.log('Creando pieza:', body);
 
-    const pieza = await prisma.pieza.create({
+    const pieza = await prisma.piezas.create({
       data: {
         nombre,
         sku: sku || null,
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
         activo: true,
         precioCompra: 0,
         cantidad: 0,
+        updatedAt: new Date(),
       },
     });
 
