@@ -19,11 +19,11 @@ export async function GET(
     const producto = await prisma.producto.findUnique({
       where: { id: parseInt(params.id) },
       include: {
-        categoria: true,
-        marca: true,
-        modelo: true,
-        proveedor: true,
-        fotos: true,
+        categorias: true,
+        marcas: true,
+        Modelo: true,
+        proveedores: true,
+        fotos_producto: true,
       },
     });
 
