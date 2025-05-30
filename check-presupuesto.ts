@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 async function main() {
   const ticket = await prisma.ticket.findUnique({
     where: { id: 3 },
-    include: { presupuesto: true }
+    include: { Presupuesto: true }
   });
 
   console.log('Ticket:', ticket);

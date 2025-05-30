@@ -19,7 +19,7 @@ export async function DELETE(
     // Verificar que el ticket existe
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
-      include: { presupuesto: true },
+      include: { Presupuesto: true },
     });
 
     if (!ticket) {
@@ -47,7 +47,7 @@ export async function DELETE(
       `;
 
       // Actualizar el presupuesto
-      if (ticket.presupuesto) {
+      if (ticket.Presupuesto) {
         const totalPagos = await tx.$queryRaw<{ total: number }[]>`
           SELECT COALESCE(SUM(monto), 0) as total
           FROM "pagos"
@@ -59,14 +59,14 @@ export async function DELETE(
           SET 
             "anticipo" = ${totalPagos[0].total},
             "saldo" = "total" - ${totalPagos[0].total},
-            "pagado" = ${totalPagos[0].total >= ticket.presupuesto.total},
-            "fechaPago" = ${totalPagos[0].total >= ticket.presupuesto.total ? new Date() : null},
+            "pagado" = ${totalPagos[0].total >= ticket.Presupuesto.total},
+            "fechaPago" = ${totalPagos[0].total >= ticket.Presupuesto.total ? new Date() : null},
             "updatedAt" = NOW()
-          WHERE id = ${ticket.presupuesto.id}
+          WHERE id = ${ticket.Presupuesto.id}
         `;
 
         // Si el saldo es 0, actualizar el estado del ticket a PAGADO
-        if (totalPagos[0].total >= ticket.presupuesto.total) {
+        if (totalPagos[0].total >= ticket.Presupuesto.total) {
           await tx.ticket.update({
             where: { id: ticketId },
             data: {
