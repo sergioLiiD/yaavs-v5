@@ -78,7 +78,8 @@ const Sidebar: React.FC = () => {
     <aside className="hidden md:flex md:flex-shrink-0">
       <div className="flex flex-col w-64 bg-blue-800 text-white">
         <div className="flex items-center justify-center h-16 bg-blue-900">
-          <span className="text-xl font-semibold">YAAVS</span>
+          <img src="/logo.png" className="mr-3 h-7" alt="Logo de la empresa" />
+          <span className="text-xl font-semibold">Sistema de Reparación de Celulares</span>
         </div>
         
         <nav className="mt-5 flex-1 px-2 bg-blue-800 space-y-1">
