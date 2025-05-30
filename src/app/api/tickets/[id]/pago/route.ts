@@ -23,9 +23,8 @@ export async function POST(
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
       include: { 
-        presupuesto: true,
-        pagos: true,
-        estatusReparacion: true
+        Presupuesto: true,
+        pagos: true
       },
     });
 
@@ -33,12 +32,12 @@ export async function POST(
       return new NextResponse('Ticket no encontrado', { status: 404 });
     }
 
-    if (!ticket.presupuesto) {
+    if (!ticket.Presupuesto) {
       return new NextResponse('El ticket no tiene un presupuesto', { status: 400 });
     }
 
-    const presupuestoId = ticket.presupuesto.id;
-    console.log('Presupuesto actual:', ticket.presupuesto);
+    const presupuestoId = ticket.Presupuesto.id;
+    console.log('Presupuesto actual:', ticket.Presupuesto);
 
     // Calcular el saldo correcto
     const saldoActual = data.total - data.anticipo;
@@ -47,12 +46,13 @@ export async function POST(
     // Iniciar transacción
     const resultado = await prisma.$transaction(async (tx) => {
       // Registrar el pago
-      const pago = await tx.pago.create({
+      const pago = await tx.pagos.create({
         data: {
           monto: data.anticipo,
           fecha: new Date(),
           metodoPago: data.metodoPago,
           ticketId: ticketId,
+          updatedAt: new Date()
         },
       });
 
@@ -65,6 +65,11 @@ export async function POST(
         },
       });
 
+      // Obtener el estatus actual
+      const estatusActual = await tx.estatusReparacion.findUnique({
+        where: { id: ticket.estatusReparacionId }
+      });
+
       // Determinar el nuevo estado del ticket
       let nuevoEstado;
       if (saldoActual <= 0) {
@@ -72,7 +77,7 @@ export async function POST(
         nuevoEstado = await tx.estatusReparacion.findFirst({
           where: { nombre: 'Reparación Completada' }
         });
-      } else if (ticket.estatusReparacion.nombre === 'Presupuesto Generado') {
+      } else if (estatusActual?.nombre === 'Presupuesto Generado') {
         // Si hay saldo pendiente y estaba en "Presupuesto Generado", mover a "En Reparación"
         nuevoEstado = await tx.estatusReparacion.findFirst({
           where: { nombre: 'En Reparación' }
