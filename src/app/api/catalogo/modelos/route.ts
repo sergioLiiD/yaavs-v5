@@ -46,10 +46,6 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      // Verificar conexión a la base de datos
-      await prisma.$connect();
-      console.log('Conexión a la base de datos establecida');
-
       // Verificar que la marca existe
       console.log('Buscando marca con ID:', marcaId);
       const marca = await prisma.marca.findUnique({
@@ -83,20 +79,10 @@ export async function GET(req: NextRequest) {
 
       console.log('GET /api/catalogo/modelos - Modelos encontrados:', modelos.length);
       
-      // Cerrar la conexión
-      await prisma.$disconnect();
-      
       return NextResponse.json(modelos, { headers });
     } catch (error) {
       console.error('GET /api/catalogo/modelos - Error en la consulta:', error);
       
-      // Intentar cerrar la conexión en caso de error
-      try {
-        await prisma.$disconnect();
-      } catch (disconnectError) {
-        console.error('Error al cerrar la conexión:', disconnectError);
-      }
-
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         return NextResponse.json(
           { 
@@ -130,6 +116,14 @@ export async function GET(req: NextRequest) {
 
 // POST /api/catalogo/modelos
 export async function POST(req: NextRequest) {
+  // Configurar headers CORS
+  const headers = {
+    'Access-Control-Allow-Origin': 'https://arreglamx.netlify.app',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+
   try {
     console.log('POST /api/catalogo/modelos - Iniciando...');
     
@@ -138,7 +132,7 @@ export async function POST(req: NextRequest) {
 
     if (!session?.user) {
       console.log('POST /api/catalogo/modelos - No autorizado');
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401, headers });
     }
 
     const data = await req.json();
@@ -149,15 +143,11 @@ export async function POST(req: NextRequest) {
       console.log('POST /api/catalogo/modelos - Datos incompletos:', { nombre: data.nombre, marcaId: data.marcaId });
       return NextResponse.json(
         { error: 'Se requieren los campos nombre y marcaId' },
-        { status: 400 }
+        { status: 400, headers }
       );
     }
 
     try {
-      // Verificar conexión a la base de datos
-      await prisma.$connect();
-      console.log('Conexión a la base de datos establecida');
-
       // Verificar que la marca existe
       const marca = await prisma.marca.findUnique({
         where: { id: parseInt(data.marcaId) }
@@ -165,7 +155,7 @@ export async function POST(req: NextRequest) {
 
       if (!marca) {
         console.log('POST /api/catalogo/modelos - Marca no encontrada:', data.marcaId);
-        return NextResponse.json({ error: 'Marca no encontrada' }, { status: 404 });
+        return NextResponse.json({ error: 'Marca no encontrada' }, { status: 404, headers });
       }
 
       // Crear el modelo
@@ -183,35 +173,33 @@ export async function POST(req: NextRequest) {
 
       console.log('POST /api/catalogo/modelos - Modelo creado:', modelo);
       
-      // Cerrar la conexión
-      await prisma.$disconnect();
-      
-      return NextResponse.json(modelo);
+      return NextResponse.json(modelo, { headers });
     } catch (error) {
       console.error('POST /api/catalogo/modelos - Error en la consulta:', error);
       
-      // Intentar cerrar la conexión en caso de error
-      try {
-        await prisma.$disconnect();
-      } catch (disconnectError) {
-        console.error('Error al cerrar la conexión:', disconnectError);
-      }
-
-      // Manejar errores específicos de Prisma
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          return NextResponse.json(
+            { error: 'Ya existe un modelo con ese nombre para la marca seleccionada' },
+            { status: 400, headers }
+          );
+        }
         return NextResponse.json(
-          { error: 'Ya existe un modelo con ese nombre para la marca seleccionada' },
-          { status: 400 }
+          { 
+            error: 'Error en la base de datos',
+            code: error.code,
+            message: error.message
+          },
+          { status: 500, headers }
         );
       }
-      
+
       return NextResponse.json(
         { 
-          error: 'Error al crear el modelo',
-          details: error instanceof Error ? error.message : 'Error desconocido',
-          stack: error instanceof Error ? error.stack : undefined
+          error: 'Error interno del servidor',
+          details: error instanceof Error ? error.message : 'Error desconocido'
         },
-        { status: 500 }
+        { status: 500, headers }
       );
     }
   } catch (error) {
@@ -219,10 +207,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Error desconocido',
-        stack: error instanceof Error ? error.stack : undefined
+        details: error instanceof Error ? error.message : 'Error desconocido'
       },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 } 
