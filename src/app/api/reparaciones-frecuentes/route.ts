@@ -3,16 +3,16 @@ import prisma from "@/lib/db/prisma"
 
 export async function GET() {
   try {
-    const reparaciones = await prisma.reparacionFrecuente.findMany({
+    const reparaciones = await prisma.reparaciones_frecuentes.findMany({
       include: {
-        pasos: {
+        pasos_reparacion_frecuente: {
           orderBy: {
             orden: "asc"
           }
         },
-        productos: {
+        productos_reparacion_frecuente: {
           include: {
-            producto: true
+            productos: true
           }
         }
       },
@@ -96,18 +96,20 @@ export async function POST(request: Request) {
       }
     }
 
-    const reparacion = await prisma.reparacionFrecuente.create({
+    const reparacion = await prisma.reparaciones_frecuentes.create({
       data: {
         nombre,
         descripcion,
         activo: activo ?? true,
-        pasos: {
+        updatedAt: new Date(),
+        pasos_reparacion_frecuente: {
           create: pasos.map((paso: { descripcion: string; orden: number }) => ({
             descripcion: paso.descripcion,
-            orden: paso.orden
+            orden: paso.orden,
+            updatedAt: new Date()
           }))
         },
-        productos: {
+        productos_reparacion_frecuente: {
           create: productos.map((producto: {
             productoId: number;
             cantidad: number;
@@ -119,19 +121,20 @@ export async function POST(request: Request) {
             cantidad: producto.cantidad,
             precioVenta: producto.precioVenta,
             conceptoExtra: producto.conceptoExtra,
-            precioConceptoExtra: producto.precioConceptoExtra
+            precioConceptoExtra: producto.precioConceptoExtra,
+            updatedAt: new Date()
           }))
         }
       },
       include: {
-        pasos: {
+        pasos_reparacion_frecuente: {
           orderBy: {
             orden: "asc"
           }
         },
-        productos: {
+        productos_reparacion_frecuente: {
           include: {
-            producto: true
+            productos: true
           }
         }
       }
