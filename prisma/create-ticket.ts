@@ -24,14 +24,16 @@ async function main() {
         estatusReparacionId: estadoRecibido.id,
         creadorId: 1,
         tecnicoAsignadoId: 1,
+        updatedAt: new Date()
       },
       include: {
-        cliente: true,
-        modelo: true,
-        tipoServicio: true,
-        estatusReparacion: true,
-        creador: true,
-        tecnicoAsignado: true,
+        Presupuesto: true,
+        Reparacion: true,
+        TicketProblema: true,
+        dispositivos: true,
+        entregas: true,
+        pagos: true,
+        direcciones: true
       }
     });
 
