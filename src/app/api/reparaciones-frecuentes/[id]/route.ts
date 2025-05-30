@@ -10,20 +10,20 @@ export async function PUT(
     const { nombre, descripcion, activo, pasos, productos } = body;
     const id = parseInt(params.id);
 
-    const reparacion = await prisma.reparacionFrecuente.update({
+    const reparacion = await prisma.reparaciones_frecuentes.update({
       where: { id },
       data: {
         nombre,
         descripcion,
         activo,
-        pasos: {
+        pasos_reparacion_frecuente: {
           deleteMany: {},
           create: pasos.map((paso: { descripcion: string; orden: number }) => ({
             descripcion: paso.descripcion,
             orden: paso.orden
           }))
         },
-        productos: {
+        productos_reparacion_frecuente: {
           deleteMany: {},
           create: productos.map((producto: {
             productoId: number;
@@ -41,14 +41,14 @@ export async function PUT(
         }
       },
       include: {
-        pasos: {
+        pasos_reparacion_frecuente: {
           orderBy: {
             orden: 'asc'
           }
         },
-        productos: {
+        productos_reparacion_frecuente: {
           include: {
-            producto: true
+            productos: true
           }
         }
       }
@@ -71,7 +71,7 @@ export async function DELETE(
   try {
     const id = parseInt(params.id);
     
-    await prisma.reparacionFrecuente.delete({
+    await prisma.reparaciones_frecuentes.delete({
       where: { id }
     });
 
