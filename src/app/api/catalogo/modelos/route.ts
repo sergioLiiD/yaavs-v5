@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 // GET /api/catalogo/modelos
 export async function GET(req: NextRequest) {
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
     if (!marcaId) {
       console.log('GET /api/catalogo/modelos - marcaId no proporcionado');
       return NextResponse.json(
-        { error: 'ID de marca no proporcionado' },
+        { error: 'Se requiere el ID de la marca' },
         { status: 400, headers }
       );
     }
@@ -59,7 +60,8 @@ export async function GET(req: NextRequest) {
       console.log('Buscando modelos para la marca:', marca.nombre);
       const modelos = await prisma.modelo.findMany({
         where: {
-          marcaId: parseInt(marcaId)
+          marcaId: parseInt(marcaId),
+          activo: true
         },
         include: {
           marca: true
@@ -127,48 +129,80 @@ export async function POST(req: NextRequest) {
     if (!data.nombre || !data.marcaId) {
       console.log('POST /api/catalogo/modelos - Datos incompletos:', { nombre: data.nombre, marcaId: data.marcaId });
       return NextResponse.json(
-        { error: 'El nombre y la marca son obligatorios' },
+        { error: 'Se requieren los campos nombre y marcaId' },
         { status: 400 }
       );
     }
 
-    // Verificar que la marca existe
-    const marca = await prisma.marca.findUnique({
-      where: { id: parseInt(data.marcaId) }
-    });
+    try {
+      // Verificar conexión a la base de datos
+      await prisma.$connect();
+      console.log('Conexión a la base de datos establecida');
 
-    if (!marca) {
-      console.log('POST /api/catalogo/modelos - Marca no encontrada:', data.marcaId);
-      return NextResponse.json({ error: 'Marca no encontrada' }, { status: 404 });
-    }
+      // Verificar que la marca existe
+      const marca = await prisma.marca.findUnique({
+        where: { id: parseInt(data.marcaId) }
+      });
 
-    // Crear el modelo
-    const modelo = await prisma.modelo.create({
-      data: {
-        nombre: data.nombre,
-        descripcion: data.descripcion || null,
-        marcaId: parseInt(data.marcaId)
-      },
-      include: {
-        marca: true
+      if (!marca) {
+        console.log('POST /api/catalogo/modelos - Marca no encontrada:', data.marcaId);
+        return NextResponse.json({ error: 'Marca no encontrada' }, { status: 404 });
       }
-    });
 
-    console.log('POST /api/catalogo/modelos - Modelo creado:', modelo);
-    return NextResponse.json(modelo);
-  } catch (error: any) {
-    console.error('POST /api/catalogo/modelos - Error:', error);
-    
-    // Manejar errores específicos de Prisma
-    if (error.code === 'P2002') {
+      // Crear el modelo
+      const modelo = await prisma.modelo.create({
+        data: {
+          nombre: data.nombre,
+          descripcion: data.descripcion,
+          marcaId: parseInt(data.marcaId),
+          activo: true
+        },
+        include: {
+          marca: true
+        }
+      });
+
+      console.log('POST /api/catalogo/modelos - Modelo creado:', modelo);
+      
+      // Cerrar la conexión
+      await prisma.$disconnect();
+      
+      return NextResponse.json(modelo);
+    } catch (error) {
+      console.error('POST /api/catalogo/modelos - Error en la consulta:', error);
+      
+      // Intentar cerrar la conexión en caso de error
+      try {
+        await prisma.$disconnect();
+      } catch (disconnectError) {
+        console.error('Error al cerrar la conexión:', disconnectError);
+      }
+
+      // Manejar errores específicos de Prisma
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'Ya existe un modelo con ese nombre para la marca seleccionada' },
+          { status: 400 }
+        );
+      }
+      
       return NextResponse.json(
-        { error: 'Ya existe un modelo con ese nombre para la marca seleccionada' },
-        { status: 400 }
+        { 
+          error: 'Error al crear el modelo',
+          details: error instanceof Error ? error.message : 'Error desconocido',
+          stack: error instanceof Error ? error.stack : undefined
+        },
+        { status: 500 }
       );
     }
-    
+  } catch (error) {
+    console.error('POST /api/catalogo/modelos - Error general:', error);
     return NextResponse.json(
-      { error: 'Error al crear el modelo' },
+      { 
+        error: 'Error interno del servidor',
+        details: error instanceof Error ? error.message : 'Error desconocido',
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }

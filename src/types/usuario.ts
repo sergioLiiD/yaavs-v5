@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 
-export type NivelUsuario = 'ADMINISTRADOR' | 'TECNICO' | 'ATENCION_CLIENTE';
+export type NivelUsuario = 'ADMINISTRADOR' | 'TECNICO' | 'ATENCION_CLIENTE' | 'GERENTE';
 
 export type Usuario = Prisma.UsuarioGetPayload<{
   select: {

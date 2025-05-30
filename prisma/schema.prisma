@@ -204,7 +204,7 @@ model Modelo {
   marcaId        Int
   activo         Boolean          @default(true)
   createdAt      DateTime         @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime         @updatedAt
   marcas         Marca            @relation(fields: [marcaId], references: [id])
   ProblemaModelo ProblemaModelo[]
   piezas         piezas[]
