@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, DroppableProvided, DraggableProvided, DropResult } from '@hello-pangea/dnd';
 import { PlusIcon, TrashIcon, Bars3Icon } from '@heroicons/react/24/outline';
 import { ProductosSelector } from '@/components/reparaciones/productos-selector';
 
@@ -71,7 +71,7 @@ export function ReparacionFrecuenteDialog({ open, onOpenChange, reparacion }: Re
     setPasos(pasos.filter((paso) => paso.id !== id));
   };
 
-  const handleDragEnd = (result: any) => {
+  const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
     const items = Array.from(pasos);
@@ -133,11 +133,11 @@ export function ReparacionFrecuenteDialog({ open, onOpenChange, reparacion }: Re
             <CardContent>
               <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="pasos">
-                  {(provided) => (
+                  {(provided: DroppableProvided) => (
                     <div {...provided.droppableProps} ref={provided.innerRef}>
                       {pasos.map((paso, index) => (
                         <Draggable key={paso.id} draggableId={paso.id} index={index}>
-                          {(provided) => (
+                          {(provided: DraggableProvided) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
