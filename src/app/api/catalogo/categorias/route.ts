@@ -16,7 +16,7 @@ export async function GET() {
       );
     }
 
-    const categorias = await prisma.categoria.findMany({
+    const categorias = await prisma.categorias.findMany({
       orderBy: {
         nombre: 'asc'
       }
@@ -26,10 +26,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error al obtener categorías:', error);
     return NextResponse.json(
-      { 
-        error: 'Error al obtener categorías',
-        details: error instanceof Error ? error.message : 'Error desconocido'
-      },
+      { error: 'Error al obtener categorías' },
       { status: 500 }
     );
   }
@@ -60,10 +57,10 @@ export async function POST(request: Request) {
     }
 
     // Crear la categoría
-    const categoria = await prisma.categoria.create({
+    const categoria = await prisma.categorias.create({
       data: {
-        nombre: data.nombre,
-        descripcion: data.descripcion || null
+        ...data,
+        updatedAt: new Date()
       }
     });
 
