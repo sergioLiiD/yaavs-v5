@@ -27,7 +27,7 @@ export async function DELETE(
     }
 
     // Verificar que el pago existe y pertenece al ticket
-    const pago = await prisma.pago.findFirst({
+    const pago = await prisma.pagos.findFirst({
       where: {
         id: pagoId,
         ticketId: ticketId,
@@ -41,32 +41,40 @@ export async function DELETE(
     // Usar una transacción para asegurar la integridad de los datos
     await prisma.$transaction(async (tx) => {
       // Eliminar el pago
-      await tx.$executeRaw`
-        DELETE FROM "pagos"
-        WHERE id = ${pagoId}
-      `;
+      await tx.pagos.delete({
+        where: {
+          id: pagoId
+        }
+      });
 
       // Actualizar el presupuesto
       if (ticket.Presupuesto) {
-        const totalPagos = await tx.$queryRaw<{ total: number }[]>`
-          SELECT COALESCE(SUM(monto), 0) as total
-          FROM "pagos"
-          WHERE "ticketId" = ${ticketId}
-        `;
+        const totalPagos = await tx.pagos.aggregate({
+          where: {
+            ticketId: ticketId
+          },
+          _sum: {
+            monto: true
+          }
+        });
 
-        await tx.$executeRaw`
-          UPDATE "Presupuesto"
-          SET 
-            "anticipo" = ${totalPagos[0].total},
-            "saldo" = "total" - ${totalPagos[0].total},
-            "pagado" = ${totalPagos[0].total >= ticket.Presupuesto.total},
-            "fechaPago" = ${totalPagos[0].total >= ticket.Presupuesto.total ? new Date() : null},
-            "updatedAt" = NOW()
-          WHERE id = ${ticket.Presupuesto.id}
-        `;
+        const totalPagado = totalPagos._sum.monto || 0;
+
+        await tx.presupuesto.update({
+          where: {
+            id: ticket.Presupuesto.id
+          },
+          data: {
+            anticipo: totalPagado,
+            saldo: ticket.Presupuesto.total - totalPagado,
+            pagado: totalPagado >= ticket.Presupuesto.total,
+            fechaPago: totalPagado >= ticket.Presupuesto.total ? new Date() : null,
+            updatedAt: new Date()
+          }
+        });
 
         // Si el saldo es 0, actualizar el estado del ticket a PAGADO
-        if (totalPagos[0].total >= ticket.Presupuesto.total) {
+        if (totalPagado >= ticket.Presupuesto.total) {
           await tx.ticket.update({
             where: { id: ticketId },
             data: {
