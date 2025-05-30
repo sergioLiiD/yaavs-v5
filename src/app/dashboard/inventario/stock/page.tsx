@@ -55,7 +55,8 @@ export default function StockPage() {
     cantidad: 0,
     precioCompra: 0,
     notas: '',
-    proveedorId: 0
+    proveedorId: 0,
+    productoId: 0
   });
   const [productosExpandidos, setProductosExpandidos] = useState<Set<number>>(new Set());
   const [ordenamiento, setOrdenamiento] = useState<Ordenamiento>({ campo: 'stock', direccion: 'asc' });
@@ -169,7 +170,8 @@ export default function StockPage() {
         cantidad: 0,
         precioCompra: 0,
         notas: '',
-        proveedorId: 0
+        proveedorId: 0,
+        productoId: 0
       });
 
       // Recargar los datos
@@ -246,7 +248,8 @@ export default function StockPage() {
       cantidad: 0,
       precioCompra: 0,
       notas: '',
-      proveedorId: 0
+      proveedorId: 0,
+      productoId: 0
     });
     setHasUnsavedChanges(false);
   };
