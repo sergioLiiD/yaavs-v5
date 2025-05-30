@@ -14,12 +14,12 @@ export async function GET() {
 
     const productos = await prisma.producto.findMany({
       include: {
-        marca: {
+        marcas: {
           select: {
             nombre: true
           }
         },
-        modelo: {
+        Modelo: {
           select: {
             nombre: true
           }
