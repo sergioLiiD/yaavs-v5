@@ -12,6 +12,7 @@ async function main() {
         orden: 1,
         color: '#FFA500', // Naranja
         activo: true,
+        updatedAt: new Date()
       },
       {
         nombre: 'En Diagnóstico',
@@ -19,6 +20,7 @@ async function main() {
         orden: 2,
         color: '#FFD700', // Amarillo
         activo: true,
+        updatedAt: new Date()
       },
       {
         nombre: 'Diagnóstico Completado',
@@ -26,6 +28,7 @@ async function main() {
         orden: 3,
         color: '#87CEEB', // Azul cielo
         activo: true,
+        updatedAt: new Date()
       },
       {
         nombre: 'Diagnóstico Pendiente',
@@ -33,6 +36,7 @@ async function main() {
         orden: 4,
         color: '#FFB6C1', // Rosa claro
         activo: true,
+        updatedAt: new Date()
       },
       {
         nombre: 'Diagnóstico Aprobado',
@@ -40,6 +44,7 @@ async function main() {
         orden: 5,
         color: '#98FB98', // Verde claro
         activo: true,
+        updatedAt: new Date()
       },
       {
         nombre: 'Presupuesto Aprobado',
@@ -47,6 +52,7 @@ async function main() {
         orden: 6,
         color: '#90EE90', // Verde
         activo: true,
+        updatedAt: new Date()
       },
       {
         nombre: 'En Reparación',
@@ -54,6 +60,7 @@ async function main() {
         orden: 7,
         color: '#FF69B4', // Rosa
         activo: true,
+        updatedAt: new Date()
       },
       {
         nombre: 'Reparación Completada',
@@ -61,6 +68,7 @@ async function main() {
         orden: 8,
         color: '#00FF00', // Verde brillante
         activo: true,
+        updatedAt: new Date()
       },
       {
         nombre: 'Listo para Entrega',
@@ -68,6 +76,7 @@ async function main() {
         orden: 9,
         color: '#008000', // Verde oscuro
         activo: true,
+        updatedAt: new Date()
       },
       {
         nombre: 'Entregado',
@@ -75,6 +84,7 @@ async function main() {
         orden: 10,
         color: '#006400', // Verde muy oscuro
         activo: true,
+        updatedAt: new Date()
       },
       {
         nombre: 'Cancelado',
@@ -82,27 +92,23 @@ async function main() {
         orden: 11,
         color: '#FF0000', // Rojo
         activo: true,
-      },
+        updatedAt: new Date()
+      }
     ];
 
     // Eliminar registros en el orden correcto
-    await prisma.piezaReparacion.deleteMany({});
-    await prisma.checklistDiagnostico.deleteMany({});
+    await prisma.piezas_reparacion.deleteMany({});
+    await prisma.checklist_diagnostico.deleteMany({});
     await prisma.reparacion.deleteMany({});
     await prisma.ticket.deleteMany({});
     await prisma.estatusReparacion.deleteMany({});
 
     // Crear los nuevos estados
-    const estadosCreados = await Promise.all(
-      estados.map(estado => 
-        prisma.estatusReparacion.create({
-          data: estado
-        })
-      )
-    );
+    const estadosCreados = await prisma.estatusReparacion.createMany({
+      data: estados
+    });
 
-    console.log('Estados de reparación creados:', estadosCreados.length);
-    console.log('Estados:', estadosCreados);
+    console.log('Estados de reparación creados:', estadosCreados.count);
   } catch (error) {
     console.error('Error al crear estados de reparación:', error);
     throw error;
