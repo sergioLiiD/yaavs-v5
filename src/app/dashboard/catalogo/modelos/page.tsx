@@ -231,9 +231,10 @@ export default function ModelosPage() {
           <div className="flex justify-end">
             <button
               onClick={openModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+              className="bg-[#FEBF19] text-gray-900 hover:bg-[#FEBF19]/90 px-4 py-2 rounded-md flex items-center"
             >
-              <HiPlus className="mr-2" /> Nuevo Modelo
+              <span className="material-symbols-outlined mr-2">add</span>
+              Nuevo Modelo
             </button>
           </div>
 

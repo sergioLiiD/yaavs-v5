@@ -26,30 +26,38 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'ID de marca no proporcionado' }, { status: 400 });
     }
 
-    // Verificar que la marca existe
-    const marca = await prisma.marca.findUnique({
-      where: { id: parseInt(marcaId) }
-    });
+    try {
+      // Verificar que la marca existe
+      const marca = await prisma.marca.findUnique({
+        where: { id: parseInt(marcaId) }
+      });
 
-    if (!marca) {
-      console.log('GET /api/catalogo/modelos - Marca no encontrada');
-      return NextResponse.json({ error: 'Marca no encontrada' }, { status: 404 });
-    }
-
-    const modelos = await prisma.modelo.findMany({
-      where: {
-        marcaId: parseInt(marcaId)
-      },
-      include: {
-        marca: true
-      },
-      orderBy: {
-        nombre: 'asc'
+      if (!marca) {
+        console.log('GET /api/catalogo/modelos - Marca no encontrada');
+        return NextResponse.json({ error: 'Marca no encontrada' }, { status: 404 });
       }
-    });
 
-    console.log('GET /api/catalogo/modelos - Modelos encontrados:', modelos.length);
-    return NextResponse.json(modelos);
+      const modelos = await prisma.modelo.findMany({
+        where: {
+          marcaId: parseInt(marcaId)
+        },
+        include: {
+          marca: true
+        },
+        orderBy: {
+          nombre: 'asc'
+        }
+      });
+
+      console.log('GET /api/catalogo/modelos - Modelos encontrados:', modelos.length);
+      return NextResponse.json(modelos);
+    } catch (error) {
+      console.error('GET /api/catalogo/modelos - Error en la consulta:', error);
+      return NextResponse.json(
+        { error: 'Error al obtener los modelos', details: error instanceof Error ? error.message : 'Error desconocido' },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error('GET /api/catalogo/modelos - Error:', error);
     return NextResponse.json(

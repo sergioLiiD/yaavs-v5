@@ -138,7 +138,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
       } lg:translate-x-0 lg:static lg:inset-0`}>
         <div className="h-full overflow-y-auto py-4 px-3 bg-white border-r border-gray-200">
           <div className="flex items-center pl-2.5 mb-5">
-            <img src="/logo.png" className="mr-3 h-6 sm:h-7" alt="Logo de la empresa" />
+            <img src="/logo.png" className="mr-3 h-24 sm:h-28" alt="Logo de la empresa" />
           </div>
           
           <div className="space-y-2">
@@ -379,7 +379,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
           <div className="fixed inset-y-0 left-0 z-30 w-9/12 max-w-sm bg-white" onClick={e => e.stopPropagation()}>
             <div className="h-full overflow-y-auto p-4">
               <div className="flex items-center mb-5">
-                <img src="/logo.png" className="mr-3 h-7" alt="Logo de la empresa" />
+                <img src="/logo.png" className="mr-3 h-28" alt="Logo de la empresa" />
                 <button 
                   className="ml-auto inline-flex items-center p-2 text-gray-500 rounded-lg hover:bg-gray-100"
                   onClick={toggleMobileMenu}
