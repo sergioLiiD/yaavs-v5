@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     // Verificar si el usuario existe
     const usuario = await prisma.usuario.findUnique({
-      where: { id: parseInt(session.user.id) }
+      where: { id: Number(session.user.id) }
     });
 
     console.log('Buscando usuario con ID:', session.user.id);
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
             cantidad: Number(cantidad),
             precioCompra: Number(precioCompra),
             notas,
-            usuarioId: parseInt(session.user.id),
+            usuarioId: Number(session.user.id),
             proveedorId: Number(proveedorId)
           }
         }),
