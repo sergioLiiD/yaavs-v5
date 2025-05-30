@@ -11,9 +11,11 @@ async function main() {
       email: 'sergio@hoom.mx',
       nombre: 'Sergio',
       apellidoPaterno: 'Velazco',
+      apellidoMaterno: '',
       passwordHash,
       nivel: NivelUsuario.ADMINISTRADOR,
-      activo: true
+      activo: true,
+      updatedAt: new Date()
     }
   });
 
