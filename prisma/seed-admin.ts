@@ -17,6 +17,7 @@ async function main() {
         passwordHash,
         nivel: NivelUsuario.ADMINISTRADOR,
         activo: true,
+        updatedAt: new Date()
       },
     });
 
