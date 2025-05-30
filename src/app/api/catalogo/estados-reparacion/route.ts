@@ -60,8 +60,9 @@ export async function POST(req: NextRequest) {
         nombre: body.nombre,
         descripcion: body.descripcion || null,
         orden: body.orden || 1,
-        color: body.color || null,
-        activo: true
+        color: body.color || '#000000',
+        activo: true,
+        updatedAt: new Date()
       }
     });
     
