@@ -35,7 +35,8 @@ async function main() {
         apellidoPaterno,
         apellidoMaterno,
         nivel,
-        activo: true
+        activo: true,
+        updatedAt: new Date()
       }
     });
 
