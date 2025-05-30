@@ -162,7 +162,7 @@ export async function DELETE(
 
         for (const reparacion of reparaciones) {
           // Eliminar piezas de reparación
-          await prisma.piezaReparacion.deleteMany({
+          await prisma.piezas_reparacion.deleteMany({
             where: {
               reparacionId: reparacion.id
             }
