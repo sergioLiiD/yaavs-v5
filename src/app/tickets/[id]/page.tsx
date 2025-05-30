@@ -19,6 +19,7 @@ async function getTicket(id: string): Promise<Ticket | null> {
   const ticket = await prisma.ticket.findUnique({
     where: { id: parseInt(id) },
     include: {
+      estatusReparacion: true,
       Presupuesto: true,
       Reparacion: {
         include: {
@@ -54,7 +55,7 @@ export default async function TicketPage({ params }: PageProps) {
           <div>
             <h1 className="text-2xl font-bold">Ticket #{ticket.numeroTicket}</h1>
             <p className="text-gray-500">
-              Estado: {ticket.estatusReparacionId}
+              Estado: {ticket.estatusReparacion.nombre}
             </p>
             {ticket.entregas && (
               <p className="text-gray-500">

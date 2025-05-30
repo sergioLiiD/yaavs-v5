@@ -70,6 +70,16 @@ export type Ticket = {
   updatedAt: Date;
   fechaCancelacion: Date | null;
   direccionId: number | null;
+  estatusReparacion: {
+    id: number;
+    nombre: string;
+    descripcion: string | null;
+    orden: number;
+    color: string | null;
+    activo: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  };
   Presupuesto: {
     id: number;
     ticketId: number;

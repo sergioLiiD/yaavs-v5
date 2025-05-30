@@ -64,6 +64,7 @@ model Ticket {
   entregas               entregas?
   pagos                  pagos[]
   direcciones            direcciones?     @relation(fields: [direccionId], references: [id])
+  estatusReparacion      EstatusReparacion @relation(fields: [estatusReparacionId], references: [id])
 
   @@map("tickets")
 }
@@ -195,6 +196,7 @@ model EstatusReparacion {
   activo      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime
+  tickets     Ticket[]
 }
 
 model Modelo {
