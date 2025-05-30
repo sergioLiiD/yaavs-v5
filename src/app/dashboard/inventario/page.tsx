@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Producto, InventarioMinimo } from '@prisma/client';
+import { Producto, inventarios_minimos } from '@prisma/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner';
 
 type ProductoConInventarioMinimo = Producto & {
-  inventarioMinimo: InventarioMinimo | null;
+  inventarioMinimo: inventarios_minimos | null;
   marca: { nombre: string };
   modelo: { nombre: string };
 };
