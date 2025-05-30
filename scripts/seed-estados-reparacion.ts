@@ -86,8 +86,14 @@ async function main() {
   for (const estado of estadosReparacion) {
     await prisma.estatusReparacion.upsert({
       where: { nombre: estado.nombre },
-      update: estado,
-      create: estado
+      update: {
+        ...estado,
+        updatedAt: new Date()
+      },
+      create: {
+        ...estado,
+        updatedAt: new Date()
+      }
     });
   }
 
