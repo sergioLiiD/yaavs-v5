@@ -19,10 +19,10 @@ export async function POST(
     // Verificar si el ticket existe y tiene una reparación
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
-      include: { reparacion: true }
+      include: { Reparacion: true }
     });
 
-    if (!ticket || !ticket.reparacion) {
+    if (!ticket || !ticket.Reparacion) {
       return new NextResponse('Reparación no encontrada', { status: 404 });
     }
 
@@ -31,6 +31,7 @@ export async function POST(
       where: { ticketId },
       data: {
         fechaReanudacion: new Date(),
+        updatedAt: new Date(),
       }
     });
 
