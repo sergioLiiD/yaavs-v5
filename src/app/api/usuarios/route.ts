@@ -174,6 +174,14 @@ export async function POST(req: NextRequest) {
       console.log('Contraseña encriptada correctamente');
 
       // Crear usuario
+      console.log('Intentando crear usuario con datos:', {
+        nombre: data.nombre,
+        email: data.email,
+        nivel: data.nivel,
+        apellidoPaterno: data.apellidoPaterno,
+        apellidoMaterno: data.apellidoMaterno
+      });
+
       const usuario = await prisma.usuario.create({
         data: {
           nombre: data.nombre,
@@ -181,21 +189,30 @@ export async function POST(req: NextRequest) {
           passwordHash: hashedPassword,
           nivel: data.nivel,
           apellidoPaterno: data.apellidoPaterno || '',
-          apellidoMaterno: data.apellidoMaterno || ''
+          apellidoMaterno: data.apellidoMaterno || '',
+          updatedAt: new Date()
         }
       });
 
-      console.log('POST /api/usuarios - Usuario creado:', { ...usuario, password: '[REDACTED]' });
+      console.log('POST /api/usuarios - Usuario creado:', { ...usuario, passwordHash: '[REDACTED]' });
       
       // Cerrar la conexión
       await prisma.$disconnect();
       
       return NextResponse.json(
-        { ...usuario, password: undefined },
+        { ...usuario, passwordHash: undefined },
         { status: 201, headers }
       );
     } catch (error) {
       console.error('POST /api/usuarios - Error en la consulta:', error);
+      
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        console.error('Error de Prisma:', {
+          code: error.code,
+          message: error.message,
+          meta: error.meta
+        });
+      }
       
       // Intentar cerrar la conexión en caso de error
       try {

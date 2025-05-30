@@ -203,7 +203,11 @@ export default function UsuariosPage() {
               Nuevo Usuario
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => e.preventDefault()}>
+          <DialogContent 
+            className="sm:max-w-[425px]" 
+            onInteractOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
               <DialogDescription>
