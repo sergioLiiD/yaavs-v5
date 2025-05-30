@@ -5,9 +5,11 @@ import { authOptions } from '@/lib/auth';
 
 // GET /api/catalogo/modelos
 export async function GET(req: NextRequest) {
+  console.log('GET /api/catalogo/modelos - Iniciando...');
+  console.log('URL de la solicitud:', req.url);
+  console.log('Método de la solicitud:', req.method);
+  
   try {
-    console.log('GET /api/catalogo/modelos - Iniciando...');
-    
     // Configurar headers CORS
     const headers = {
       'Access-Control-Allow-Origin': '*',
@@ -33,7 +35,12 @@ export async function GET(req: NextRequest) {
     }
 
     try {
+      // Verificar conexión a la base de datos
+      await prisma.$connect();
+      console.log('Conexión a la base de datos establecida');
+
       // Verificar que la marca existe
+      console.log('Buscando marca con ID:', marcaId);
       const marca = await prisma.marca.findUnique({
         where: { id: parseInt(marcaId) }
       });
@@ -46,6 +53,10 @@ export async function GET(req: NextRequest) {
         );
       }
 
+      console.log('Marca encontrada:', marca.nombre);
+
+      // Buscar modelos
+      console.log('Buscando modelos para la marca:', marca.nombre);
       const modelos = await prisma.modelo.findMany({
         where: {
           marcaId: parseInt(marcaId)
@@ -59,13 +70,26 @@ export async function GET(req: NextRequest) {
       });
 
       console.log('GET /api/catalogo/modelos - Modelos encontrados:', modelos.length);
+      
+      // Cerrar la conexión
+      await prisma.$disconnect();
+      
       return NextResponse.json(modelos, { headers });
     } catch (error) {
       console.error('GET /api/catalogo/modelos - Error en la consulta:', error);
+      
+      // Intentar cerrar la conexión en caso de error
+      try {
+        await prisma.$disconnect();
+      } catch (disconnectError) {
+        console.error('Error al cerrar la conexión:', disconnectError);
+      }
+
       return NextResponse.json(
         { 
           error: 'Error al obtener los modelos',
-          details: error instanceof Error ? error.message : 'Error desconocido'
+          details: error instanceof Error ? error.message : 'Error desconocido',
+          stack: error instanceof Error ? error.stack : undefined
         },
         { status: 500, headers }
       );
@@ -75,7 +99,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Error desconocido'
+        details: error instanceof Error ? error.message : 'Error desconocido',
+        stack: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
