@@ -5,7 +5,7 @@ import { NivelUsuario } from '@/types/usuario';
 async function createAdminUser() {
   try {
     const email = 'sergio@hoom.mx';
-    const password = 'whoS5un0%';
+    const password = 'whoSuno%';
     const nombre = 'Sergio';
     const apellidoPaterno = 'Velazco';
     const apellidoMaterno = 'Bernal';

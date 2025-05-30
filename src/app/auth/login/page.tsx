@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 function LoginForm() {
   const router = useRouter();
@@ -96,7 +97,7 @@ function LoginForm() {
               <input
                 id="email"
                 type="email"
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-[#FEBF19] focus:border-[#FEBF19] block w-full p-2.5"
                 placeholder="nombre@empresa.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -111,7 +112,7 @@ function LoginForm() {
               <input
                 id="password"
                 type="password"
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-[#FEBF19] focus:border-[#FEBF19] block w-full p-2.5"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -123,7 +124,7 @@ function LoginForm() {
                 <input
                   id="remember"
                   type="checkbox"
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-[#FEBF19] bg-gray-100 border-gray-300 rounded focus:ring-[#FEBF19]"
                   checked={rememberMe}
                   onChange={() => setRememberMe(!rememberMe)}
                 />
@@ -131,18 +132,18 @@ function LoginForm() {
                   Recordarme
                 </label>
               </div>
-              <Link href="/auth/recuperar-password" className="text-sm text-blue-600 hover:underline">
+              <Link href="/auth/recuperar-password" className="text-sm text-[#FEBF19] hover:underline">
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
             
-            <button 
+            <Button 
               type="submit" 
               disabled={isLoading}
-              className="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:bg-blue-300"
+              className="w-full"
             >
               {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-            </button>
+            </Button>
           </form>
         </div>
         
