@@ -65,8 +65,8 @@ function LoginForm() {
         <div className="flex justify-center mb-8">
           <img 
             src="/logo.png" 
-            alt="YAAVS Logo" 
-            className="h-12"
+            alt="Logo de la empresa" 
+            className="h-48 w-auto"
             onError={(e) => {
               // Fallback si no hay logo
               const target = e.target as HTMLImageElement;

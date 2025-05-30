@@ -201,7 +201,7 @@ export default function EstadoReparacionPage() {
         <h1 className="text-2xl font-semibold text-gray-900">Estados de Reparación</h1>
         <button
           onClick={openModal}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+          className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
         >
           <HiPlus className="mr-2" /> Nuevo Estado
         </button>

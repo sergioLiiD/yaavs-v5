@@ -442,7 +442,7 @@ export default function CatalogoPage() {
         <h1 className="text-2xl font-bold text-gray-900">Catálogo de Productos</h1>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
         >
           <HiPlus className="mr-2" />
           Nuevo Producto
