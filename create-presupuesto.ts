@@ -14,7 +14,8 @@ async function main() {
       saldo: 4466,
       aprobado: true,
       fechaAprobacion: new Date(),
-    },
+      updatedAt: new Date()
+    }
   });
 
   console.log('Presupuesto creado:', presupuesto);
