@@ -44,20 +44,21 @@ export async function POST(req: NextRequest) {
         descripcionProblema: body.descripcionProblema,
         estatusReparacionId: estadoInicial.id,
         creadorId: Number(session.user.id),
-        dispositivo: {
+        dispositivos: {
           create: {
             capacidad: body.capacidad,
             color: body.color,
             fechaCompra: body.fechaCompra ? new Date(body.fechaCompra) : null,
             redCelular: body.redCelular,
-            codigoDesbloqueo: body.codigoDesbloqueo
+            codigoDesbloqueo: body.codigoDesbloqueo,
+            updatedAt: new Date()
           }
         }
       }
     });
 
     // Crear la dirección asociada al ticket
-    await prisma.direccion.create({
+    await prisma.direcciones.create({
       data: {
         calle: body.direccion.calle,
         numeroExterior: body.direccion.numeroExterior,
@@ -68,7 +69,8 @@ export async function POST(req: NextRequest) {
         codigoPostal: body.direccion.codigoPostal,
         latitud: body.direccion.latitud,
         longitud: body.direccion.longitud,
-        ticket: { connect: { id: ticket.id } }
+        updatedAt: new Date(),
+        tickets: { connect: { id: ticket.id } }
       }
     });
 
@@ -76,15 +78,8 @@ export async function POST(req: NextRequest) {
     const ticketCompleto = await prisma.ticket.findUnique({
       where: { id: ticket.id },
       include: {
-        dispositivo: true,
-        direccion: true,
-        cliente: true,
-        modelo: {
-          include: {
-            marca: true
-          }
-        },
-        estatusReparacion: true
+        dispositivos: true,
+        direcciones: true
       }
     });
 
@@ -112,15 +107,7 @@ export async function GET(req: NextRequest) {
         clienteId: Number(session.user.id)
       },
       include: {
-        tipoServicio: true,
-        modelo: {
-          include: {
-            marca: true,
-          },
-        },
-        estatusReparacion: true,
-        tecnicoAsignado: true,
-        presupuesto: true,
+        Presupuesto: true,
         pagos: {
           orderBy: {
             fecha: 'desc'
