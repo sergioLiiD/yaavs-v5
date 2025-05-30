@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const problemasFrecuentes = await prisma.problemaFrecuente.findMany({
+    const problemasFrecuentes = await prisma.problemas_frecuentes.findMany({
       where: {
         modeloId: parseInt(modeloId),
         activo: true
