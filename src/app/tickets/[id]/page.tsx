@@ -54,8 +54,13 @@ export default async function TicketPage({ params }: PageProps) {
           <div>
             <h1 className="text-2xl font-bold">Ticket #{ticket.numeroTicket}</h1>
             <p className="text-gray-500">
-              Estado: {ticket.estatusReparacion?.nombre}
+              Estado: {ticket.estatusReparacionId}
             </p>
+            {ticket.entregas && (
+              <p className="text-gray-500">
+                Entrega: {ticket.entregas.entregado ? 'Entregado' : 'Pendiente'}
+              </p>
+            )}
           </div>
         </div>
 

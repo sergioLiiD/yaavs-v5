@@ -118,7 +118,7 @@ export type Ticket = {
         id: number;
         nombre: string;
         descripcion: string | null;
-      };
+      } | null;
     }>;
   } | null;
   dispositivos: {
@@ -135,9 +135,11 @@ export type Ticket = {
   entregas: {
     id: number;
     ticketId: number;
-    fecha: Date;
-    tipo: string;
-    notas: string | null;
+    tipoEntrega: string;
+    fechaEntrega: Date | null;
+    entregado: boolean;
+    observaciones: string | null;
+    direccionEntregaId: number | null;
     createdAt: Date;
     updatedAt: Date;
   } | null;
@@ -161,41 +163,4 @@ export type Ticket = {
     createdAt: Date;
     updatedAt: Date;
   } | null;
-  cliente: {
-    id: number;
-    nombre: string;
-    apellidoPaterno: string;
-    apellidoMaterno: string | null;
-    telefonoCelular: string;
-    email: string;
-  };
-  tipoServicio: {
-    id: number;
-    nombre: string;
-  };
-  modelo: {
-    id: number;
-    nombre: string;
-    marca: {
-      id: number;
-      nombre: string;
-    };
-  };
-  estatusReparacion: {
-    id: number;
-    nombre: string;
-    color: string | null;
-  };
-  tecnicoAsignado: {
-    id: number;
-    nombre: string;
-    apellidoPaterno: string;
-    apellidoMaterno: string | null;
-  } | null;
-  creador: {
-    id: number;
-    nombre: string;
-    apellidoPaterno: string;
-    apellidoMaterno: string | null;
-  };
 }; 
