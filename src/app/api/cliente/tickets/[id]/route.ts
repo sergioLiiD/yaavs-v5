@@ -26,20 +26,19 @@ export async function GET(
         clienteId: Number(session.user.id)
       },
       include: {
-        cliente: true,
-        tipoServicio: true,
+        direcciones: true,
+        tipos_servicio: true,
         modelo: {
           include: {
-            marca: true,
+            marcas: true,
           },
         },
         estatusReparacion: true,
         tecnicoAsignado: true,
-        dispositivo: true,
-        direccion: true,
-        presupuesto: {
+        dispositivos: true,
+        Presupuesto: {
           include: {
-            conceptos: true
+            conceptos_presupuesto: true
           }
         },
         pagos: {
