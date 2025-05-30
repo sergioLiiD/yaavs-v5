@@ -35,7 +35,8 @@ async function main() {
         apellidoMaterno,
         passwordHash,
         nivel,
-        activo: true
+        activo: true,
+        updatedAt: new Date()
       }
     });
 
