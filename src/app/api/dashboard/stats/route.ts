@@ -24,6 +24,9 @@ export async function GET() {
           gte: currentMonth
         }
       }
+    }).catch(error => {
+      console.error('Error al contar tickets del mes actual:', error);
+      return 0;
     });
 
     // Obtener tickets del mes anterior
@@ -34,6 +37,9 @@ export async function GET() {
           lt: currentMonth
         }
       }
+    }).catch(error => {
+      console.error('Error al contar tickets del mes anterior:', error);
+      return 0;
     });
 
     // Calcular el porcentaje de cambio
@@ -46,6 +52,9 @@ export async function GET() {
           nombre: 'En Reparación'
         }
       }
+    }).catch(error => {
+      console.error('Error al contar tickets en reparación:', error);
+      return 0;
     });
 
     // Obtener tickets reparados
@@ -55,6 +64,9 @@ export async function GET() {
           nombre: 'Reparación Completada'
         }
       }
+    }).catch(error => {
+      console.error('Error al contar tickets reparados:', error);
+      return 0;
     });
 
     // Obtener tickets por entregar
@@ -64,6 +76,9 @@ export async function GET() {
           nombre: 'Por Entregar'
         }
       }
+    }).catch(error => {
+      console.error('Error al contar tickets por entregar:', error);
+      return 0;
     });
 
     // Obtener tickets recientes
@@ -81,6 +96,9 @@ export async function GET() {
         },
         estatusReparacion: true
       }
+    }).catch(error => {
+      console.error('Error al obtener tickets recientes:', error);
+      return [];
     });
 
     return NextResponse.json({
@@ -125,7 +143,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error al obtener estadísticas:', error);
     return NextResponse.json(
-      { error: 'Error al obtener estadísticas' },
+      { error: 'Error al obtener estadísticas', details: error instanceof Error ? error.message : 'Error desconocido' },
       { status: 500 }
     );
   }

@@ -9,59 +9,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Usuario {
-  id                          Int                           @id @default(autoincrement())
-  email                       String                        @unique
-  nombre                      String
-  apellidoPaterno             String
-  apellidoMaterno             String?
-  passwordHash                String
-  nivel                       NivelUsuario                  @default(TECNICO)
-  activo                      Boolean                       @default(true)
-  createdAt                   DateTime                      @default(now())
-  updatedAt                   DateTime                      @updatedAt
-  reparaciones                Reparacion[]
-  entradas                    EntradaAlmacen[]
-  salidas                     SalidaAlmacen[]
-  usuarios_puntos_recoleccion usuarios_puntos_recoleccion[]
-
-  @@map("Usuario")
-}
-
-model Cliente {
-  id               Int      @id @default(autoincrement())
-  nombre           String
-  apellidoPaterno  String
-  apellidoMaterno  String?
-  telefonoCelular  String
-  telefonoContacto String?
-  email            String   @unique
-  calle            String?
-  numeroExterior   String?
-  numeroInterior   String?
-  colonia          String?
-  ciudad           String?
-  estado           String?
-  codigoPostal     String?
-  latitud          Float?
-  longitud         Float?
-  fuenteReferencia String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  rfc              String?
-  passwordHash     String?
-  activo           Boolean  @default(true)
-  tipoRegistro     String   @default("Registro en tienda")
-}
-
 model TipoServicio {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique
+  descripcion String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  productos   Producto[]
 
-  @@map("service_types")
+  @@map("tipos_servicio")
 }
 
 model Marca {
@@ -70,86 +26,11 @@ model Marca {
   descripcion String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  modelos     Modelo[]
-  piezas      Pieza[]
+  Modelo      Modelo[]
+  piezas      piezas[]
   productos   Producto[]
 
   @@map("marcas")
-}
-
-model Modelo {
-  id              Int              @id @default(autoincrement())
-  nombre          String
-  descripcion     String?
-  marcaId         Int
-  activo          Boolean          @default(true)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  marca           Marca            @relation(fields: [marcaId], references: [id])
-  problemasModelo ProblemaModelo[]
-  piezas          Pieza[]
-  productos       Producto[]
-
-  @@index([marcaId])
-}
-
-model ProblemaFrecuente {
-  id              Int              @id @default(autoincrement())
-  nombre          String
-  descripcion     String?
-  activo          Boolean          @default(true)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  modeloId        Int
-  problemasModelo ProblemaModelo[]
-  ticketProblemas TicketProblema[]
-
-  @@map("problemas_frecuentes")
-}
-
-model ProblemaModelo {
-  id                  Int               @id @default(autoincrement())
-  modeloId            Int
-  problemaFrecuenteId Int
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  modelo              Modelo            @relation(fields: [modeloId], references: [id])
-  problemaFrecuente   ProblemaFrecuente @relation(fields: [problemaFrecuenteId], references: [id])
-
-  @@unique([modeloId, problemaFrecuenteId])
-}
-
-model EstatusReparacion {
-  id          Int      @id @default(autoincrement())
-  nombre      String   @unique
-  descripcion String?
-  orden       Int
-  color       String?
-  activo      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Pieza {
-  id               Int               @id @default(autoincrement())
-  nombre           String
-  descripcion      String?
-  sku              String?           @unique
-  cantidad         Int               @default(0)
-  precioCompra     Float
-  precioVenta      Float
-  unidadMedida     String?
-  ubicacion        String?
-  activo           Boolean           @default(true)
-  marcaId          Int?
-  modeloId         Int?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  marca            Marca?            @relation(fields: [marcaId], references: [id])
-  modelo           Modelo?           @relation(fields: [modeloId], references: [id])
-  piezasReparacion PiezaReparacion[]
-
-  @@map("piezas")
 }
 
 model Ticket {
@@ -176,116 +57,15 @@ model Ticket {
   updatedAt              DateTime         @updatedAt
   fechaCancelacion       DateTime?
   direccionId            Int?             @unique
-  presupuesto            Presupuesto?
-  reparacion             Reparacion?
-  ticketProblemas        TicketProblema[]
-  dispositivo            Dispositivo?
-  entrega                Entrega?
-  pagos                  Pago[]
-  direccion              Direccion?       @relation(fields: [direccionId], references: [id])
+  Presupuesto            Presupuesto?
+  Reparacion             Reparacion?
+  TicketProblema         TicketProblema[]
+  dispositivos           dispositivos?
+  entregas               entregas?
+  pagos                  pagos[]
+  direcciones            direcciones?     @relation(fields: [direccionId], references: [id])
 
   @@map("tickets")
-}
-
-model TicketProblema {
-  id                  Int               @id @default(autoincrement())
-  ticketId            Int
-  problemaFrecuenteId Int
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  problemaFrecuente   ProblemaFrecuente @relation(fields: [problemaFrecuenteId], references: [id])
-  ticket              Ticket            @relation(fields: [ticketId], references: [id])
-
-  @@unique([ticketId, problemaFrecuenteId])
-}
-
-model Reparacion {
-  id               Int                    @id @default(autoincrement())
-  ticketId         Int                    @unique
-  tecnicoId        Int
-  observaciones    String?
-  fechaInicio      DateTime?
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  fechaFin         DateTime?
-  checklist        Json?
-  fechaPausa       DateTime?
-  fechaReanudacion DateTime?
-  fotos            String[]
-  videos           String[]
-  diagnostico      String?
-  saludBateria     Int?
-  versionSO        String?
-  tecnico          Usuario                @relation(fields: [tecnicoId], references: [id])
-  ticket           Ticket                 @relation(fields: [ticketId], references: [id])
-  checklistItems   ChecklistDiagnostico[]
-  piezas           PiezaReparacion[]
-}
-
-model ChecklistDiagnostico {
-  id           Int        @id @default(autoincrement())
-  reparacionId Int
-  item         String
-  respuesta    Boolean
-  observacion  String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  reparacion   Reparacion @relation(fields: [reparacionId], references: [id])
-
-  @@map("checklist_diagnostico")
-}
-
-model PiezaReparacion {
-  id                  Int        @id @default(autoincrement())
-  reparacionId        Int
-  piezaId             Int?
-  cantidad            Int
-  precioUnitario      Float
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
-  conceptoExtra       String?
-  precioConceptoExtra Float?
-  pieza               Pieza?     @relation(fields: [piezaId], references: [id])
-  reparacion          Reparacion @relation(fields: [reparacionId], references: [id])
-
-  @@map("piezas_reparacion")
-}
-
-model Presupuesto {
-  id              Int                   @id @default(autoincrement())
-  ticketId        Int                   @unique
-  manoDeObra      Float
-  subtotal        Float
-  iva             Float
-  total           Float
-  aprobado        Boolean               @default(false)
-  fechaAprobacion DateTime?
-  pagado          Boolean               @default(false)
-  metodoPago      MetodoPago?
-  comprobantePago String?
-  fechaPago       DateTime?
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
-  anticipo        Float                 @default(0)
-  cuponDescuento  String?
-  descuento       Float                 @default(0)
-  saldo           Float                 @default(0)
-  ticket          Ticket                @relation(fields: [ticketId], references: [id])
-  conceptos       ConceptoPresupuesto[]
-}
-
-model ConceptoPresupuesto {
-  id             Int         @id @default(autoincrement())
-  presupuestoId  Int
-  descripcion    String
-  cantidad       Int
-  precioUnitario Float
-  subtotal       Float
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  presupuesto    Presupuesto @relation(fields: [presupuestoId], references: [id], onDelete: Cascade)
-
-  @@map("conceptos_presupuesto")
 }
 
 model Proveedor {
@@ -303,55 +83,44 @@ model Proveedor {
   cuentaBancaria     String
   rfc                String
   tipo               TipoProveedor    @default(FISICA)
-  entradas           EntradaAlmacen[]
+  entradas_almacen   EntradaAlmacen[]
   productos          Producto[]
 
   @@map("proveedores")
 }
 
 model Producto {
-  id                     Int                           @id @default(autoincrement())
-  sku                    String                        @unique
-  nombre                 String
-  descripcion            String?
-  notasInternas          String?
-  garantiaValor          Int                           @default(0)
-  garantiaUnidad         String
-  createdAt              DateTime                      @default(now())
-  updatedAt              DateTime                      @updatedAt
-  categoriaId            Int?
-  marcaId                Int?
-  modeloId               Int?
-  proveedorId            Int?
-  precioPromedio         Float                         @default(0)
-  stock                  Int                           @default(0)
-  tipoServicioId         Int
-  stockMaximo            Int                           @default(0)
-  stockMinimo            Int                           @default(0)
-  tipo                   TipoProducto                  @default(PRODUCTO)
-  entradas               EntradaAlmacen[]
-  fotos                  FotoProducto[]
-  inventarioMinimo       InventarioMinimo?
-  categoria              Categoria?                    @relation(fields: [categoriaId], references: [id])
-  marca                  Marca?                        @relation(fields: [marcaId], references: [id])
-  modelo                 Modelo?                       @relation(fields: [modeloId], references: [id])
-  proveedor              Proveedor?                    @relation(fields: [proveedorId], references: [id])
-  tipoServicio           tipos_servicio                @relation(fields: [tipoServicioId], references: [id])
-  reparacionesFrecuentes ProductoReparacionFrecuente[]
-  salidas                SalidaAlmacen[]
+  id                             Int                              @id @default(autoincrement())
+  sku                            String                           @unique
+  nombre                         String
+  descripcion                    String?
+  notasInternas                  String?
+  garantiaValor                  Int                              @default(0)
+  garantiaUnidad                 String
+  createdAt                      DateTime                         @default(now())
+  updatedAt                      DateTime                         @updatedAt
+  categoriaId                    Int?
+  marcaId                        Int?
+  modeloId                       Int?
+  proveedorId                    Int?
+  precioPromedio                 Float                            @default(0)
+  stock                          Int                              @default(0)
+  tipoServicioId                 Int
+  stockMaximo                    Int                              @default(0)
+  stockMinimo                    Int                              @default(0)
+  tipo                           TipoProducto                     @default(PRODUCTO)
+  entradas                       EntradaAlmacen[]
+  fotos_producto                 fotos_producto[]
+  inventarios_minimos            inventarios_minimos?
+  categorias                     categorias?                      @relation(fields: [categoriaId], references: [id])
+  marcas                         Marca?                           @relation(fields: [marcaId], references: [id])
+  Modelo                         Modelo?                          @relation(fields: [modeloId], references: [id])
+  proveedores                    Proveedor?                       @relation(fields: [proveedorId], references: [id])
+  tipos_servicio                 TipoServicio                     @relation(fields: [tipoServicioId], references: [id])
+  productos_reparacion_frecuente productos_reparacion_frecuente[]
+  salidas                        SalidaAlmacen[]
 
   @@map("productos")
-}
-
-model InventarioMinimo {
-  id             Int      @id @default(autoincrement())
-  productoId     Int      @unique
-  cantidadMinima Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  producto       Producto @relation(fields: [productoId], references: [id])
-
-  @@map("inventarios_minimos")
 }
 
 model EntradaAlmacen {
@@ -366,20 +135,10 @@ model EntradaAlmacen {
   usuarioId    Int
   proveedorId  Int?
   producto     Producto   @relation(fields: [productoId], references: [id])
-  proveedor    Proveedor? @relation(fields: [proveedorId], references: [id])
+  proveedores  Proveedor? @relation(fields: [proveedorId], references: [id])
   usuario      Usuario    @relation(fields: [usuarioId], references: [id])
 
   @@map("entradas_almacen")
-}
-
-model FotoProducto {
-  id         Int      @id @default(autoincrement())
-  url        String
-  createdAt  DateTime @default(now())
-  productoId Int
-  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
-
-  @@map("fotos_producto")
 }
 
 model SalidaAlmacen {
@@ -401,151 +160,144 @@ model SalidaAlmacen {
   @@map("salidas_almacen")
 }
 
-model Categoria {
-  id          Int        @id @default(autoincrement())
-  nombre      String     @unique
-  descripcion String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  productos   Producto[]
-
-  @@map("categorias")
+model Cliente {
+  id               Int      @id @default(autoincrement())
+  nombre           String
+  apellidoPaterno  String
+  apellidoMaterno  String?
+  telefonoCelular  String
+  telefonoContacto String?
+  email            String   @unique
+  calle            String?
+  numeroExterior   String?
+  numeroInterior   String?
+  colonia          String?
+  ciudad           String?
+  estado           String?
+  codigoPostal     String?
+  latitud          Float?
+  longitud         Float?
+  fuenteReferencia String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime
+  rfc              String?
+  passwordHash     String?
+  activo           Boolean  @default(true)
+  tipoRegistro     String   @default("Registro en tienda")
 }
 
-model PrecioVenta {
-  id                     String   @id @default(uuid())
-  tipo                   String
-  nombre                 String
-  marca                  String
-  modelo                 String
-  precio_compra_promedio Float
-  precio_venta           Float
-  created_at             DateTime @default(now())
-  updated_at             DateTime @updatedAt
-  created_by             String
-  updated_by             String
-  producto_id            Int?
-  servicio_id            Int?
-
-  @@map("precios_venta")
-}
-
-model ReparacionFrecuente {
-  id          Int                           @id @default(autoincrement())
-  nombre      String
-  descripcion String?
-  activo      Boolean                       @default(true)
-  createdAt   DateTime                      @default(now())
-  updatedAt   DateTime                      @updatedAt
-  pasos       PasoReparacionFrecuente[]
-  productos   ProductoReparacionFrecuente[]
-
-  @@map("reparaciones_frecuentes")
-}
-
-model PasoReparacionFrecuente {
-  id                    Int                 @id @default(autoincrement())
-  reparacionFrecuenteId Int
-  descripcion           String
-  orden                 Int
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  reparacionFrecuente   ReparacionFrecuente @relation(fields: [reparacionFrecuenteId], references: [id], onDelete: Cascade)
-
-  @@map("pasos_reparacion_frecuente")
-}
-
-model ProductoReparacionFrecuente {
-  id                    Int                 @id @default(autoincrement())
-  reparacionFrecuenteId Int
-  productoId            Int
-  cantidad              Int
-  precioVenta           Float
-  conceptoExtra         String?
-  precioConceptoExtra   Float?
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  producto              Producto            @relation(fields: [productoId], references: [id])
-  reparacionFrecuente   ReparacionFrecuente @relation(fields: [reparacionFrecuenteId], references: [id], onDelete: Cascade)
-
-  @@map("productos_reparacion_frecuente")
-}
-
-model ChecklistItem {
-  id              Int      @id @default(autoincrement())
-  nombre          String
-  descripcion     String?
-  paraDiagnostico Boolean  @default(false)
-  paraReparacion  Boolean  @default(false)
-  activo          Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@map("checklist_items")
-}
-
-model Dispositivo {
-  id               Int       @id @default(autoincrement())
-  capacidad        String?
-  color            String?
-  fechaCompra      DateTime?
-  codigoDesbloqueo String?
-  redCelular       String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  ticketId         Int?      @unique
-  ticket           Ticket?   @relation(fields: [ticketId], references: [id])
-
-  @@map("dispositivos")
-}
-
-model Pago {
+model EstatusReparacion {
   id          Int      @id @default(autoincrement())
-  ticketId    Int
-  monto       Float
-  fecha       DateTime
+  nombre      String   @unique
+  descripcion String?
+  orden       Int
+  color       String?
+  activo      Boolean  @default(true)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  comprobante String?
-  metodoPago  String
-  ticket      Ticket   @relation(fields: [ticketId], references: [id])
-
-  @@map("pagos")
+  updatedAt   DateTime
 }
 
-model Direccion {
-  id             Int      @id @default(autoincrement())
-  calle          String
-  numeroExterior String
-  numeroInterior String?
-  colonia        String
-  ciudad         String
-  estado         String
-  codigoPostal   String
-  latitud        Float?
-  longitud       Float?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  entrega        Entrega?
-  ticket         Ticket?
+model Modelo {
+  id             Int              @id @default(autoincrement())
+  nombre         String
+  descripcion    String?
+  marcaId        Int
+  activo         Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  marcas         Marca            @relation(fields: [marcaId], references: [id])
+  ProblemaModelo ProblemaModelo[]
+  piezas         piezas[]
+  productos      Producto[]
 
-  @@map("direcciones")
+  @@index([marcaId])
 }
 
-model Entrega {
-  id                 Int         @id @default(autoincrement())
-  ticketId           Int         @unique
-  tipoEntrega        TipoEntrega
-  fechaEntrega       DateTime?
-  entregado          Boolean     @default(false)
-  observaciones      String?
-  direccionEntregaId Int?        @unique
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  direccionEntrega   Direccion?  @relation(fields: [direccionEntregaId], references: [id])
-  ticket             Ticket      @relation(fields: [ticketId], references: [id])
+model Presupuesto {
+  id                    Int                     @id @default(autoincrement())
+  ticketId              Int                     @unique
+  manoDeObra            Float
+  subtotal              Float
+  iva                   Float
+  total                 Float
+  aprobado              Boolean                 @default(false)
+  fechaAprobacion       DateTime?
+  pagado                Boolean                 @default(false)
+  metodoPago            MetodoPago?
+  comprobantePago       String?
+  fechaPago             DateTime?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime
+  anticipo              Float                   @default(0)
+  cuponDescuento        String?
+  descuento             Float                   @default(0)
+  saldo                 Float                   @default(0)
+  tickets               Ticket                  @relation(fields: [ticketId], references: [id])
+  conceptos_presupuesto conceptos_presupuesto[]
+}
 
-  @@map("entregas")
+model ProblemaModelo {
+  id                   Int                  @id @default(autoincrement())
+  modeloId             Int
+  problemaFrecuenteId  Int
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime
+  Modelo               Modelo               @relation(fields: [modeloId], references: [id])
+  problemas_frecuentes problemas_frecuentes @relation(fields: [problemaFrecuenteId], references: [id])
+
+  @@unique([modeloId, problemaFrecuenteId])
+}
+
+model Reparacion {
+  id                    Int                     @id @default(autoincrement())
+  ticketId              Int                     @unique
+  tecnicoId             Int
+  observaciones         String?
+  fechaInicio           DateTime?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime
+  fechaFin              DateTime?
+  checklist             Json?
+  fechaPausa            DateTime?
+  fechaReanudacion      DateTime?
+  fotos                 String[]
+  videos                String[]
+  diagnostico           String?
+  saludBateria          Int?
+  versionSO             String?
+  Usuario               Usuario                 @relation(fields: [tecnicoId], references: [id])
+  tickets               Ticket                  @relation(fields: [ticketId], references: [id])
+  checklist_diagnostico checklist_diagnostico[]
+  piezas_reparacion     piezas_reparacion[]
+}
+
+model TicketProblema {
+  id                   Int                  @id @default(autoincrement())
+  ticketId             Int
+  problemaFrecuenteId  Int
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime
+  problemas_frecuentes problemas_frecuentes @relation(fields: [problemaFrecuenteId], references: [id])
+  tickets              Ticket               @relation(fields: [ticketId], references: [id])
+
+  @@unique([ticketId, problemaFrecuenteId])
+}
+
+model Usuario {
+  id                          Int                           @id @default(autoincrement())
+  email                       String                        @unique
+  nombre                      String
+  apellidoPaterno             String
+  apellidoMaterno             String?
+  passwordHash                String
+  nivel                       NivelUsuario                  @default(TECNICO)
+  activo                      Boolean                       @default(true)
+  createdAt                   DateTime                      @default(now())
+  updatedAt                   DateTime
+  Reparacion                  Reparacion[]
+  entradas                    EntradaAlmacen[]
+  salidas                     SalidaAlmacen[]
+  usuarios_puntos_recoleccion usuarios_puntos_recoleccion[]
 }
 
 model brands {
@@ -576,6 +328,110 @@ model catalog_items {
   catalog_item_models catalog_item_models[]
 }
 
+model categorias {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique
+  descripcion String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+  productos   Producto[]
+}
+
+model checklist_diagnostico {
+  id           Int        @id @default(autoincrement())
+  reparacionId Int
+  item         String
+  respuesta    Boolean
+  observacion  String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime
+  Reparacion   Reparacion @relation(fields: [reparacionId], references: [id])
+}
+
+model checklist_items {
+  id              Int      @id @default(autoincrement())
+  nombre          String
+  descripcion     String?
+  paraDiagnostico Boolean  @default(false)
+  paraReparacion  Boolean  @default(false)
+  activo          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+}
+
+model conceptos_presupuesto {
+  id             Int         @id @default(autoincrement())
+  presupuestoId  Int
+  descripcion    String
+  cantidad       Int
+  precioUnitario Float
+  subtotal       Float
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime
+  Presupuesto    Presupuesto @relation(fields: [presupuestoId], references: [id], onDelete: Cascade)
+}
+
+model direcciones {
+  id             Int       @id @default(autoincrement())
+  calle          String
+  numeroExterior String
+  numeroInterior String?
+  colonia        String
+  ciudad         String
+  estado         String
+  codigoPostal   String
+  latitud        Float?
+  longitud       Float?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime
+  entregas       entregas?
+  tickets        Ticket?
+}
+
+model dispositivos {
+  id               Int       @id @default(autoincrement())
+  capacidad        String?
+  color            String?
+  fechaCompra      DateTime?
+  codigoDesbloqueo String?
+  redCelular       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  ticketId         Int?      @unique
+  tickets          Ticket?   @relation(fields: [ticketId], references: [id])
+}
+
+model entregas {
+  id                 Int          @id @default(autoincrement())
+  ticketId           Int          @unique
+  tipoEntrega        TipoEntrega
+  fechaEntrega       DateTime?
+  entregado          Boolean      @default(false)
+  observaciones      String?
+  direccionEntregaId Int?         @unique
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime
+  direcciones        direcciones? @relation(fields: [direccionEntregaId], references: [id])
+  tickets            Ticket       @relation(fields: [ticketId], references: [id])
+}
+
+model fotos_producto {
+  id         Int      @id @default(autoincrement())
+  url        String
+  createdAt  DateTime @default(now())
+  productoId Int
+  productos  Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+}
+
+model inventarios_minimos {
+  id             Int      @id @default(autoincrement())
+  productoId     Int      @unique
+  cantidadMinima Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime
+  productos      Producto @relation(fields: [productoId], references: [id])
+}
+
 model models {
   id                  Int                   @id @default(autoincrement())
   name                String
@@ -585,6 +441,104 @@ model models {
   updatedAt           DateTime
   catalog_item_models catalog_item_models[]
   brands              brands                @relation(fields: [brandId], references: [id])
+}
+
+model pagos {
+  id          Int      @id @default(autoincrement())
+  ticketId    Int
+  monto       Float
+  fecha       DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  comprobante String?
+  metodoPago  String
+  tickets     Ticket   @relation(fields: [ticketId], references: [id])
+}
+
+model pasos_reparacion_frecuente {
+  id                      Int                     @id @default(autoincrement())
+  reparacionFrecuenteId   Int
+  descripcion             String
+  orden                   Int
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime
+  reparaciones_frecuentes reparaciones_frecuentes @relation(fields: [reparacionFrecuenteId], references: [id], onDelete: Cascade)
+}
+
+model piezas {
+  id                Int                 @id @default(autoincrement())
+  nombre            String
+  descripcion       String?
+  sku               String?             @unique
+  cantidad          Int                 @default(0)
+  precioCompra      Float
+  precioVenta       Float
+  unidadMedida      String?
+  ubicacion         String?
+  activo            Boolean             @default(true)
+  marcaId           Int?
+  modeloId          Int?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  marcas            Marca?              @relation(fields: [marcaId], references: [id])
+  Modelo            Modelo?             @relation(fields: [modeloId], references: [id])
+  piezas_reparacion piezas_reparacion[]
+}
+
+model piezas_reparacion {
+  id                  Int        @id @default(autoincrement())
+  reparacionId        Int
+  piezaId             Int?
+  cantidad            Int
+  precioUnitario      Float
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime
+  conceptoExtra       String?
+  precioConceptoExtra Float?
+  piezas              piezas?    @relation(fields: [piezaId], references: [id])
+  Reparacion          Reparacion @relation(fields: [reparacionId], references: [id])
+}
+
+model precios_venta {
+  id                     String   @id
+  tipo                   String
+  nombre                 String
+  marca                  String
+  modelo                 String
+  precio_compra_promedio Float
+  precio_venta           Float
+  created_at             DateTime @default(now())
+  updated_at             DateTime
+  created_by             String
+  updated_by             String
+  producto_id            Int?
+  servicio_id            Int?
+}
+
+model problemas_frecuentes {
+  id             Int              @id @default(autoincrement())
+  nombre         String
+  descripcion    String?
+  activo         Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  modeloId       Int
+  ProblemaModelo ProblemaModelo[]
+  TicketProblema TicketProblema[]
+}
+
+model productos_reparacion_frecuente {
+  id                      Int                     @id @default(autoincrement())
+  reparacionFrecuenteId   Int
+  productoId              Int
+  cantidad                Int
+  precioVenta             Float
+  conceptoExtra           String?
+  precioConceptoExtra     Float?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime
+  productos               Producto                @relation(fields: [productoId], references: [id])
+  reparaciones_frecuentes reparaciones_frecuentes @relation(fields: [reparacionFrecuenteId], references: [id], onDelete: Cascade)
 }
 
 model providers {
@@ -611,13 +565,23 @@ model puntos_recoleccion {
   usuarios_puntos_recoleccion usuarios_puntos_recoleccion[]
 }
 
-model tipos_servicio {
-  id          Int        @id @default(autoincrement())
-  nombre      String     @unique
-  descripcion String?
-  createdAt   DateTime   @default(now())
+model reparaciones_frecuentes {
+  id                             Int                              @id @default(autoincrement())
+  nombre                         String
+  descripcion                    String?
+  activo                         Boolean                          @default(true)
+  createdAt                      DateTime                         @default(now())
+  updatedAt                      DateTime
+  pasos_reparacion_frecuente     pasos_reparacion_frecuente[]
+  productos_reparacion_frecuente productos_reparacion_frecuente[]
+}
+
+model service_types {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
   updatedAt   DateTime
-  productos   Producto[]
 }
 
 model users {
@@ -643,14 +607,15 @@ model usuarios_puntos_recoleccion {
   @@unique([puntoRecoleccionId, usuarioId])
 }
 
+enum NivelUsuario {
+  ADMINISTRADOR
+  TECNICO
+  ATENCION_CLIENTE
+}
+
 enum TipoProveedor {
   FISICA
   MORAL
-}
-
-enum TipoProducto {
-  PRODUCTO
-  SERVICIO
 }
 
 enum TipoSalida {
@@ -660,12 +625,6 @@ enum TipoSalida {
   OTRO
 }
 
-enum NivelUsuario {
-  ADMINISTRADOR
-  TECNICO
-  ATENCION_CLIENTE
-}
-
 enum MetodoPago {
   EFECTIVO
   TARJETA
@@ -673,12 +632,17 @@ enum MetodoPago {
   PAGO_ENTREGA
 }
 
+enum NivelUsuarioPunto {
+  ADMINISTRADOR
+  OPERADOR
+}
+
 enum TipoEntrega {
   OFICINA
   DOMICILIO
 }
 
-enum NivelUsuarioPunto {
-  ADMINISTRADOR
-  OPERADOR
+enum TipoProducto {
+  PRODUCTO
+  SERVICIO
 }

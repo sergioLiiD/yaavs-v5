@@ -46,6 +46,9 @@ async function main() {
           clabeInterbancaria: '123456789012345678',
           cuentaBancaria: '1234567890',
           rfc: 'XAXX010101000',
+          notas: 'Notas del proveedor 1',
+          createdAt: new Date(),
+          updatedAt: new Date()
         },
       }),
       prisma.proveedor.create({
@@ -59,6 +62,9 @@ async function main() {
           clabeInterbancaria: '098765432109876543',
           cuentaBancaria: '0987654321',
           rfc: 'XAXX010101001',
+          notas: 'Notas del proveedor 2',
+          createdAt: new Date(),
+          updatedAt: new Date()
         },
       }),
     ]);
@@ -69,6 +75,8 @@ async function main() {
       data: {
         nombre: 'Apple',
         descripcion: 'Productos Apple',
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
     });
 
@@ -76,6 +84,8 @@ async function main() {
       data: {
         nombre: 'Samsung',
         descripcion: 'Productos Samsung',
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
     });
     console.log('Marcas creadas');
@@ -86,6 +96,8 @@ async function main() {
         nombre: 'iPhone 16 Pro',
         descripcion: 'iPhone 16 Pro - 2024',
         marcaId: apple.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
     });
 
@@ -94,6 +106,8 @@ async function main() {
         nombre: 'Galaxy S24',
         descripcion: 'Samsung Galaxy S24 - 2024',
         marcaId: samsung.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
     });
     console.log('Modelos creados');
@@ -111,6 +125,8 @@ async function main() {
         ubicacion: 'A1',
         marcaId: apple.id,
         modeloId: iphone16Pro.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'Batería iPhone 16 Pro',
@@ -123,6 +139,8 @@ async function main() {
         ubicacion: 'B1',
         marcaId: apple.id,
         modeloId: iphone16Pro.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'Pantalla Galaxy S24',
@@ -135,6 +153,8 @@ async function main() {
         ubicacion: 'A2',
         marcaId: samsung.id,
         modeloId: galaxyS24.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'Batería Galaxy S24',
@@ -147,11 +167,13 @@ async function main() {
         ubicacion: 'B2',
         marcaId: samsung.id,
         modeloId: galaxyS24.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
     ];
 
     const piezas = await Promise.all(
-      piezasData.map(pieza => prisma.pieza.create({ data: pieza }))
+      piezasData.map(pieza => prisma.piezas.create({ data: pieza }))
     );
     console.log('Piezas creadas:', piezas.length);
 
@@ -164,7 +186,9 @@ async function main() {
         apellidoPaterno: 'Velazco',
         passwordHash,
         nivel: NivelUsuario.ADMINISTRADOR,
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
     });
 
@@ -177,77 +201,99 @@ async function main() {
         descripcion: 'El dispositivo ha sido recibido y está pendiente de diagnóstico',
         orden: 1,
         color: '#FFA500',
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'En Diagnóstico',
         descripcion: 'El dispositivo está siendo diagnosticado',
         orden: 2,
         color: '#FFD700',
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'Diagnóstico Completado',
         descripcion: 'El diagnóstico ha sido completado y se ha generado el presupuesto',
         orden: 3,
         color: '#87CEEB',
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'Diagnóstico Pendiente',
         descripcion: 'El diagnóstico está pendiente de aprobación del cliente',
         orden: 4,
         color: '#FFB6C1',
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'Diagnóstico Aprobado',
         descripcion: 'El cliente ha aprobado el diagnóstico',
         orden: 5,
         color: '#98FB98',
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'Presupuesto Aprobado',
         descripcion: 'El cliente ha aprobado el presupuesto',
         orden: 6,
         color: '#90EE90',
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'En Reparación',
         descripcion: 'El dispositivo está siendo reparado',
         orden: 7,
         color: '#FF69B4',
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'Reparación Completada',
         descripcion: 'La reparación ha sido completada',
         orden: 8,
         color: '#00FF00',
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'Listo para Entrega',
         descripcion: 'El dispositivo está listo para ser entregado al cliente',
         orden: 9,
         color: '#008000',
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'Entregado',
         descripcion: 'El dispositivo ha sido entregado al cliente',
         orden: 10,
         color: '#006400',
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         nombre: 'Cancelado',
         descripcion: 'El ticket ha sido cancelado',
         orden: 11,
         color: '#FF0000',
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
     ];
 
@@ -273,7 +319,9 @@ async function main() {
         descripcion: 'El presupuesto ha sido generado y está pendiente de aprobación',
         orden: 3,
         color: '#FFA500',
-        activo: true
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
     });
 
@@ -283,6 +331,8 @@ async function main() {
   } catch (error) {
     console.error('Error en el seed:', error);
     throw error;
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
