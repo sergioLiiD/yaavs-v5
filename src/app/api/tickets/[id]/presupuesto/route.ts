@@ -27,7 +27,7 @@ export async function GET(
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
       include: {
-        presupuesto: true,
+        Presupuesto: true,
       },
     });
 
@@ -35,11 +35,11 @@ export async function GET(
       return new NextResponse('Ticket no encontrado', { status: 404 });
     }
 
-    if (!ticket.presupuesto) {
+    if (!ticket.Presupuesto) {
       return NextResponse.json(null);
     }
 
-    return NextResponse.json(ticket.presupuesto);
+    return NextResponse.json(ticket.Presupuesto);
   } catch (error) {
     console.error('Error al obtener presupuesto:', error);
     return new NextResponse('Error interno del servidor', { status: 500 });
@@ -71,8 +71,8 @@ export async function POST(
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
       include: {
-        presupuesto: true,
-        reparacion: true,
+        Presupuesto: true,
+        Reparacion: true,
       },
     });
 
@@ -110,7 +110,7 @@ export async function POST(
         ticketId: ticketId,
       },
       create: {
-        ticket: {
+        tickets: {
           connect: {
             id: ticketId
           }
@@ -121,6 +121,7 @@ export async function POST(
         total,
         aprobado: false,
         pagado: false,
+        updatedAt: new Date(),
       },
       update: {
         manoDeObra,
@@ -129,6 +130,7 @@ export async function POST(
         total,
         aprobado: false,
         pagado: false,
+        updatedAt: new Date(),
       },
     });
 
@@ -155,8 +157,7 @@ export async function POST(
         estatusReparacionId: estatusPresupuesto.id
       },
       include: {
-        estatusReparacion: true,
-        presupuesto: true
+        Presupuesto: true
       }
     });
 
@@ -169,9 +170,12 @@ export async function POST(
       },
       create: {
         ticketId: ticketId,
-        tecnicoId: parseInt(session.user.id),
+        tecnicoId: session.user.id,
+        updatedAt: new Date(),
       },
-      update: {},
+      update: {
+        updatedAt: new Date(),
+      },
     });
 
     console.log('Reparación creada/actualizada:', reparacion);
@@ -182,7 +186,7 @@ export async function POST(
       .map(p => p.piezaId);
     
     if (piezasIds.length > 0) {
-      const piezasExistentes = await prisma.pieza.findMany({
+      const piezasExistentes = await prisma.piezas.findMany({
         where: {
           id: {
             in: piezasIds
@@ -205,24 +209,25 @@ export async function POST(
     }
 
     // Actualizar los productos del presupuesto
-    await prisma.piezaReparacion.deleteMany({
+    await prisma.piezas_reparacion.deleteMany({
       where: {
         reparacionId: reparacion.id,
       },
     });
 
-    const piezasData = productos.map((p: any) => ({
+    const piezasData = productos.map((p: ProductoPresupuesto) => ({
       reparacionId: reparacion.id,
-      piezaId: p.piezaId,
+      piezaId: p.productoId,
       cantidad: p.cantidad,
-      precioUnitario: p.precioUnitario,
-      conceptoExtra: p.conceptoExtra,
-      precioConceptoExtra: p.precioConceptoExtra,
+      precioUnitario: p.precioVenta,
+      conceptoExtra: p.nombre,
+      precioConceptoExtra: p.precioVenta,
+      updatedAt: new Date(),
     }));
 
     console.log('Creando piezas de reparación:', piezasData);
 
-    await prisma.piezaReparacion.createMany({
+    await prisma.piezas_reparacion.createMany({
       data: piezasData,
     });
 
@@ -231,4 +236,4 @@ export async function POST(
     console.error('Error al guardar presupuesto:', error);
     return new NextResponse(`Error interno del servidor: ${error.message}`, { status: 500 });
   }
-} 
+}
