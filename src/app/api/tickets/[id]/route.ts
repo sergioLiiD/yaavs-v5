@@ -40,7 +40,7 @@ export async function GET(
     const reparacion = await prisma.reparacion.findUnique({
       where: { ticketId: parseInt(params.id) },
       include: {
-        tecnico: true
+        Usuario: true
       }
     });
     console.log('Reparación:', reparacion);
@@ -50,28 +50,21 @@ export async function GET(
     const ticket = await prisma.ticket.findUnique({
       where: { id: parseInt(params.id) },
       include: {
-        cliente: true,
-        tipoServicio: true,
-        modelo: {
+        Presupuesto: true,
+        Reparacion: {
           include: {
-            marca: true,
-          },
-        },
-        estatusReparacion: true,
-        reparacion: {
-          include: {
-            tecnico: true,
-            checklistItems: true
+            Usuario: true,
+            checklist_diagnostico: true
           }
         },
-        tecnicoAsignado: true,
-        dispositivo: true,
-        creador: true,
+        dispositivos: true,
         pagos: {
           orderBy: {
             fecha: 'desc'
           }
-        }
+        },
+        entregas: true,
+        direcciones: true
       },
     });
 
@@ -150,7 +143,7 @@ export async function PUT(
       },
       data: {
         estatusReparacionId: data.estatusReparacionId,
-        presupuesto: data.presupuesto ? {
+        Presupuesto: data.presupuesto ? {
           upsert: {
             create: {
               ...data.presupuesto,
@@ -169,23 +162,15 @@ export async function PUT(
         } : undefined
       },
       include: {
-        cliente: true,
-        tipoServicio: true,
-        modelo: {
-          include: {
-            marca: true,
-          },
-        },
-        estatusReparacion: true,
-        tecnicoAsignado: true,
-        dispositivo: true,
-        direccion: true,
-        presupuesto: true,
+        dispositivos: true,
+        direcciones: true,
+        Presupuesto: true,
         pagos: {
           orderBy: {
             fecha: 'desc'
           }
-        }
+        },
+        entregas: true
       }
     });
 
@@ -230,8 +215,8 @@ export async function DELETE(
     const ticket = await prisma.ticket.findUnique({
       where: { id: parseInt(params.id) },
       include: {
-        dispositivo: true,
-        reparacion: true
+        dispositivos: true,
+        Reparacion: true
       }
     });
 
@@ -262,15 +247,8 @@ export async function DELETE(
         updatedAt: new Date()
       },
       include: {
-        cliente: true,
-        tipoServicio: true,
-        modelo: {
-          include: {
-            marca: true,
-          },
-        },
-        estatusReparacion: true,
-        tecnicoAsignado: true,
+        dispositivos: true,
+        Reparacion: true
       }
     });
 
