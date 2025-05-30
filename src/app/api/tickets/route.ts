@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     });
 
     // Crear el dispositivo asociado al ticket
-    await prisma.dispositivo.create({
+    await prisma.dispositivos.create({
       data: {
         capacidad,
         color,
@@ -72,6 +72,7 @@ export async function POST(req: Request) {
         codigoDesbloqueo,
         redCelular,
         ticketId: ticket.id,
+        updatedAt: new Date()
       },
     });
 
@@ -82,6 +83,7 @@ export async function POST(req: Request) {
           ticketId: ticket.id,
           tecnicoId: Number(session.user.id),
           fechaInicio: new Date(),
+          updatedAt: new Date()
         },
       });
     }
@@ -111,28 +113,15 @@ export async function GET(request: Request) {
         ...(tecnicoId ? { tecnicoAsignadoId: parseInt(tecnicoId) } : {}),
       },
       include: {
-        cliente: true,
-        tipoServicio: true,
-        modelo: {
-          include: {
-            marca: true,
-          },
-        },
-        estatusReparacion: {
-          select: {
-            id: true,
-            nombre: true,
-            color: true
-          }
-        },
-        creador: true,
-        tecnicoAsignado: true,
-        presupuesto: true,
+        Presupuesto: true,
         pagos: {
           orderBy: {
             fecha: 'desc'
           }
-        }
+        },
+        dispositivos: true,
+        entregas: true,
+        direcciones: true
       },
       orderBy: {
         createdAt: 'desc',
