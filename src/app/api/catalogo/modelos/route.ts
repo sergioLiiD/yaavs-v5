@@ -8,14 +8,17 @@ export async function GET(req: NextRequest) {
   try {
     console.log('GET /api/catalogo/modelos - Iniciando...');
     
-    // Comentamos la validación de sesión para tickets
-    // const session = await getServerSession(authOptions);
-    // console.log('GET /api/catalogo/modelos - Session:', session?.user?.email);
+    // Configurar headers CORS
+    const headers = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
 
-    // if (!session?.user) {
-    //   console.log('GET /api/catalogo/modelos - No autorizado');
-    //   return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    // }
+    // Manejar solicitud OPTIONS para CORS
+    if (req.method === 'OPTIONS') {
+      return new NextResponse(null, { headers });
+    }
 
     const { searchParams } = new URL(req.url);
     const marcaId = searchParams.get('marcaId');
@@ -23,7 +26,10 @@ export async function GET(req: NextRequest) {
 
     if (!marcaId) {
       console.log('GET /api/catalogo/modelos - marcaId no proporcionado');
-      return NextResponse.json({ error: 'ID de marca no proporcionado' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'ID de marca no proporcionado' },
+        { status: 400, headers }
+      );
     }
 
     try {
@@ -34,7 +40,10 @@ export async function GET(req: NextRequest) {
 
       if (!marca) {
         console.log('GET /api/catalogo/modelos - Marca no encontrada');
-        return NextResponse.json({ error: 'Marca no encontrada' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'Marca no encontrada' },
+          { status: 404, headers }
+        );
       }
 
       const modelos = await prisma.modelo.findMany({
@@ -50,18 +59,24 @@ export async function GET(req: NextRequest) {
       });
 
       console.log('GET /api/catalogo/modelos - Modelos encontrados:', modelos.length);
-      return NextResponse.json(modelos);
+      return NextResponse.json(modelos, { headers });
     } catch (error) {
       console.error('GET /api/catalogo/modelos - Error en la consulta:', error);
       return NextResponse.json(
-        { error: 'Error al obtener los modelos', details: error instanceof Error ? error.message : 'Error desconocido' },
-        { status: 500 }
+        { 
+          error: 'Error al obtener los modelos',
+          details: error instanceof Error ? error.message : 'Error desconocido'
+        },
+        { status: 500, headers }
       );
     }
   } catch (error) {
-    console.error('GET /api/catalogo/modelos - Error:', error);
+    console.error('GET /api/catalogo/modelos - Error general:', error);
     return NextResponse.json(
-      { error: 'Error al obtener los modelos' },
+      { 
+        error: 'Error interno del servidor',
+        details: error instanceof Error ? error.message : 'Error desconocido'
+      },
       { status: 500 }
     );
   }

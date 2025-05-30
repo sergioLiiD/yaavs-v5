@@ -78,16 +78,37 @@ export default function ModelosPage() {
       
       try {
         setIsLoadingModelos(true);
-        const response = await axios.get(`/api/catalogo/modelos?marcaId=${marcaSeleccionada}`);
-        setModelos(response.data.map((modelo: any) => ({
-          ...modelo,
-          id: modelo.id.toString(),
-          marcaId: modelo.marcaId.toString()
-        })));
-        setError('');
-      } catch (err) {
-        console.error('Error al cargar modelos:', err);
-        setError('Error al cargar los modelos. Por favor, intente nuevamente.');
+        console.log('Intentando cargar modelos para marcaId:', marcaSeleccionada);
+        
+        const response = await axios.get(`/api/catalogo/modelos?marcaId=${marcaSeleccionada}`, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          validateStatus: function (status) {
+            return status < 500; // Resolver solo si el código de estado es menor que 500
+          }
+        });
+
+        if (response.status === 200) {
+          console.log('Modelos cargados exitosamente:', response.data);
+          setModelos(response.data.map((modelo: any) => ({
+            ...modelo,
+            id: modelo.id.toString(),
+            marcaId: modelo.marcaId.toString()
+          })));
+          setError('');
+        } else {
+          console.error('Error en la respuesta:', response.status, response.data);
+          setError(response.data.error || 'Error al cargar los modelos');
+        }
+      } catch (err: any) {
+        console.error('Error detallado al cargar modelos:', {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status,
+          config: err.config
+        });
+        setError(err.response?.data?.error || 'Error al cargar los modelos. Por favor, intente nuevamente.');
       } finally {
         setIsLoadingModelos(false);
       }
