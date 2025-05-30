@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { Prisma, ChecklistDiagnostico } from '@prisma/client';
+import { Prisma, checklist_diagnostico } from '@prisma/client';
 
 interface ReparacionPayload {
-  checklist: Omit<ChecklistDiagnostico, 'id' | 'reparacionId' | 'createdAt' | 'updatedAt'>[];
+  checklist: Omit<checklist_diagnostico, 'id' | 'reparacionId' | 'createdAt' | 'updatedAt'>[];
   saludBateria: number;
   versionSO: string;
   diagnostico: string;
@@ -33,9 +33,9 @@ export async function POST(
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
       include: { 
-        reparacion: {
+        Reparacion: {
           include: {
-            checklistItems: true
+            checklist_diagnostico: true
           }
         }
       }
@@ -83,10 +83,11 @@ export async function POST(
     
     const reparacionData = {
       ticketId: ticketId,
-      tecnicoId: parseInt(session.user.id),
+      tecnicoId: session.user.id,
       diagnostico: body.diagnostico,
       saludBateria: body.saludBateria,
       versionSO: body.versionSO,
+      updatedAt: new Date()
     };
 
     console.log('Datos de reparación:', reparacionData);
@@ -105,25 +106,26 @@ export async function POST(
     });
 
     // Eliminar los items del checklist existentes solo si hay nuevos items
-    if (ticket.reparacion && body.checklist.length > 0) {
-      await prisma.checklistDiagnostico.deleteMany({
+    if (ticket.Reparacion && body.checklist.length > 0) {
+      await prisma.checklist_diagnostico.deleteMany({
         where: {
-          reparacionId: ticket.reparacion.id
+          reparacionId: ticket.Reparacion.id
         }
       });
     }
 
     // Crear los nuevos items del checklist solo si hay items
-    let checklistItems: ChecklistDiagnostico[] = [];
+    let checklistItems: checklist_diagnostico[] = [];
     if (body.checklist.length > 0) {
       checklistItems = await Promise.all(
         body.checklist.map(item =>
-          prisma.checklistDiagnostico.create({
+          prisma.checklist_diagnostico.create({
             data: {
               reparacionId: reparacion.id,
               item: item.item,
               respuesta: item.respuesta,
-              observacion: item.observacion
+              observacion: item.observacion,
+              updatedAt: new Date()
             }
           })
         )
@@ -161,7 +163,7 @@ export async function POST(
     const reparacionActualizada = await prisma.reparacion.findUnique({
       where: { id: reparacion.id },
       include: {
-        checklistItems: true
+        checklist_diagnostico: true
       }
     });
 
