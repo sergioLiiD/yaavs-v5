@@ -43,15 +43,15 @@ export async function GET(
     console.log('Reparación encontrada:', reparacion);
 
     // Obtener las piezas de reparación
-    const piezasReparacion = await prisma.piezaReparacion.findMany({
+    const piezasReparacion = await prisma.piezas_reparacion.findMany({
       where: {
         reparacionId: reparacion.id
       },
       include: {
-        pieza: {
+        piezas: {
           include: {
-            marca: true,
-            modelo: true
+            marcas: true,
+            Modelo: true
           }
         }
       }
