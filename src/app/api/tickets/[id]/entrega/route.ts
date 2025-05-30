@@ -22,13 +22,12 @@ export async function POST(
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
       include: {
-        estatusReparacion: true,
-        entrega: {
+        entregas: {
           include: {
-            direccionEntrega: true
+            direcciones: true
           }
         },
-        direccion: true
+        direcciones: true
       }
     });
 
@@ -36,8 +35,20 @@ export async function POST(
       return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
     }
 
+    // Obtener el estatus de reparación
+    const estatusReparacion = await prisma.estatusReparacion.findUnique({
+      where: { id: ticket.estatusReparacionId }
+    });
+
+    if (!estatusReparacion) {
+      return NextResponse.json(
+        { error: 'No se encontró el estatus de reparación' },
+        { status: 404 }
+      );
+    }
+
     // Verificar que el ticket está en estado de reparación completada
-    if (ticket.estatusReparacion.nombre !== 'Reparación Completada') {
+    if (estatusReparacion.nombre !== 'Reparación Completada') {
       return NextResponse.json(
         { error: 'El ticket debe estar en estado de reparación completada' },
         { status: 400 }
@@ -61,42 +72,51 @@ export async function POST(
       );
     }
 
+    // Obtener la dirección del ticket
+    const direccion = await prisma.direcciones.findUnique({
+      where: { id: ticket.direccionId || 0 }
+    });
+
     // Crear o actualizar la entrega
-    const entrega = await prisma.entrega.upsert({
+    const entrega = await prisma.entregas.upsert({
       where: {
         ticketId: ticketId
       },
       create: {
-        ticket: { connect: { id: ticketId } },
+        tickets: { connect: { id: ticketId } },
         tipoEntrega: tipoEntrega as 'DOMICILIO' | 'OFICINA',
         observaciones: body.observaciones,
-        direccionEntrega: tipoEntrega === 'DOMICILIO' ? {
+        updatedAt: new Date(),
+        direcciones: tipoEntrega === 'DOMICILIO' && direccion ? {
           create: {
-            calle: ticket.direccion?.calle || '',
-            numeroExterior: ticket.direccion?.numeroExterior || '',
-            numeroInterior: ticket.direccion?.numeroInterior || '',
-            colonia: ticket.direccion?.colonia || '',
-            ciudad: ticket.direccion?.ciudad || '',
-            estado: ticket.direccion?.estado || '',
-            codigoPostal: ticket.direccion?.codigoPostal || '',
-            latitud: ticket.direccion?.latitud || 0,
-            longitud: ticket.direccion?.longitud || 0
+            calle: direccion.calle,
+            numeroExterior: direccion.numeroExterior,
+            numeroInterior: direccion.numeroInterior || '',
+            colonia: direccion.colonia,
+            ciudad: direccion.ciudad,
+            estado: direccion.estado,
+            codigoPostal: direccion.codigoPostal,
+            latitud: direccion.latitud || 0,
+            longitud: direccion.longitud || 0,
+            updatedAt: new Date()
           }
         } : undefined
       },
       update: {
         observaciones: body.observaciones,
-        direccionEntrega: tipoEntrega === 'DOMICILIO' ? {
+        updatedAt: new Date(),
+        direcciones: tipoEntrega === 'DOMICILIO' && direccion ? {
           update: {
-            calle: ticket.direccion?.calle || '',
-            numeroExterior: ticket.direccion?.numeroExterior || '',
-            numeroInterior: ticket.direccion?.numeroInterior || '',
-            colonia: ticket.direccion?.colonia || '',
-            ciudad: ticket.direccion?.ciudad || '',
-            estado: ticket.direccion?.estado || '',
-            codigoPostal: ticket.direccion?.codigoPostal || '',
-            latitud: ticket.direccion?.latitud || 0,
-            longitud: ticket.direccion?.longitud || 0
+            calle: direccion.calle,
+            numeroExterior: direccion.numeroExterior,
+            numeroInterior: direccion.numeroInterior || '',
+            colonia: direccion.colonia,
+            ciudad: direccion.ciudad,
+            estado: direccion.estado,
+            codigoPostal: direccion.codigoPostal,
+            latitud: direccion.latitud || 0,
+            longitud: direccion.longitud || 0,
+            updatedAt: new Date()
           }
         } : undefined
       }
@@ -111,10 +131,9 @@ export async function POST(
         estatusReparacionId: estatusEntrega.id
       },
       include: {
-        estatusReparacion: true,
-        entrega: {
+        entregas: {
           include: {
-            direccionEntrega: true
+            direcciones: true
           }
         }
       }
@@ -148,7 +167,7 @@ export async function PUT(
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
       include: {
-        entrega: true
+        entregas: true
       }
     });
 
@@ -156,7 +175,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
     }
 
-    if (!ticket.entrega) {
+    if (!ticket.entregas) {
       return NextResponse.json({ error: 'No hay entrega registrada' }, { status: 404 });
     }
 
@@ -175,7 +194,7 @@ export async function PUT(
     }
 
     // Actualizar la entrega
-    const entregaActualizada = await prisma.entrega.update({
+    const entregaActualizada = await prisma.entregas.update({
       where: {
         ticketId: ticketId
       },
@@ -197,10 +216,9 @@ export async function PUT(
         fechaEntrega: new Date()
       },
       include: {
-        estatusReparacion: true,
-        entrega: {
+        entregas: {
           include: {
-            direccionEntrega: true
+            direcciones: true
           }
         }
       }
