@@ -81,13 +81,13 @@ export async function GET() {
       orderBy: {
         createdAt: 'desc'
       },
-      include: {
-        direcciones: true,
-        dispositivos: {
-          include: {
-            marcas: true
-          }
-        }
+      select: {
+        id: true,
+        numeroTicket: true,
+        descripcionProblema: true,
+        estatusReparacionId: true,
+        clienteId: true,
+        modeloId: true
       }
     }).catch(error => {
       console.error('Error al obtener tickets recientes:', error);
@@ -127,8 +127,7 @@ export async function GET() {
       ],
       recentTickets: ticketsRecientes.map(ticket => ({
         id: ticket.id,
-        cliente: `${ticket.direcciones?.nombre || ''} ${ticket.direcciones?.apellidoPaterno || ''}`,
-        modelo: `${ticket.dispositivos?.marcas?.nombre || ''} ${ticket.dispositivos?.modelo || ''}`,
+        numeroTicket: ticket.numeroTicket,
         problema: ticket.descripcionProblema,
         estado: `Estatus ID: ${ticket.estatusReparacionId}`
       }))
