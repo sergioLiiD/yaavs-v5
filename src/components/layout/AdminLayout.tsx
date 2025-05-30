@@ -139,7 +139,6 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
         <div className="h-full overflow-y-auto py-4 px-3 bg-white border-r border-gray-200">
           <div className="flex items-center pl-2.5 mb-5">
             <img src="/logo.png" className="mr-3 h-6 sm:h-7" alt="Logo de la empresa" />
-            <span className="self-center text-xl font-semibold whitespace-nowrap">Sistema de Reparación de Celulares</span>
           </div>
           
           <div className="space-y-2">
@@ -381,7 +380,6 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
             <div className="h-full overflow-y-auto p-4">
               <div className="flex items-center mb-5">
                 <img src="/logo.png" className="mr-3 h-7" alt="Logo de la empresa" />
-                <span className="self-center text-xl font-semibold">Sistema de Reparación de Celulares</span>
                 <button 
                   className="ml-auto inline-flex items-center p-2 text-gray-500 rounded-lg hover:bg-gray-100"
                   onClick={toggleMobileMenu}
