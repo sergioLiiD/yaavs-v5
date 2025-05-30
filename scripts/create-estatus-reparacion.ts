@@ -19,7 +19,10 @@ async function main() {
     });
     if (!existe) {
       await prisma.estatusReparacion.create({
-        data: estado
+        data: {
+          ...estado,
+          updatedAt: new Date()
+        }
       });
       console.log(`Estado creado: ${estado.nombre}`);
     } else {
