@@ -47,7 +47,7 @@ const nextConfig = {
     };
     return config;
   },
-  // Configuración de cookies
+  // Configuración de cookies y CORS
   async headers() {
     return [
       {
@@ -59,7 +59,7 @@ const nextConfig = {
           },
           {
             key: 'Access-Control-Allow-Origin',
-            value: '*',
+            value: 'https://arreglamx.netlify.app',
           },
           {
             key: 'Access-Control-Allow-Methods',
@@ -67,7 +67,7 @@ const nextConfig = {
           },
           {
             key: 'Access-Control-Allow-Headers',
-            value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version',
+            value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization',
           },
         ],
       },

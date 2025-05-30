@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client';
 export async function GET(req: NextRequest) {
   // Configurar headers CORS
   const headers = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': 'https://arreglamx.netlify.app',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Credentials': 'true',
@@ -97,11 +97,21 @@ export async function GET(req: NextRequest) {
         console.error('Error al cerrar la conexión:', disconnectError);
       }
 
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        return NextResponse.json(
+          { 
+            error: 'Error en la base de datos',
+            code: error.code,
+            message: error.message
+          },
+          { status: 500, headers }
+        );
+      }
+
       return NextResponse.json(
         { 
           error: 'Error interno del servidor',
-          details: error instanceof Error ? error.message : 'Error desconocido',
-          stack: error instanceof Error ? error.stack : undefined
+          details: error instanceof Error ? error.message : 'Error desconocido'
         },
         { status: 500, headers }
       );
@@ -111,8 +121,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Error desconocido',
-        stack: error instanceof Error ? error.stack : undefined
+        details: error instanceof Error ? error.message : 'Error desconocido'
       },
       { status: 500, headers }
     );

@@ -13,15 +13,19 @@ const axiosInstance = axios.create({
 // Interceptor para agregar el token de autenticación
 axiosInstance.interceptors.request.use(
   async (config) => {
-    const session = await getSession();
-    if (session?.user) {
-      // NextAuth maneja la autenticación a través de cookies
-      // No necesitamos agregar el token manualmente
-      config.withCredentials = true;
+    try {
+      const session = await getSession();
+      if (session?.user) {
+        config.withCredentials = true;
+      }
+      return config;
+    } catch (error) {
+      console.error('Error en el interceptor de solicitud:', error);
+      return Promise.reject(error);
     }
-    return config;
   },
   (error) => {
+    console.error('Error en el interceptor de solicitud:', error);
     return Promise.reject(error);
   }
 );
@@ -30,10 +34,17 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error('Error en la respuesta:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      config: error.config
+    });
+
     if (error.response?.status === 401) {
       // Redirigir al login si el token expiró
       window.location.href = '/auth/login';
     }
+
     return Promise.reject(error);
   }
 );
