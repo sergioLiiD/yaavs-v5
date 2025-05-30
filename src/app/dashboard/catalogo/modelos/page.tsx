@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { HiPlus, HiPencilAlt, HiTrash } from 'react-icons/hi';
-import axios from 'axios';
+import axios from '@/lib/axios';
 
 // Interfaces para representar los datos
 interface Marca {
@@ -80,27 +80,15 @@ export default function ModelosPage() {
         setIsLoadingModelos(true);
         console.log('Intentando cargar modelos para marcaId:', marcaSeleccionada);
         
-        const response = await axios.get(`/api/catalogo/modelos?marcaId=${marcaSeleccionada}`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          validateStatus: function (status) {
-            return status < 500; // Resolver solo si el código de estado es menor que 500
-          }
-        });
+        const response = await axios.get(`/api/catalogo/modelos?marcaId=${marcaSeleccionada}`);
 
-        if (response.status === 200) {
-          console.log('Modelos cargados exitosamente:', response.data);
-          setModelos(response.data.map((modelo: any) => ({
-            ...modelo,
-            id: modelo.id.toString(),
-            marcaId: modelo.marcaId.toString()
-          })));
-          setError('');
-        } else {
-          console.error('Error en la respuesta:', response.status, response.data);
-          setError(response.data.error || 'Error al cargar los modelos');
-        }
+        console.log('Modelos cargados exitosamente:', response.data);
+        setModelos(response.data.map((modelo: any) => ({
+          ...modelo,
+          id: modelo.id.toString(),
+          marcaId: modelo.marcaId.toString()
+        })));
+        setError('');
       } catch (err: any) {
         console.error('Error detallado al cargar modelos:', {
           message: err.message,

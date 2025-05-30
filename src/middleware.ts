@@ -19,6 +19,10 @@ const publicPaths = [
 const protectedPaths = [
   '/dashboard',
   '/api/admin',
+  '/api/catalogo',
+  '/api/tickets',
+  '/api/usuarios',
+  '/api/inventario',
   '/cliente/tickets',
   '/cliente/nuevo-ticket',
   '/cliente/perfil',
@@ -45,7 +49,7 @@ export async function middleware(request: NextRequest) {
   // Si es una ruta protegida y no hay token, redirigir al login correspondiente
   if (isProtectedPath) {
     if (!token && !clienteToken) {
-      const isClientePath = pathname.startsWith('/cliente');
+      const isClientePath = pathname.startsWith('/cliente') || pathname.startsWith('/api/cliente');
       const loginUrl = isClientePath ? '/cliente/login' : '/auth/login';
       return NextResponse.redirect(new URL(loginUrl, request.url));
     }

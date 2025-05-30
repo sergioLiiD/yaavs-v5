@@ -6,21 +6,31 @@ import { Prisma } from '@prisma/client';
 
 // GET /api/catalogo/modelos
 export async function GET(req: NextRequest) {
+  // Configurar headers CORS
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+
   console.log('GET /api/catalogo/modelos - Iniciando...');
   console.log('URL de la solicitud:', req.url);
   console.log('Método de la solicitud:', req.method);
   
   try {
-    // Configurar headers CORS
-    const headers = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    };
-
     // Manejar solicitud OPTIONS para CORS
     if (req.method === 'OPTIONS') {
       return new NextResponse(null, { headers });
+    }
+
+    // Verificar autenticación
+    const session = await getServerSession(authOptions);
+    console.log('GET /api/catalogo/modelos - Session:', session?.user?.email);
+
+    if (!session?.user) {
+      console.log('GET /api/catalogo/modelos - No autorizado');
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401, headers });
     }
 
     const { searchParams } = new URL(req.url);
@@ -89,7 +99,7 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.json(
         { 
-          error: 'Error al obtener los modelos',
+          error: 'Error interno del servidor',
           details: error instanceof Error ? error.message : 'Error desconocido',
           stack: error instanceof Error ? error.stack : undefined
         },
@@ -104,7 +114,7 @@ export async function GET(req: NextRequest) {
         details: error instanceof Error ? error.message : 'Error desconocido',
         stack: error instanceof Error ? error.stack : undefined
       },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }
