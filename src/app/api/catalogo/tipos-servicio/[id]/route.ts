@@ -24,7 +24,10 @@ export async function GET(
     }
 
     const tipoServicio = await prisma.tipoServicio.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        productos: true
+      }
     });
 
     if (!tipoServicio) {
@@ -134,7 +137,6 @@ export async function DELETE(
     const tipoServicio = await prisma.tipoServicio.findUnique({
       where: { id },
       include: {
-        tickets: true,
         productos: true
       }
     });
@@ -147,9 +149,9 @@ export async function DELETE(
     }
 
     // Verificar si hay registros relacionados
-    if (tipoServicio.tickets.length > 0 || tipoServicio.productos.length > 0) {
+    if (tipoServicio.productos.length > 0) {
       return NextResponse.json(
-        { error: 'No se puede eliminar porque tiene registros relacionados' },
+        { error: 'No se puede eliminar porque tiene productos relacionados' },
         { status: 400 }
       );
     }
