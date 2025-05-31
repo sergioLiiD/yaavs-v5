@@ -4,6 +4,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+// Tipos para Google Maps
+type GoogleMap = any;
+type GoogleMarker = any;
+type GoogleMapMouseEvent = any;
+
 interface MapProps {
   onLocationSelect: (location: { lat: number; lng: number }) => void;
   selectedLocation: { lat: number; lng: number };

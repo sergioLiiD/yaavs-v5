@@ -31,9 +31,10 @@ import { Map } from '@/components/ui/map';
 import { Label } from '@/components/ui/label';
 import { Loader } from '@googlemaps/js-api-loader';
 
-type GoogleMap = google.maps.Map;
-type GoogleMarker = google.maps.Marker;
-type GoogleMapMouseEvent = google.maps.MapMouseEvent;
+// Tipos para Google Maps
+type GoogleMap = any;
+type GoogleMarker = any;
+type GoogleMapMouseEvent = any;
 
 // Esquema de validación
 const ticketSchema = z.object({
