@@ -31,14 +31,6 @@ import { Map } from '@/components/ui/map';
 import { Label } from '@/components/ui/label';
 import { Loader } from '@googlemaps/js-api-loader';
 
-declare global {
-  interface Window {
-    google: {
-      maps: typeof google.maps;
-    };
-  }
-}
-
 type GoogleMap = google.maps.Map;
 type GoogleMarker = google.maps.Marker;
 type GoogleMapMouseEvent = google.maps.MapMouseEvent;
