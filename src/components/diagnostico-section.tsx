@@ -19,6 +19,13 @@ interface ChecklistItem {
   paraReparacion: boolean;
 }
 
+interface ChecklistDiagnostico {
+  id: number;
+  item: string;
+  respuesta: boolean;
+  observacion: string;
+}
+
 interface DiagnosticoSectionProps {
   ticket: Ticket;
   onUpdate?: () => void;
@@ -27,16 +34,16 @@ interface DiagnosticoSectionProps {
 export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [diagnostico, setDiagnostico] = useState(ticket.reparacion?.diagnostico || '');
-  const [saludBateria, setSaludBateria] = useState(ticket.reparacion?.saludBateria?.toString() || '');
-  const [versionSO, setVersionSO] = useState(ticket.reparacion?.versionSO || '');
-  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
+  const [diagnostico, setDiagnostico] = useState(ticket.Reparacion?.diagnostico || '');
+  const [saludBateria, setSaludBateria] = useState(ticket.Reparacion?.saludBateria?.toString() || '');
+  const [versionSO, setVersionSO] = useState(ticket.Reparacion?.versionSO || '');
+  const [checklistItems, setChecklistItems] = useState<ChecklistDiagnostico[]>([]);
   const [checklist, setChecklist] = useState(
-    ticket.reparacion?.checklistItems?.map(item => ({
+    ticket.Reparacion?.checklist_diagnostico?.map(item => ({
       id: item.id,
       item: item.item,
       respuesta: item.respuesta,
-      observacion: item.observacion || ''
+      observacion: item.observacion
     })) || []
   );
 

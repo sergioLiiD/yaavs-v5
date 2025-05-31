@@ -21,13 +21,13 @@ export const EntregaSection: React.FC<EntregaSectionProps> = ({ ticket, onUpdate
             <p className="text-gray-500">{ticket.estatusReparacion?.nombre}</p>
           </div>
 
-          {ticket.reparacion && (
+          {ticket.Reparacion && (
             <>
               <div>
                 <h3 className="font-medium">Fecha de Entrega</h3>
                 <p className="text-gray-500">
-                  {ticket.reparacion.fechaFin
-                    ? new Date(ticket.reparacion.fechaFin).toLocaleDateString()
+                  {ticket.Reparacion.fechaFin
+                    ? new Date(ticket.Reparacion.fechaFin).toLocaleDateString()
                     : 'No se ha entregado'}
                 </p>
               </div>
@@ -35,7 +35,7 @@ export const EntregaSection: React.FC<EntregaSectionProps> = ({ ticket, onUpdate
               <div>
                 <h3 className="font-medium">Observaciones</h3>
                 <p className="text-gray-500">
-                  {ticket.reparacion.observaciones || 'Sin observaciones'}
+                  {ticket.Reparacion.observaciones || 'Sin observaciones'}
                 </p>
               </div>
             </>

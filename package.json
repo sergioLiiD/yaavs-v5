@@ -96,6 +96,7 @@
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "5.11.1",
+    "@types/google.maps": "3.58.1",
     "prisma": "6.8.2",
     "ts-node": "10.9.2"
   },
