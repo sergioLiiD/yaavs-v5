@@ -31,7 +31,9 @@ import { Map } from '@/components/ui/map';
 import { Label } from '@/components/ui/label';
 import { Loader } from '@googlemaps/js-api-loader';
 
-// Tipos para Google Maps
+// @ts-ignore
+const google = window.google;
+
 type GoogleMap = any;
 type GoogleMarker = any;
 type GoogleMapMouseEvent = any;

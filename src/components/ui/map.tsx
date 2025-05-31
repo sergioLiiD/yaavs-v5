@@ -4,10 +4,48 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-// Tipos para Google Maps
-type GoogleMap = any;
-type GoogleMarker = any;
-type GoogleMapMouseEvent = any;
+// @ts-ignore
+const google = window.google;
+
+// Interfaces para Google Maps
+interface GoogleMapsMap {
+  center: { lat: number; lng: number };
+  zoom: number;
+  mapTypeControl: boolean;
+  streetViewControl: boolean;
+  fullscreenControl: boolean;
+}
+
+interface GoogleMapsMarker {
+  position: { lat: number; lng: number };
+  map: GoogleMapsMap;
+  draggable: boolean;
+  setPosition: (position: { lat: number; lng: number }) => void;
+  setMap: (map: GoogleMapsMap | null) => void;
+}
+
+interface GoogleMapsMouseEvent {
+  latLng: {
+    lat: () => number;
+    lng: () => number;
+  } | null;
+}
+
+interface GoogleMaps {
+  maps: {
+    Map: new (element: HTMLElement, options: GoogleMapsMap) => GoogleMapsMap;
+    Marker: new (options: { position: { lat: number; lng: number }; map: GoogleMapsMap; draggable: boolean }) => GoogleMapsMarker;
+    Geocoder: new () => {
+      geocode: (request: { address: string }, callback: (results: any[], status: string) => void) => void;
+    };
+  };
+}
+
+declare global {
+  interface Window {
+    google: GoogleMaps;
+  }
+}
 
 interface MapProps {
   onLocationSelect: (location: { lat: number; lng: number }) => void;
