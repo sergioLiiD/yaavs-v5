@@ -67,7 +67,6 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
   console.log('Estado actual:', {
     ticket: {
       id: ticket.id,
-      tecnicoAsignado: ticket.tecnicoAsignado,
       tecnicoAsignadoId: ticket.tecnicoAsignadoId
     },
     formData: {

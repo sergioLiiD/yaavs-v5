@@ -2,6 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+declare global {
+  interface Window {
+    google: {
+      maps: typeof google.maps;
+    };
+  }
+}
+
 interface MapProps {
   onLocationSelect: (location: { lat: number; lng: number }) => void;
   selectedLocation: { lat: number; lng: number };

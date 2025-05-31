@@ -29,9 +29,17 @@ import { Map } from '@/components/ui/map';
 import { Label } from '@/components/ui/label';
 import { Loader } from '@googlemaps/js-api-loader';
 
-type GoogleMap = any;
-type GoogleMarker = any;
-type GoogleMapMouseEvent = any;
+declare global {
+  interface Window {
+    google: {
+      maps: typeof google.maps;
+    };
+  }
+}
+
+type GoogleMap = google.maps.Map;
+type GoogleMarker = google.maps.Marker;
+type GoogleMapMouseEvent = google.maps.MapMouseEvent;
 
 // Esquema de validación
 const ticketSchema = z.object({
@@ -180,7 +188,7 @@ export function NuevoTicketForm() {
         }
 
         console.log('Creando instancia del mapa...');
-        mapInstance = new window.google.maps.Map(mapElement, {
+        mapInstance = new google.maps.Map(mapElement, {
           center: selectedLocation,
           zoom: 15,
           mapTypeControl: true,
@@ -189,7 +197,7 @@ export function NuevoTicketForm() {
         });
 
         console.log('Creando marcador...');
-        markerInstance = new window.google.maps.Marker({
+        markerInstance = new google.maps.Marker({
           position: selectedLocation,
           map: mapInstance,
           draggable: true,

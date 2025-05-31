@@ -12,7 +12,7 @@ async function checkProductos() {
         }
       },
       include: {
-        marca: true,
+        marcas: true,
         modelo: true,
         proveedor: true,
         inventarioMinimo: true
