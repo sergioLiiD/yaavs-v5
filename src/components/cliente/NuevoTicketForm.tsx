@@ -29,11 +29,9 @@ import { Map } from '@/components/ui/map';
 import { Label } from '@/components/ui/label';
 import { Loader } from '@googlemaps/js-api-loader';
 
-declare global {
-  interface Window {
-    google: typeof google;
-  }
-}
+type GoogleMap = any;
+type GoogleMarker = any;
+type GoogleMapMouseEvent = any;
 
 // Esquema de validación
 const ticketSchema = z.object({
@@ -154,8 +152,8 @@ export function NuevoTicketForm() {
       return;
     }
 
-    let mapInstance: google.maps.Map | null = null;
-    let markerInstance: google.maps.Marker | null = null;
+    let mapInstance: GoogleMap | null = null;
+    let markerInstance: GoogleMarker | null = null;
 
     console.log('Preparando para inicializar el mapa...');
     console.log('Estado del contenedor:', { 
@@ -182,7 +180,7 @@ export function NuevoTicketForm() {
         }
 
         console.log('Creando instancia del mapa...');
-        mapInstance = new google.maps.Map(mapElement, {
+        mapInstance = new window.google.maps.Map(mapElement, {
           center: selectedLocation,
           zoom: 15,
           mapTypeControl: true,
@@ -191,14 +189,14 @@ export function NuevoTicketForm() {
         });
 
         console.log('Creando marcador...');
-        markerInstance = new google.maps.Marker({
+        markerInstance = new window.google.maps.Marker({
           position: selectedLocation,
           map: mapInstance,
           draggable: true,
         });
 
         console.log('Agregando listeners...');
-        mapInstance.addListener('click', (e: google.maps.MapMouseEvent) => {
+        mapInstance.addListener('click', (e: GoogleMapMouseEvent) => {
           if (!e.latLng) return;
           markerInstance?.setPosition(e.latLng);
           handleLocationSelect({
@@ -207,7 +205,7 @@ export function NuevoTicketForm() {
           });
         });
 
-        markerInstance.addListener('dragend', (e: google.maps.MapMouseEvent) => {
+        markerInstance.addListener('dragend', (e: GoogleMapMouseEvent) => {
           if (!e.latLng) return;
           handleLocationSelect({
             lat: e.latLng.lat(),

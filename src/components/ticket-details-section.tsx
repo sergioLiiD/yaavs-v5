@@ -34,12 +34,12 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
     descripcionProblema: ticket.descripcionProblema || '',
     tecnicoAsignadoId: ticket.tecnicoAsignadoId?.toString() || '',
     estatusReparacionId: ticket.estatusReparacionId?.toString() || '',
-    diagnostico: ticket.reparacion?.diagnostico || '',
-    capacidad: ticket.dispositivo?.capacidad || '',
-    color: ticket.dispositivo?.color || '',
-    fechaCompra: ticket.dispositivo?.fechaCompra ? new Date(ticket.dispositivo.fechaCompra).toISOString().split('T')[0] : '',
-    codigoDesbloqueo: ticket.dispositivo?.codigoDesbloqueo || '',
-    redCelular: ticket.dispositivo?.redCelular || '',
+    diagnostico: ticket.Reparacion?.diagnostico || '',
+    capacidad: ticket.dispositivos?.capacidad || '',
+    color: ticket.dispositivos?.color || '',
+    fechaCompra: ticket.dispositivos?.fechaCompra ? new Date(ticket.dispositivos.fechaCompra).toISOString().split('T')[0] : '',
+    codigoDesbloqueo: ticket.dispositivos?.codigoDesbloqueo || '',
+    redCelular: ticket.dispositivos?.redCelular || '',
   });
 
   useEffect(() => {
@@ -172,9 +172,11 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue>
-                        {ticket.tecnicoAsignado ? 
-                          `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno} ${ticket.tecnicoAsignado.apellidoMaterno}` : 
-                          'Seleccionar técnico'}
+                        {ticket.tecnicoAsignadoId ? (
+                          <span>{ticket.tecnicoAsignadoId}</span>
+                        ) : (
+                          <span className="text-gray-500">No asignado</span>
+                        )}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
