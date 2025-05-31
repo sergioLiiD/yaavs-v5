@@ -27,11 +27,11 @@ interface ReparacionSectionProps {
 
 export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, onUpdate }) => {
   const router = useRouter();
-  const [observaciones, setObservaciones] = useState(ticket.reparacion?.observaciones || '');
+  const [observaciones, setObservaciones] = useState(ticket.Reparacion?.observaciones || '');
   const [isLoading, setIsLoading] = useState(false);
   const [tiempoTranscurrido, setTiempoTranscurrido] = useState(() => {
-    if (ticket.reparacion?.fechaInicio) {
-      const fechaInicio = new Date(ticket.reparacion.fechaInicio).getTime();
+    if (ticket.Reparacion?.fechaInicio) {
+      const fechaInicio = new Date(ticket.Reparacion.fechaInicio).getTime();
       const ahora = new Date().getTime();
       return Math.floor((ahora - fechaInicio) / 1000);
     }
@@ -44,9 +44,9 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     respuesta: boolean;
     observacion: string;
   }>>([]);
-  const [fotos, setFotos] = useState<string[]>(ticket.reparacion?.fotos || []);
-  const [videos, setVideos] = useState<string[]>(ticket.reparacion?.videos || []);
-  const [isTimerRunning, setIsTimerRunning] = useState(!!ticket.reparacion?.fechaInicio && !ticket.reparacion?.fechaFin);
+  const [fotos, setFotos] = useState<string[]>(ticket.Reparacion?.fotos || []);
+  const [videos, setVideos] = useState<string[]>(ticket.Reparacion?.videos || []);
+  const [isTimerRunning, setIsTimerRunning] = useState(!!ticket.Reparacion?.fechaInicio && !ticket.Reparacion?.fechaFin);
   const [isPaused, setIsPaused] = useState(false);
 
   // Verificar si hay pagos realizados
@@ -60,7 +60,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     hasPayments,
     totalPaid,
     hasValidPayment,
-    reparacion: ticket.reparacion,
+    reparacion: ticket.Reparacion,
     isTimerRunning,
     isPaused,
     tiempoTranscurrido,
@@ -286,8 +286,8 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                 </Button>
               )}
               <span className="text-sm text-gray-500">
-                {ticket.reparacion?.fechaInicio 
-                  ? `Iniciado: ${new Date(ticket.reparacion.fechaInicio).toLocaleString()}`
+                {ticket.Reparacion?.fechaInicio 
+                  ? `Iniciado: ${new Date(ticket.Reparacion.fechaInicio).toLocaleString()}`
                   : 'No iniciado'}
               </span>
             </div>

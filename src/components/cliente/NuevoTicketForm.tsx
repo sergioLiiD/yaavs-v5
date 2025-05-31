@@ -29,6 +29,12 @@ import { Map } from '@/components/ui/map';
 import { Label } from '@/components/ui/label';
 import { Loader } from '@googlemaps/js-api-loader';
 
+declare global {
+  interface Window {
+    google: typeof google;
+  }
+}
+
 // Esquema de validación
 const ticketSchema = z.object({
   // Datos del dispositivo

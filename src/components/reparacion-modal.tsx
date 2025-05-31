@@ -30,7 +30,7 @@ export const ReparacionModal: React.FC<ReparacionModalProps> = ({ open, onClose,
         },
         body: JSON.stringify({
           observaciones,
-          completar: !ticket.reparacion?.fechaInicio || !!ticket.reparacion?.fechaInicio,
+          completar: !ticket.Reparacion?.fechaInicio || !!ticket.Reparacion?.fechaInicio,
         }),
       });
 
@@ -48,10 +48,10 @@ export const ReparacionModal: React.FC<ReparacionModalProps> = ({ open, onClose,
   };
 
   const getTitle = () => {
-    if (!ticket.reparacion?.fechaInicio) {
+    if (!ticket.Reparacion?.fechaInicio) {
       return 'Iniciar Reparación';
     }
-    if (!ticket.reparacion?.fechaFin) {
+    if (!ticket.Reparacion?.fechaFin) {
       return 'Completar Reparación';
     }
     return 'Actualizar Reparación';
