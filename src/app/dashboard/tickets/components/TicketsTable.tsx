@@ -91,6 +91,7 @@ export function TicketsTable() {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
+        setLoading(true);
         const url = session?.user?.role === 'TECNICO' 
           ? `/api/tickets?tecnicoId=${session.user.id}`
           : '/api/tickets';
@@ -100,10 +101,11 @@ export function TicketsTable() {
           throw new Error('Error al cargar los tickets');
         }
         const data = await response.json();
-        setTickets(data);
+        setTickets(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error:', error);
         toast.error('Error al cargar los tickets');
+        setTickets([]);
       } finally {
         setLoading(false);
       }
@@ -121,19 +123,32 @@ export function TicketsTable() {
   // Agregar un efecto para actualizar cuando la ventana recupera el foco
   useEffect(() => {
     const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        fetchTickets();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleFocus);
+    return () => document.removeEventListener('visibilitychange', handleFocus);
+  }, [session?.user?.id, session?.user?.role]);
+
+  const fetchTickets = async () => {
+    try {
       const url = session?.user?.role === 'TECNICO' 
         ? `/api/tickets?tecnicoId=${session.user.id}`
         : '/api/tickets';
         
-      fetch(url)
-        .then(response => response.json())
-        .then(data => setTickets(data))
-        .catch(error => console.error('Error al actualizar tickets:', error));
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [session?.user?.id, session?.user?.role]);
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Error al cargar los tickets');
+      }
+      const data = await response.json();
+      setTickets(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error al actualizar tickets:', error);
+      toast.error('Error al actualizar los tickets');
+    }
+  };
 
   const filteredTickets = tickets.filter(ticket => {
     // Primero aplicar el filtro de estado
@@ -341,17 +356,27 @@ export function TicketsTable() {
                           {ticket.numeroTicket}
                         </button>
                       </TableCell>
-                      <TableCell>{ticket.cliente.nombre} {ticket.cliente.apellidoPaterno} {ticket.cliente.apellidoMaterno || ''}</TableCell>
-                      <TableCell>{ticket.modelo.marca.nombre} {ticket.modelo.nombre}</TableCell>
-                      <TableCell>{ticket.tipoServicio.nombre}</TableCell>
-                      <TableCell>{ticket.tecnicoAsignado ? ticket.tecnicoAsignado.nombre : 'Sin asignar'}</TableCell>
+                      <TableCell>
+                        {ticket.cliente ? `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno} ${ticket.cliente.apellidoMaterno || ''}` : 'Cliente no disponible'}
+                      </TableCell>
+                      <TableCell>
+                        {ticket.modelo && ticket.modelo.marca ? `${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}` : 'Modelo no disponible'}
+                      </TableCell>
+                      <TableCell>
+                        {ticket.tipoServicio ? ticket.tipoServicio.nombre : 'Servicio no disponible'}
+                      </TableCell>
+                      <TableCell>
+                        {ticket.tecnicoAsignado ? ticket.tecnicoAsignado.nombre : 'Sin asignar'}
+                      </TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
                           ticket.cancelado 
                             ? 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20'
-                            : `bg-[${ticket.estatusReparacion.color}]/40 text-[${ticket.estatusReparacion.color}] ring-1 ring-inset ring-[${ticket.estatusReparacion.color}]/20`
+                            : ticket.estatusReparacion 
+                              ? `bg-[${ticket.estatusReparacion.color}]/40 text-[${ticket.estatusReparacion.color}] ring-1 ring-inset ring-[${ticket.estatusReparacion.color}]/20`
+                              : 'bg-gray-50 text-gray-700 ring-1 ring-inset ring-gray-600/20'
                         }`}>
-                          {ticket.estatusReparacion.nombre}
+                          {ticket.estatusReparacion ? ticket.estatusReparacion.nombre : 'Estado no disponible'}
                         </span>
                       </TableCell>
                       <TableCell>{new Date(ticket.fechaRecepcion).toLocaleDateString()}</TableCell>

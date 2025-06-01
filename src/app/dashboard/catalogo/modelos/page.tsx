@@ -231,7 +231,7 @@ export default function ModelosPage() {
           <div className="flex justify-end">
             <button
               onClick={openModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+              className="px-4 py-2 bg-[#FEBF19] text-gray-900 rounded-lg hover:bg-[#FEBF19]/90 flex items-center"
             >
               <HiPlus className="mr-2" /> Nuevo Modelo
             </button>
@@ -283,13 +283,13 @@ export default function ModelosPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button
                             onClick={() => handleEdit(modelo)}
-                            className="text-blue-600 hover:text-blue-900 mr-4"
+                            className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2 mr-4"
                           >
                             <HiPencilAlt className="inline w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleDelete(modelo.id)}
-                            className="text-red-600 hover:text-red-900"
+                            className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                           >
                             <HiTrash className="inline w-5 h-5" />
                           </button>
@@ -387,14 +387,14 @@ export default function ModelosPage() {
                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                   <button
                     type="submit"
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#FEBF19] text-base font-medium text-gray-900 hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19] sm:ml-3 sm:w-auto sm:text-sm"
                   >
                     {isEditing ? 'Actualizar' : 'Guardar'}
                   </button>
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19] sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                   >
                     Cancelar
                   </button>

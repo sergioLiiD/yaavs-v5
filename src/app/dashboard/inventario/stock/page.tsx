@@ -13,8 +13,8 @@ interface Producto {
   stock: number;
   precioPromedio: number;
   entradas: EntradaAlmacen[];
-  marca: { nombre: string };
-  modelo: { nombre: string };
+  marcas: { nombre: string };
+  Modelo: { nombre: string };
   sku?: string;
   descripcion?: string;
   tipo: string;
@@ -454,7 +454,7 @@ export default function StockPage() {
               setProductoSeleccionado(null);
               setIsModalOpen(true);
             }}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#22C55E] hover:bg-[#22C55E]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22C55E]"
           >
             <HiPlus className="h-5 w-5 mr-2" />
             Nueva Entrada
@@ -518,7 +518,7 @@ export default function StockPage() {
                   <tr>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{producto.nombre}</div>
-                      <div className="text-sm text-gray-500">{producto.marca.nombre} - {producto.modelo.nombre}</div>
+                      <div className="text-sm text-gray-500">{producto.marcas.nombre} - {producto.Modelo.nombre}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`text-sm ${
@@ -553,7 +553,7 @@ export default function StockPage() {
                           setProductoSeleccionado(producto);
                           setIsModalOpen(true);
                         }}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                         title="Registrar entrada"
                       >
                         <HiPlus className="h-5 w-5" />
@@ -688,7 +688,7 @@ export default function StockPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 text-sm font-medium text-gray-900 bg-[#FEBF19] rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                 >
                   Registrar Entrada
                 </button>

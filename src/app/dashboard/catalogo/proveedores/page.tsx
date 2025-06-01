@@ -168,7 +168,7 @@ export default function ProveedoresPage() {
             setEditingId(null);
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center"
+          className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 flex items-center"
         >
           <HiPlus className="mr-2" />
           Nuevo Proveedor
@@ -231,7 +231,7 @@ export default function ProveedoresPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <button
                       onClick={() => toggleDetalles(proveedor.id)}
-                      className="text-blue-600 hover:text-blue-900 font-medium"
+                      className="text-[#FEBF19] hover:text-[#FEBF19]/90 font-medium"
                     >
                       {proveedorExpandido === proveedor.id ? 'Ocultar' : 'Mostrar'}
                     </button>
@@ -239,13 +239,13 @@ export default function ProveedoresPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
                       onClick={() => handleEdit(proveedor)}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
+                      className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2 mr-4"
                     >
                       <HiPencil className="h-5 w-5" />
                     </button>
                     <button
                       onClick={() => handleDelete(proveedor.id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                     >
                       <HiTrash className="h-5 w-5" />
                     </button>
@@ -431,7 +431,7 @@ export default function ProveedoresPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 bg-[#FEBF19] text-white rounded-md hover:bg-[#FEBF19]/90"
                 >
                   {editingId ? 'Actualizar' : 'Guardar'}
                 </button>

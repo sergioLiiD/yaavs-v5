@@ -16,6 +16,7 @@ model TipoServicio {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   productos   Producto[]
+  tickets     Ticket[]
 
   @@map("tipos_servicio")
 }
@@ -34,9 +35,9 @@ model Marca {
 }
 
 model Ticket {
-  id                     Int              @id @default(autoincrement())
-  numeroTicket           String           @unique
-  fechaRecepcion         DateTime         @default(now())
+  id                     Int               @id @default(autoincrement())
+  numeroTicket           String            @unique
+  fechaRecepcion         DateTime          @default(now())
   clienteId              Int
   tipoServicioId         Int
   modeloId               Int
@@ -44,26 +45,32 @@ model Ticket {
   estatusReparacionId    Int
   creadorId              Int
   tecnicoAsignadoId      Int?
-  recogida               Boolean          @default(false)
+  recogida               Boolean           @default(false)
   fechaEntrega           DateTime?
-  entregado              Boolean          @default(false)
-  cancelado              Boolean          @default(false)
+  entregado              Boolean           @default(false)
+  cancelado              Boolean           @default(false)
   motivoCancelacion      String?
   fechaInicioDiagnostico DateTime?
   fechaFinDiagnostico    DateTime?
   fechaInicioReparacion  DateTime?
   fechaFinReparacion     DateTime?
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
   fechaCancelacion       DateTime?
-  direccionId            Int?             @unique
+  direccionId            Int?              @unique
   Presupuesto            Presupuesto?
   Reparacion             Reparacion?
   TicketProblema         TicketProblema[]
   dispositivos           dispositivos?
   entregas               entregas?
   pagos                  pagos[]
-  direcciones            direcciones?     @relation(fields: [direccionId], references: [id])
+  cliente                Cliente           @relation(fields: [clienteId], references: [id])
+  direcciones            direcciones?      @relation(fields: [direccionId], references: [id])
+  estatusReparacion      EstatusReparacion @relation(fields: [estatusReparacionId], references: [id])
+  modelo                 Modelo            @relation(fields: [modeloId], references: [id])
+  tipoServicio           TipoServicio      @relation(fields: [tipoServicioId], references: [id])
+  creador                Usuario           @relation("TicketCreador", fields: [creadorId], references: [id])
+  tecnicoAsignado        Usuario?          @relation("TicketTecnico", fields: [tecnicoAsignadoId], references: [id])
 
   @@map("tickets")
 }
@@ -184,6 +191,7 @@ model Cliente {
   passwordHash     String?
   activo           Boolean  @default(true)
   tipoRegistro     String   @default("Registro en tienda")
+  tickets          Ticket[]
 }
 
 model EstatusReparacion {
@@ -195,6 +203,7 @@ model EstatusReparacion {
   activo      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime
+  tickets     Ticket[]
 }
 
 model Modelo {
@@ -204,11 +213,12 @@ model Modelo {
   marcaId        Int
   activo         Boolean          @default(true)
   createdAt      DateTime         @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime         @updatedAt
   marcas         Marca            @relation(fields: [marcaId], references: [id])
   ProblemaModelo ProblemaModelo[]
   piezas         piezas[]
   productos      Producto[]
+  tickets        Ticket[]
 
   @@index([marcaId])
 }
@@ -298,6 +308,8 @@ model Usuario {
   entradas                    EntradaAlmacen[]
   salidas                     SalidaAlmacen[]
   usuarios_puntos_recoleccion usuarios_puntos_recoleccion[]
+  ticketsCreados             Ticket[]                      @relation("TicketCreador")
+  ticketsAsignados           Ticket[]                      @relation("TicketTecnico")
 }
 
 model brands {
@@ -500,7 +512,7 @@ model piezas_reparacion {
 }
 
 model precios_venta {
-  id                     String   @id
+  id                     String   @id @default(uuid())
   tipo                   String
   nombre                 String
   marca                  String
@@ -508,7 +520,7 @@ model precios_venta {
   precio_compra_promedio Float
   precio_venta           Float
   created_at             DateTime @default(now())
-  updated_at             DateTime
+  updated_at             DateTime @updatedAt
   created_by             String
   updated_by             String
   producto_id            Int?

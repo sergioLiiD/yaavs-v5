@@ -100,7 +100,7 @@ export type Ticket = {
     apellidoPaterno: string;
     apellidoMaterno: string | null;
   } | null;
-  dispositivo: {
+  dispositivos: {
     id: number;
     color: string | null;
     capacidad: string | null;

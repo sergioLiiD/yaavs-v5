@@ -155,7 +155,9 @@ export async function POST(request: Request) {
         apellidoMaterno: validatedData.apellidoMaterno || '',
         passwordHash,
         nivel: validatedData.nivel,
-        activo: validatedData.activo
+        activo: validatedData.activo,
+        updatedAt: new Date(),
+        createdAt: new Date()
       },
       select: {
         id: true,

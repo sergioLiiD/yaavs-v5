@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Producto, InventarioMinimo } from '@prisma/client';
+import { Producto, inventarios_minimos } from '@prisma/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,15 +13,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Edit2, Trash2 } from 'lucide-react';
+import { HiPencilAlt, HiTrash } from 'react-icons/hi';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 type ProductoConInventarioMinimo = Producto & {
-  inventarioMinimo: InventarioMinimo | null;
-  marca?: { nombre: string };
-  modelo?: { nombre: string };
-  proveedor?: { nombre: string };
+  inventarios_minimos: inventarios_minimos | null;
+  marcas: { nombre: string };
+  Modelo: { nombre: string };
+  proveedores: { nombre: string };
 };
 
 export default function InventariosMinimosPage() {
@@ -122,8 +122,8 @@ export default function InventariosMinimosPage() {
     const searchLower = searchTerm.toLowerCase();
     return (
       producto.tipo === 'PRODUCTO' && (
-        (producto.marca?.nombre?.toLowerCase() || '').includes(searchLower) ||
-        (producto.modelo?.nombre?.toLowerCase() || '').includes(searchLower) ||
+        (producto.marcas?.nombre?.toLowerCase() || '').includes(searchLower) ||
+        (producto.Modelo?.nombre?.toLowerCase() || '').includes(searchLower) ||
         (producto.nombre?.toLowerCase() || '').includes(searchLower)
       )
     );
@@ -161,14 +161,11 @@ export default function InventariosMinimosPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap sticky top-0 bg-gray-50">
                       Stock Actual
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap sticky top-0 bg-gray-50">
-                      Inventario Mínimo
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-pre-line sticky top-0 bg-gray-50">
+                      Inventario{'\n'}Mínimo
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap sticky top-0 bg-gray-50">
                       Estado
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap sticky top-0 bg-gray-50">
-                      Proveedor
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap sticky top-0 bg-gray-50">
                       Acciones
@@ -179,10 +176,10 @@ export default function InventariosMinimosPage() {
                   {filteredProductos?.map((producto) => (
                     <tr key={producto.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {producto.marca?.nombre || '-'}
+                        {producto.marcas?.nombre || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {producto.modelo?.nombre || '-'}
+                        {producto.Modelo?.nombre || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {producto.nombre}
@@ -191,21 +188,18 @@ export default function InventariosMinimosPage() {
                         {producto.stock}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {producto.inventarioMinimo?.cantidadMinima || 0}
+                        {producto.inventarios_minimos?.cantidadMinima || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          producto.stock <= (producto.inventarioMinimo?.cantidadMinima || 0)
+                          producto.stock <= (producto.inventarios_minimos?.cantidadMinima || 0)
                             ? 'bg-red-100 text-red-800'
                             : 'bg-green-100 text-green-800'
                         }`}>
-                          {producto.stock <= (producto.inventarioMinimo?.cantidadMinima || 0)
+                          {producto.stock <= (producto.inventarios_minimos?.cantidadMinima || 0)
                             ? 'Stock Bajo'
                             : 'Stock Normal'}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {producto.proveedor?.nombre || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex gap-2">
@@ -213,20 +207,15 @@ export default function InventariosMinimosPage() {
                             if (!open) setEditingProductId(null);
                             else {
                               setEditingProductId(producto.id);
-                              setNewMinimo(producto.inventarioMinimo?.cantidadMinima.toString() || '0');
+                              setNewMinimo(producto.inventarios_minimos?.cantidadMinima.toString() || '0');
                             }
                           }}>
                             <DialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  setEditingProductId(producto.id);
-                                  setNewMinimo(producto.inventarioMinimo?.cantidadMinima.toString() || '0');
-                                }}
+                              <button
+                                className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                               >
-                                <Edit2 className="h-4 w-4" />
-                              </Button>
+                                <HiPencilAlt className="h-5 w-5" />
+                              </button>
                             </DialogTrigger>
                             <DialogContent className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] z-50 w-full max-w-lg bg-white">
                               <DialogHeader className="px-6 pt-6 pb-4">
@@ -262,7 +251,7 @@ export default function InventariosMinimosPage() {
                                     onClick={() => {
                                       handleEdit(producto.id, parseInt(newMinimo));
                                     }}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    className="px-4 py-2 text-sm font-medium text-gray-900 bg-[#FEBF19] border border-transparent rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                                   >
                                     Guardar
                                   </Button>
@@ -270,13 +259,12 @@ export default function InventariosMinimosPage() {
                               </div>
                             </DialogContent>
                           </Dialog>
-                          <Button
-                            variant="ghost"
-                            size="icon"
+                          <button
                             onClick={() => handleDelete(producto.id)}
+                            className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                            <HiTrash className="h-5 w-5" />
+                          </button>
                         </div>
                       </td>
                     </tr>

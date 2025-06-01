@@ -7,19 +7,31 @@ import axios from 'axios';
 
 // Tipo para representar un precio de venta
 interface PrecioVenta {
-  id: number;
-  nombre: string;
-  precio_venta: number;
+  id: string;
   tipo: 'PRODUCTO' | 'SERVICIO';
+  nombre: string;
+  marca: string;
+  modelo: string;
+  precio_compra_promedio: number;
+  precio_venta: number;
   producto_id?: number;
   servicio_id?: number;
-  precio_compra_promedio: number;
-  marca?: string;
-  modelo?: string;
-  created_at: string;
-  updated_at: string;
+  created_at: Date;
+  updated_at: Date;
   created_by: string;
   updated_by: string;
+}
+
+interface PrecioVentaItem {
+  id: number;
+  nombre: string;
+  tipo: 'PRODUCTO' | 'SERVICIO';
+  precio: number;
+  precio_id: string;
+  marca: string;
+  modelo: string;
+  precio_compra: number;
+  updated_at: string;
 }
 
 interface Producto {
@@ -40,6 +52,14 @@ interface Producto {
   garantia?: string;
   descripcion: string;
   notas_internas?: string;
+  marcas?: {
+    id: number;
+    nombre: string;
+  };
+  Modelo?: {
+    id: number;
+    nombre: string;
+  };
 }
 
 interface Servicio {
@@ -61,7 +81,7 @@ export default function PreciosVentaPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [preciosPromedio, setPreciosPromedio] = useState<PrecioPromedio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDetalles, setShowDetalles] = useState(false);
   const [detallesVisibles, setDetallesVisibles] = useState<Record<string, boolean>>({});
@@ -74,30 +94,33 @@ export default function PreciosVentaPage() {
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
-      console.log('Iniciando carga de datos...');
-      
-      // Cargar productos del catálogo
-      const productosResponse = await axios.get('/api/inventario/productos');
-      console.log('Productos cargados:', productosResponse.data);
-      setProductos(productosResponse.data);
+      setError(null);
 
-      // Cargar precios de venta
-      const preciosResponse = await axios.get('/api/precios-venta');
-      console.log('Precios cargados:', preciosResponse.data);
-      setPrecios(preciosResponse.data);
+      // Obtener productos y servicios
+      const productosResponse = await fetch('/api/inventario/productos');
+      if (!productosResponse.ok) throw new Error('Error al obtener productos');
+      const productosData = await productosResponse.json();
 
-      // Cargar precios de compra promedio desde stock
-      const stockResponse = await axios.get('/api/inventario/stock/precios-promedio');
-      const preciosPromedioData: PrecioPromedio[] = stockResponse.data;
-      console.log('Precios promedio cargados:', preciosPromedioData);
+      // Obtener precios de venta
+      const preciosResponse = await fetch('/api/precios-venta');
+      if (!preciosResponse.ok) throw new Error('Error al obtener precios');
+      const preciosData = await preciosResponse.json();
+
+      // Obtener precios promedio de compra
+      const preciosPromedioResponse = await fetch('/api/inventario/stock/precios-promedio');
+      if (!preciosPromedioResponse.ok) throw new Error('Error al obtener precios promedio');
+      const preciosPromedioData = await preciosPromedioResponse.json();
+
+      setProductos(productosData);
+      setPrecios(preciosData);
       setPreciosPromedio(preciosPromedioData);
     } catch (err) {
-      console.error('Error detallado al cargar datos:', err);
+      console.error('Error al cargar datos:', err);
       setError('Error al cargar los datos. Por favor, intente nuevamente.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, []); // Dependencias vacías ya que no depende de ningún estado
 
   useEffect(() => {
     fetchData();
@@ -116,7 +139,7 @@ export default function PreciosVentaPage() {
     updated_at: string;
   }) => {
     setCurrentPrecio({
-      id: item.precio_id || 0, // Si no hay precio_id, será 0 y se creará uno nuevo
+      id: item.precio_id.toString(),
       nombre: item.nombre,
       precio_venta: item.precio,
       tipo: item.tipo,
@@ -125,8 +148,8 @@ export default function PreciosVentaPage() {
       precio_compra_promedio: item.precio_compra,
       marca: item.marca,
       modelo: item.modelo,
-      created_at: new Date().toISOString(),
-      updated_at: item.updated_at || new Date().toISOString(),
+      created_at: new Date(item.updated_at),
+      updated_at: new Date(item.updated_at),
       created_by: session?.user?.email || '',
       updated_by: session?.user?.email || ''
     });
@@ -140,50 +163,38 @@ export default function PreciosVentaPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!currentPrecio) return;
-    
+
     try {
-      // Si no tiene ID, crear nuevo precio
-      if (!currentPrecio.id) {
-        await axios.post('/api/precios-venta', {
-          tipo: currentPrecio.tipo,
-          nombre: currentPrecio.nombre,
-          marca: currentPrecio.marca,
-          modelo: currentPrecio.modelo,
-          precio_compra_promedio: currentPrecio.precio_compra_promedio,
-          precio_venta: currentPrecio.precio_venta,
-          producto_id: currentPrecio.tipo === 'PRODUCTO' ? currentPrecio.producto_id : null,
-          servicio_id: currentPrecio.tipo === 'SERVICIO' ? currentPrecio.servicio_id : null,
-          created_by: session?.user?.email || '',
-          updated_by: session?.user?.email || ''
-        });
-      } else {
-        // Si tiene ID, actualizar precio existente
-        await axios.put(`/api/precios-venta/${currentPrecio.id}`, {
-          tipo: currentPrecio.tipo,
-          nombre: currentPrecio.nombre,
-          marca: currentPrecio.marca,
-          modelo: currentPrecio.modelo,
-          precio_compra_promedio: currentPrecio.precio_compra_promedio,
-          precio_venta: currentPrecio.precio_venta,
-          producto_id: currentPrecio.tipo === 'PRODUCTO' ? currentPrecio.producto_id : null,
-          servicio_id: currentPrecio.tipo === 'SERVICIO' ? currentPrecio.servicio_id : null,
-          updated_by: session?.user?.email || ''
-        });
+      const response = await fetch('/api/precios-venta', {
+        method: currentPrecio.id ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...currentPrecio,
+          updated_by: session?.user?.email || 'system'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al guardar el precio');
       }
-      
-      // Recargar los datos después de guardar
+
+      // Recargar los datos
       await fetchData();
-      closeModal();
-    } catch (err) {
-      console.error('Error al guardar precio:', err);
-      setError('Error al guardar el precio. Por favor, intente nuevamente.');
+      setIsModalOpen(false);
+      setCurrentPrecio(null);
+    } catch (error) {
+      console.error('Error:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
     }
   };
 
   // Crear lista completa de productos y servicios con sus precios
   const allItems = useMemo(() => {
+    if (!productos.length) return [];
+    
     return productos.map(item => {
       // Buscar el precio de venta existente por nombre
       const precio = precios.find(p => p.nombre === item.nombre);
@@ -195,11 +206,11 @@ export default function PreciosVentaPage() {
         nombre: String(item.nombre || ''),
         tipo: item.tipo,
         precio: precio ? Number(precio.precio_venta) : 0,
-        precio_id: precio ? Number(precio.id) : 0,
-        marca: item.tipo === 'PRODUCTO' ? String(item.marca?.nombre || '-') : '-',
-        modelo: item.tipo === 'PRODUCTO' ? String(item.modelo?.nombre || '-') : '-',
+        precio_id: precio ? String(precio.id) : '',
+        marca: item.tipo === 'PRODUCTO' ? String(item.marcas?.nombre || '-') : '-',
+        modelo: item.tipo === 'PRODUCTO' ? String(item.Modelo?.nombre || '-') : '-',
         precio_compra: item.tipo === 'PRODUCTO' ? Number(precioPromedio) : 0,
-        updated_at: precio?.updated_at || ''
+        updated_at: precio?.updated_at ? new Date(precio.updated_at).toISOString() : ''
       };
     });
   }, [productos, precios, preciosPromedio]);
@@ -216,6 +227,25 @@ export default function PreciosVentaPage() {
       ...prev,
       [id]: !prev[id]
     }));
+  };
+
+  const handleEdit = (item: PrecioVentaItem) => {
+    setCurrentPrecio({
+      id: item.precio_id,
+      nombre: item.nombre,
+      precio_venta: item.precio,
+      tipo: item.tipo,
+      producto_id: item.tipo === 'PRODUCTO' ? item.id : undefined,
+      servicio_id: item.tipo === 'SERVICIO' ? item.id : undefined,
+      precio_compra_promedio: item.precio_compra,
+      marca: item.marca,
+      modelo: item.modelo,
+      created_at: new Date(),
+      updated_at: new Date(),
+      created_by: session?.user?.email || '',
+      updated_by: session?.user?.email || ''
+    });
+    setIsModalOpen(true);
   };
 
   const content = (
@@ -279,14 +309,23 @@ export default function PreciosVentaPage() {
                       Modelo
                     </th>
                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Precio de Venta
+                      <div className="flex flex-col">
+                        <span>Precio de</span>
+                        <span>Venta</span>
+                      </div>
                     </th>
                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Precio Compra Promedio
+                      <div className="flex flex-col">
+                        <span>Precio Compra</span>
+                        <span>Promedio</span>
+                      </div>
                     </th>
                     {showDetalles && (
                       <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Última Actualización
+                        <div className="flex flex-col">
+                          <span>Última</span>
+                          <span>Actualización</span>
+                        </div>
                       </th>
                     )}
                     <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
@@ -331,13 +370,13 @@ export default function PreciosVentaPage() {
                           <div className="flex justify-end space-x-3">
                             <button
                               onClick={() => toggleDetalles(`${item.tipo}-${item.id}`)}
-                              className="text-indigo-600 hover:text-indigo-900"
+                              className="text-[#FEBF19] hover:text-[#FEBF19]/90"
                             >
                               {detallesVisibles[`${item.tipo}-${item.id}`] ? 'Ocultar' : 'Mostrar'}
                             </button>
                             <button
-                              onClick={() => openModal(item)}
-                              className="text-blue-600 hover:text-blue-900"
+                              onClick={() => handleEdit(item)}
+                              className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                             >
                               <HiPencilAlt className="h-5 w-5" />
                             </button>

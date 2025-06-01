@@ -442,7 +442,7 @@ export default function CatalogoPage() {
         <h1 className="text-2xl font-bold text-gray-900">Catálogo de Productos</h1>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
+          className="bg-[#FEBF19] text-gray-900 px-12 py-2 min-w-[200px] rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2 whitespace-nowrap inline-flex items-center justify-center"
         >
           <HiPlus className="mr-2" />
           Nuevo Producto
@@ -499,24 +499,26 @@ export default function CatalogoPage() {
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <button
                         onClick={() => toggleDetalles(producto.id)}
-                        className="text-indigo-600 hover:text-indigo-900"
+                        className="text-[#FEBF19] hover:text-[#FEBF19]/90"
                       >
                         {detallesVisibles[producto.id] ? 'Ocultar' : 'Mostrar'}
                       </button>
                     </td>
                     <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                      <button
-                        onClick={() => handleEdit(producto)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-3"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(producto.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Eliminar
-                      </button>
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => handleEdit(producto)}
+                          className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
+                        >
+                          <HiPencil className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(producto.id)}
+                          className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
+                        >
+                          <HiTrash className="h-5 w-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   {detallesVisibles[producto.id] && (
@@ -803,7 +805,7 @@ export default function CatalogoPage() {
                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                   <button
                     type="submit"
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#FEBF19] text-base font-medium text-gray-900 hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19] sm:ml-3 sm:w-auto sm:text-sm"
                   >
                     {productoSeleccionado ? 'Actualizar' : 'Crear'}
                   </button>

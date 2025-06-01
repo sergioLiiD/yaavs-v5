@@ -42,7 +42,7 @@ export async function PUT(
     }
 
     // Buscar inventario mínimo existente
-    const inventarioExistente = await prisma.inventarioMinimo.findUnique({
+    const inventarioExistente = await prisma.inventarios_minimos.findUnique({
       where: { productoId },
     });
 
@@ -52,7 +52,7 @@ export async function PUT(
     if (inventarioExistente) {
       console.log('Actualizando inventario existente');
       inventario = await prisma.$transaction(async (tx) => {
-        const updated = await tx.inventarioMinimo.update({
+        const updated = await tx.inventarios_minimos.update({
           where: { productoId },
           data: { cantidadMinima },
         });
@@ -61,10 +61,12 @@ export async function PUT(
     } else {
       console.log('Creando nuevo inventario');
       inventario = await prisma.$transaction(async (tx) => {
-        const created = await tx.inventarioMinimo.create({
+        const created = await tx.inventarios_minimos.create({
           data: {
             productoId,
             cantidadMinima,
+            updatedAt: new Date(),
+            createdAt: new Date(),
           },
         });
         return created;
@@ -75,10 +77,10 @@ export async function PUT(
     const productoActualizado = await prisma.producto.findUnique({
       where: { id: productoId },
       include: {
-        marca: true,
-        modelo: true,
-        proveedor: true,
-        inventarioMinimo: true,
+        marcas: true,
+        Modelo: true,
+        proveedores: true,
+        inventarios_minimos: true,
       },
     });
 
@@ -121,7 +123,7 @@ export async function DELETE(
     }
 
     // Verificar si existe el inventario mínimo
-    const inventarioExistente = await prisma.inventarioMinimo.findUnique({
+    const inventarioExistente = await prisma.inventarios_minimos.findUnique({
       where: { productoId },
     });
 
@@ -134,7 +136,7 @@ export async function DELETE(
     }
 
     console.log('Eliminando inventario:', inventarioExistente);
-    await prisma.inventarioMinimo.delete({
+    await prisma.inventarios_minimos.delete({
       where: { productoId },
     });
 

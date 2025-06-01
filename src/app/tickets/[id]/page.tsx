@@ -23,25 +23,25 @@ async function getTicket(id: string): Promise<Ticket | null> {
       tipoServicio: true,
       modelo: {
         include: {
-          marca: true
+          marcas: true
         }
       },
       estatusReparacion: true,
       tecnicoAsignado: true,
-      dispositivo: true,
+      dispositivos: true,
       creador: true,
-      reparacion: {
+      Reparacion: {
         include: {
-          tecnico: true,
-          checklistItems: true,
-          piezas: {
+          Usuario: true,
+          checklist_diagnostico: true,
+          piezas_reparacion: {
             include: {
-              pieza: true
+              piezas: true
             }
           }
         }
       },
-      presupuesto: true
+      Presupuesto: true
     }
   });
 

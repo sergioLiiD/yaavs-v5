@@ -86,6 +86,21 @@ export function ReparacionFrecuenteDialog({
     },
   });
 
+  // Limpiar el formulario cuando se cierra el modal
+  React.useEffect(() => {
+    if (!open) {
+      form.reset({
+        nombre: '',
+        descripcion: '',
+        activo: true,
+        productos: [],
+        pasos: [],
+      });
+      setPasos([]);
+      setProductos([]);
+    }
+  }, [open, form]);
+
   // Actualizar el formulario cuando cambia initialData
   React.useEffect(() => {
     if (initialData) {

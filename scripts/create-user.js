@@ -1,24 +1,24 @@
-import { PrismaClient, NivelUsuario } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const passwordHash = await bcrypt.hash('whoS5un0%', 10);
-  
-  const admin = await prisma.usuario.create({
+  const passwordHash = await bcrypt.hash('whoSuno%', 10);
+
+  const usuario = await prisma.usuario.create({
     data: {
       email: 'sergio@hoom.mx',
       nombre: 'Sergio',
       apellidoPaterno: 'Velazco',
       passwordHash,
-      nivel: NivelUsuario.ADMINISTRADOR,
+      nivel: 'ADMINISTRADOR',
       activo: true,
       updatedAt: new Date()
     }
   });
 
-  console.log('Usuario administrador creado:', admin);
+  console.log('Usuario creado:', usuario);
 }
 
 main()

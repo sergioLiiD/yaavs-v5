@@ -7,21 +7,57 @@ import axios from 'axios';
 import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { ReparacionFrecuenteDialog } from '@/components/reparacion-frecuente-dialog';
+import { z } from 'zod';
+import { toast } from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
+
+const formSchema = z.object({
+  nombre: z.string().min(1, "El nombre es requerido"),
+  descripcion: z.string().optional(),
+  activo: z.boolean().default(true),
+  productos: z.array(
+    z.object({
+      id: z.string(),
+      productoId: z.number(),
+      cantidad: z.number().min(1),
+      precioVenta: z.number().min(0),
+      conceptoExtra: z.string().optional(),
+      precioConceptoExtra: z.number().optional(),
+    })
+  ),
+  pasos: z.array(
+    z.object({
+      id: z.string(),
+      descripcion: z.string(),
+      orden: z.number(),
+    })
+  ),
+});
 
 interface ReparacionFrecuente {
   id: string;
   nombre: string;
-  descripcion?: string;
+  descripcion: string;
   activo: boolean;
-  productos: Array<{
+  productos_reparacion_frecuente: Array<{
     id: string;
     productoId: number;
     cantidad: number;
     precioVenta: number;
     conceptoExtra?: string;
     precioConceptoExtra?: number;
+    productos: {
+      id: number;
+      nombre: string;
+      precioPromedio: number;
+      tipo: string;
+      sku: string;
+      stock: number;
+      marca?: { nombre: string };
+      modelo?: { nombre: string };
+    };
   }>;
-  pasos: Array<{
+  pasos_reparacion_frecuente: Array<{
     id: string;
     descripcion: string;
     orden: number;
@@ -71,6 +107,8 @@ export default function ReparacionesFrecuentesPage() {
   const [isEditing, setIsEditing] = useState(false);
 
   const [estados, setEstados] = useState<EstadoReparacion[]>([]);
+
+  const queryClient = useQueryClient();
 
   // Cargar las reparaciones frecuentes al montar el componente
   useEffect(() => {
@@ -129,19 +167,19 @@ export default function ReparacionesFrecuentesPage() {
       nombre: reparacion.nombre,
       descripcion: reparacion.descripcion || '',
       activo: reparacion.activo,
-      productos: reparacion.productos.map(p => ({
-        id: p.id,
+      productos: reparacion.productos_reparacion_frecuente?.map(p => ({
+        id: p.id.toString(),
         productoId: p.productoId,
         cantidad: p.cantidad,
         precioVenta: p.precioVenta,
         conceptoExtra: p.conceptoExtra,
         precioConceptoExtra: p.precioConceptoExtra
-      })),
-      pasos: reparacion.pasos.map(p => ({
-        id: p.id,
+      })) || [],
+      pasos: reparacion.pasos_reparacion_frecuente?.map(p => ({
+        id: p.id.toString(),
         descripcion: p.descripcion,
         orden: p.orden
-      }))
+      })) || []
     });
     setIsEditing(true);
     openModal();
@@ -159,27 +197,86 @@ export default function ReparacionesFrecuentesPage() {
     }
   };
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
+      const formattedData = {
+        ...data,
+        productos: data.productos.map((p: z.infer<typeof formSchema>['productos'][0]) => ({
+          ...p,
+          id: String(p.id),
+          productoId: Number(p.productoId),
+          cantidad: Number(p.cantidad),
+          precioVenta: Number(p.precioVenta),
+          conceptoExtra: p.conceptoExtra || '',
+          precioConceptoExtra: p.precioConceptoExtra ? Number(p.precioConceptoExtra) : 0
+        })),
+        pasos: data.pasos.map((p: z.infer<typeof formSchema>['pasos'][0]) => ({
+          ...p,
+          id: String(p.id),
+          orden: Number(p.orden)
+        }))
+      };
+
+      console.log('Datos a enviar:', formattedData);
+
       if (isEditing && currentReparacion?.id) {
-        // Actualizar una reparación frecuente existente
-        const response = await axios.put(`/api/reparaciones-frecuentes/${currentReparacion.id}`, data);
+        const response = await axios.put(`/api/reparaciones-frecuentes/${currentReparacion.id}`, formattedData);
+        const updatedReparacion: ReparacionFrecuente = {
+          ...response.data,
+          id: response.data.id.toString(),
+          productos_reparacion_frecuente: response.data.productos_reparacion_frecuente.map((p: any) => ({
+            ...p,
+            id: String(p.id),
+            productoId: Number(p.productoId),
+            cantidad: Number(p.cantidad),
+            precioVenta: Number(p.precioVenta),
+            productos: {
+              ...p.productos,
+              id: Number(p.productos.id),
+              precioPromedio: Number(p.productos.precioPromedio)
+            }
+          })),
+          pasos_reparacion_frecuente: response.data.pasos_reparacion_frecuente.map((p: any) => ({
+            ...p,
+            id: String(p.id),
+            orden: Number(p.orden)
+          }))
+        };
         setReparacionesFrecuentes(reparacionesFrecuentes.map(rep => 
-          rep.id === currentReparacion.id 
-            ? { ...response.data, id: response.data.id.toString() }
-            : rep
+          rep.id === currentReparacion.id ? updatedReparacion : rep
         ));
       } else {
-        // Agregar una nueva reparación frecuente
-        const response = await axios.post('/api/reparaciones-frecuentes', data);
-        const newReparacion = { ...response.data, id: response.data.id.toString() };
+        const response = await axios.post('/api/reparaciones-frecuentes', formattedData);
+        const newReparacion: ReparacionFrecuente = {
+          ...response.data,
+          id: response.data.id.toString(),
+          productos_reparacion_frecuente: response.data.productos_reparacion_frecuente.map((p: any) => ({
+            ...p,
+            id: String(p.id),
+            productoId: Number(p.productoId),
+            cantidad: Number(p.cantidad),
+            precioVenta: Number(p.precioVenta),
+            productos: {
+              ...p.productos,
+              id: Number(p.productos.id),
+              precioPromedio: Number(p.productos.precioPromedio)
+            }
+          })),
+          pasos_reparacion_frecuente: response.data.pasos_reparacion_frecuente.map((p: any) => ({
+            ...p,
+            id: String(p.id),
+            orden: Number(p.orden)
+          }))
+        };
         setReparacionesFrecuentes([...reparacionesFrecuentes, newReparacion]);
       }
-      
+
       closeModal();
-    } catch (err) {
-      console.error('Error al guardar reparación frecuente:', err);
-      setError('Error al guardar los datos. Por favor, intente nuevamente.');
+      queryClient.invalidateQueries({ queryKey: ['reparacionesFrecuentes'] });
+      toast.success(isEditing ? 'Reparación frecuente actualizada' : 'Reparación frecuente creada');
+    } catch (error) {
+      console.error('Error al guardar reparación frecuente:', error);
+      toast.error('Error al guardar la reparación frecuente');
     }
   };
 
@@ -207,6 +304,7 @@ export default function ReparacionesFrecuentesPage() {
             <TableRow>
               <TableHead>Nombre</TableHead>
               <TableHead>Descripción</TableHead>
+              <TableHead>Precio</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
@@ -216,6 +314,13 @@ export default function ReparacionesFrecuentesPage() {
               <TableRow key={reparacion.id}>
                 <TableCell className="font-medium">{reparacion.nombre}</TableCell>
                 <TableCell>{reparacion.descripcion || '-'}</TableCell>
+                <TableCell>
+                  ${reparacion.productos_reparacion_frecuente?.reduce((total: number, producto: { precioVenta: number; cantidad: number; precioConceptoExtra?: number }) => {
+                    const subtotal = producto.precioVenta * producto.cantidad;
+                    const extra = producto.precioConceptoExtra || 0;
+                    return total + subtotal + extra;
+                  }, 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+                </TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     reparacion.activo 
@@ -227,22 +332,18 @@ export default function ReparacionesFrecuentesPage() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    <button
                       onClick={() => handleEdit(reparacion)}
-                      className="text-blue-600 hover:text-blue-700"
+                      className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                     >
                       <HiPencilAlt className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    </button>
+                    <button
                       onClick={() => handleDelete(reparacion.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                     >
                       <HiTrash className="h-5 w-5" />
-                    </Button>
+                    </button>
                   </div>
                 </TableCell>
               </TableRow>

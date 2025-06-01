@@ -80,11 +80,11 @@ export async function POST(request: Request) {
     console.log('Datos validados correctamente');
 
     // Verificar si el email ya existe
-    const existingUser = await prisma.usuario.findUnique({
+    const existingCliente = await prisma.cliente.findUnique({
       where: { email: validatedData.email },
     });
 
-    if (existingUser) {
+    if (existingCliente) {
       console.log('Email ya registrado:', validatedData.email);
       return NextResponse.json(
         { error: 'El email ya está registrado' },
@@ -95,20 +95,6 @@ export async function POST(request: Request) {
     // Generar una contraseña aleatoria
     const defaultPassword = Math.random().toString(36).slice(-8);
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-
-    // Crear el usuario
-    console.log('Creando usuario...');
-    const usuario = await prisma.usuario.create({
-      data: {
-        email: validatedData.email,
-        nombre: validatedData.nombre,
-        apellidoPaterno: validatedData.apellidoPaterno,
-        apellidoMaterno: validatedData.apellidoMaterno || '',
-        passwordHash: hashedPassword,
-        nivel: 'ATENCION_CLIENTE',
-      },
-    });
-    console.log('Usuario creado:', usuario.id);
 
     // Crear el cliente
     console.log('Creando cliente...');
@@ -134,6 +120,8 @@ export async function POST(request: Request) {
         passwordHash: hashedPassword,
         tipoRegistro: 'REGISTRO_TIENDA',
         activo: true,
+        updatedAt: new Date(),
+        createdAt: new Date()
       },
       select: {
         id: true,

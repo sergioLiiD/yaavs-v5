@@ -88,13 +88,25 @@ export async function GET() {
         createdAt: 'desc'
       },
       include: {
-        cliente: true,
-        modelo: {
-          include: {
-            marca: true
+        direcciones: true,
+        dispositivos: true,
+        estatusReparacion: true,
+        cliente: {
+          select: {
+            nombre: true,
+            apellidoPaterno: true
           }
         },
-        estatusReparacion: true
+        modelo: {
+          select: {
+            nombre: true,
+            marca: {
+              select: {
+                nombre: true
+              }
+            }
+          }
+        }
       }
     }).catch(error => {
       console.error('Error al obtener tickets recientes:', error);
@@ -134,10 +146,10 @@ export async function GET() {
       ],
       recentTickets: ticketsRecientes.map(ticket => ({
         id: ticket.id,
-        cliente: `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno}`,
-        modelo: `${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}`,
+        cliente: `${ticket.cliente?.nombre || ''} ${ticket.cliente?.apellidoPaterno || ''}`,
+        modelo: `${ticket.modelo?.marca?.nombre || ''} ${ticket.modelo?.nombre || ''}`,
         problema: ticket.descripcionProblema,
-        estado: ticket.estatusReparacion.nombre
+        estado: ticket.estatusReparacion?.nombre || ''
       }))
     });
   } catch (error) {

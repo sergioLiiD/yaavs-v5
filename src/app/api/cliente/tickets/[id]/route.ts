@@ -30,16 +30,16 @@ export async function GET(
         tipoServicio: true,
         modelo: {
           include: {
-            marca: true,
+            marcas: true,
           },
         },
         estatusReparacion: true,
         tecnicoAsignado: true,
-        dispositivo: true,
-        direccion: true,
-        presupuesto: {
+        dispositivos: true,
+        direcciones: true,
+        Presupuesto: {
           include: {
-            conceptos: true
+            conceptos_presupuesto: true
           }
         },
         pagos: {

@@ -130,23 +130,45 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
       if (productoSeleccionado) {
         // Buscar el precio de venta según el tipo de producto
         const precioVenta = preciosVenta.find((p: PrecioVenta) => {
+          const nombreCoincide = p.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase();
+          const tipoCoincide = p.tipo === productoSeleccionado.tipo;
+          
           if (productoSeleccionado.tipo === 'SERVICIO') {
-            // Para servicios, solo comparar por nombre
-            return p.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase();
+            return nombreCoincide && tipoCoincide;
           } else {
-            // Para productos, comparar por nombre, marca y modelo
-            return p.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase() &&
-                   p.marca.toLowerCase() === (productoSeleccionado.marca?.nombre.toLowerCase() || '') &&
-                   p.modelo.toLowerCase() === (productoSeleccionado.modelo?.nombre.toLowerCase() || '');
+            const marcaCoincide = p.marca.toLowerCase() === (productoSeleccionado.marca?.nombre.toLowerCase() || '');
+            const modeloCoincide = p.modelo.toLowerCase() === (productoSeleccionado.modelo?.nombre.toLowerCase() || '');
+            return nombreCoincide && marcaCoincide && modeloCoincide && tipoCoincide;
           }
         });
 
-        if (precioVenta) {
-          const producto = productoActualizado.find(p => p.id === id);
-          if (producto) {
+        const producto = productoActualizado.find(p => p.id === id);
+        if (producto) {
+          if (precioVenta) {
             producto.precioVenta = precioVenta.precio_venta;
+            console.log('Precio de venta encontrado:', precioVenta.precio_venta);
+          } else {
+            // Si no se encuentra un precio de venta específico, usar el precio promedio
+            producto.precioVenta = productoSeleccionado.precioPromedio;
+            console.log('Usando precio promedio:', productoSeleccionado.precioPromedio);
           }
         }
+      }
+    }
+
+    // Si se cambia el precio de venta manualmente, asegurarse de que sea un número
+    if (field === 'precioVenta') {
+      const producto = productoActualizado.find(p => p.id === id);
+      if (producto) {
+        producto.precioVenta = Number(value) || 0;
+      }
+    }
+
+    // Si se cambia la cantidad, asegurarse de que sea un número
+    if (field === 'cantidad') {
+      const producto = productoActualizado.find(p => p.id === id);
+      if (producto) {
+        producto.cantidad = Number(value) || 1;
       }
     }
 
@@ -155,8 +177,8 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
 
   const calcularTotal = () => {
     return productos.reduce((total, p) => {
-      const subtotal = p.cantidad * p.precioVenta;
-      const extra = p.precioConceptoExtra || 0;
+      const subtotal = Number(p.cantidad) * Number(p.precioVenta);
+      const extra = Number(p.precioConceptoExtra) || 0;
       return total + subtotal + extra;
     }, 0);
   };
@@ -178,7 +200,8 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[80%]">Producto</TableHead>
+            <TableHead className="w-[60%]">Producto</TableHead>
+            <TableHead className="w-[20%]">Subtotal</TableHead>
             <TableHead className="w-[20%] text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
@@ -243,7 +266,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
                       <Input
                         type="number"
                         min="1"
-                        value={producto.cantidad}
+                        value={producto.cantidad || 1}
                         onChange={(e) =>
                           handleProductoChange(producto.id, 'cantidad', parseInt(e.target.value))
                         }
@@ -256,7 +279,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
                         type="number"
                         min="0"
                         step="0.01"
-                        value={producto.precioVenta}
+                        value={producto.precioVenta || 0}
                         onChange={(e) =>
                           handleProductoChange(producto.id, 'precioVenta', parseFloat(e.target.value))
                         }
@@ -264,6 +287,11 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
                       />
                     </div>
                   </div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="text-sm font-medium">
+                  ${((producto.cantidad || 1) * (producto.precioVenta || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </TableCell>
               <TableCell className="text-right">
@@ -286,7 +314,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
         <div className="text-right">
           <p className="text-sm text-gray-600">Total</p>
           <p className="text-lg font-semibold text-black">
-            ${calcularTotal().toFixed(2)}
+            ${calcularTotal().toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
       </div>

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 export class ChecklistService {
   static async getAll() {
     try {
-      return await prisma.checklistItem.findMany({
+      return await prisma.checklist_items.findMany({
         orderBy: {
           nombre: 'asc'
         }
@@ -16,7 +16,7 @@ export class ChecklistService {
 
   static async getById(id: number) {
     try {
-      const item = await prisma.checklistItem.findUnique({
+      const item = await prisma.checklist_items.findUnique({
         where: { id }
       });
 
@@ -48,11 +48,12 @@ export class ChecklistService {
         throw new Error('Debe seleccionar al menos un tipo de checklist');
       }
 
-      return await prisma.checklistItem.create({
+      return await prisma.checklist_items.create({
         data: {
           ...data,
           nombre: data.nombre.trim(),
-          activo: true
+          activo: true,
+          updatedAt: new Date()
         }
       });
     } catch (error) {
@@ -84,11 +85,12 @@ export class ChecklistService {
         }
       }
 
-      return await prisma.checklistItem.update({
+      return await prisma.checklist_items.update({
         where: { id },
         data: {
           ...data,
-          nombre: data.nombre ? data.nombre.trim() : undefined
+          nombre: data.nombre ? data.nombre.trim() : undefined,
+          updatedAt: new Date()
         }
       });
     } catch (error) {
@@ -102,7 +104,7 @@ export class ChecklistService {
       // Verificar que el item existe
       await this.getById(id);
 
-      return await prisma.checklistItem.delete({
+      return await prisma.checklist_items.delete({
         where: { id }
       });
     } catch (error) {
@@ -113,7 +115,7 @@ export class ChecklistService {
 
   static async getByTipo(tipo: 'diagnostico' | 'reparacion') {
     try {
-      return await prisma.checklistItem.findMany({
+      return await prisma.checklist_items.findMany({
         where: {
           activo: true,
           ...(tipo === 'diagnostico' 

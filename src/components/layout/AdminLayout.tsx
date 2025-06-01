@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { 
   HiAdjustments,
@@ -33,6 +33,7 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayoutProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -80,7 +81,6 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
     { href: '/dashboard', icon: HiChartPie, text: 'Dashboard', active: title === 'Dashboard' },
     { href: '/dashboard/tickets', icon: HiTicket, text: 'Tickets', active: title.includes('Tickets') },
     { href: '/dashboard/clientes', icon: HiUsers, text: 'Clientes', active: title.includes('Clientes') },
-    { href: '/dashboard/dispositivos', icon: HiPhone, text: 'Dispositivos', active: title.includes('Dispositivos') },
     { href: '/dashboard/reportes', icon: HiClipboardCheck, text: 'Reportes', active: title.includes('Reportes') },
   ];
 
@@ -91,13 +91,13 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
   ];
 
   const catalogoLinks = [
-    { href: '/dashboard/catalogo/tipo-servicio', icon: HiTag, text: 'Tipo de Servicio', active: title.includes('Tipo de Servicio') },
-    { href: '/dashboard/catalogo/marcas', icon: HiDeviceMobile, text: 'Marcas de Celulares', active: title.includes('Marcas de Celulares') },
-    { href: '/dashboard/catalogo/modelos', icon: HiPhone, text: 'Modelos de Celulares', active: title.includes('Modelos de Celulares') },
-    { href: '/dashboard/catalogo/status-reparacion', icon: HiClipboardList, text: 'Estados de Reparación', active: title.includes('Estados de Reparación') },
-    { href: '/dashboard/catalogo/proveedores', icon: HiShoppingBag, text: 'Proveedores', active: title.includes('Proveedores') },
-    { href: '/dashboard/catalogo/reparaciones-frecuentes', icon: HiClipboardCheck, text: 'Reparaciones Frecuentes', active: title.includes('Reparaciones Frecuentes') },
-    { href: '/dashboard/catalogo/check-list', icon: HiClipboardCheck, text: 'Checklist de Verificación', active: title.includes('Checklist de Verificación') },
+    { href: '/dashboard/catalogo/tipo-servicio', icon: HiTag, text: 'Tipo de Servicio', active: pathname?.includes('/dashboard/catalogo/tipo-servicio') },
+    { href: '/dashboard/catalogo/marcas', icon: HiDeviceMobile, text: 'Marcas de Celulares', active: pathname?.includes('/dashboard/catalogo/marcas') },
+    { href: '/dashboard/catalogo/modelos', icon: HiPhone, text: 'Modelos de Celulares', active: pathname?.includes('/dashboard/catalogo/modelos') },
+    { href: '/dashboard/catalogo/status-reparacion', icon: HiClipboardList, text: 'Estados de Reparación', active: pathname?.includes('/dashboard/catalogo/status-reparacion') },
+    { href: '/dashboard/catalogo/proveedores', icon: HiShoppingBag, text: 'Proveedores', active: pathname?.includes('/dashboard/catalogo/proveedores') },
+    { href: '/dashboard/catalogo/reparaciones-frecuentes', icon: HiClipboardCheck, text: 'Reparaciones Frecuentes', active: pathname?.includes('/dashboard/catalogo/reparaciones-frecuentes') },
+    { href: '/dashboard/catalogo/check-list', icon: HiClipboardCheck, text: 'Checklist de Verificación', active: pathname?.includes('/dashboard/catalogo/check-list') },
   ];
 
   const inventarioLinks = [
@@ -105,19 +105,19 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
       route: '/dashboard/inventario/catalogo',
       icon: HiShoppingBag,
       text: 'Catálogo',
-      active: title.includes('Catálogo')
+      active: pathname?.includes('/dashboard/inventario/catalogo')
     },
     {
       route: '/dashboard/inventario/stock',
       icon: HiCube,
       text: 'Stock',
-      active: title.includes('Stock')
+      active: pathname?.includes('/dashboard/inventario/stock')
     },
     {
       route: '/dashboard/inventario/minimos',
       icon: HiAdjustments,
       text: 'Inventarios Mínimos',
-      active: title.includes('Inventarios Mínimos')
+      active: pathname?.includes('/dashboard/inventario/minimos')
     }
   ];
 
@@ -126,7 +126,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
       route: '/dashboard/costos/precios-venta',
       icon: HiCurrencyDollar,
       text: 'Precios de Venta',
-      active: title.includes('Precios de Venta')
+      active: pathname?.includes('/dashboard/costos/precios-venta')
     }
   ];
 
@@ -138,13 +138,12 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
       } lg:translate-x-0 lg:static lg:inset-0`}>
         <div className="h-full overflow-y-auto py-4 px-3 bg-white border-r border-gray-200">
           <div className="flex items-center pl-2.5 mb-5">
-            <img src="/logo.png" className="mr-3 h-6 sm:h-7" alt="YAAVS Logo" 
+            <img src="/logo.png" className="mr-3 h-18 sm:h-21" alt="YAAVS Logo" 
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
               }}
             />
-            <span className="self-center text-xl font-semibold whitespace-nowrap">YAAVS</span>
           </div>
           
           <div className="space-y-2">
@@ -155,7 +154,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                   <Link 
                     href={link.href}
                     className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-gray-100 
-                      ${link.active ? 'bg-gray-100 text-[#FEBF19]' : 'text-gray-900'}`}
+                      ${link.active ? 'bg-[#FEBF19]/10 text-[#FEBF19]' : 'text-gray-900'}`}
                   >
                     <link.icon className={`w-6 h-6 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
                     <span className="ml-3">{link.text}</span>
@@ -168,14 +167,16 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                 <button
                   type="button"
                   className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
-                    title.includes('Inventario') && 'bg-gray-100'
+                    title.includes('Inventario') && 'bg-[#FEBF19]/10'
                   }`}
                   onClick={toggleInventario}
                 >
                   <HiShoppingBag className={`w-6 h-6 text-gray-500 transition duration-75 ${
                     title.includes('Inventario') && 'text-[#FEBF19]'
                   }`} />
-                  <span className="flex-1 ml-3 text-left whitespace-nowrap">Inventario</span>
+                  <span className={`flex-1 ml-3 text-left whitespace-nowrap ${
+                    title.includes('Inventario') && 'text-[#FEBF19]'
+                  }`}>Inventario</span>
                   <svg className={`w-5 h-5 ${inventarioOpen ? 'rotate-180' : ''}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
                   </svg>
@@ -186,7 +187,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                       <Link
                         href={link.route}
                         className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
-                          ${link.active ? 'text-[#FEBF19]' : 'text-gray-900'}`}
+                          ${link.active ? 'text-[#FEBF19] bg-[#FEBF19]/10' : 'text-gray-900'}`}
                       >
                         <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
                         {link.text}
@@ -201,14 +202,16 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                 <button
                   type="button"
                   className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
-                    title.includes('Catálogo') && 'bg-gray-100'
+                    title.includes('Catálogo') && 'bg-[#FEBF19]/10'
                   }`}
                   onClick={toggleCatalogo}
                 >
                   <HiCollection className={`w-6 h-6 text-gray-500 transition duration-75 ${
                     title.includes('Catálogo') && 'text-[#FEBF19]'
                   }`} />
-                  <span className="flex-1 ml-3 text-left whitespace-nowrap">Catálogo</span>
+                  <span className={`flex-1 ml-3 text-left whitespace-nowrap ${
+                    title.includes('Catálogo') && 'text-[#FEBF19]'
+                  }`}>Catálogo</span>
                   <svg className={`w-5 h-5 ${catalogoOpen ? 'rotate-180' : ''}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
                   </svg>
@@ -219,7 +222,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                       <Link
                         href={link.href}
                         className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
-                          ${link.active ? 'text-[#FEBF19]' : 'text-gray-900'}`}
+                          ${link.active ? 'text-[#FEBF19] bg-[#FEBF19]/10' : 'text-gray-900'}`}
                       >
                         <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
                         {link.text}
@@ -234,14 +237,16 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                 <button
                   type="button"
                   className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
-                    title.includes('Costos') && 'bg-gray-100'
+                    title.includes('Costos') && 'bg-[#FEBF19]/10'
                   }`}
                   onClick={toggleCostos}
                 >
                   <HiCurrencyDollar className={`w-6 h-6 text-gray-500 transition duration-75 ${
                     title.includes('Costos') && 'text-[#FEBF19]'
                   }`} />
-                  <span className="flex-1 ml-3 text-left whitespace-nowrap">Costos</span>
+                  <span className={`flex-1 ml-3 text-left whitespace-nowrap ${
+                    title.includes('Costos') && 'text-[#FEBF19]'
+                  }`}>Costos</span>
                   <svg className={`w-5 h-5 ${costosOpen ? 'rotate-180' : ''}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
                   </svg>
@@ -252,7 +257,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                       <Link
                         href={link.route}
                         className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
-                          ${link.active ? 'text-[#FEBF19]' : 'text-gray-900'}`}
+                          ${link.active ? 'text-[#FEBF19] bg-[#FEBF19]/10' : 'text-gray-900'}`}
                       >
                         <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
                         {link.text}
@@ -272,7 +277,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                   <Link 
                     href={link.href}
                     className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-gray-100
-                      ${link.active ? 'bg-gray-100 text-[#FEBF19]' : 'text-gray-900'}`}
+                      ${link.active ? 'bg-[#FEBF19]/10 text-[#FEBF19]' : 'text-gray-900'}`}
                   >
                     <link.icon className={`w-6 h-6 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
                     <span className="ml-3">{link.text}</span>
@@ -385,13 +390,12 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
           <div className="fixed inset-y-0 left-0 z-30 w-9/12 max-w-sm bg-white" onClick={e => e.stopPropagation()}>
             <div className="h-full overflow-y-auto p-4">
               <div className="flex items-center mb-5">
-                <img src="/logo.png" className="mr-3 h-7" alt="YAAVS Logo" 
+                <img src="/logo.png" className="mr-3 h-21" alt="YAAVS Logo" 
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                   }}
                 />
-                <span className="self-center text-xl font-semibold">YAAVS</span>
                 <button 
                   className="ml-auto inline-flex items-center p-2 text-gray-500 rounded-lg hover:bg-gray-100"
                   onClick={toggleMobileMenu}
@@ -408,7 +412,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                       <Link 
                         href={link.href}
                         className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-gray-100 
-                          ${link.active ? 'bg-gray-100 text-[#FEBF19]' : 'text-gray-900'}`}
+                          ${link.active ? 'bg-[#FEBF19]/10 text-[#FEBF19]' : 'text-gray-900'}`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <link.icon className={`w-6 h-6 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
@@ -422,14 +426,16 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                     <button
                       type="button"
                       className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
-                        title.includes('Inventario') && 'bg-gray-100'
+                        title.includes('Inventario') && 'bg-[#FEBF19]/10'
                       }`}
                       onClick={toggleInventario}
                     >
                       <HiShoppingBag className={`w-6 h-6 text-gray-500 transition duration-75 ${
                         title.includes('Inventario') && 'text-[#FEBF19]'
                       }`} />
-                      <span className="flex-1 ml-3 text-left whitespace-nowrap">Inventario</span>
+                      <span className={`flex-1 ml-3 text-left whitespace-nowrap ${
+                        title.includes('Inventario') && 'text-[#FEBF19]'
+                      }`}>Inventario</span>
                       <svg className={`w-5 h-5 ${inventarioOpen ? 'rotate-180' : ''}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
                       </svg>
@@ -440,7 +446,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                           <Link
                             href={link.route}
                             className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
-                              ${link.active ? 'text-[#FEBF19]' : 'text-gray-900'}`}
+                              ${link.active ? 'text-[#FEBF19] bg-[#FEBF19]/10' : 'text-gray-900'}`}
                             onClick={() => setMobileMenuOpen(false)}
                           >
                             <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
@@ -456,14 +462,16 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                     <button
                       type="button"
                       className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
-                        title.includes('Catálogo') && 'bg-gray-100'
+                        title.includes('Catálogo') && 'bg-[#FEBF19]/10'
                       }`}
                       onClick={toggleCatalogo}
                     >
                       <HiCollection className={`w-6 h-6 text-gray-500 transition duration-75 ${
                         title.includes('Catálogo') && 'text-[#FEBF19]'
                       }`} />
-                      <span className="flex-1 ml-3 text-left whitespace-nowrap">Catálogo</span>
+                      <span className={`flex-1 ml-3 text-left whitespace-nowrap ${
+                        title.includes('Catálogo') && 'text-[#FEBF19]'
+                      }`}>Catálogo</span>
                       <svg className={`w-5 h-5 ${catalogoOpen ? 'rotate-180' : ''}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
                       </svg>
@@ -474,7 +482,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                           <Link
                             href={link.href}
                             className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
-                              ${link.active ? 'text-[#FEBF19]' : 'text-gray-900'}`}
+                              ${link.active ? 'text-[#FEBF19] bg-[#FEBF19]/10' : 'text-gray-900'}`}
                             onClick={() => setMobileMenuOpen(false)}
                           >
                             <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
@@ -490,14 +498,16 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                     <button
                       type="button"
                       className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
-                        title.includes('Costos') && 'bg-gray-100'
+                        title.includes('Costos') && 'bg-[#FEBF19]/10'
                       }`}
                       onClick={toggleCostos}
                     >
                       <HiCurrencyDollar className={`w-6 h-6 text-gray-500 transition duration-75 ${
                         title.includes('Costos') && 'text-[#FEBF19]'
                       }`} />
-                      <span className="flex-1 ml-3 text-left whitespace-nowrap">Costos</span>
+                      <span className={`flex-1 ml-3 text-left whitespace-nowrap ${
+                        title.includes('Costos') && 'text-[#FEBF19]'
+                      }`}>Costos</span>
                       <svg className={`w-5 h-5 ${costosOpen ? 'rotate-180' : ''}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
                       </svg>
@@ -508,7 +518,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                           <Link
                             href={link.route}
                             className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
-                              ${link.active ? 'text-[#FEBF19]' : 'text-gray-900'}`}
+                              ${link.active ? 'text-[#FEBF19] bg-[#FEBF19]/10' : 'text-gray-900'}`}
                             onClick={() => setMobileMenuOpen(false)}
                           >
                             <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
@@ -529,7 +539,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                       <Link 
                         href={link.href}
                         className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-gray-100
-                          ${link.active ? 'bg-gray-100 text-[#FEBF19]' : 'text-gray-900'}`}
+                          ${link.active ? 'bg-[#FEBF19]/10 text-[#FEBF19]' : 'text-gray-900'}`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <link.icon className={`w-6 h-6 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />

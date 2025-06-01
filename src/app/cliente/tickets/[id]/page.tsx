@@ -39,7 +39,7 @@ interface Ticket {
     fechaCompra: string;
     redCelular: string;
     codigoDesbloqueo: string;
-  };
+  } | null;
   direccion: {
     calle: string;
     numeroExterior: string;
@@ -170,16 +170,16 @@ export default function TicketDetailPage({ params }: { params: { id: string } })
               {ticket.modelo.marca.nombre} {ticket.modelo.nombre}
             </p>
             <p className="text-sm text-gray-600 mt-2">
-              Capacidad: {ticket.dispositivo.capacidad}
+              Capacidad: {ticket.dispositivo?.capacidad}
             </p>
             <p className="text-sm text-gray-600">
-              Color: {ticket.dispositivo.color}
+              Color: {ticket.dispositivo?.color}
             </p>
             <p className="text-sm text-gray-600">
-              Fecha de compra: {new Date(ticket.dispositivo.fechaCompra).toLocaleDateString()}
+              Fecha de compra: {ticket.dispositivo?.fechaCompra ? new Date(ticket.dispositivo.fechaCompra).toLocaleDateString() : 'No disponible'}
             </p>
             <p className="text-sm text-gray-600">
-              Red celular: {ticket.dispositivo.redCelular}
+              Red celular: {ticket.dispositivo?.redCelular}
             </p>
           </CardContent>
         </Card>

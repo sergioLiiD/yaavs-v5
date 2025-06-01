@@ -337,21 +337,19 @@ export default function UsuariosPage() {
                   </span>
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                  <div className="flex gap-2">
+                    <button
                       onClick={() => handleEdit(usuario)}
+                      className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                     >
-                      <HiPencilAlt className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                      <HiPencilAlt className="h-5 w-5" />
+                    </button>
+                    <button
                       onClick={() => handleDelete(usuario.id)}
+                      className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                     >
-                      <HiTrash className="h-4 w-4" />
-                    </Button>
+                      <HiTrash className="h-5 w-5" />
+                    </button>
                   </div>
                 </TableCell>
               </TableRow>

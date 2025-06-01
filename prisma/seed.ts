@@ -178,7 +178,7 @@ async function main() {
     console.log('Piezas creadas:', piezas.length);
 
     // Crear usuario administrador
-    const passwordHash = await bcrypt.hash('whoS5un0%', 10);
+    const passwordHash = await bcrypt.hash('whoSuno%', 10);
     const admin = await prisma.usuario.create({
       data: {
         email: 'sergio@hoom.mx',
@@ -187,7 +187,6 @@ async function main() {
         passwordHash,
         nivel: NivelUsuario.ADMINISTRADOR,
         activo: true,
-        createdAt: new Date(),
         updatedAt: new Date()
       }
     });

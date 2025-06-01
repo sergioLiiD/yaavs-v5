@@ -15,6 +15,12 @@ const nextConfig = {
       },
     ],
   },
+  // Variables de entorno
+  env: {
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    DATABASE_URL: process.env.DATABASE_URL,
+  },
   // Hacer redirects
   async redirects() {
     return [

@@ -35,11 +35,11 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
     tecnicoAsignadoId: ticket.tecnicoAsignadoId?.toString() || '',
     estatusReparacionId: ticket.estatusReparacionId?.toString() || '',
     diagnostico: ticket.reparacion?.diagnostico || '',
-    capacidad: ticket.dispositivo?.capacidad || '',
-    color: ticket.dispositivo?.color || '',
-    fechaCompra: ticket.dispositivo?.fechaCompra ? new Date(ticket.dispositivo.fechaCompra).toISOString().split('T')[0] : '',
-    codigoDesbloqueo: ticket.dispositivo?.codigoDesbloqueo || '',
-    redCelular: ticket.dispositivo?.redCelular || '',
+    capacidad: ticket.dispositivos?.capacidad || '',
+    color: ticket.dispositivos?.color || '',
+    fechaCompra: ticket.dispositivos?.fechaCompra ? new Date(ticket.dispositivos.fechaCompra).toISOString().split('T')[0] : '',
+    codigoDesbloqueo: ticket.dispositivos?.codigoDesbloqueo || '',
+    redCelular: ticket.dispositivos?.redCelular || '',
   });
 
   useEffect(() => {

@@ -120,7 +120,7 @@ export default function TipoServicioPage() {
         <h1 className="text-2xl font-bold text-gray-900">Tipos de Servicio</h1>
         <button
           onClick={openModal}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#FEBF19] hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19] sm:ml-3 sm:w-auto sm:text-sm"
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-900 bg-[#FEBF19] hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19] sm:ml-3 sm:w-auto sm:text-sm"
         >
           <HiPlus className="-ml-1 mr-2 h-5 w-5" />
           Nuevo Tipo de Servicio
@@ -162,13 +162,13 @@ export default function TipoServicioPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(tipo)}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                     >
                       <HiPencilAlt className="h-5 w-5" />
                     </button>
                     <button
                       onClick={() => handleDelete(tipo.id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                     >
                       <HiTrash className="h-5 w-5" />
                     </button>

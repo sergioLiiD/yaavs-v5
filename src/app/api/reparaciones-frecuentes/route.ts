@@ -3,31 +3,31 @@ import prisma from "@/lib/db/prisma"
 
 export async function GET() {
   try {
-    const reparaciones = await prisma.reparacionFrecuente.findMany({
+    const reparaciones = await prisma.reparaciones_frecuentes.findMany({
       include: {
-        pasos: {
-          orderBy: {
-            orden: "asc"
+        productos_reparacion_frecuente: {
+          include: {
+            productos: true
           }
         },
-        productos: {
-          include: {
-            producto: true
+        pasos_reparacion_frecuente: {
+          orderBy: {
+            orden: "asc"
           }
         }
       },
       orderBy: {
-        createdAt: "desc"
+        createdAt: 'desc'
       }
-    })
+    });
 
-    return NextResponse.json(reparaciones)
+    return NextResponse.json(reparaciones);
   } catch (error) {
-    console.error("Error al obtener reparaciones frecuentes:", error)
+    console.error('Error al obtener reparaciones frecuentes:', error);
     return NextResponse.json(
-      { error: "Error al obtener reparaciones frecuentes" },
+      { error: 'Error al obtener reparaciones frecuentes' },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -96,18 +96,21 @@ export async function POST(request: Request) {
       }
     }
 
-    const reparacion = await prisma.reparacionFrecuente.create({
+    const now = new Date()
+    const reparacion = await prisma.reparaciones_frecuentes.create({
       data: {
         nombre,
         descripcion,
         activo: activo ?? true,
-        pasos: {
+        updatedAt: now,
+        pasos_reparacion_frecuente: {
           create: pasos.map((paso: { descripcion: string; orden: number }) => ({
             descripcion: paso.descripcion,
-            orden: paso.orden
+            orden: paso.orden,
+            updatedAt: now
           }))
         },
-        productos: {
+        productos_reparacion_frecuente: {
           create: productos.map((producto: {
             productoId: number;
             cantidad: number;
@@ -119,19 +122,20 @@ export async function POST(request: Request) {
             cantidad: producto.cantidad,
             precioVenta: producto.precioVenta,
             conceptoExtra: producto.conceptoExtra,
-            precioConceptoExtra: producto.precioConceptoExtra
+            precioConceptoExtra: producto.precioConceptoExtra,
+            updatedAt: now
           }))
         }
       },
       include: {
-        pasos: {
+        pasos_reparacion_frecuente: {
           orderBy: {
             orden: "asc"
           }
         },
-        productos: {
+        productos_reparacion_frecuente: {
           include: {
-            producto: true
+            productos: true
           }
         }
       }

@@ -45,6 +45,19 @@ export default function ClientesPage() {
     telefonoCelular: '',
     telefonoContacto: '',
     email: '',
+    rfc: '',
+    calle: '',
+    numeroExterior: '',
+    numeroInterior: '',
+    colonia: '',
+    ciudad: '',
+    estado: '',
+    codigoPostal: '',
+    latitud: undefined,
+    longitud: undefined,
+    fuenteReferencia: '',
+    activo: true,
+    tipoRegistro: 'REGISTRO_TIENDA'
   });
   const [isEditing, setIsEditing] = useState(false);
   const [expandedClientes, setExpandedClientes] = useState<number[]>([]);
@@ -80,6 +93,19 @@ export default function ClientesPage() {
       telefonoCelular: '',
       telefonoContacto: '',
       email: '',
+      rfc: '',
+      calle: '',
+      numeroExterior: '',
+      numeroInterior: '',
+      colonia: '',
+      ciudad: '',
+      estado: '',
+      codigoPostal: '',
+      latitud: undefined,
+      longitud: undefined,
+      fuenteReferencia: '',
+      activo: true,
+      tipoRegistro: 'REGISTRO_TIENDA'
     });
     setIsEditing(false);
   };
@@ -255,24 +281,26 @@ export default function ClientesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => toggleCliente(cliente.id)}
-                        className="text-gray-500 hover:text-gray-700 mr-4 text-xs"
-                      >
-                        {expandedClientes.includes(cliente.id) ? '▼' : '▶'}
-                      </button>
-                      <button
-                        onClick={() => handleEdit(cliente)}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(cliente.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Eliminar
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => toggleCliente(cliente.id)}
+                          className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
+                        >
+                          {expandedClientes.includes(cliente.id) ? '▼' : '▶'}
+                        </button>
+                        <button
+                          onClick={() => handleEdit(cliente)}
+                          className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
+                        >
+                          <HiPencilAlt className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(cliente.id)}
+                          className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
+                        >
+                          <HiTrash className="h-5 w-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   {expandedClientes.includes(cliente.id) && (
