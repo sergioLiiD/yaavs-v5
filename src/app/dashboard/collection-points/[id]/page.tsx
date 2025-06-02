@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import CollectionPointDetails from '@/components/collection-points/CollectionPointDetails';
 import { CollectionPoint } from '@/types/collection-point';
+import CollectionPointDetails from '@/components/collection-points/CollectionPointDetails';
 
-export default function CollectionPointPage() {
-  const params = useParams();
-  const id = params.id as string;
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default function CollectionPointPage({ params }: PageProps) {
   const [collectionPoint, setCollectionPoint] = useState<CollectionPoint | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,40 +18,34 @@ export default function CollectionPointPage() {
   useEffect(() => {
     const fetchCollectionPoint = async () => {
       try {
-        setLoading(true);
-        const response = await fetch(`/api/puntos-recoleccion/${id}`);
-        if (!response.ok) {
-          throw new Error('Error al cargar el punto de recolección');
-        }
+        const response = await fetch(`/api/puntos-recoleccion/${params.id}`);
+        if (!response.ok) throw new Error('Error al cargar el punto de recolección');
         const data = await response.json();
         setCollectionPoint(data);
-        setError(null);
       } catch (error) {
-        console.error('Error:', error);
         setError('Error al cargar el punto de recolección');
+        console.error('Error:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCollectionPoint();
-  }, [id]);
+  }, [params.id]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-500">Cargando punto de recolección...</p>
-      </div>
-    );
+    return <div className="text-center py-4">Cargando...</div>;
   }
 
   if (error || !collectionPoint) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-red-500">{error || 'No se encontró el punto de recolección'}</p>
-      </div>
-    );
+    return <div className="text-red-600 text-center py-4">{error || 'Punto de recolección no encontrado'}</div>;
   }
 
-  return <CollectionPointDetails collectionPoint={collectionPoint} />;
+  return (
+    <div className="space-y-8">
+      <div className="bg-white shadow rounded-lg p-6">
+        <CollectionPointDetails collectionPoint={collectionPoint} />
+      </div>
+    </div>
+  );
 } 

@@ -661,3 +661,38 @@ enum TipoProducto {
   PRODUCTO
   SERVICIO
 }
+
+model User {
+  id               String           @id @default(cuid())
+  name             String
+  email            String           @unique
+  password         String
+  role             String           // 'admin', 'operator', 'technician'
+  collectionPoint  CollectionPoint  @relation(fields: [collectionPointId], references: [id])
+  collectionPointId String
+  isActive         Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([collectionPointId])
+}
+
+model CollectionPoint {
+  id               String           @id @default(cuid())
+  name             String
+  phone            String
+  email            String
+  url              String?
+  isHeadquarters   Boolean          @default(false)
+  isRepairPoint    Boolean          @default(false)
+  location         Json
+  schedule         Json
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  users            User[]
+  parent           CollectionPoint? @relation("BranchToHeadquarters", fields: [parentId], references: [id])
+  parentId         String?
+  branches         CollectionPoint[] @relation("BranchToHeadquarters")
+
+  @@index([parentId])
+}
