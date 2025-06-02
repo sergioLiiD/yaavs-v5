@@ -562,18 +562,21 @@ model providers {
 }
 
 model puntos_recoleccion {
-  id                          String                        @id
-  nombreComercial             String
-  nombreResponsable           String
-  apellidoPaterno             String
-  apellidoMaterno             String?
-  telefono                    String
-  celular                     String?
-  email                       String                        @unique
-  urlNegocio                  String?
-  activo                      Boolean                       @default(true)
-  createdAt                   DateTime                      @default(now())
-  updatedAt                   DateTime
+  id            String                        @id @default(uuid())
+  name          String
+  phone         String
+  email         String                        @unique
+  url           String?
+  schedule      Json                          // Almacenará el array de horarios
+  location      Json                          // Almacenará la ubicación (address, latitude, longitude)
+  isHeadquarters Boolean                      @default(false)
+  isRepairPoint Boolean                       @default(false)
+  parentId      String?                       // ID del punto principal si es sucursal
+  parent        puntos_recoleccion?           @relation("BranchToHeadquarters", fields: [parentId], references: [id])
+  branches      puntos_recoleccion[]          @relation("BranchToHeadquarters")
+  activo        Boolean                       @default(true)
+  createdAt     DateTime                      @default(now())
+  updatedAt     DateTime                      @updatedAt
   usuarios_puntos_recoleccion usuarios_puntos_recoleccion[]
 }
 

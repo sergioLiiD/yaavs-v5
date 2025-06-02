@@ -22,7 +22,8 @@ import {
   HiDeviceMobile,
   HiClipboardList,
   HiCube,
-  HiCurrencyDollar
+  HiCurrencyDollar,
+  HiLocationMarker
 } from 'react-icons/hi';
 import Link from 'next/link';
 
@@ -78,10 +79,11 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
 
   // Lista de enlaces del sidebar
   const sidebarLinks = [
-    { href: '/dashboard', icon: HiChartPie, text: 'Dashboard', active: title === 'Dashboard' },
-    { href: '/dashboard/tickets', icon: HiTicket, text: 'Tickets', active: title.includes('Tickets') },
-    { href: '/dashboard/clientes', icon: HiUsers, text: 'Clientes', active: title.includes('Clientes') },
-    { href: '/dashboard/reportes', icon: HiClipboardCheck, text: 'Reportes', active: title.includes('Reportes') },
+    { href: '/dashboard', icon: HiChartPie, text: 'Dashboard', active: pathname === '/dashboard' },
+    { href: '/dashboard/tickets', icon: HiTicket, text: 'Tickets', active: pathname?.includes('/dashboard/tickets') },
+    { href: '/dashboard/clientes', icon: HiUsers, text: 'Clientes', active: pathname?.includes('/dashboard/clientes') },
+    { href: '/dashboard/reportes', icon: HiClipboardCheck, text: 'Reportes', active: pathname?.includes('/dashboard/reportes') },
+    { href: '/dashboard/collection-points', icon: HiLocationMarker, text: 'Puntos de Recolección', active: pathname?.includes('/dashboard/collection-points') },
   ];
 
   const configLinks = [

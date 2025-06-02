@@ -260,6 +260,95 @@ const tickets = await prisma.ticket.findMany({
 
 **Nota**: Este error es común cuando se agrega un campo de ID para una relación pero se olvida definir la relación en el esquema de Prisma. Siempre asegurarse de definir ambas partes de la relación: el campo de ID y la relación en sí.
 
+### Caso 6: Modelo de Puntos de Recolección (2024-06-02)
+**Problema**: Necesidad de manejar puntos de recolección con sucursales y puntos de reparación.
+**Solución**: 
+- Se creó el modelo `puntos_recoleccion` con soporte para:
+  - Puntos principales y sucursales
+  - Horarios en formato JSON
+  - Ubicación con coordenadas
+  - Puntos de reparación
+  - Relaciones jerárquicas entre puntos
+
+```prisma
+model puntos_recoleccion {
+  id            String                        @id @default(uuid())
+  name          String
+  phone         String
+  email         String                        @unique
+  url           String?
+  schedule      Json                          // Array de horarios
+  location      Json                          // {address, latitude, longitude}
+  isHeadquarters Boolean                      @default(false)
+  isRepairPoint Boolean                       @default(false)
+  parentId      String?                       // ID del punto principal
+  parent        puntos_recoleccion?           @relation("BranchToHeadquarters", fields: [parentId], references: [id])
+  branches      puntos_recoleccion[]          @relation("BranchToHeadquarters")
+  activo        Boolean                       @default(true)
+  createdAt     DateTime                      @default(now())
+  updatedAt     DateTime                      @updatedAt
+  usuarios_puntos_recoleccion usuarios_puntos_recoleccion[]
+}
+```
+
+**Código que NO funciona**:
+```typescript
+// En el frontend
+interface CollectionPoint {
+  location: string;  // ❌ Incorrecto
+  schedule: string;  // ❌ Incorrecto
+}
+
+// En el backend
+const punto = await prisma.puntos_recoleccion.create({
+  data: {
+    location: "Av. Reforma 123",  // ❌ Error: Expected JSON
+    schedule: "9:00-18:00"        // ❌ Error: Expected JSON
+  }
+});
+```
+
+**Código que SÍ funciona**:
+```typescript
+// En el frontend
+interface CollectionPoint {
+  location: {
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+  schedule: Array<{
+    day: string;
+    openTime: string;
+    closeTime: string;
+  }>;
+}
+
+// En el backend
+const punto = await prisma.puntos_recoleccion.create({
+  data: {
+    location: {
+      address: "Av. Reforma 123",
+      latitude: 19.4326,
+      longitude: -99.1332
+    },
+    schedule: [
+      {
+        day: "Lunes",
+        openTime: "09:00",
+        closeTime: "18:00"
+      }
+    ]
+  }
+});
+```
+
+**Notas importantes**:
+1. Los campos `schedule` y `location` son de tipo `Json` en Prisma, por lo que deben enviarse como objetos JavaScript
+2. La relación `BranchToHeadquarters` permite crear una jerarquía de puntos
+3. El campo `isRepairPoint` indica si el punto realiza reparaciones
+4. Los usuarios se asocian a través de la tabla `usuarios_puntos_recoleccion`
+
 ## Actualizaciones
 
 Este documento debe actualizarse cada vez que:
