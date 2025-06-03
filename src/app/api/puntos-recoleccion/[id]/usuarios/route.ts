@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hash } from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
 
 // GET /api/puntos-recoleccion/[id]/usuarios
 export async function GET(
@@ -8,6 +9,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('Obteniendo usuarios para el punto:', params.id);
+    
     const users = await prisma.usuarios_puntos_recoleccion.findMany({
       where: {
         puntoRecoleccionId: params.id,
@@ -19,10 +22,14 @@ export async function GET(
             nombre: true,
             email: true,
             nivel: true,
+            apellidoPaterno: true,
+            apellidoMaterno: true,
           },
         },
       },
     });
+
+    console.log('Usuarios encontrados:', JSON.stringify(users, null, 2));
 
     return NextResponse.json(users);
   } catch (error) {
@@ -43,10 +50,9 @@ export async function POST(
     const body = await request.json();
     const { email, password, nombre, apellidoPaterno, apellidoMaterno, nivel } = body;
 
-    // Verificar si el punto de recolección existe y es un punto de reparación
+    // Verificar si el punto de recolección existe
     const collectionPoint = await prisma.puntos_recoleccion.findUnique({
       where: { id: params.id },
-      select: { isRepairPoint: true },
     });
 
     if (!collectionPoint) {
@@ -56,15 +62,8 @@ export async function POST(
       );
     }
 
-    if (!collectionPoint.isRepairPoint) {
-      return NextResponse.json(
-        { error: 'Este punto no es un punto de reparación' },
-        { status: 400 }
-      );
-    }
-
     // Verificar si ya existe un usuario con ese email
-    const existingUser = await prisma.Usuario.findUnique({
+    const existingUser = await prisma.usuario.findUnique({
       where: { email },
     });
 
@@ -77,24 +76,29 @@ export async function POST(
 
     // Crear el usuario
     const hashedPassword = await hash(password, 12);
-    const usuario = await prisma.Usuario.create({
+    const usuario = await prisma.usuario.create({
       data: {
         email,
         nombre: `${nombre} ${apellidoPaterno} ${apellidoMaterno}`.trim(),
+        apellidoPaterno,
+        apellidoMaterno,
         passwordHash: hashedPassword,
         nivel: 'TECNICO',
         activo: true,
+        updatedAt: new Date(),
       },
     });
 
     // Asignar el usuario al punto de recolección
     const userPoint = await prisma.usuarios_puntos_recoleccion.create({
       data: {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         puntoRecoleccionId: params.id,
         usuarioId: usuario.id,
         nivel: nivel as 'ADMINISTRADOR' | 'OPERADOR',
         activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       include: {
         Usuario: {

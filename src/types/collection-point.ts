@@ -15,9 +15,9 @@ export interface DaySchedule {
 }
 
 export interface Location {
+  lat: number;
+  lng: number;
   address: string;
-  latitude: number;
-  longitude: number;
 }
 
 export interface CollectionPoint {

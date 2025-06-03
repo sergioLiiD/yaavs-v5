@@ -1,11 +1,24 @@
 'use client';
 
 import { CollectionPoint } from '@/types/collection-point';
-import Map from './Map';
+import dynamic from 'next/dynamic';
 import { ArrowLeftIcon, MapPinIcon, PhoneIcon, EnvelopeIcon, ClockIcon, BuildingOfficeIcon, UserGroupIcon, ArrowsPointingOutIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import RepairPointUsers from './RepairPointUsers';
+
+// Importar el mapa dinámicamente con opciones específicas
+const DynamicMap = dynamic(
+  () => import('@/components/collection-points/Map'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center">
+        <p className="text-gray-500">Cargando mapa...</p>
+      </div>
+    ),
+  }
+);
 
 const DAYS_OF_WEEK = {
   monday: 'Lunes',
@@ -36,6 +49,7 @@ export default function CollectionPointDetails({ collectionPoint }: CollectionPo
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [parentName, setParentName] = useState<string>('');
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const fetchParentName = async () => {
@@ -158,19 +172,21 @@ export default function CollectionPointDetails({ collectionPoint }: CollectionPo
 
           <div className="mt-6">
             <div className="relative">
-              <div className={`h-48 rounded-lg overflow-hidden transition-all duration-300 ${isMapExpanded ? 'h-96' : ''}`} style={{ zIndex: 0 }}>
-                <Map
-                  selectedLocation={collectionPoint.location}
-                  onLocationSelect={() => {}}
-                />
-              </div>
               <button
                 onClick={() => setIsMapExpanded(!isMapExpanded)}
-                className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19]"
-                style={{ zIndex: 1 }}
+                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19]"
               >
-                <ArrowsPointingOutIcon className="h-5 w-5 text-gray-600" />
+                <MapPinIcon className="h-5 w-5 mr-2 text-gray-400" />
+                {isMapExpanded ? 'Ocultar Mapa' : 'Ver Ubicación en el Mapa'}
               </button>
+              
+              {isMapExpanded && (
+                <div className="mt-4 h-96 rounded-lg overflow-hidden">
+                  <DynamicMap
+                    selectedLocation={collectionPoint.location}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -193,7 +209,15 @@ export default function CollectionPointDetails({ collectionPoint }: CollectionPo
                     collectionPointId={collectionPoint.id}
                     isRepairPoint={collectionPoint.isRepairPoint}
                     showModal={showUserModal}
-                    onCloseModal={() => setShowUserModal(false)}
+                    onCloseModal={() => {
+                      setShowUserModal(false);
+                      setIsEditing(false);
+                    }}
+                    isEditing={isEditing}
+                    onEditStart={() => {
+                      setShowUserModal(true);
+                      setIsEditing(true);
+                    }}
                   />
                 </div>
               </div>

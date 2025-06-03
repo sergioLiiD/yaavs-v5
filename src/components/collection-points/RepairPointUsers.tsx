@@ -9,11 +9,13 @@ interface RepairPointUser {
   usuarioId: number;
   nivel: 'ADMINISTRADOR' | 'OPERADOR';
   activo: boolean;
-  usuario: {
+  Usuario: {
     id: number;
     nombre: string;
     email: string;
     nivel: string;
+    apellidoPaterno: string;
+    apellidoMaterno: string;
   };
 }
 
@@ -22,6 +24,8 @@ interface RepairPointUsersProps {
   isRepairPoint: boolean;
   showModal: boolean;
   onCloseModal: () => void;
+  isEditing: boolean;
+  onEditStart: () => void;
 }
 
 const ROLES = [
@@ -29,7 +33,7 @@ const ROLES = [
   { value: 'OPERADOR', label: 'Operador' },
 ];
 
-export default function RepairPointUsers({ collectionPointId, isRepairPoint, showModal, onCloseModal }: RepairPointUsersProps) {
+export default function RepairPointUsers({ collectionPointId, isRepairPoint, showModal, onCloseModal, isEditing, onEditStart }: RepairPointUsersProps) {
   const [users, setUsers] = useState<RepairPointUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,18 +48,23 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
   });
 
   useEffect(() => {
-    fetchUsers();
+    if (collectionPointId) {
+      fetchUsers();
+    }
   }, [collectionPointId]);
 
   const fetchUsers = async () => {
     try {
+      setLoading(true);
       const response = await fetch(`/api/puntos-recoleccion/${collectionPointId}/usuarios`);
       if (!response.ok) throw new Error('Error al cargar usuarios');
       const data = await response.json();
-      setUsers(data);
+      console.log('Datos de usuarios recibidos:', JSON.stringify(data, null, 2));
+      setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
       setError('Error al cargar los usuarios');
       console.error('Error:', error);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -99,13 +108,14 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
   const handleEdit = (user: RepairPointUser) => {
     setEditingUser(user);
     setFormData({
-      email: user.usuario.email,
-      nombre: user.usuario.nombre,
-      apellidoPaterno: user.usuario.nombre.split(' ')[0] || '',
-      apellidoMaterno: user.usuario.nombre.split(' ')[1] || '',
+      email: user.Usuario.email,
+      nombre: user.Usuario.nombre.split(' ')[0] || '',
+      apellidoPaterno: user.Usuario.apellidoPaterno || '',
+      apellidoMaterno: user.Usuario.apellidoMaterno || '',
       nivel: user.nivel,
       password: '',
     });
+    onEditStart();
   };
 
   const handleDelete = async (userId: string) => {
@@ -151,39 +161,44 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{user.usuario.nombre}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500">
-                    {ROLES.find(r => r.value === user.nivel)?.label}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => handleEdit(user)}
-                    className="text-[#FEBF19] hover:text-[#FEBF19]/90 mr-4"
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(user.id)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {users.map((user) => {
+              console.log('Renderizando usuario:', user);
+              return (
+                <tr key={user.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {user.Usuario ? `${user.Usuario.nombre} ${user.Usuario.apellidoPaterno} ${user.Usuario.apellidoMaterno}`.trim() : 'Sin nombre'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">
+                      {ROLES.find(r => r.value === user.nivel)?.label || 'Sin rol'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleEdit(user)}
+                      className="text-[#FEBF19] hover:text-[#FEBF19]/90 mr-4"
+                    >
+                      <PencilIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(user.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-[9999] isolate">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full relative z-[9999]">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               {editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
             </h3>
@@ -196,7 +211,7 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
                   type="text"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="mt-1 block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] focus:ring-2 text-black outline-none"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
                   required
                 />
               </div>
@@ -208,7 +223,7 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
                   type="text"
                   value={formData.apellidoPaterno}
                   onChange={(e) => setFormData({ ...formData, apellidoPaterno: e.target.value })}
-                  className="mt-1 block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] focus:ring-2 text-black outline-none"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
                   required
                 />
               </div>
@@ -220,7 +235,7 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
                   type="text"
                   value={formData.apellidoMaterno}
                   onChange={(e) => setFormData({ ...formData, apellidoMaterno: e.target.value })}
-                  className="mt-1 block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] focus:ring-2 text-black outline-none"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
                 />
               </div>
               <div>
@@ -231,7 +246,7 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="mt-1 block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] focus:ring-2 text-black outline-none"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
                   required
                 />
               </div>
@@ -242,7 +257,7 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
                 <select
                   value={formData.nivel}
                   onChange={(e) => setFormData({ ...formData, nivel: e.target.value as 'OPERADOR' | 'ADMINISTRADOR' })}
-                  className="mt-1 block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] focus:ring-2 text-black outline-none"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
                   required
                 >
                   {ROLES.map((role) => (
@@ -261,7 +276,7 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="mt-1 block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] focus:ring-2 text-black outline-none"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
                     required
                   />
                 </div>
