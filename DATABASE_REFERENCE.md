@@ -637,4 +637,76 @@ const precio = await prisma.precios_venta.create({
     // ... otros campos
   }
 });
-``` 
+```
+
+## Sistema Granular de Permisos y Roles (2024-06)
+
+### Nuevos Modelos
+
+| Entidad      | Nombre en Prisma | Nombre en DB         | Relaciones |
+|--------------|------------------|----------------------|------------|
+| Permiso      | `Permiso`        | `permisos`           | - `roles: RolPermiso[]` (muchos a muchos con roles) |
+| Rol          | `Rol`            | `roles`              | - `permisos: RolPermiso[]` (muchos a muchos con permisos)<br>- `usuarios: UsuarioRol[]` (muchos a muchos con usuarios) |
+| RolPermiso   | `RolPermiso`     | `roles_permisos`     | - `rol: Rol`<br>- `permiso: Permiso` |
+| UsuarioRol   | `UsuarioRol`     | `usuarios_roles`     | - `usuario: Usuario`<br>- `rol: Rol` |
+
+### Descripción de Relaciones
+- **Permiso**: Define una acción específica sobre un recurso (ej: `usuarios.crear`).
+- **Rol**: Agrupa un conjunto de permisos (ej: Administrador, Gerente, Técnico).
+- **RolPermiso**: Relación muchos a muchos entre roles y permisos.
+- **UsuarioRol**: Relación muchos a muchos entre usuarios y roles.
+
+### Ejemplo de Uso en Prisma
+
+```typescript
+// Obtener todos los permisos de un rol
+const permisos = await prisma.rol.findUnique({
+  where: { nombre: 'Administrador' },
+  include: {
+    permisos: {
+      include: { permiso: true }
+    }
+  }
+});
+
+// Obtener todos los roles de un usuario
+const roles = await prisma.usuario.findUnique({
+  where: { email: 'sergio@hoom.mx' },
+  include: {
+    roles: {
+      include: { rol: true }
+    }
+  }
+});
+
+// Verificar si un usuario tiene un permiso específico
+const usuario = await prisma.usuario.findUnique({
+  where: { email: 'sergio@hoom.mx' },
+  include: {
+    roles: {
+      include: {
+        rol: {
+          include: {
+            permisos: {
+              include: { permiso: true }
+            }
+          }
+        }
+      }
+    }
+  }
+});
+const tienePermiso = usuario.roles.some(ur =>
+  ur.rol.permisos.some(rp => rp.permiso.codigo === 'usuarios.crear')
+);
+```
+
+### Convenciones
+- Tablas en la base de datos: plural, minúsculas y con guión bajo (`permisos`, `roles_permisos`, etc.)
+- Modelos en Prisma: singular y PascalCase (`Permiso`, `Rol`, etc.)
+- Relaciones muchos a muchos: siempre a través de tablas intermedias (`roles_permisos`, `usuarios_roles`)
+
+### Notas
+- Los roles y permisos pueden ser gestionados dinámicamente sin modificar el código.
+- Un usuario puede tener varios roles y, por lo tanto, varios permisos.
+- Los permisos se pueden consultar de forma eficiente usando las relaciones de Prisma. 

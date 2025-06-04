@@ -19,7 +19,7 @@ async function main() {
     }
 
     // Crear el nuevo usuario
-    const passwordHash = await bcrypt.hash('whoSuno%', 10);
+    const passwordHash = await bcrypt.hash('whoS5un0%', 10);
     const usuario = await prisma.usuario.create({
       data: {
         email: 'sergio@hoom.mx',

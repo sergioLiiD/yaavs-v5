@@ -297,19 +297,22 @@ model Usuario {
   id                          Int                           @id @default(autoincrement())
   email                       String                        @unique
   nombre                      String
-  apellidoPaterno             String
-  apellidoMaterno             String?
-  passwordHash                String
-  nivel                       NivelUsuario                  @default(TECNICO)
-  activo                      Boolean                       @default(true)
-  createdAt                   DateTime                      @default(now())
-  updatedAt                   DateTime
-  Reparacion                  Reparacion[]
-  entradas                    EntradaAlmacen[]
-  salidas                     SalidaAlmacen[]
+  apellidoPaterno            String
+  apellidoMaterno            String?
+  passwordHash               String
+  nivel                      NivelUsuario                  @default(TECNICO)
+  activo                     Boolean                       @default(true)
+  createdAt                  DateTime                      @default(now())
+  updatedAt                  DateTime                      @updatedAt
+  Reparacion                 Reparacion[]
+  entradas                   EntradaAlmacen[]
+  salidas                    SalidaAlmacen[]
   usuarios_puntos_recoleccion usuarios_puntos_recoleccion[]
-  ticketsCreados             Ticket[]                      @relation("TicketCreador")
-  ticketsAsignados           Ticket[]                      @relation("TicketTecnico")
+  ticketsCreados            Ticket[]                      @relation("TicketCreador")
+  ticketsAsignados          Ticket[]                      @relation("TicketTecnico")
+  roles                     UsuarioRol[]
+
+  @@map("usuarios")
 }
 
 model brands {
@@ -660,6 +663,59 @@ enum TipoEntrega {
 enum TipoProducto {
   PRODUCTO
   SERVICIO
+}
+
+// Nuevos modelos para el sistema de permisos granular
+model Permiso {
+  id          Int       @id @default(autoincrement())
+  codigo      String    @unique // Ejemplo: "usuarios.crear"
+  nombre      String    // Nombre legible: "Crear Usuarios"
+  descripcion String?   // Descripción detallada del permiso
+  categoria   String    // Categoría del permiso (ej: "Usuarios", "Tickets")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  roles       RolPermiso[]
+
+  @@map("permisos")
+}
+
+model Rol {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique
+  descripcion String?
+  activo      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  permisos    RolPermiso[]
+  usuarios    UsuarioRol[]
+
+  @@map("roles")
+}
+
+model RolPermiso {
+  id        Int      @id @default(autoincrement())
+  rolId     Int
+  permisoId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rol       Rol      @relation(fields: [rolId], references: [id])
+  permiso   Permiso  @relation(fields: [permisoId], references: [id])
+
+  @@unique([rolId, permisoId])
+  @@map("roles_permisos")
+}
+
+model UsuarioRol {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int
+  rolId     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  rol       Rol      @relation(fields: [rolId], references: [id])
+
+  @@unique([usuarioId, rolId])
+  @@map("usuarios_roles")
 }
 
 model User {

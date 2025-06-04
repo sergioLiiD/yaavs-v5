@@ -47,6 +47,14 @@ interface Producto {
   stockMaximo: number;
   stockMinimo: number;
   categoriaId?: number;
+  marcas?: {
+    id: number;
+    nombre: string;
+  };
+  Modelo?: {
+    id: number;
+    nombre: string;
+  };
 }
 
 interface TipoServicio {
@@ -491,10 +499,10 @@ export default function CatalogoPage() {
                       {producto.nombre}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {producto.marca?.nombre || '-'}
+                      {producto.marcas?.nombre || '-'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {producto.modelo?.nombre || '-'}
+                      {producto.Modelo?.nombre || '-'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <button
