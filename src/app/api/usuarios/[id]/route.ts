@@ -3,12 +3,16 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { UsuarioService } from '@/services/usuarioService';
 import { UpdateUsuarioDTO, NivelUsuario } from '@/types/usuario';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 interface RouteParams {
   params: {
     id: string;
   };
 }
+
+const prisma = new PrismaClient();
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
@@ -88,14 +92,43 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 
     // Preparar los datos de actualización
-    const updateData = {
-      ...data,
-      activo: data.activo !== undefined ? data.activo : existingUser.activo
+    const updateData: any = {
+      nombre: data.nombre,
+      apellidoPaterno: data.apellidoPaterno,
+      apellidoMaterno: data.apellidoMaterno,
+      email: data.email,
+      nivel: data.nivel,
+      activo: data.activo !== undefined ? data.activo : existingUser.activo,
     };
 
-    console.log('Datos a actualizar:', updateData);
+    // Si se proporciona una nueva contraseña, hashearla
+    if (data.password) {
+      const salt = await bcrypt.genSalt(10);
+      updateData.passwordHash = await bcrypt.hash(data.password, salt);
+    }
 
-    const updatedUser = await UsuarioService.update(id, updateData as UpdateUsuarioDTO);
+    // Actualizar usuario y roles
+    const updatedUser = await prisma.usuario.update({
+      where: { id },
+      data: {
+        ...updateData,
+        roles: data.roles ? {
+          deleteMany: {},
+          create: data.roles.map((rolId: number) => ({
+            rol: {
+              connect: { id: rolId }
+            }
+          }))
+        } : undefined
+      },
+      include: {
+        roles: {
+          include: {
+            rol: true
+          }
+        }
+      }
+    });
     console.log('Usuario actualizado:', updatedUser);
     
     return NextResponse.json(updatedUser);
@@ -143,7 +176,15 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       );
     }
 
-    await UsuarioService.delete(id);
+    // Eliminar el usuario usando el servicio
+    const deleted = await UsuarioService.delete(id);
+    if (!deleted) {
+      return NextResponse.json(
+        { error: 'Error al eliminar el usuario' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({ message: 'Usuario eliminado correctamente' });
   } catch (error) {
     console.error('Error al eliminar usuario:', error);

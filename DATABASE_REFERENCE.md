@@ -639,74 +639,61 @@ const precio = await prisma.precios_venta.create({
 });
 ```
 
-## Sistema Granular de Permisos y Roles (2024-06)
+## Convención de uso de Prisma Client (2024-06-05)
 
-### Nuevos Modelos
+- **IMPORTANTE:** Aunque las tablas en la base de datos están mapeadas en plural (ej: `roles`, `permisos`, `roles_permisos`, `usuarios_roles`), en el código con Prisma Client **siempre** se usan los delegados en singular y camelCase:
 
-| Entidad      | Nombre en Prisma | Nombre en DB         | Relaciones |
-|--------------|------------------|----------------------|------------|
-| Permiso      | `Permiso`        | `permisos`           | - `roles: RolPermiso[]` (muchos a muchos con roles) |
-| Rol          | `Rol`            | `roles`              | - `permisos: RolPermiso[]` (muchos a muchos con permisos)<br>- `usuarios: UsuarioRol[]` (muchos a muchos con usuarios) |
-| RolPermiso   | `RolPermiso`     | `roles_permisos`     | - `rol: Rol`<br>- `permiso: Permiso` |
-| UsuarioRol   | `UsuarioRol`     | `usuarios_roles`     | - `usuario: Usuario`<br>- `rol: Rol` |
+  - `prisma.rol` (no `prisma.roles`)
+  - `prisma.permiso` (no `prisma.permisos`)
+  - `prisma.rolPermiso` (no `prisma.roles_permisos`)
+  - `prisma.usuario` (no `prisma.usuarios`)
+  - `prisma.usuarioRol` (no `prisma.usuarios_roles`)
 
-### Descripción de Relaciones
-- **Permiso**: Define una acción específica sobre un recurso (ej: `usuarios.crear`).
-- **Rol**: Agrupa un conjunto de permisos (ej: Administrador, Gerente, Técnico).
-- **RolPermiso**: Relación muchos a muchos entre roles y permisos.
-- **UsuarioRol**: Relación muchos a muchos entre usuarios y roles.
+- Esto aplica para todos los métodos: `findUnique`, `findMany`, `upsert`, `create`, etc.
+- Los nombres mapeados solo se usan en SQL directo (`$executeRawUnsafe`).
 
-### Ejemplo de Uso en Prisma
-
-```typescript
-// Obtener todos los permisos de un rol
-const permisos = await prisma.rol.findUnique({
-  where: { nombre: 'Administrador' },
-  include: {
-    permisos: {
-      include: { permiso: true }
-    }
-  }
-});
-
-// Obtener todos los roles de un usuario
-const roles = await prisma.usuario.findUnique({
-  where: { email: 'sergio@hoom.mx' },
-  include: {
-    roles: {
-      include: { rol: true }
-    }
-  }
-});
-
-// Verificar si un usuario tiene un permiso específico
-const usuario = await prisma.usuario.findUnique({
-  where: { email: 'sergio@hoom.mx' },
-  include: {
-    roles: {
-      include: {
-        rol: {
-          include: {
-            permisos: {
-              include: { permiso: true }
-            }
-          }
-        }
-      }
-    }
-  }
-});
-const tienePermiso = usuario.roles.some(ur =>
-  ur.rol.permisos.some(rp => rp.permiso.codigo === 'usuarios.crear')
-);
+**Ejemplo correcto:**
+```ts
+const rol = await prisma.rol.findUnique({ where: { nombre: 'ADMINISTRADOR' } });
+const permisos = await prisma.permiso.findMany();
+await prisma.rolPermiso.create({ data: { rolId, permisoId } });
 ```
 
-### Convenciones
-- Tablas en la base de datos: plural, minúsculas y con guión bajo (`permisos`, `roles_permisos`, etc.)
-- Modelos en Prisma: singular y PascalCase (`Permiso`, `Rol`, etc.)
-- Relaciones muchos a muchos: siempre a través de tablas intermedias (`roles_permisos`, `usuarios_roles`)
+## Cambios y estructura de roles y permisos (junio 2024)
 
-### Notas
-- Los roles y permisos pueden ser gestionados dinámicamente sin modificar el código.
-- Un usuario puede tener varios roles y, por lo tanto, varios permisos.
-- Los permisos se pueden consultar de forma eficiente usando las relaciones de Prisma. 
+## Tablas y modelos relevantes
+- **roles**: Tabla de roles del sistema.
+- **permisos**: Tabla de permisos del sistema.
+- **roles_permisos**: Relación muchos a muchos entre roles y permisos.
+- **usuarios_roles**: Relación muchos a muchos entre usuarios y roles.
+
+## Relaciones
+- Un usuario puede tener varios roles (usuarios_roles).
+- Un rol puede tener varios permisos (roles_permisos).
+- Un permiso puede estar asignado a varios roles.
+
+## Permisos y roles básicos
+- Se crearon los siguientes permisos básicos:
+  - Gestionar Usuarios (USUARIOS_MANAGE)
+  - Ver Usuarios (USUARIOS_VIEW)
+  - Gestionar Roles (ROLES_MANAGE)
+  - Ver Roles (ROLES_VIEW)
+  - Gestionar Tickets (TICKETS_MANAGE)
+  - Ver Tickets (TICKETS_VIEW)
+- Se crearon los siguientes roles básicos:
+  - ADMINISTRADOR (acceso total)
+  - TECNICO (acceso a tickets)
+  - OPERADOR (acceso limitado)
+
+## Usuario administrador
+- El usuario `admin@yaavs.com` se crea por defecto con el rol ADMINISTRADOR y todos los permisos asignados.
+
+## Notas de migración
+- Los nombres de las tablas en SQL están mapeados en Prisma con @@map, por ejemplo:
+  - Modelo `Rol` → tabla `roles`
+  - Modelo `Permiso` → tabla `permisos`
+  - Modelo `RolPermiso` → tabla `roles_permisos`
+  - Modelo `UsuarioRol` → tabla `usuarios_roles`
+
+## Última actualización
+- 2024-06-05: Estructura inicial de roles y permisos, seed y migración documentados. 

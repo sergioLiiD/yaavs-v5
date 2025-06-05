@@ -23,7 +23,9 @@ import {
   HiClipboardList,
   HiCube,
   HiCurrencyDollar,
-  HiLocationMarker
+  HiLocationMarker,
+  HiUserGroup,
+  HiKey
 } from 'react-icons/hi';
 import Link from 'next/link';
 
@@ -87,8 +89,9 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
   ];
 
   const configLinks = [
-    { href: '/dashboard/usuarios', icon: HiUsers, text: 'Usuarios', active: title.includes('Usuarios') },
-    { href: '/dashboard/configuracion', icon: HiCog, text: 'Configuración', active: title.includes('Configuración') },
+    { href: '/dashboard/admin/usuarios', icon: HiUsers, text: 'Usuarios', active: pathname?.includes('/dashboard/admin/usuarios') },
+    { href: '/dashboard/admin/roles', icon: HiAdjustments, text: 'Roles', active: pathname?.includes('/dashboard/admin/roles') },
+    { href: '/dashboard/admin/configuracion', icon: HiCog, text: 'Configuración', active: pathname?.includes('/dashboard/admin/configuracion') },
     { href: '/dashboard/perfil', icon: HiUser, text: 'Mi Perfil', active: title.includes('Perfil') },
   ];
 
@@ -129,6 +132,29 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
       icon: HiCurrencyDollar,
       text: 'Precios de Venta',
       active: pathname?.includes('/dashboard/costos/precios-venta')
+    }
+  ];
+
+  const adminLinks = [
+    {
+      title: 'Administración',
+      items: [
+        {
+          title: 'Usuarios',
+          href: '/dashboard/admin/usuarios',
+          icon: HiUsers
+        },
+        {
+          title: 'Roles',
+          href: '/dashboard/admin/roles',
+          icon: HiUserGroup
+        },
+        {
+          title: 'Permisos',
+          href: '/dashboard/admin/permisos',
+          icon: HiKey
+        }
+      ]
     }
   ];
 

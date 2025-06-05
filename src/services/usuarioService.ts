@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { CreateUsuarioDTO, UpdateUsuarioDTO, Usuario } from '@/types/usuario';
 import bcrypt from 'bcryptjs';
 import { sql } from '@vercel/postgres';
-import { NivelUsuario } from '@prisma/client';
+import { NivelUsuario, Prisma } from '@prisma/client';
 
 export class UsuarioService {
   // Obtener todos los usuarios
@@ -11,16 +11,12 @@ export class UsuarioService {
       orderBy: {
         nombre: 'asc'
       },
-      select: {
-        id: true,
-        email: true,
-        nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true,
-        nivel: true,
-        activo: true,
-        createdAt: true,
-        updatedAt: true
+      include: {
+        roles: {
+          include: {
+            rol: true
+          }
+        }
       }
     });
     return usuarios as Usuario[];
@@ -30,16 +26,12 @@ export class UsuarioService {
   static async getById(id: number): Promise<Usuario | null> {
     const usuario = await prisma.usuario.findUnique({
       where: { id },
-      select: {
-        id: true,
-        email: true,
-        nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true,
-        nivel: true,
-        activo: true,
-        createdAt: true,
-        updatedAt: true
+      include: {
+        roles: {
+          include: {
+            rol: true
+          }
+        }
       }
     });
     return usuario as Usuario | null;
@@ -69,18 +61,19 @@ export class UsuarioService {
         apellidoPaterno: data.apellidoPaterno,
         apellidoMaterno: data.apellidoMaterno,
         nivel: data.nivel as NivelUsuario,
-        activo: data.activo ?? true
+        activo: data.activo ?? true,
+        roles: {
+          create: data.roles?.map(rolId => ({
+            rolId
+          }))
+        }
       },
-      select: {
-        id: true,
-        email: true,
-        nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true,
-        nivel: true,
-        activo: true,
-        createdAt: true,
-        updatedAt: true
+      include: {
+        roles: {
+          include: {
+            rol: true
+          }
+        }
       }
     });
     return usuario as Usuario;
@@ -88,7 +81,7 @@ export class UsuarioService {
 
   // Actualizar un usuario
   static async update(id: number, data: UpdateUsuarioDTO): Promise<Usuario> {
-    const updateData: any = {
+    const updateData: Prisma.UsuarioUpdateInput = {
       ...data
     };
 
@@ -98,19 +91,27 @@ export class UsuarioService {
       delete updateData.password;
     }
 
+    // Primero eliminamos los roles existentes
+    await prisma.usuarioRol.deleteMany({
+      where: { usuarioId: id }
+    });
+
     const usuario = await prisma.usuario.update({
       where: { id },
-      data: updateData,
-      select: {
-        id: true,
-        email: true,
-        nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true,
-        nivel: true,
-        activo: true,
-        createdAt: true,
-        updatedAt: true
+      data: {
+        ...updateData,
+        roles: {
+          create: data.roles?.map(rolId => ({
+            rolId
+          }))
+        }
+      },
+      include: {
+        roles: {
+          include: {
+            rol: true
+          }
+        }
       }
     });
     return usuario as Usuario;
@@ -118,6 +119,12 @@ export class UsuarioService {
 
   // Eliminar un usuario
   static async delete(id: number): Promise<boolean> {
+    // Primero eliminamos las relaciones de roles
+    await prisma.usuarioRol.deleteMany({
+      where: { usuarioId: id }
+    });
+
+    // Luego eliminamos el usuario
     const result = await prisma.usuario.delete({
       where: { id }
     });
@@ -141,6 +148,13 @@ export class UsuarioService {
       where: {
         email,
         activo: true
+      },
+      include: {
+        roles: {
+          include: {
+            rol: true
+          }
+        }
       }
     });
 
@@ -149,16 +163,6 @@ export class UsuarioService {
     const isValid = await bcrypt.compare(password, usuario.passwordHash);
     if (!isValid) return null;
 
-    return {
-      id: usuario.id,
-      email: usuario.email,
-      nombre: usuario.nombre,
-      apellidoPaterno: usuario.apellidoPaterno,
-      apellidoMaterno: usuario.apellidoMaterno,
-      nivel: usuario.nivel,
-      activo: usuario.activo,
-      createdAt: usuario.createdAt,
-      updatedAt: usuario.updatedAt
-    };
+    return usuario as Usuario;
   }
 }

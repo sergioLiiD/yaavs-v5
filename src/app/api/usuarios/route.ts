@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { CreateUsuarioDTO, NivelUsuario } from '@/types/usuario';
+import { CreateUsuarioDTO } from '@/types/usuario';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
@@ -15,7 +15,6 @@ const usuarioSchema = z.object({
   apellidoMaterno: z.string().optional(),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   confirmPassword: z.string(),
-  nivel: z.enum(['ADMINISTRADOR', 'TECNICO', 'ATENCION_CLIENTE'] as const),
   activo: z.boolean().optional().default(true)
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
@@ -42,7 +41,13 @@ export async function GET(request: Request) {
     try {
       const usuarios = await prisma.usuario.findMany({
         where: rol ? {
-          nivel: rol as NivelUsuario
+          roles: {
+            some: {
+              rol: {
+                nombre: rol
+              }
+            }
+          }
         } : undefined,
         select: {
           id: true,
@@ -50,15 +55,25 @@ export async function GET(request: Request) {
           apellidoPaterno: true,
           apellidoMaterno: true,
           email: true,
-          nivel: true,
-          activo: true
+          activo: true,
+          roles: {
+            select: {
+              rol: {
+                select: {
+                  id: true,
+                  nombre: true,
+                  descripcion: true
+                }
+              }
+            }
+          }
         },
         orderBy: {
           nombre: 'asc'
         }
       });
 
-      console.log(`Usuarios encontrados: ${usuarios.length}`);
+      console.log('Usuarios encontrados:', usuarios);
       return NextResponse.json(usuarios);
     } catch (dbError) {
       console.error('Error en consulta a la base de datos:', dbError);
@@ -154,21 +169,23 @@ export async function POST(request: Request) {
         apellidoPaterno: validatedData.apellidoPaterno,
         apellidoMaterno: validatedData.apellidoMaterno || '',
         passwordHash,
-        nivel: validatedData.nivel,
         activo: validatedData.activo,
         updatedAt: new Date(),
-        createdAt: new Date()
+        createdAt: new Date(),
+        roles: {
+          create: body.roles?.map((rolId: number) => ({
+            rol: {
+              connect: { id: rolId }
+            }
+          })) || []
+        }
       },
-      select: {
-        id: true,
-        email: true,
-        nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true,
-        nivel: true,
-        activo: true,
-        createdAt: true,
-        updatedAt: true
+      include: {
+        roles: {
+          include: {
+            rol: true
+          }
+        }
       }
     });
     console.log('Usuario creado:', usuario.id);
@@ -184,31 +201,8 @@ export async function POST(request: Request) {
       );
     }
 
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return NextResponse.json(
-        { 
-          error: 'Error en la base de datos', 
-          code: error.code,
-          message: error.message,
-          meta: error.meta
-        },
-        { status: 500 }
-      );
-    }
-
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { 
-          error: 'Error al crear usuario',
-          message: error.message,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json(
-      { error: 'Error al crear el usuario' },
+      { error: 'Error al crear usuario' },
       { status: 500 }
     );
   }

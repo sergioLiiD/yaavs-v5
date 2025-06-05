@@ -2,19 +2,25 @@ import { Prisma } from '@prisma/client';
 
 export type NivelUsuario = 'ADMINISTRADOR' | 'TECNICO' | 'ATENCION_CLIENTE';
 
-export type Usuario = Prisma.UsuarioGetPayload<{
-  select: {
-    id: true;
-    email: true;
-    nombre: true;
-    apellidoPaterno: true;
-    apellidoMaterno: true;
-    nivel: true;
-    activo: true;
-    createdAt: true;
-    updatedAt: true;
-  };
-}>;
+export interface Rol {
+  id: number;
+  nombre: string;
+  descripcion: string;
+}
+
+export interface Usuario {
+  id: number;
+  email: string;
+  nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string | null;
+  activo: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  roles: Array<{
+    rol: Rol;
+  }>;
+}
 
 export interface CreateUsuarioDTO {
   email: string;
@@ -23,8 +29,8 @@ export interface CreateUsuarioDTO {
   nombre: string;
   apellidoPaterno: string;
   apellidoMaterno?: string;
-  nivel: NivelUsuario;
   activo?: boolean;
+  roles?: number[]; // IDs de los roles a asignar
 }
 
 export interface UpdateUsuarioDTO {
@@ -34,6 +40,6 @@ export interface UpdateUsuarioDTO {
   nombre?: string;
   apellidoPaterno?: string;
   apellidoMaterno?: string | null;
-  nivel?: NivelUsuario;
   activo?: boolean;
+  roles?: number[]; // IDs de los roles a asignar
 } 

@@ -1,24 +1,31 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 
-export default function DashboardLayout({
+export default function AdminSectionLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/login');
+      return;
     }
-  }, [status, router]);
+
+    if (status === 'authenticated' && session?.user) {
+      if (session.user.role !== 'ADMINISTRADOR') {
+        router.push('/dashboard');
+        return;
+      }
+    }
+  }, [status, session, router]);
 
   if (status === 'loading') {
     return (
@@ -28,12 +35,8 @@ export default function DashboardLayout({
     );
   }
 
-  if (!session) {
+  if (!session || session.user.role !== 'ADMINISTRADOR') {
     return null;
-  }
-
-  if (pathname?.startsWith('/dashboard/admin')) {
-    return <>{children}</>;
   }
 
   return <AdminLayout>{children}</AdminLayout>;

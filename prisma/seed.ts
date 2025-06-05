@@ -1,4 +1,4 @@
-import { PrismaClient, NivelUsuario } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -7,9 +7,12 @@ async function main() {
   console.log('Iniciando seed de la base de datos...');
 
   try {
-    // Primero eliminar registros en orden inverso de dependencias
-    console.log('Eliminando registros existentes...');
+    // Nombres de tablas según mapping en schema.prisma
     const tablesToTruncate = [
+      'usuarios_roles',
+      'roles_permisos',
+      'permisos',
+      'roles',
       'checklist_diagnostico',
       'piezas_reparacion',
       'reparaciones',
@@ -23,15 +26,142 @@ async function main() {
 
     for (const table of tablesToTruncate) {
       try {
-        await prisma.$executeRaw`TRUNCATE TABLE "${table}" CASCADE`;
+        await prisma.$executeRawUnsafe(`TRUNCATE TABLE "${table}" CASCADE`);
         console.log(`Tabla ${table} truncada exitosamente`);
       } catch (error) {
         console.warn(`Advertencia al truncar ${table}:`, error);
-        // Continuamos con la siguiente tabla
       }
     }
 
     console.log('Datos existentes eliminados');
+
+    // Crear permisos básicos
+    const permisos = [
+      {
+        nombre: 'Gestionar Usuarios',
+        descripcion: 'Permite crear, editar y eliminar usuarios',
+        codigo: 'USUARIOS_MANAGE'
+      },
+      {
+        nombre: 'Ver Usuarios',
+        descripcion: 'Permite ver la lista de usuarios',
+        codigo: 'USUARIOS_VIEW'
+      },
+      {
+        nombre: 'Gestionar Roles',
+        descripcion: 'Permite crear, editar y eliminar roles',
+        codigo: 'ROLES_MANAGE'
+      },
+      {
+        nombre: 'Ver Roles',
+        descripcion: 'Permite ver la lista de roles',
+        codigo: 'ROLES_VIEW'
+      },
+      {
+        nombre: 'Gestionar Tickets',
+        descripcion: 'Permite crear, editar y eliminar tickets',
+        codigo: 'TICKETS_MANAGE'
+      },
+      {
+        nombre: 'Ver Tickets',
+        descripcion: 'Permite ver la lista de tickets',
+        codigo: 'TICKETS_VIEW'
+      }
+    ];
+
+    // Crear roles básicos
+    const roles = [
+      {
+        nombre: 'ADMINISTRADOR',
+        descripcion: 'Administrador del sistema con acceso total'
+      },
+      {
+        nombre: 'TECNICO',
+        descripcion: 'Técnico con acceso a gestión de tickets'
+      },
+      {
+        nombre: 'OPERADOR',
+        descripcion: 'Operador con acceso limitado'
+      }
+    ];
+
+    // Crear permisos
+    for (const permiso of permisos) {
+      await prisma.permiso.upsert({
+        where: { codigo: permiso.codigo },
+        update: {},
+        create: permiso
+      });
+    }
+
+    // Crear roles y asignar permisos
+    for (const rol of roles) {
+      const rolCreado = await prisma.rol.upsert({
+        where: { nombre: rol.nombre },
+        update: {},
+        create: rol
+      });
+
+      // Asignar todos los permisos al rol ADMINISTRADOR
+      if (rol.nombre === 'ADMINISTRADOR') {
+        const todosLosPermisos = await prisma.permiso.findMany();
+        for (const permiso of todosLosPermisos) {
+          await prisma.rolPermiso.upsert({
+            where: {
+              rolId_permisoId: {
+                rolId: rolCreado.id,
+                permisoId: permiso.id
+              }
+            },
+            update: {},
+            create: {
+              rolId: rolCreado.id,
+              permisoId: permiso.id
+            }
+          });
+        }
+      }
+    }
+
+    // Crear usuario administrador
+    const adminEmail = 'sergio.velazco@yaavs.com';
+    const adminExists = await prisma.usuario.findUnique({
+      where: { email: adminEmail }
+    });
+
+    if (!adminExists) {
+      const passwordHash = await bcrypt.hash('whoS5un0%', 10);
+      const admin = await prisma.usuario.create({
+        data: {
+          email: adminEmail,
+          passwordHash,
+          nombre: 'Sergio',
+          apellidoPaterno: 'Velazco',
+          apellidoMaterno: '',
+          updatedAt: new Date()
+        }
+      });
+
+      // Asignar rol de administrador
+      const rolAdmin = await prisma.rol.findUnique({
+        where: { nombre: 'ADMINISTRADOR' }
+      });
+
+      if (rolAdmin) {
+        await prisma.usuarioRol.create({
+          data: {
+            usuarioId: admin.id,
+            rolId: rolAdmin.id
+          }
+        });
+      }
+    }
+
+    console.log('Usuario administrador creado o verificado.');
+
+    // REGISTRO PARA DATABASE_REFERENCE.md
+    // - Se corrigió el uso de los delegados Prisma: siempre singular y camelCase (ej: prisma.rol, prisma.permiso, etc.)
+    // - Los nombres de tabla mapeados solo se usan para SQL directo, nunca para los métodos Prisma
 
     // Crear proveedores
     const proveedores = await Promise.all([
@@ -177,22 +307,6 @@ async function main() {
     );
     console.log('Piezas creadas:', piezas.length);
 
-    // Crear usuario administrador
-    const passwordHash = await bcrypt.hash('whoSuno%', 10);
-    const admin = await prisma.usuario.create({
-      data: {
-        email: 'sergio@hoom.mx',
-        nombre: 'Sergio',
-        apellidoPaterno: 'Velazco',
-        passwordHash,
-        nivel: NivelUsuario.ADMINISTRADOR,
-        activo: true,
-        updatedAt: new Date()
-      }
-    });
-
-    console.log('Usuario administrador creado:', admin);
-
     // Crear estados de reparación por defecto
     const estadosReparacion = [
       {
@@ -253,7 +367,7 @@ async function main() {
         nombre: 'En Reparación',
         descripcion: 'El dispositivo está siendo reparado',
         orden: 7,
-        color: '#FF69B4',
+        color: '#ADD8E6',
         activo: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -262,16 +376,16 @@ async function main() {
         nombre: 'Reparación Completada',
         descripcion: 'La reparación ha sido completada',
         orden: 8,
-        color: '#00FF00',
+        color: '#98FB98',
         activo: true,
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
         nombre: 'Listo para Entrega',
-        descripcion: 'El dispositivo está listo para ser entregado al cliente',
+        descripcion: 'El dispositivo está listo para ser entregado',
         orden: 9,
-        color: '#008000',
+        color: '#98FB98',
         activo: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -280,14 +394,14 @@ async function main() {
         nombre: 'Entregado',
         descripcion: 'El dispositivo ha sido entregado al cliente',
         orden: 10,
-        color: '#006400',
+        color: '#98FB98',
         activo: true,
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
         nombre: 'Cancelado',
-        descripcion: 'El ticket ha sido cancelado',
+        descripcion: 'El servicio ha sido cancelado',
         orden: 11,
         color: '#FF0000',
         activo: true,
@@ -296,177 +410,15 @@ async function main() {
       }
     ];
 
-    console.log('Creando estados de reparación...');
-    
-    // Usar upsert para cada estado para evitar duplicados
     for (const estado of estadosReparacion) {
       await prisma.estatusReparacion.upsert({
         where: { nombre: estado.nombre },
-        update: estado,
+        update: {},
         create: estado
       });
     }
+    console.log('Estados de reparación creados');
 
-    console.log('Estados de reparación creados exitosamente');
-
-    // Crear el estado "Presupuesto Generado"
-    const presupuestoGenerado = await prisma.estatusReparacion.upsert({
-      where: { nombre: 'Presupuesto Generado' },
-      update: {},
-      create: {
-        nombre: 'Presupuesto Generado',
-        descripcion: 'El presupuesto ha sido generado y está pendiente de aprobación',
-        orden: 3,
-        color: '#FFA500',
-        activo: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-    });
-
-    console.log('Estado creado:', presupuestoGenerado);
-
-    // Crear permisos base
-    const permisos = [
-      // Usuarios
-      { codigo: 'usuarios.crear', nombre: 'Crear Usuarios', categoria: 'Usuarios', descripcion: 'Permite crear nuevos usuarios en el sistema' },
-      { codigo: 'usuarios.leer', nombre: 'Ver Usuarios', categoria: 'Usuarios', descripcion: 'Permite ver la lista de usuarios' },
-      { codigo: 'usuarios.actualizar', nombre: 'Actualizar Usuarios', categoria: 'Usuarios', descripcion: 'Permite modificar usuarios existentes' },
-      { codigo: 'usuarios.eliminar', nombre: 'Eliminar Usuarios', categoria: 'Usuarios', descripcion: 'Permite eliminar usuarios' },
-      
-      // Tickets
-      { codigo: 'tickets.crear', nombre: 'Crear Tickets', categoria: 'Tickets', descripcion: 'Permite crear nuevos tickets' },
-      { codigo: 'tickets.leer', nombre: 'Ver Tickets', categoria: 'Tickets', descripcion: 'Permite ver la lista de tickets' },
-      { codigo: 'tickets.actualizar', nombre: 'Actualizar Tickets', categoria: 'Tickets', descripcion: 'Permite modificar tickets existentes' },
-      { codigo: 'tickets.eliminar', nombre: 'Eliminar Tickets', categoria: 'Tickets', descripcion: 'Permite eliminar tickets' },
-      { codigo: 'tickets.aprobar', nombre: 'Aprobar Tickets', categoria: 'Tickets', descripcion: 'Permite aprobar tickets' },
-      
-      // Inventario
-      { codigo: 'inventario.crear', nombre: 'Crear Productos', categoria: 'Inventario', descripcion: 'Permite crear nuevos productos' },
-      { codigo: 'inventario.leer', nombre: 'Ver Inventario', categoria: 'Inventario', descripcion: 'Permite ver el inventario' },
-      { codigo: 'inventario.actualizar', nombre: 'Actualizar Inventario', categoria: 'Inventario', descripcion: 'Permite modificar el inventario' },
-      { codigo: 'inventario.eliminar', nombre: 'Eliminar Productos', categoria: 'Inventario', descripcion: 'Permite eliminar productos' },
-      { codigo: 'inventario.exportar', nombre: 'Exportar Inventario', categoria: 'Inventario', descripcion: 'Permite exportar el inventario' },
-      
-      // Catálogos
-      { codigo: 'catalogos.crear', nombre: 'Crear Catálogos', categoria: 'Catálogos', descripcion: 'Permite crear nuevos catálogos' },
-      { codigo: 'catalogos.leer', nombre: 'Ver Catálogos', categoria: 'Catálogos', descripcion: 'Permite ver los catálogos' },
-      { codigo: 'catalogos.actualizar', nombre: 'Actualizar Catálogos', categoria: 'Catálogos', descripcion: 'Permite modificar catálogos' },
-      { codigo: 'catalogos.eliminar', nombre: 'Eliminar Catálogos', categoria: 'Catálogos', descripcion: 'Permite eliminar catálogos' },
-    ];
-
-    // Crear permisos en la base de datos
-    for (const permiso of permisos) {
-      await prisma.permiso.upsert({
-        where: { codigo: permiso.codigo },
-        update: permiso,
-        create: permiso,
-      });
-    }
-
-    // Crear roles predefinidos
-    const roles = [
-      {
-        nombre: 'Administrador',
-        descripcion: 'Acceso total al sistema',
-        permisos: permisos.map(p => p.codigo), // Todos los permisos
-      },
-      {
-        nombre: 'Gerente',
-        descripcion: 'Acceso a la mayoría de las funciones excepto gestión de usuarios',
-        permisos: permisos
-          .filter(p => !p.codigo.startsWith('usuarios.'))
-          .map(p => p.codigo),
-      },
-      {
-        nombre: 'Técnico',
-        descripcion: 'Acceso a tickets e inventario',
-        permisos: permisos
-          .filter(p => 
-            p.codigo.startsWith('tickets.') || 
-            p.codigo.startsWith('inventario.')
-          )
-          .map(p => p.codigo),
-      },
-      {
-        nombre: 'Atención al Cliente',
-        descripcion: 'Acceso básico a tickets',
-        permisos: permisos
-          .filter(p => 
-            p.codigo === 'tickets.crear' ||
-            p.codigo === 'tickets.leer'
-          )
-          .map(p => p.codigo),
-      },
-    ];
-
-    // Crear roles y asignar permisos
-    for (const rol of roles) {
-      const { permisos: permisosRol, ...rolData } = rol;
-      const rolCreado = await prisma.rol.upsert({
-        where: { nombre: rolData.nombre },
-        update: rolData,
-        create: rolData,
-      });
-
-      // Asignar permisos al rol
-      for (const codigoPermiso of permisosRol) {
-        const permiso = await prisma.permiso.findUnique({
-          where: { codigo: codigoPermiso },
-        });
-        if (permiso) {
-          await prisma.rolPermiso.upsert({
-            where: {
-              rolId_permisoId: {
-                rolId: rolCreado.id,
-                permisoId: permiso.id,
-              },
-            },
-            update: {},
-            create: {
-              rolId: rolCreado.id,
-              permisoId: permiso.id,
-            },
-          });
-        }
-      }
-    }
-
-    // Crear usuario administrador por defecto si no existe
-    const adminEmail = 'admin@hoom.mx';
-    const adminExists = await prisma.usuario.findUnique({
-      where: { email: adminEmail },
-    });
-
-    if (!adminExists) {
-      const passwordHash = await bcrypt.hash('admin123', 10);
-      const admin = await prisma.usuario.create({
-        data: {
-          email: adminEmail,
-          nombre: 'Administrador',
-          apellidoPaterno: 'Sistema',
-          passwordHash,
-          nivel: 'ADMINISTRADOR',
-          activo: true,
-        },
-      });
-
-      // Asignar rol de administrador al usuario
-      const rolAdmin = await prisma.rol.findUnique({
-        where: { nombre: 'Administrador' },
-      });
-
-      if (rolAdmin) {
-        await prisma.usuarioRol.create({
-          data: {
-            usuarioId: admin.id,
-            rolId: rolAdmin.id,
-          },
-        });
-      }
-    }
-
-    console.log('Datos de ejemplo creados exitosamente');
   } catch (error) {
     console.error('Error en el seed:', error);
     throw error;

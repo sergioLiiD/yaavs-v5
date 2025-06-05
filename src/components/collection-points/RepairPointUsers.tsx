@@ -7,13 +7,17 @@ interface RepairPointUser {
   id: string;
   puntoRecoleccionId: string;
   usuarioId: number;
-  nivel: 'ADMINISTRADOR' | 'OPERADOR';
+  rol: 'ADMINISTRADOR' | 'OPERADOR';
   activo: boolean;
   Usuario: {
     id: number;
     nombre: string;
     email: string;
-    nivel: string;
+    roles: Array<{
+      rol: {
+        nombre: string;
+      }
+    }>;
     apellidoPaterno: string;
     apellidoMaterno: string;
   };
@@ -44,7 +48,7 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
     nombre: '',
     apellidoPaterno: '',
     apellidoMaterno: '',
-    nivel: 'OPERADOR' as 'OPERADOR' | 'ADMINISTRADOR',
+    rol: 'OPERADOR' as 'OPERADOR' | 'ADMINISTRADOR',
   });
 
   useEffect(() => {
@@ -97,7 +101,7 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
         nombre: '',
         apellidoPaterno: '',
         apellidoMaterno: '',
-        nivel: 'OPERADOR',
+        rol: 'OPERADOR',
       });
     } catch (error) {
       setError('Error al guardar el usuario');
@@ -112,7 +116,7 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
       nombre: user.Usuario.nombre.split(' ')[0] || '',
       apellidoPaterno: user.Usuario.apellidoPaterno || '',
       apellidoMaterno: user.Usuario.apellidoMaterno || '',
-      nivel: user.nivel,
+      rol: user.rol,
       password: '',
     });
     onEditStart();
@@ -172,7 +176,7 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
-                      {ROLES.find(r => r.value === user.nivel)?.label || 'Sin rol'}
+                      {ROLES.find(r => r.value === user.rol)?.label || 'Sin rol'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -250,23 +254,6 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Rol
-                </label>
-                <select
-                  value={formData.nivel}
-                  onChange={(e) => setFormData({ ...formData, nivel: e.target.value as 'OPERADOR' | 'ADMINISTRADOR' })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
-                  required
-                >
-                  {ROLES.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {role.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
               {!editingUser && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -277,34 +264,39 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
-                    required
+                    required={!editingUser}
                   />
                 </div>
               )}
-              <div className="flex justify-end space-x-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Rol
+                </label>
+                <select
+                  value={formData.rol}
+                  onChange={(e) => setFormData({ ...formData, rol: e.target.value as 'OPERADOR' | 'ADMINISTRADOR' })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
+                >
+                  {ROLES.map((role) => (
+                    <option key={role.value} value={role.value}>
+                      {role.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
                 <button
                   type="button"
-                  onClick={() => {
-                    onCloseModal();
-                    setEditingUser(null);
-                    setFormData({
-                      email: '',
-                      password: '',
-                      nombre: '',
-                      apellidoPaterno: '',
-                      apellidoMaterno: '',
-                      nivel: 'OPERADOR',
-                    });
-                  }}
+                  onClick={onCloseModal}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-black bg-[#FEBF19] rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19]"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#FEBF19] border border-transparent rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19]"
                 >
-                  {editingUser ? 'Guardar Cambios' : 'Crear Usuario'}
+                  {editingUser ? 'Guardar cambios' : 'Crear usuario'}
                 </button>
               </div>
             </form>

@@ -2,20 +2,19 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { NivelUsuario } from '@/types/usuario';
 
 declare module 'next-auth' {
   interface User {
     id: number;
     email: string;
     nombre: string;
-    role: NivelUsuario;
+    role: string;
   }
 
   interface Session {
     user: User & {
       id: number;
-      role: NivelUsuario;
+      role: string;
     };
   }
 }
@@ -50,6 +49,13 @@ export const authOptions: NextAuthOptions = {
           where: {
             email: credentials.email,
             activo: true
+          },
+          include: {
+            roles: {
+              include: {
+                rol: true
+              }
+            }
           }
         });
 
@@ -72,12 +78,19 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Obtener el rol más alto del usuario
+        const roles = usuario.roles.map(ur => ur.rol.nombre);
+        const role = roles.includes('ADMINISTRADOR') ? 'ADMINISTRADOR' :
+                    roles.includes('TECNICO') ? 'TECNICO' :
+                    roles.includes('ATENCION_CLIENTE') ? 'ATENCION_CLIENTE' :
+                    roles[0] || 'SIN_ROL';
+
         console.log('Autenticación exitosa');
         return {
           id: usuario.id,
           email: usuario.email,
           nombre: usuario.nombre,
-          role: usuario.nivel
+          role
         };
       }
     })
@@ -97,7 +110,7 @@ export const authOptions: NextAuthOptions = {
       console.log('Session Callback - Token:', token);
       if (session.user) {
         session.user.id = token.id as number;
-        session.user.role = token.role as NivelUsuario;
+        session.user.role = token.role as string;
       }
       return session;
     }
