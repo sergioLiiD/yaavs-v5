@@ -14,6 +14,13 @@ interface Ticket {
     nombre: string;
     apellidoPaterno: string;
     apellidoMaterno?: string;
+    calle: string;
+    numeroExterior: string;
+    numeroInterior?: string;
+    colonia: string;
+    ciudad: string;
+    estado: string;
+    codigoPostal: string;
   };
   tipoServicio: {
     nombre: string;
@@ -33,22 +40,14 @@ interface Ticket {
   } | null;
   fechaRecepcion: string;
   descripcionProblema: string | null;
-  dispositivo: {
+  dispositivos: {
     capacidad: string;
     color: string;
     fechaCompra: string;
     redCelular: string;
     codigoDesbloqueo: string;
   } | null;
-  direccion: {
-    calle: string;
-    numeroExterior: string;
-    numeroInterior?: string;
-    colonia: string;
-    ciudad: string;
-    estado: string;
-    codigoPostal: string;
-  };
+  recogida: boolean;
   presupuesto?: {
     total: number;
     anticipo: number;
@@ -167,19 +166,21 @@ export default function TicketDetailPage({ params }: { params: { id: string } })
           </CardHeader>
           <CardContent>
             <p className="text-lg">
-              {ticket.modelo.marca.nombre} {ticket.modelo.nombre}
+              {ticket.modelo?.marca?.nombre 
+                ? `${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}`
+                : 'Modelo no disponible'}
             </p>
             <p className="text-sm text-gray-600 mt-2">
-              Capacidad: {ticket.dispositivo?.capacidad}
+              Capacidad: {ticket.dispositivos?.capacidad || 'No disponible'}
             </p>
             <p className="text-sm text-gray-600">
-              Color: {ticket.dispositivo?.color}
+              Color: {ticket.dispositivos?.color || 'No disponible'}
             </p>
             <p className="text-sm text-gray-600">
-              Fecha de compra: {ticket.dispositivo?.fechaCompra ? new Date(ticket.dispositivo.fechaCompra).toLocaleDateString() : 'No disponible'}
+              Fecha de compra: {ticket.dispositivos?.fechaCompra ? new Date(ticket.dispositivos.fechaCompra).toLocaleDateString() : 'No disponible'}
             </p>
             <p className="text-sm text-gray-600">
-              Red celular: {ticket.dispositivo?.redCelular}
+              Red celular: {ticket.dispositivos?.redCelular || 'No disponible'}
             </p>
           </CardContent>
         </Card>
@@ -195,22 +196,37 @@ export default function TicketDetailPage({ params }: { params: { id: string } })
 
         <Card>
           <CardHeader>
-            <CardTitle>Dirección de Recolección</CardTitle>
+            <CardTitle>
+              {ticket.recogida ? 'Estado de Envío' : 'Dirección de Recolección'}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-lg">
-              {ticket.direccion.calle} {ticket.direccion.numeroExterior}
-              {ticket.direccion.numeroInterior ? ` Int. ${ticket.direccion.numeroInterior}` : ''}
-            </p>
-            <p className="text-sm text-gray-600 mt-2">
-              {ticket.direccion.colonia}
-            </p>
-            <p className="text-sm text-gray-600">
-              {ticket.direccion.ciudad}, {ticket.direccion.estado}
-            </p>
-            <p className="text-sm text-gray-600">
-              CP: {ticket.direccion.codigoPostal}
-            </p>
+            {ticket.recogida ? (
+              <div className="space-y-2">
+                <p className="text-lg text-gray-600">
+                  Enviado por paquetería por el cliente
+                </p>
+                <p className="text-sm text-gray-500">
+                  No se requiere recolección en domicilio
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-lg">
+                  {ticket.cliente.calle} {ticket.cliente.numeroExterior}
+                  {ticket.cliente.numeroInterior ? ` Int. ${ticket.cliente.numeroInterior}` : ''}
+                </p>
+                <p className="text-sm text-gray-600 mt-2">
+                  {ticket.cliente.colonia}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {ticket.cliente.ciudad}, {ticket.cliente.estado}
+                </p>
+                <p className="text-sm text-gray-600">
+                  CP: {ticket.cliente.codigoPostal}
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 

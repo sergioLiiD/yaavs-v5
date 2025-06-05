@@ -131,7 +131,14 @@ export default function CollectionPointsPage() {
                     className="hover:bg-gray-50 cursor-pointer"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{point.name}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {point.name}
+                        {point.parent && (
+                          <span className="ml-2 text-sm text-gray-500">
+                            (Sucursal de {point.parent.name})
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">{point.phone}</div>
@@ -141,9 +148,13 @@ export default function CollectionPointsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
-                        {point.isHeadquarters && (
+                        {point.isHeadquarters ? (
                           <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
                             Principal
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+                            Sucursal
                           </span>
                         )}
                         {point.isRepairPoint && (

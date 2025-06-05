@@ -181,7 +181,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                 <li key={index}>
                   <Link 
                     href={link.href}
-                    className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-gray-100 
+                    className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-[#FEBF19]/10
                       ${link.active ? 'bg-[#FEBF19]/10 text-[#FEBF19]' : 'text-gray-900'}`}
                   >
                     <link.icon className={`w-6 h-6 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
@@ -194,7 +194,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
               <li>
                 <button
                   type="button"
-                  className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
+                  className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-[#FEBF19]/10 ${
                     title.includes('Inventario') && 'bg-[#FEBF19]/10'
                   }`}
                   onClick={toggleInventario}
@@ -214,7 +214,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                     <li key={index}>
                       <Link
                         href={link.route}
-                        className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
+                        className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-[#FEBF19]/10 
                           ${link.active ? 'text-[#FEBF19] bg-[#FEBF19]/10' : 'text-gray-900'}`}
                       >
                         <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
@@ -229,7 +229,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
               <li>
                 <button
                   type="button"
-                  className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
+                  className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-[#FEBF19]/10 ${
                     title.includes('Catálogo') && 'bg-[#FEBF19]/10'
                   }`}
                   onClick={toggleCatalogo}
@@ -249,7 +249,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                     <li key={index}>
                       <Link
                         href={link.href}
-                        className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
+                        className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-[#FEBF19]/10 
                           ${link.active ? 'text-[#FEBF19] bg-[#FEBF19]/10' : 'text-gray-900'}`}
                       >
                         <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
@@ -264,7 +264,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
               <li>
                 <button
                   type="button"
-                  className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
+                  className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-[#FEBF19]/10 ${
                     title.includes('Costos') && 'bg-[#FEBF19]/10'
                   }`}
                   onClick={toggleCostos}
@@ -284,7 +284,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                     <li key={index}>
                       <Link
                         href={link.route}
-                        className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
+                        className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-[#FEBF19]/10 
                           ${link.active ? 'text-[#FEBF19] bg-[#FEBF19]/10' : 'text-gray-900'}`}
                       >
                         <link.icon className={`w-5 h-5 mr-2 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
@@ -304,7 +304,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                 <li key={index}>
                   <Link 
                     href={link.href}
-                    className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-gray-100
+                    className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-[#FEBF19]/10
                       ${link.active ? 'bg-[#FEBF19]/10 text-[#FEBF19]' : 'text-gray-900'}`}
                   >
                     <link.icon className={`w-6 h-6 ${link.active ? 'text-[#FEBF19]' : 'text-gray-500'}`} />
@@ -339,9 +339,15 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                 {mobileMenuOpen ? <HiX className="h-6 w-6" /> : <HiMenu className="h-6 w-6" />}
               </button>
               <Link href="/dashboard" className="flex items-center">
-                <span className="self-center whitespace-nowrap text-xl font-semibold text-gray-900">
-                  {title}
-                </span>
+                <img 
+                  src="/logo.png" 
+                  alt="YAAVS Logo" 
+                  className="h-12 w-auto"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
               </Link>
             </div>
             <div className="flex items-center gap-4">
@@ -356,11 +362,11 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
               <div className="relative">
                 <button 
                   onClick={toggleUserMenu}
-                  className="flex text-sm rounded-full focus:ring-4 focus:ring-gray-300"
+                  className="flex text-sm rounded-full focus:ring-4 focus:ring-[#FEBF19]"
                 >
                   <img 
-                    className="w-8 h-8 rounded-full border-2 border-blue-500"
-                    src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff"
+                    className="w-8 h-8 rounded-full border-2 border-[#FEBF19]"
+                    src="https://ui-avatars.com/api/?name=Admin&background=FEBF19&color=fff"
                     alt="User settings"
                   />
                 </button>
@@ -439,7 +445,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                     <li key={index}>
                       <Link 
                         href={link.href}
-                        className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-gray-100 
+                        className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-[#FEBF19]/10
                           ${link.active ? 'bg-[#FEBF19]/10 text-[#FEBF19]' : 'text-gray-900'}`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
@@ -453,7 +459,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                   <li>
                     <button
                       type="button"
-                      className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
+                      className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-[#FEBF19]/10 ${
                         title.includes('Inventario') && 'bg-[#FEBF19]/10'
                       }`}
                       onClick={toggleInventario}
@@ -473,7 +479,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                         <li key={index}>
                           <Link
                             href={link.route}
-                            className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
+                            className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-[#FEBF19]/10 
                               ${link.active ? 'text-[#FEBF19] bg-[#FEBF19]/10' : 'text-gray-900'}`}
                             onClick={() => setMobileMenuOpen(false)}
                           >
@@ -489,7 +495,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                   <li>
                     <button
                       type="button"
-                      className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
+                      className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-[#FEBF19]/10 ${
                         title.includes('Catálogo') && 'bg-[#FEBF19]/10'
                       }`}
                       onClick={toggleCatalogo}
@@ -509,7 +515,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                         <li key={index}>
                           <Link
                             href={link.href}
-                            className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
+                            className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-[#FEBF19]/10 
                               ${link.active ? 'text-[#FEBF19] bg-[#FEBF19]/10' : 'text-gray-900'}`}
                             onClick={() => setMobileMenuOpen(false)}
                           >
@@ -525,7 +531,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                   <li>
                     <button
                       type="button"
-                      className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 ${
+                      className={`flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-[#FEBF19]/10 ${
                         title.includes('Costos') && 'bg-[#FEBF19]/10'
                       }`}
                       onClick={toggleCostos}
@@ -545,7 +551,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                         <li key={index}>
                           <Link
                             href={link.route}
-                            className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-gray-100 
+                            className={`flex items-center p-2 pl-11 text-base font-normal rounded-lg hover:bg-[#FEBF19]/10 
                               ${link.active ? 'text-[#FEBF19] bg-[#FEBF19]/10' : 'text-gray-900'}`}
                             onClick={() => setMobileMenuOpen(false)}
                           >
@@ -566,7 +572,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
                     <li key={index}>
                       <Link 
                         href={link.href}
-                        className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-gray-100
+                        className={`flex items-center p-2 text-base font-normal rounded-lg hover:bg-[#FEBF19]/10
                           ${link.active ? 'bg-[#FEBF19]/10 text-[#FEBF19]' : 'text-gray-900'}`}
                         onClick={() => setMobileMenuOpen(false)}
                       >

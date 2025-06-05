@@ -174,9 +174,9 @@ export default function CollectionPointDetails({ collectionPoint }: CollectionPo
             <div className="relative">
               <button
                 onClick={() => setIsMapExpanded(!isMapExpanded)}
-                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19]"
+                className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-[#FEBF19] hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19]"
               >
-                <MapPinIcon className="h-5 w-5 mr-2 text-gray-400" />
+                <MapPinIcon className="h-5 w-5 mr-2 text-black" />
                 {isMapExpanded ? 'Ocultar Mapa' : 'Ver Ubicación en el Mapa'}
               </button>
               
@@ -190,21 +190,52 @@ export default function CollectionPointDetails({ collectionPoint }: CollectionPo
             </div>
           </div>
 
+          {collectionPoint.isHeadquarters && collectionPoint.branches && collectionPoint.branches.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">Sucursales</h2>
+              <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                <ul className="divide-y divide-gray-200">
+                  {collectionPoint.branches.map((branch) => (
+                    <li key={branch.id}>
+                      <div className="px-4 py-4 sm:px-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <p className="text-sm font-medium text-gray-900">{branch.name}</p>
+                            {branch.isRepairPoint && (
+                              <span className="ml-2 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                Reparación
+                              </span>
+                            )}
+                          </div>
+                          <div className="ml-2 flex-shrink-0 flex">
+                            <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                              {branch.phone}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-2 sm:flex sm:justify-between">
+                          <div className="sm:flex">
+                            <p className="flex items-center text-sm text-gray-500">
+                              {branch.email}
+                            </p>
+                          </div>
+                          <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                            <p>{branch.location.address}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
           <div className="border-t border-gray-200 pt-6 mt-6">
             <div className="flex items-start">
               <UserGroupIcon className="h-6 w-6 text-gray-400 mt-1" />
               <div className="ml-3 flex-1">
                 <div className="mt-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Usuarios del Punto</h3>
-                    <button
-                      onClick={() => setShowUserModal(true)}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-black bg-[#FEBF19] hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19]"
-                    >
-                      <PlusIcon className="h-5 w-5 mr-2" />
-                      Agregar Usuario
-                    </button>
-                  </div>
                   <RepairPointUsers
                     collectionPointId={collectionPoint.id}
                     isRepairPoint={collectionPoint.isRepairPoint}

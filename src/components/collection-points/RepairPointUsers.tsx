@@ -1,27 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-
-interface RepairPointUser {
-  id: string;
-  puntoRecoleccionId: string;
-  usuarioId: number;
-  rol: 'ADMINISTRADOR' | 'OPERADOR';
-  activo: boolean;
-  Usuario: {
-    id: number;
-    nombre: string;
-    email: string;
-    roles: Array<{
-      rol: {
-        nombre: string;
-      }
-    }>;
-    apellidoPaterno: string;
-    apellidoMaterno: string;
-  };
-}
+import { UserPlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'react-hot-toast';
+import { Usuario } from '@/types/usuario';
 
 interface RepairPointUsersProps {
   collectionPointId: string;
@@ -32,94 +19,121 @@ interface RepairPointUsersProps {
   onEditStart: () => void;
 }
 
-const ROLES = [
-  { value: 'ADMINISTRADOR', label: 'Administrador' },
-  { value: 'OPERADOR', label: 'Operador' },
-];
+interface UserPoint {
+  id: string;
+  puntoRecoleccionId: string;
+  usuarioId: number;
+  rolId: number;
+  activo: boolean;
+  Usuario: {
+    id: number;
+    nombre: string;
+    email: string;
+    apellidoPaterno: string;
+    apellidoMaterno: string;
+  };
+}
 
-export default function RepairPointUsers({ collectionPointId, isRepairPoint, showModal, onCloseModal, isEditing, onEditStart }: RepairPointUsersProps) {
-  const [users, setUsers] = useState<RepairPointUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [editingUser, setEditingUser] = useState<RepairPointUser | null>(null);
+interface Rol {
+  id: number;
+  nombre: string;
+  descripcion: string;
+}
+
+export default function RepairPointUsers({
+  collectionPointId,
+  isRepairPoint,
+  showModal,
+  onCloseModal,
+  isEditing,
+  onEditStart
+}: RepairPointUsersProps) {
+  const [users, setUsers] = useState<UserPoint[]>([]);
+  const [roles, setRoles] = useState<Rol[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     nombre: '',
     apellidoPaterno: '',
     apellidoMaterno: '',
-    rol: 'OPERADOR' as 'OPERADOR' | 'ADMINISTRADOR',
+    rolId: 0
   });
+  const [editingUser, setEditingUser] = useState<UserPoint | null>(null);
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
-    if (collectionPointId) {
-      fetchUsers();
-    }
+    fetchUsers();
+    fetchRoles();
   }, [collectionPointId]);
+
+  const fetchRoles = async () => {
+    try {
+      const response = await fetch('/api/roles');
+      if (!response.ok) throw new Error('Error al cargar roles');
+      const data = await response.json();
+      setRoles(data);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al cargar roles');
+    }
+  };
 
   const fetchUsers = async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       const response = await fetch(`/api/puntos-recoleccion/${collectionPointId}/usuarios`);
       if (!response.ok) throw new Error('Error al cargar usuarios');
       const data = await response.json();
-      console.log('Datos de usuarios recibidos:', JSON.stringify(data, null, 2));
-      setUsers(Array.isArray(data) ? data : []);
+      setUsers(data);
     } catch (error) {
-      setError('Error al cargar los usuarios');
       console.error('Error:', error);
-      setUsers([]);
+      setError('Error al cargar usuarios');
+      toast.error('Error al cargar usuarios');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const url = editingUser
-        ? `/api/puntos-recoleccion/${collectionPointId}/usuarios/${editingUser.id}`
-        : `/api/puntos-recoleccion/${collectionPointId}/usuarios`;
-      
-      const response = await fetch(url, {
-        method: editingUser ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          puntoRecoleccionId: collectionPointId,
-        }),
-      });
-
-      if (!response.ok) throw new Error('Error al guardar usuario');
-      
-      await fetchUsers();
-      onCloseModal();
-      setEditingUser(null);
-      setFormData({
-        email: '',
-        password: '',
-        nombre: '',
-        apellidoPaterno: '',
-        apellidoMaterno: '',
-        rol: 'OPERADOR',
-      });
-    } catch (error) {
-      setError('Error al guardar el usuario');
-      console.error('Error:', error);
+  const validatePasswords = () => {
+    if (isEditing) {
+      if (formData.password || formData.confirmPassword) {
+        if (formData.password !== formData.confirmPassword) {
+          setPasswordError('Las contraseñas no coinciden');
+          return false;
+        }
+        if (formData.password && formData.password.length < 6) {
+          setPasswordError('La contraseña debe tener al menos 6 caracteres');
+          return false;
+        }
+      }
+    } else {
+      if (!formData.password || !formData.confirmPassword) {
+        setPasswordError('La contraseña es requerida');
+        return false;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setPasswordError('Las contraseñas no coinciden');
+        return false;
+      }
+      if (formData.password.length < 6) {
+        setPasswordError('La contraseña debe tener al menos 6 caracteres');
+        return false;
+      }
     }
+    setPasswordError('');
+    return true;
   };
 
-  const handleEdit = (user: RepairPointUser) => {
-    setEditingUser(user);
-    setFormData({
-      email: user.Usuario.email,
-      nombre: user.Usuario.nombre.split(' ')[0] || '',
-      apellidoPaterno: user.Usuario.apellidoPaterno || '',
-      apellidoMaterno: user.Usuario.apellidoMaterno || '',
-      rol: user.rol,
-      password: '',
-    });
-    onEditStart();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'password' || name === 'confirmPassword') {
+      setPasswordError('');
+    }
   };
 
   const handleDelete = async (userId: string) => {
@@ -127,182 +141,255 @@ export default function RepairPointUsers({ collectionPointId, isRepairPoint, sho
 
     try {
       const response = await fetch(`/api/puntos-recoleccion/${collectionPointId}/usuarios/${userId}`, {
-        method: 'DELETE',
+        method: 'DELETE'
       });
 
       if (!response.ok) throw new Error('Error al eliminar usuario');
-      
-      await fetchUsers();
+      toast.success('Usuario eliminado exitosamente');
+      fetchUsers();
     } catch (error) {
-      setError('Error al eliminar el usuario');
       console.error('Error:', error);
+      toast.error('Error al eliminar usuario');
     }
   };
 
-  if (loading) {
-    return <div className="text-center py-4">Cargando usuarios...</div>;
-  }
+  const resetForm = () => {
+    setFormData({
+      email: '',
+      password: '',
+      confirmPassword: '',
+      nombre: '',
+      apellidoPaterno: '',
+      apellidoMaterno: '',
+      rolId: 0
+    });
+    setEditingUser(null);
+    setPasswordError('');
+  };
 
-  if (error) {
-    return <div className="text-red-600 text-center py-4">{error}</div>;
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validatePasswords()) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const userData = { ...formData };
+      
+      if (isEditing && !userData.password && editingUser) {
+        const { password, confirmPassword, ...userDataWithoutPassword } = userData;
+        const response = await fetch(`/api/puntos-recoleccion/${collectionPointId}/usuarios/${editingUser.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userDataWithoutPassword)
+        });
+
+        if (!response.ok) throw new Error('Error al actualizar usuario');
+        toast.success('Usuario actualizado exitosamente');
+      } else {
+        const response = await fetch(`/api/puntos-recoleccion/${collectionPointId}/usuarios`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData)
+        });
+
+        if (!response.ok) throw new Error('Error al crear usuario');
+        toast.success('Usuario creado exitosamente');
+      }
+
+      onCloseModal();
+      fetchUsers();
+      resetForm();
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al guardar usuario');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (user: UserPoint) => {
+    setEditingUser(user);
+    setFormData({
+      email: user.Usuario.email,
+      password: '',
+      confirmPassword: '',
+      nombre: user.Usuario.nombre.split(' ')[0],
+      apellidoPaterno: user.Usuario.apellidoPaterno,
+      apellidoMaterno: user.Usuario.apellidoMaterno || '',
+      rolId: user.rolId
+    });
+    onEditStart();
+  };
+
+  if (isLoading) return <div>Cargando usuarios...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
 
   return (
     <div className="space-y-4">
-      <div className="mt-4">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nombre Completo
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Rol
-              </th>
-              <th scope="col" className="relative px-6 py-3">
-                <span className="sr-only">Acciones</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((user) => {
-              console.log('Renderizando usuario:', user);
-              return (
-                <tr key={user.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {user.Usuario ? `${user.Usuario.nombre} ${user.Usuario.apellidoPaterno} ${user.Usuario.apellidoMaterno}`.trim() : 'Sin nombre'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {ROLES.find(r => r.value === user.rol)?.label || 'Sin rol'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleEdit(user)}
-                      className="text-[#FEBF19] hover:text-[#FEBF19]/90 mr-4"
-                    >
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(user.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-[9999] isolate">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full relative z-[9999]">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              {editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
-            </h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium text-gray-900">Usuarios del Punto</h3>
+        <Button onClick={() => {
+          if (!isEditing) {
+            resetForm();
+          }
+          onEditStart();
+        }}>
+          <UserPlusIcon className="h-5 w-5 mr-2" />
+          Agregar Usuario
+        </Button>
+        <Dialog open={showModal} onOpenChange={onCloseModal}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
+            </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Nombre
-                </label>
-                <input
-                  type="text"
-                  value={formData.nombre}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Apellido Paterno
-                </label>
-                <input
-                  type="text"
-                  value={formData.apellidoPaterno}
-                  onChange={(e) => setFormData({ ...formData, apellidoPaterno: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Apellido Materno
-                </label>
-                <input
-                  type="text"
-                  value={formData.apellidoMaterno}
-                  onChange={(e) => setFormData({ ...formData, apellidoMaterno: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Correo electrónico
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
-                  required
-                />
-              </div>
-              {!editingUser && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Contraseña
-                  </label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
-                    required={!editingUser}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nombre">Nombre</Label>
+                  <Input
+                    id="nombre"
+                    name="nombre"
+                    value={formData.nombre}
+                    onChange={handleInputChange}
+                    required
                   />
                 </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Rol
-                </label>
-                <select
-                  value={formData.rol}
-                  onChange={(e) => setFormData({ ...formData, rol: e.target.value as 'OPERADOR' | 'ADMINISTRADOR' })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm px-4 py-2"
-                >
-                  {ROLES.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {role.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="space-y-2">
+                  <Label htmlFor="apellidoPaterno">Apellido Paterno</Label>
+                  <Input
+                    id="apellidoPaterno"
+                    name="apellidoPaterno"
+                    value={formData.apellidoPaterno}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="apellidoMaterno">Apellido Materno</Label>
+                  <Input
+                    id="apellidoMaterno"
+                    name="apellidoMaterno"
+                    value={formData.apellidoMaterno}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Correo Electrónico</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required={!isEditing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    required={!isEditing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rolId">Rol</Label>
+                  <Select
+                    value={formData.rolId.toString()}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, rolId: parseInt(value) }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((rol) => (
+                        <SelectItem key={rol.id} value={rol.id.toString()}>
+                          {rol.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
+              {passwordError && (
+                <p className="text-red-500 text-sm">{passwordError}</p>
+              )}
+              <div className="flex justify-end space-x-2">
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={onCloseModal}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19]"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#FEBF19] border border-transparent rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19]"
+                  disabled={isSubmitting}
                 >
-                  {editingUser ? 'Guardar cambios' : 'Crear usuario'}
-                </button>
+                  {isSubmitting ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
+                </Button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul className="divide-y divide-gray-200">
+          {users.map((user) => (
+            <li key={user.id}>
+              <div className="px-4 py-4 sm:px-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <p className="text-sm font-medium text-gray-900">
+                      {user.Usuario.nombre} {user.Usuario.apellidoPaterno} {user.Usuario.apellidoMaterno}
+                    </p>
+                    <span className="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                      {roles.find(r => r.id === user.rolId)?.nombre || 'Sin rol'}
+                    </span>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(user)}
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(user.id)}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">{user.Usuario.email}</p>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 } 

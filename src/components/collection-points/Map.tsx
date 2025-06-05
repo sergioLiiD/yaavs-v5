@@ -10,11 +10,13 @@ interface MapProps {
     lng?: number;
     address?: string;
   };
+  onLocationSelect?: (location: { lat: number; lng: number; address: string }) => void;
 }
 
-export default function Map({ selectedLocation }: MapProps) {
+export default function Map({ selectedLocation, onLocationSelect }: MapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
 
   useEffect(() => {
     const mapElement = mapRef.current;
@@ -26,15 +28,20 @@ export default function Map({ selectedLocation }: MapProps) {
         
         // Si el mapa ya está inicializado, solo actualizamos la ubicación
         if (mapInstanceRef.current) {
-          const lat = selectedLocation?.latitude || selectedLocation?.lat || 19.4326;
-          const lng = selectedLocation?.longitude || selectedLocation?.lng || -99.1332;
+          const lat = selectedLocation?.lat || selectedLocation?.latitude || 19.4326;
+          const lng = selectedLocation?.lng || selectedLocation?.longitude || -99.1332;
           const address = selectedLocation?.address || 'Ciudad de México';
 
           mapInstanceRef.current.setView([lat, lng], 13);
           
-          // Actualizar el marcador
-          const marker = L.marker([lat, lng]).addTo(mapInstanceRef.current);
-          marker.bindPopup(address).openPopup();
+          // Eliminar el marcador anterior si existe
+          if (markerRef.current) {
+            mapInstanceRef.current.removeLayer(markerRef.current);
+          }
+          
+          // Crear nuevo marcador
+          markerRef.current = L.marker([lat, lng]).addTo(mapInstanceRef.current);
+          markerRef.current.bindPopup(address).openPopup();
           
           return;
         }
@@ -52,8 +59,8 @@ export default function Map({ selectedLocation }: MapProps) {
         L.Marker.prototype.options.icon = DefaultIcon;
 
         // Valores por defecto para Ciudad de México
-        const lat = selectedLocation?.latitude || selectedLocation?.lat || 19.4326;
-        const lng = selectedLocation?.longitude || selectedLocation?.lng || -99.1332;
+        const lat = selectedLocation?.lat || selectedLocation?.latitude || 19.4326;
+        const lng = selectedLocation?.lng || selectedLocation?.longitude || -99.1332;
         const address = selectedLocation?.address || 'Ciudad de México';
 
         // Crear el mapa
@@ -66,14 +73,23 @@ export default function Map({ selectedLocation }: MapProps) {
         }).addTo(map);
 
         // Agregar el marcador
-        const marker = L.marker([lat, lng]).addTo(map);
-        marker.bindPopup(address).openPopup();
+        markerRef.current = L.marker([lat, lng]).addTo(map);
+        markerRef.current.bindPopup(address).openPopup();
+
+        // Agregar evento de clic en el mapa
+        if (onLocationSelect) {
+          map.on('click', (e: any) => {
+            const { lat, lng } = e.latlng;
+            onLocationSelect({ lat, lng, address: '' });
+          });
+        }
 
         // Limpiar al desmontar
         return () => {
           if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
             mapInstanceRef.current = null;
+            markerRef.current = null;
           }
         };
       } catch (error) {
@@ -82,7 +98,7 @@ export default function Map({ selectedLocation }: MapProps) {
     };
 
     loadMap();
-  }, [selectedLocation]);
+  }, [selectedLocation, onLocationSelect]);
 
   return (
     <div className="h-full w-full">

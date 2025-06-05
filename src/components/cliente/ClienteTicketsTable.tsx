@@ -112,8 +112,12 @@ export function ClienteTicketsTable() {
                         {ticket.numeroTicket}
                       </Button>
                     </TableCell>
-                    <TableCell>{ticket.modelo.marca.nombre} {ticket.modelo.nombre}</TableCell>
-                    <TableCell>{ticket.tipoServicio.nombre}</TableCell>
+                    <TableCell>
+                      {ticket.modelo?.marca?.nombre 
+                        ? `${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}`
+                        : 'Modelo no disponible'}
+                    </TableCell>
+                    <TableCell>{ticket.tipoServicio?.nombre || 'Servicio no disponible'}</TableCell>
                     <TableCell>{ticket.tecnicoAsignado ? ticket.tecnicoAsignado.nombre : 'Sin asignar'}</TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
@@ -121,7 +125,7 @@ export function ClienteTicketsTable() {
                           ? 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20'
                           : 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20'
                       }`}>
-                        {ticket.estatusReparacion.nombre}
+                        {ticket.estatusReparacion?.nombre || 'Estado no disponible'}
                       </span>
                     </TableCell>
                     <TableCell>{new Date(ticket.fechaRecepcion).toLocaleDateString()}</TableCell>

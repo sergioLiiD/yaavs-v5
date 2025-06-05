@@ -55,7 +55,9 @@ export default function CollectionPointModal({ isOpen, onClose, collectionPoint 
                     <Dialog.Title as="h3" className="text-2xl font-semibold leading-6 text-gray-900 mb-6">
                       {collectionPoint ? 'Editar Punto de Recolección' : 'Nuevo Punto de Recolección'}
                     </Dialog.Title>
-                    <CollectionPointForm onClose={onClose} collectionPoint={collectionPoint} />
+                    <div className="mt-2">
+                      <CollectionPointForm onClose={onClose} collectionPoint={collectionPoint} />
+                    </div>
                   </div>
                 </div>
               </Dialog.Panel>

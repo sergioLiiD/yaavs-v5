@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     console.log('Datos recibidos:', body);
 
     // Validar datos requeridos
-    if (!body.modeloId || !body.direccion) {
+    if (!body.modeloId) {
       return NextResponse.json(
         { error: 'Faltan campos requeridos' },
         { status: 400 }
@@ -57,21 +57,24 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // Crear la dirección asociada al ticket
-    await prisma.direcciones.create({
-      data: {
-        calle: body.direccion.calle,
-        numeroExterior: body.direccion.numeroExterior,
-        numeroInterior: body.direccion.numeroInterior,
-        colonia: body.direccion.colonia,
-        ciudad: body.direccion.ciudad,
-        estado: body.direccion.estado,
-        codigoPostal: body.direccion.codigoPostal,
-        latitud: body.direccion.latitud,
-        longitud: body.direccion.longitud,
-        tickets: { connect: { id: ticket.id } }
-      }
-    });
+    // Crear la dirección solo si el tipo de recolección es domicilio
+    if (body.tipoRecoleccion === 'domicilio' && body.direccion) {
+      await prisma.direcciones.create({
+        data: {
+          calle: body.direccion.calle,
+          numeroExterior: body.direccion.numeroExterior,
+          numeroInterior: body.direccion.numeroInterior,
+          colonia: body.direccion.colonia,
+          ciudad: body.direccion.ciudad,
+          estado: body.direccion.estado,
+          codigoPostal: body.direccion.codigoPostal,
+          latitud: body.direccion.latitud,
+          longitud: body.direccion.longitud,
+          tickets: { connect: { id: ticket.id } },
+          updatedAt: new Date()
+        }
+      });
+    }
 
     // Obtener el ticket completo con sus relaciones
     const ticketCompleto = await prisma.ticket.findUnique({

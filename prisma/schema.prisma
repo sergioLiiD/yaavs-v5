@@ -320,6 +320,7 @@ model Rol {
   descripcion String?
   permisos    RolPermiso[]
   usuarios    UsuarioRol[]
+  usuariosPuntos usuarios_puntos_recoleccion[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -640,7 +641,7 @@ model puntos_recoleccion {
   id            String                        @id @default(uuid())
   name          String
   phone         String
-  email         String                        @unique
+  email         String
   url           String?
   schedule      Json                          // Almacenará el array de horarios
   location      Json                          // Almacenará la ubicación (address, latitude, longitude)
@@ -687,12 +688,13 @@ model usuarios_puntos_recoleccion {
   id                 String             @id
   puntoRecoleccionId String
   usuarioId          Int
-  nivel              NivelUsuarioPunto
+  rolId              Int
   activo             Boolean            @default(true)
   createdAt          DateTime           @default(now())
-  updatedAt          DateTime
+  updatedAt          DateTime           @updatedAt
   puntos_recoleccion puntos_recoleccion @relation(fields: [puntoRecoleccionId], references: [id])
   Usuario            Usuario            @relation(fields: [usuarioId], references: [id])
+  Rol                Rol                @relation(fields: [rolId], references: [id])
 
   @@unique([puntoRecoleccionId, usuarioId])
 }

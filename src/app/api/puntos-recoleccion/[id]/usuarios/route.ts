@@ -15,13 +15,16 @@ export async function GET(
       where: {
         puntoRecoleccionId: params.id,
       },
-      include: {
+      select: {
+        id: true,
+        puntoRecoleccionId: true,
+        usuarioId: true,
+        activo: true,
         Usuario: {
           select: {
             id: true,
             nombre: true,
             email: true,
-            nivel: true,
             apellidoPaterno: true,
             apellidoMaterno: true,
           },
@@ -48,7 +51,7 @@ export async function POST(
 ) {
   try {
     const body = await request.json();
-    const { email, password, nombre, apellidoPaterno, apellidoMaterno, nivel } = body;
+    const { email, password, nombre, apellidoPaterno, apellidoMaterno, rolId } = body;
 
     // Verificar si el punto de recolección existe
     const collectionPoint = await prisma.puntos_recoleccion.findUnique({
@@ -74,18 +77,37 @@ export async function POST(
       );
     }
 
+    // Verificar si el rol existe
+    const rol = await prisma.rol.findUnique({
+      where: { id: rolId },
+    });
+
+    if (!rol) {
+      return NextResponse.json(
+        { error: 'El rol seleccionado no existe' },
+        { status: 400 }
+      );
+    }
+
     // Crear el usuario
     const hashedPassword = await hash(password, 12);
     const usuario = await prisma.usuario.create({
       data: {
         email,
-        nombre: `${nombre} ${apellidoPaterno} ${apellidoMaterno}`.trim(),
+        nombre,
         apellidoPaterno,
         apellidoMaterno,
         passwordHash: hashedPassword,
-        nivel: 'TECNICO',
         activo: true,
         updatedAt: new Date(),
+      },
+    });
+
+    // Asignar el rol al usuario (UsuarioRol)
+    await prisma.usuarioRol.create({
+      data: {
+        usuarioId: usuario.id,
+        rolId: rolId,
       },
     });
 
@@ -95,10 +117,8 @@ export async function POST(
         id: uuidv4(),
         puntoRecoleccionId: params.id,
         usuarioId: usuario.id,
-        nivel: nivel as 'ADMINISTRADOR' | 'OPERADOR',
+        rolId: rolId,
         activo: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       },
       include: {
         Usuario: {
@@ -106,7 +126,8 @@ export async function POST(
             id: true,
             nombre: true,
             email: true,
-            nivel: true,
+            apellidoPaterno: true,
+            apellidoMaterno: true,
           },
         },
       },

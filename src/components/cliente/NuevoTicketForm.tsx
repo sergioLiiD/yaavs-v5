@@ -43,16 +43,28 @@ const ticketSchema = z.object({
   patronDesbloqueo: z.array(z.string()).optional(),
   descripcionProblema: z.string().min(1, 'La descripción del problema es requerida'),
 
-  // Dirección de recolección
-  calle: z.string().min(1, 'La calle es requerida'),
-  numeroExterior: z.string().min(1, 'El número exterior es requerido'),
+  // Tipo de recolección
+  tipoRecoleccion: z.enum(['domicilio', 'oficina']).default('domicilio'),
+
+  // Dirección de recolección (solo si es domicilio)
+  calle: z.string().optional(),
+  numeroExterior: z.string().optional(),
   numeroInterior: z.string().optional(),
-  colonia: z.string().min(1, 'La colonia es requerida'),
-  ciudad: z.string().min(1, 'La ciudad es requerida'),
-  estado: z.string().min(1, 'El estado es requerido'),
-  codigoPostal: z.string().min(1, 'El código postal es requerido'),
-  latitud: z.number(),
-  longitud: z.number(),
+  colonia: z.string().optional(),
+  ciudad: z.string().optional(),
+  estado: z.string().optional(),
+  codigoPostal: z.string().optional(),
+  latitud: z.number().optional(),
+  longitud: z.number().optional(),
+}).refine((data) => {
+  if (data.tipoRecoleccion === 'domicilio') {
+    return data.calle && data.numeroExterior && data.colonia && 
+           data.ciudad && data.estado && data.codigoPostal;
+  }
+  return true;
+}, {
+  message: "Todos los campos de dirección son requeridos cuando se selecciona recolección a domicilio",
+  path: ["calle"]
 });
 
 type TicketFormData = z.infer<typeof ticketSchema>;
@@ -83,6 +95,7 @@ export function NuevoTicketForm() {
       redCelular: '',
       codigoDesbloqueo: '',
       descripcionProblema: '',
+      tipoRecoleccion: 'domicilio',
       calle: '',
       numeroExterior: '',
       numeroInterior: '',
@@ -96,6 +109,7 @@ export function NuevoTicketForm() {
   });
 
   const selectedMarcaId = form.watch('marcaId');
+  const tipoRecoleccion = form.watch('tipoRecoleccion');
   const direccion = form.watch(['calle', 'numeroExterior', 'colonia', 'ciudad', 'estado', 'codigoPostal']);
 
   // Cargar Google Maps
@@ -556,7 +570,7 @@ export function NuevoTicketForm() {
                   <FormItem>
                     <FormLabel>Código de Desbloqueo</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="text" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -633,139 +647,202 @@ export function NuevoTicketForm() {
           />
         </div>
 
-        {/* Dirección de recolección */}
+        {/* Tipo de recolección */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Dirección de Recolección</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="calle"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Calle</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="numeroExterior"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número Exterior</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="numeroInterior"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número Interior</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="colonia"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Colonia</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="ciudad"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ciudad</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="estado"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Estado</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="codigoPostal"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Código Postal</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          
-          <div className="flex justify-end">
-            <Button 
-              type="button" 
-              onClick={handleSearchOnMap}
-              className="mb-4"
-              disabled={isLoadingMaps || !googleMapsLoaded}
-            >
-              {isLoadingMaps ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Cargando Google Maps...
-                </div>
-              ) : !googleMapsLoaded ? (
-                'Error al cargar Google Maps'
-              ) : (
-                'Buscar en el mapa'
-              )}
-            </Button>
-          </div>
-
-          {showMap && (
-            <div className="h-[400px] w-full border rounded-lg overflow-hidden relative">
-              {!mapLoaded ? (
-                <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                    <p className="text-gray-600">Cargando mapa...</p>
+          <h3 className="text-lg font-medium">Tipo de Recolección</h3>
+          <FormField
+            control={form.control}
+            name="tipoRecoleccion"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="domicilio"
+                      name="tipoRecoleccion"
+                      value="domicilio"
+                      checked={field.value === "domicilio"}
+                      onChange={() => field.onChange("domicilio")}
+                      className="h-4 w-4 text-[#FEBF19]"
+                    />
+                    <Label htmlFor="domicilio">Recolección a Domicilio</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="oficina"
+                      name="tipoRecoleccion"
+                      value="oficina"
+                      checked={field.value === "oficina"}
+                      onChange={() => field.onChange("oficina")}
+                      className="h-4 w-4 text-[#FEBF19]"
+                    />
+                    <Label htmlFor="oficina">Envío a Oficina Central</Label>
                   </div>
                 </div>
-              ) : null}
-              <div 
-                ref={mapContainerRef} 
-                className="w-full h-full absolute inset-0"
-                style={{ minHeight: '400px' }}
-              />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {tipoRecoleccion === 'oficina' && (
+            <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+              <h4 className="font-medium">Instrucciones para envío a oficina central:</h4>
+              <div className="space-y-2">
+                <p><strong>Dirección de envío:</strong></p>
+                <p>Arregla.mx<br />
+                Atenas 56 piso 1<br />
+                Colonia Juárez<br />
+                Delegación Cuahutemoc<br />
+                CDMX</p>
+                <p><strong>Whatsapp:</strong> 56 5243 5208</p>
+                <div className="mt-4">
+                  <p><strong>Instrucciones importantes:</strong></p>
+                  <ul className="list-disc pl-5 space-y-2">
+                    <li>Enviar el equipo en su caja original y sellada.</li>
+                    <li>Si no se tiene la caja original, enviar en caja envuelta con plástico con burbujas para evitar daños.</li>
+                    <li>El equipo se evaluará en el estado en el que fue recibido, por lo que un buen empaque es muy importante para evitar daños.</li>
+                  </ul>
+                </div>
+              </div>
             </div>
+          )}
+
+          {tipoRecoleccion === 'domicilio' && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="calle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Calle</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="numeroExterior"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número Exterior</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="numeroInterior"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número Interior</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="colonia"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Colonia</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="ciudad"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ciudad</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="estado"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="codigoPostal"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Código Postal</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  type="button" 
+                  onClick={handleSearchOnMap}
+                  className="mb-4"
+                  disabled={isLoadingMaps || !googleMapsLoaded}
+                >
+                  {isLoadingMaps ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Cargando Google Maps...
+                    </div>
+                  ) : !googleMapsLoaded ? (
+                    'Error al cargar Google Maps'
+                  ) : (
+                    'Buscar en el mapa'
+                  )}
+                </Button>
+              </div>
+
+              {showMap && (
+                <div className="h-[400px] w-full border rounded-lg overflow-hidden relative">
+                  {!mapLoaded ? (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FEBF19]"></div>
+                        <p className="text-gray-600">Cargando mapa...</p>
+                      </div>
+                    </div>
+                  ) : null}
+                  <div 
+                    ref={mapContainerRef} 
+                    className="w-full h-full absolute inset-0"
+                    style={{ minHeight: '400px' }}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
 

@@ -64,8 +64,8 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
     isRepairPoint: false,
     location: {
       address: '',
-      latitude: 19.4326,
-      longitude: -99.1332,
+      lat: 19.4326,
+      lng: -99.1332,
     },
     schedule: {
       monday: { open: false, start: '09:00', end: '18:00' },
@@ -82,8 +82,8 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
 
   const [selectedLocation, setSelectedLocation] = useState<Location>({
     address: '',
-    latitude: 0,
-    longitude: 0,
+    lat: 19.4326,
+    lng: -99.1332,
   });
 
   const [headquarters, setHeadquarters] = useState<Headquarters[]>([]);
@@ -137,6 +137,11 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
         ...prev,
         [name]: checked,
       }));
+    } else if (name === 'parentId') {
+      setFormData(prev => ({
+        ...prev,
+        parentId: value || undefined
+      }));
     } else {
       setFormData(prev => ({
         ...prev,
@@ -186,10 +191,32 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
     setError(null);
 
     try {
+      // Asegurarnos de que el horario tenga el formato correcto
+      const schedule = Object.entries(formData.schedule).reduce((acc, [day, schedule]) => {
+        const dayKey = day as keyof Schedule;
+        acc[dayKey] = {
+          open: Boolean(schedule.open),
+          start: schedule.start || '09:00',
+          end: schedule.end || '18:00'
+        };
+        return acc;
+      }, {} as Schedule);
+
+      // Asegurarnos de que la ubicación tenga el formato correcto
+      const location = {
+        address: formData.location.address,
+        lat: Number(formData.location.lat),
+        lng: Number(formData.location.lng)
+      };
+
       const data = {
         ...formData,
-        schedule: formData.schedule
+        schedule,
+        location,
+        parentId: !formData.isHeadquarters ? formData.parentId : undefined
       };
+
+      console.log('Enviando datos:', JSON.stringify(data, null, 2));
 
       const response = await fetch(
         collectionPoint ? `/api/puntos-recoleccion/${collectionPoint.id}` : '/api/puntos-recoleccion',
@@ -202,17 +229,17 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
         }
       );
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        throw new Error('Error al guardar el punto de recolección');
+        throw new Error(responseData.error || 'Error al crear punto de recolección');
       }
 
+      onSuccess?.();
       onClose();
-      if (onSuccess) {
-        onSuccess();
-      }
     } catch (error) {
       console.error('Error:', error);
-      setError('Error al guardar el punto de recolección');
+      setError(error instanceof Error ? error.message : 'Error al crear punto de recolección');
     } finally {
       setIsSubmitting(false);
     }
@@ -242,23 +269,22 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
         
         const newLocation = {
           address: display_name,
-          latitude: parseFloat(lat),
-          longitude: parseFloat(lon),
+          lat: parseFloat(lat),
+          lng: parseFloat(lon),
         };
         console.log('Nueva ubicación:', newLocation);
         
+        // Actualizar tanto selectedLocation como formData
         setSelectedLocation(newLocation);
         setFormData(prev => ({
           ...prev,
-          location: newLocation,
+          location: newLocation
         }));
       } else {
         console.log('No se encontraron resultados para la dirección');
-        alert('No se encontró la dirección');
       }
     } catch (error) {
-      console.error('Error detallado al buscar la dirección:', error);
-      alert('Error al buscar la dirección');
+      console.error('Error al buscar la ubicación:', error);
     }
   };
 
@@ -269,6 +295,11 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
       </h1>
       
       <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+            {error}
+          </div>
+        )}
         {/* Selector de tipo de punto */}
         {!collectionPoint && (
           <div className="mb-6">
@@ -471,10 +502,12 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
               </button>
             </div>
           </div>
-          <DynamicMap
-            selectedLocation={selectedLocation}
-            onLocationSelect={setSelectedLocation}
-          />
+          <div className="h-96 w-full rounded-lg overflow-hidden border border-gray-200">
+            <DynamicMap
+              selectedLocation={selectedLocation}
+              onLocationSelect={setSelectedLocation}
+            />
+          </div>
         </div>
 
         <div className="flex justify-end space-x-3">

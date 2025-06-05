@@ -17,6 +17,8 @@ export interface DaySchedule {
 export interface Location {
   lat: number;
   lng: number;
+  latitude?: number;
+  longitude?: number;
   address: string;
 }
 
@@ -31,6 +33,11 @@ export interface CollectionPoint {
   location: Location;
   schedule: Schedule;
   parentId?: string;
+  parent?: {
+    id: string;
+    name: string;
+  };
+  branches?: CollectionPoint[];
   createdAt: Date;
   updatedAt: Date;
 }

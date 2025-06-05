@@ -1,22 +1,32 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { verify } from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    // Obtener el token de la cookie
+    const token = cookies().get('cliente_token')?.value;
+
+    if (!token) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
     }
 
+    // Verificar el token
+    const decoded = verify(token, process.env.JWT_SECRET || 'tu_secreto_seguro_para_jwt_aqui') as { id: number, email: string };
+
+    // Buscar el cliente en la base de datos
     const cliente = await prisma.cliente.findUnique({
-      where: { email: session.user.email },
+      where: { 
+        id: decoded.id,
+        email: decoded.email,
+        activo: true
+      },
       select: {
         id: true,
         nombre: true,

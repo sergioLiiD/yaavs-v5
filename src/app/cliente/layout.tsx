@@ -38,8 +38,16 @@ export default function ClienteLayout({
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <Link href="/cliente" className="text-xl font-bold text-blue-600">
-                  YAAVS
+                <Link href="/cliente" className="flex items-center">
+                  <img 
+                    src="/logo.png" 
+                    alt="YAAVS Logo" 
+                    className="h-12 w-auto"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
                 </Link>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -47,7 +55,7 @@ export default function ClienteLayout({
                   href="/cliente"
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                     pathname === '/cliente'
-                      ? 'border-blue-500 text-gray-900'
+                      ? 'border-[#FEBF19] text-gray-900'
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
                 >
@@ -57,7 +65,7 @@ export default function ClienteLayout({
                   href="/cliente/tickets"
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                     pathname === '/cliente/tickets'
-                      ? 'border-blue-500 text-gray-900'
+                      ? 'border-[#FEBF19] text-gray-900'
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
                 >
@@ -67,7 +75,7 @@ export default function ClienteLayout({
                   href="/cliente/nuevo-ticket"
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                     pathname === '/cliente/nuevo-ticket'
-                      ? 'border-blue-500 text-gray-900'
+                      ? 'border-[#FEBF19] text-gray-900'
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
                 >
