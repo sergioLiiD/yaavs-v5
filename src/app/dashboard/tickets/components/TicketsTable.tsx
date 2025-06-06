@@ -39,7 +39,8 @@ import { Badge } from "@/components/ui/badge";
 
 interface Ticket {
   id: number;
-  cliente?: {
+  numeroTicket: string;
+  cliente: {
     id: number;
     nombre: string;
     apellidoPaterno: string;
@@ -47,19 +48,19 @@ interface Ticket {
     telefonoCelular?: string;
     email?: string;
   };
-  modelo?: {
+  modelo: {
     id: number;
     nombre: string;
-    marcas?: {
+    marcas: {
       id: number;
       nombre: string;
     };
   };
-  tipoServicio?: {
+  tipoServicio: {
     id: number;
     nombre: string;
   };
-  estatusReparacion?: {
+  estatusReparacion: {
     id: number;
     nombre: string;
   };
@@ -176,7 +177,7 @@ export function TicketsTable() {
       ticket.cliente.apellidoPaterno.toLowerCase().includes(searchLower) ||
       ticket.cliente.apellidoMaterno?.toLowerCase().includes(searchLower) ||
       ticket.tipoServicio.nombre.toLowerCase().includes(searchLower) ||
-      ticket.modelo.marca.nombre.toLowerCase().includes(searchLower) ||
+      ticket.modelo.marcas.nombre.toLowerCase().includes(searchLower) ||
       ticket.modelo.nombre.toLowerCase().includes(searchLower) ||
       ticket.estatusReparacion.nombre.toLowerCase().includes(searchLower) ||
       (ticket.tecnicoAsignado?.nombre.toLowerCase().includes(searchLower) || 'sin asignar'.includes(searchLower))
@@ -191,16 +192,18 @@ export function TicketsTable() {
           size="icon"
           onClick={() => onViewDetails(ticket)}
           title="Ver detalles"
+          className="p-2 rounded-md bg-[#FEBF19] hover:bg-[#FEBF19]/90"
         >
-          <Eye className="h-4 w-4" />
+          <Eye className="h-5 w-5 text-black" />
         </Button>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => router.push(`/dashboard/tickets/${ticket.id}/edit`)}
           title="Editar ticket"
+          className="p-2 rounded-md bg-[#FEBF19] hover:bg-[#FEBF19]/90"
         >
-          <Pencil className="h-4 w-4" />
+          <Pencil className="h-5 w-5 text-black" />
         </Button>
         <Button
           variant="ghost"
@@ -210,8 +213,9 @@ export function TicketsTable() {
             setIsAssignModalOpen(true);
           }}
           title={ticket.tecnicoAsignado ? "Cambiar técnico" : "Asignar técnico"}
+          className="p-2 rounded-md bg-[#FEBF19] hover:bg-[#FEBF19]/90"
         >
-          <UserPlus className="h-4 w-4" />
+          <UserPlus className="h-5 w-5 text-black" />
         </Button>
         {ticket.estatusReparacion?.nombre === 'Recibido' && (
           <Button
@@ -219,8 +223,20 @@ export function TicketsTable() {
             size="icon"
             onClick={() => router.push(`/dashboard/tickets/${ticket.id}/repair`)}
             title="Trabajar en reparación"
+            className="p-2 rounded-md bg-[#FEBF19] hover:bg-[#FEBF19]/90"
           >
-            <Wrench className="h-4 w-4" />
+            <Wrench className="h-5 w-5 text-black" />
+          </Button>
+        )}
+        {!ticket.cancelado && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(ticket.id)}
+            title="Eliminar ticket"
+            className="p-2 rounded-md bg-[#FEBF19] hover:bg-[#FEBF19]/90"
+          >
+            <Trash2 className="h-5 w-5 text-black" />
           </Button>
         )}
       </div>
@@ -385,16 +401,6 @@ export function TicketsTable() {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     {renderAcciones(ticket)}
-                    {!ticket.cancelado && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDelete(ticket.id)}
-                        title="Eliminar ticket"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 </TableCell>
               </TableRow>

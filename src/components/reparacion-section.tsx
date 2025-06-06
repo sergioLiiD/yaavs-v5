@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Ticket } from '@/types/ticket';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { HiClock, HiCamera, HiVideoCamera } from 'react-icons/hi';
+import { HiClock, HiCamera, HiVideoCamera, HiSave } from 'react-icons/hi';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
@@ -262,27 +262,41 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
             <div className="flex items-center space-x-4">
               {!isTimerRunning && (
                 <Button
+                  type="button"
                   onClick={handleStartTimer}
-                  className="bg-blue-600 hover:bg-blue-700"
-                  disabled={!hasValidPayment}
+                  disabled={isTimerRunning || !hasValidPayment}
+                  className="flex items-center space-x-2"
                 >
-                  Iniciar Reparación
+                  <div className="p-2 rounded-md border-2 border-orange-500">
+                    <HiClock className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <span>Iniciar Reparación</span>
                 </Button>
               )}
               {isTimerRunning && !isPaused && (
                 <Button
+                  type="button"
                   onClick={handlePauseTimer}
-                  className="bg-yellow-600 hover:bg-yellow-700"
+                  disabled={!isTimerRunning || isPaused}
+                  className="flex items-center space-x-2"
                 >
-                  Pausar
+                  <div className="p-2 rounded-md border-2 border-orange-500">
+                    <HiClock className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <span>Pausar</span>
                 </Button>
               )}
               {isPaused && (
                 <Button
+                  type="button"
                   onClick={handleResumeTimer}
-                  className="bg-green-600 hover:bg-green-700"
+                  disabled={!isPaused}
+                  className="flex items-center space-x-2"
                 >
-                  Reanudar
+                  <div className="p-2 rounded-md border-2 border-orange-500">
+                    <HiClock className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <span>Reanudar</span>
                 </Button>
               )}
               <span className="text-sm text-gray-500">
@@ -360,13 +374,16 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                   className="hidden"
                   id="foto-upload"
                 />
-                <label
-                  htmlFor="foto-upload"
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+                <Button
+                  type="button"
+                  onClick={() => document.getElementById('foto-upload')?.click()}
+                  className="flex items-center space-x-2"
                 >
-                  <HiCamera className="h-5 w-5 mr-2" />
-                  Subir Fotos
-                </label>
+                  <div className="p-2 rounded-md border-2 border-orange-500">
+                    <HiCamera className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <span>Subir Fotos</span>
+                </Button>
               </div>
               {fotos.length > 0 && (
                 <div className="grid grid-cols-3 gap-4 mt-4">
@@ -393,13 +410,16 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                   className="hidden"
                   id="video-upload"
                 />
-                <label
-                  htmlFor="video-upload"
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+                <Button
+                  type="button"
+                  onClick={() => document.getElementById('video-upload')?.click()}
+                  className="flex items-center space-x-2"
                 >
-                  <HiVideoCamera className="h-5 w-5 mr-2" />
-                  Subir Videos
-                </label>
+                  <div className="p-2 rounded-md border-2 border-orange-500">
+                    <HiVideoCamera className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <span>Subir Videos</span>
+                </Button>
               </div>
               {videos.length > 0 && (
                 <div className="grid grid-cols-2 gap-4 mt-4">
@@ -419,11 +439,15 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
           {/* Botón de completar reparación */}
           <div className="flex justify-end">
             <Button
+              type="button"
               onClick={handleSubmit}
               disabled={isLoading}
-              className="bg-green-600 hover:bg-green-700"
+              className="flex items-center space-x-2"
             >
-              {isLoading ? 'Guardando...' : 'Completar Reparación'}
+              <div className="p-2 rounded-md border-2 border-orange-500">
+                <HiSave className="h-5 w-5 text-orange-500" />
+              </div>
+              <span>{isLoading ? 'Guardando...' : 'Completar Reparación'}</span>
             </Button>
           </div>
         </div>

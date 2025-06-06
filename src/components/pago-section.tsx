@@ -27,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { HiSave } from 'react-icons/hi';
 
 interface PagoSectionProps {
   ticketId: number;
@@ -300,10 +301,15 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
             {/* Botón de guardar */}
             <div className="flex justify-end">
               <Button
+                type="button"
                 onClick={handleGuardarPago}
                 disabled={isLoading}
+                className="flex items-center space-x-2"
               >
-                {isLoading ? 'Guardando...' : 'Guardar Pago'}
+                <div className="p-2 rounded-md border-2 border-orange-500">
+                  <HiSave className="h-5 w-5 text-orange-500" />
+                </div>
+                <span>{isLoading ? 'Guardando...' : 'Guardar Pago'}</span>
               </Button>
             </div>
           </div>
@@ -332,12 +338,14 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
                       <p className="text-sm text-gray-500">{pago.metodoPago}</p>
                     </div>
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      type="button"
                       onClick={() => handleDeletePago(pago)}
-                      disabled={isLoading}
+                      className="flex items-center space-x-2"
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <div className="p-2 rounded-md border-2 border-orange-500">
+                        <Trash2 className="h-5 w-5 text-orange-500" />
+                      </div>
+                      <span>Eliminar</span>
                     </Button>
                   </div>
                 </div>

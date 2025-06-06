@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { HiSave, HiClock, HiCamera } from 'react-icons/hi';
 
 interface ChecklistItem {
   id: number;
@@ -195,8 +196,11 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
             </div>
           )}
 
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Guardando...' : 'Guardar Diagnóstico'}
+          <Button type="submit" disabled={isLoading} className="flex items-center space-x-2">
+            <div className="p-2 rounded-md border-2 border-orange-500">
+              <HiSave className="h-5 w-5 text-orange-500" />
+            </div>
+            <span>{isLoading ? 'Guardando...' : 'Guardar Diagnóstico'}</span>
           </Button>
         </form>
       </CardContent>

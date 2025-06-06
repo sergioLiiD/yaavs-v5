@@ -27,6 +27,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HiSave } from "react-icons/hi";
 
 interface Producto {
   id: number;
@@ -509,10 +510,13 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
                     <TableCell>
                       <Button
                         type="button"
-                        variant="ghost"
                         onClick={() => handleRemoveProducto(producto.id)}
+                        className="flex items-center space-x-2"
                       >
-                        <TrashIcon className="h-4 w-4" />
+                        <div className="p-2 rounded-md border-2 border-orange-500">
+                          <TrashIcon className="h-5 w-5 text-orange-500" />
+                        </div>
+                        <span>Eliminar</span>
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -530,10 +534,15 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
             {/* Botón de guardar */}
             <div className="flex justify-end">
               <Button
+                type="button"
                 onClick={handleGuardarPresupuesto}
                 disabled={isLoading}
+                className="flex items-center space-x-2"
               >
-                {isLoading ? 'Guardando...' : 'Guardar Presupuesto'}
+                <div className="p-2 rounded-md border-2 border-orange-500">
+                  <HiSave className="h-5 w-5 text-orange-500" />
+                </div>
+                <span>{isLoading ? 'Guardando...' : 'Guardar Presupuesto'}</span>
               </Button>
             </div>
           </div>
