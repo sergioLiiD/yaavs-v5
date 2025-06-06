@@ -27,6 +27,7 @@ import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import RouteGuard from '@/components/route-guard';
 
 const NIVELES_USUARIO = ['ADMINISTRADOR', 'TECNICO', 'ATENCION_CLIENTE'] as const;
 
@@ -304,322 +305,326 @@ export default function UsuariosPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openModal}>
-              <HiPlus className="h-5 w-5 mr-2" />
-              Nuevo Usuario
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl" aria-describedby="dialog-description">
-            <DialogHeader>
-              <DialogTitle>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
-              <p id="dialog-description" className="sr-only">
-                {isEditing ? 'Formulario para editar los datos del usuario' : 'Formulario para crear un nuevo usuario'}
-              </p>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nombre">Nombre</Label>
-                  <Input
-                    id="nombre"
-                    name="nombre"
-                    value={currentUsuario.nombre || ''}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="apellidoPaterno">Apellido Paterno</Label>
-                  <Input
-                    id="apellidoPaterno"
-                    name="apellidoPaterno"
-                    value={currentUsuario.apellidoPaterno || ''}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="apellidoMaterno">Apellido Materno</Label>
-                  <Input
-                    id="apellidoMaterno"
-                    name="apellidoMaterno"
-                    value={currentUsuario.apellidoMaterno || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={currentUsuario.email || ''}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">
-                    {isEditing ? 'Nueva Contraseña (opcional)' : 'Contraseña'}
-                  </Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    value={currentUsuario.password || ''}
-                    onChange={handleInputChange}
-                    required={!isEditing}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">
-                    {isEditing ? 'Confirmar Nueva Contraseña (opcional)' : 'Confirmar Contraseña'}
-                  </Label>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    value={currentUsuario.confirmPassword || ''}
-                    onChange={handleInputChange}
-                    required={!isEditing}
-                  />
-                </div>
-                {passwordError && (
-                  <div className="col-span-2 text-sm text-red-500">
-                    {passwordError}
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <Label>Estado</Label>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="activo"
-                      checked={currentUsuario.activo}
-                      onCheckedChange={(checked) => 
-                        setCurrentUsuario(prev => ({ ...prev, activo: checked as boolean }))
-                      }
-                    />
-                    <Label htmlFor="activo">Activo</Label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2 mt-4 border-t pt-4">
-                <Label className="text-lg font-semibold">Roles</Label>
-                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                  {roles.length > 0 ? (
-                    roles.map((rol) => (
-                      <div key={rol.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`rol-${rol.id}`}
-                          checked={currentUsuario.roles?.includes(rol.id)}
-                          onCheckedChange={(checked) => handleRoleChange(rol.id, checked as boolean)}
-                        />
-                        <Label htmlFor={`rol-${rol.id}`} className="font-medium">
-                          {rol.nombre}
-                        </Label>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="col-span-2 text-center text-gray-500">
-                      No hay roles disponibles
+    <RouteGuard requiredPermissions={['USERS_VIEW']} section="Usuarios">
+      <div className="container mx-auto py-6">
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openModal}>
+                  <HiPlus className="h-5 w-5 mr-2" />
+                  Nuevo Usuario
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl" aria-describedby="dialog-description">
+                <DialogHeader>
+                  <DialogTitle>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
+                  <p id="dialog-description" className="sr-only">
+                    {isEditing ? 'Formulario para editar los datos del usuario' : 'Formulario para crear un nuevo usuario'}
+                  </p>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="nombre">Nombre</Label>
+                      <Input
+                        id="nombre"
+                        name="nombre"
+                        value={currentUsuario.nombre || ''}
+                        onChange={handleInputChange}
+                        required
+                      />
                     </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={closeModal} disabled={isSubmitting}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                      {isEditing ? 'Actualizando...' : 'Creando...'}
-                    </>
-                  ) : (
-                    isEditing ? 'Actualizar' : 'Crear'
-                  )}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-        <div className="flex-1">
-          <Input
-            type="search"
-            placeholder="Buscar usuarios..."
-            value={searchTerm}
-            onChange={handleSearch}
-            className="w-full"
-          />
-        </div>
-        <Select
-          value={estadoFilter === '' ? 'all' : estadoFilter.toString()}
-          onValueChange={(value) => handleFilterChange('estado', value)}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filtrar por estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los estados</SelectItem>
-            <SelectItem value="true">Activos</SelectItem>
-            <SelectItem value="false">Inactivos</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-
-      <div className="bg-white shadow-sm rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Roles</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedUsuarios.map((usuario) => (
-              <TableRow key={usuario.id}>
-                <TableCell>
-                  {usuario.nombre} {usuario.apellidoPaterno} {usuario.apellidoMaterno}
-                </TableCell>
-                <TableCell>{usuario.email}</TableCell>
-                <TableCell>
-                  <Badge variant={usuario.activo ? "default" : "destructive"}>
-                    {usuario.activo ? 'Activo' : 'Inactivo'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {usuario.roles && usuario.roles.length > 0 ? (
-                      usuario.roles.map((ur) => (
-                        <Badge key={ur.rol.id} variant="secondary">
-                          {ur.rol.nombre}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-gray-500">Sin roles asignados</span>
+                    <div className="space-y-2">
+                      <Label htmlFor="apellidoPaterno">Apellido Paterno</Label>
+                      <Input
+                        id="apellidoPaterno"
+                        name="apellidoPaterno"
+                        value={currentUsuario.apellidoPaterno || ''}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="apellidoMaterno">Apellido Materno</Label>
+                      <Input
+                        id="apellidoMaterno"
+                        name="apellidoMaterno"
+                        value={currentUsuario.apellidoMaterno || ''}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={currentUsuario.email || ''}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">
+                        {isEditing ? 'Nueva Contraseña (opcional)' : 'Contraseña'}
+                      </Label>
+                      <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        value={currentUsuario.password || ''}
+                        onChange={handleInputChange}
+                        required={!isEditing}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">
+                        {isEditing ? 'Confirmar Nueva Contraseña (opcional)' : 'Confirmar Contraseña'}
+                      </Label>
+                      <Input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type="password"
+                        value={currentUsuario.confirmPassword || ''}
+                        onChange={handleInputChange}
+                        required={!isEditing}
+                      />
+                    </div>
+                    {passwordError && (
+                      <div className="col-span-2 text-sm text-red-500">
+                        {passwordError}
+                      </div>
                     )}
+                    <div className="space-y-2">
+                      <Label>Estado</Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="activo"
+                          checked={currentUsuario.activo}
+                          onCheckedChange={(checked) => 
+                            setCurrentUsuario(prev => ({ ...prev, activo: checked as boolean }))
+                          }
+                        />
+                        <Label htmlFor="activo">Activo</Label>
+                      </div>
+                    </div>
                   </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(usuario)}
-                    >
-                      <HiPencilAlt className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteClick(usuario)}
-                      disabled={isDeleting === usuario.id}
-                    >
-                      {isDeleting === usuario.id ? (
-                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-gray-900"></div>
+
+                  <div className="space-y-2 mt-4 border-t pt-4">
+                    <Label className="text-lg font-semibold">Roles</Label>
+                    <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                      {roles.length > 0 ? (
+                        roles.map((rol) => (
+                          <div key={rol.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`rol-${rol.id}`}
+                              checked={currentUsuario.roles?.includes(rol.id)}
+                              onCheckedChange={(checked) => handleRoleChange(rol.id, checked as boolean)}
+                            />
+                            <Label htmlFor={`rol-${rol.id}`} className="font-medium">
+                              {rol.nombre}
+                            </Label>
+                          </div>
+                        ))
                       ) : (
-                        <HiTrash className="h-5 w-5" />
+                        <div className="col-span-2 text-center text-gray-500">
+                          No hay roles disponibles
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" onClick={closeModal} disabled={isSubmitting}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                          {isEditing ? 'Actualizando...' : 'Creando...'}
+                        </>
+                      ) : (
+                        isEditing ? 'Actualizar' : 'Crear'
                       )}
                     </Button>
                   </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar eliminación</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-gray-600">
-              ¿Está seguro que desea eliminar al usuario{' '}
-              <span className="font-semibold">
-                {userToDelete?.nombre} {userToDelete?.apellidoPaterno} {userToDelete?.apellidoMaterno}
-              </span>?
-            </p>
-            <p className="text-sm text-red-500 mt-2">
-              Esta acción no se puede deshacer y eliminará permanentemente todos los datos asociados al usuario.
-            </p>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={handleDeleteCancel}
-              disabled={isDeleting === userToDelete?.id}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting === userToDelete?.id}
-            >
-              {isDeleting === userToDelete?.id ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                  Eliminando...
-                </>
-              ) : (
-                'Eliminar'
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {totalPages > 1 && (
-        <div className="flex justify-center space-x-2">
-          <Button
-            variant="outline"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            Anterior
-          </Button>
-          <div className="flex items-center space-x-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
+            <div className="flex-1">
+              <Input
+                type="search"
+                placeholder="Buscar usuarios..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="w-full"
+              />
+            </div>
+            <Select
+              value={estadoFilter === '' ? 'all' : estadoFilter.toString()}
+              onValueChange={(value) => handleFilterChange('estado', value)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filtrar por estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="true">Activos</SelectItem>
+                <SelectItem value="false">Inactivos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
+          <div className="bg-white shadow-sm rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Roles</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedUsuarios.map((usuario) => (
+                  <TableRow key={usuario.id}>
+                    <TableCell>
+                      {usuario.nombre} {usuario.apellidoPaterno} {usuario.apellidoMaterno}
+                    </TableCell>
+                    <TableCell>{usuario.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={usuario.activo ? "default" : "destructive"}>
+                        {usuario.activo ? 'Activo' : 'Inactivo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {usuario.roles && usuario.roles.length > 0 ? (
+                          usuario.roles.map((ur) => (
+                            <Badge key={ur.rol.id} variant="secondary">
+                              {ur.rol.nombre}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-gray-500">Sin roles asignados</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(usuario)}
+                        >
+                          <HiPencilAlt className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteClick(usuario)}
+                          disabled={isDeleting === usuario.id}
+                        >
+                          {isDeleting === usuario.id ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-gray-900"></div>
+                          ) : (
+                            <HiTrash className="h-5 w-5" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirmar eliminación</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <p className="text-gray-600">
+                  ¿Está seguro que desea eliminar al usuario{' '}
+                  <span className="font-semibold">
+                    {userToDelete?.nombre} {userToDelete?.apellidoPaterno} {userToDelete?.apellidoMaterno}
+                  </span>?
+                </p>
+                <p className="text-sm text-red-500 mt-2">
+                  Esta acción no se puede deshacer y eliminará permanentemente todos los datos asociados al usuario.
+                </p>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={handleDeleteCancel}
+                  disabled={isDeleting === userToDelete?.id}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteConfirm}
+                  disabled={isDeleting === userToDelete?.id}
+                >
+                  {isDeleting === userToDelete?.id ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                      Eliminando...
+                    </>
+                  ) : (
+                    'Eliminar'
+                  )}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center space-x-2">
               <Button
-                key={page}
-                variant={currentPage === page ? "default" : "outline"}
-                onClick={() => handlePageChange(page)}
+                variant="outline"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
               >
-                {page}
+                Anterior
               </Button>
-            ))}
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            Siguiente
-          </Button>
+              <div className="flex items-center space-x-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Siguiente
+              </Button>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    </RouteGuard>
   );
 } 

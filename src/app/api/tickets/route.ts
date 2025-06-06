@@ -3,138 +3,132 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
+    console.log('Sesión:', session);
+
     if (!session?.user) {
+      console.log('No hay sesión de usuario');
       return new NextResponse('No autorizado', { status: 401 });
     }
 
-    const body = await req.json();
-    console.log('Datos recibidos en la API:', body);
+    const data = await request.json();
+    console.log('Datos recibidos:', data);
 
     const {
       clienteId,
       tipoServicioId,
       modeloId,
       descripcionProblema,
-      tecnicoAsignadoId,
       capacidad,
       color,
       fechaCompra,
       codigoDesbloqueo,
       redCelular,
-      esReparacionDirecta = false,
-    } = body;
-
-    // Validar datos requeridos
-    if (!clienteId || !tipoServicioId || !modeloId) {
-      return new NextResponse('Faltan campos requeridos', { status: 400 });
-    }
+      imei,
+    } = data;
 
     // Convertir IDs a números
     const clienteIdNum = parseInt(clienteId);
     const tipoServicioIdNum = parseInt(tipoServicioId);
     const modeloIdNum = parseInt(modeloId);
-    const tecnicoAsignadoIdNum = tecnicoAsignadoId ? parseInt(tecnicoAsignadoId) : null;
 
-    // Obtener el estado inicial según el tipo de reparación
-    const estatusReparacion = await prisma.estatusReparacion.findFirst({
-      where: { 
-        nombre: esReparacionDirecta ? 'En Reparación' : 'Recibido'
-      }
-    });
-
-    if (!estatusReparacion) {
-      return new NextResponse('No se encontró el estado inicial', { status: 500 });
+    if (isNaN(clienteIdNum) || isNaN(tipoServicioIdNum) || isNaN(modeloIdNum)) {
+      return new NextResponse('IDs inválidos', { status: 400 });
     }
 
-    // Crear el ticket
-    const ticket = await prisma.ticket.create({
-      data: {
-        numeroTicket: `TKT-${Date.now()}`,
-        clienteId: clienteIdNum,
-        tipoServicioId: tipoServicioIdNum,
-        modeloId: modeloIdNum,
-        descripcionProblema: descripcionProblema || '',
-        estatusReparacionId: estatusReparacion.id,
-        creadorId: Number(session.user.id),
-        tecnicoAsignadoId: tecnicoAsignadoIdNum,
-      },
+    // Obtener el estatus inicial
+    const estatusInicial = await prisma.estatusReparacion.findFirst({
+      where: { nombre: 'Recibido' }
     });
 
-    // Crear el dispositivo asociado al ticket
-    await prisma.dispositivos.create({
+    if (!estatusInicial) {
+      console.log('No se encontró el estatus inicial');
+      return new NextResponse('No se encontró el estatus inicial', { status: 500 });
+    }
+
+    console.log('Estatus inicial encontrado:', estatusInicial);
+
+    // Crear el dispositivo primero
+    const dispositivo = await prisma.dispositivos.create({
       data: {
         capacidad,
         color,
         fechaCompra: fechaCompra ? new Date(fechaCompra) : null,
         codigoDesbloqueo,
         redCelular,
-        ticketId: ticket.id,
         updatedAt: new Date()
-      },
+      }
     });
 
-    // Si es reparación directa, crear la reparación inmediatamente
-    if (esReparacionDirecta) {
-      await prisma.reparacion.create({
-        data: {
-          ticketId: ticket.id,
-          tecnicoId: Number(session.user.id),
-          fechaInicio: new Date(),
-          updatedAt: new Date()
-        },
-      });
-    }
+    console.log('Dispositivo creado:', dispositivo);
 
+    // Crear el ticket
+    const ticket = await prisma.ticket.create({
+      data: {
+        numeroTicket: `TICK-${Date.now()}`,
+        clienteId: clienteIdNum,
+        tipoServicioId: tipoServicioIdNum,
+        modeloId: modeloIdNum,
+        descripcionProblema,
+        estatusReparacionId: estatusInicial.id,
+        creadorId: session.user.id,
+        imei,
+        dispositivos: {
+          connect: {
+            id: dispositivo.id
+          }
+        }
+      },
+      include: {
+        dispositivos: true
+      }
+    });
+
+    console.log('Ticket creado:', ticket);
     return NextResponse.json(ticket);
   } catch (error) {
-    console.error('Error al crear ticket:', error);
-    return NextResponse.json(
-      { error: `Error al crear ticket: ${error instanceof Error ? error.message : 'Error desconocido'}` },
-      { status: 500 }
-    );
+    console.error('Error al crear el ticket:', error);
+    if (error instanceof Error) {
+      return new NextResponse(`Error al crear el ticket: ${error.message}`, { status: 500 });
+    }
+    return new NextResponse('Error interno del servidor', { status: 500 });
   }
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
+    console.log('Sesión:', session);
 
-    const { searchParams } = new URL(request.url);
-    const tecnicoId = searchParams.get('tecnicoId');
+    if (!session?.user) {
+      console.log('No hay sesión de usuario');
+      return new NextResponse('No autorizado', { status: 401 });
+    }
 
     const tickets = await prisma.ticket.findMany({
       where: {
-        ...(tecnicoId ? { tecnicoAsignadoId: parseInt(tecnicoId) } : {}),
+        cancelado: false
       },
       include: {
-        cliente: true,
-        tipoServicio: true,
-        modelo: {
-          include: {
-            marcas: true,
-          },
-        },
-        estatusReparacion: {
-          select: {
-            id: true,
-            nombre: true,
-            color: true
-          }
-        },
-        creador: {
+        cliente: {
           select: {
             id: true,
             nombre: true,
             apellidoPaterno: true,
-            apellidoMaterno: true
+            apellidoMaterno: true,
+            telefonoCelular: true,
+            email: true
           }
         },
+        modelo: {
+          include: {
+            marcas: true
+          }
+        },
+        tipoServicio: true,
+        estatusReparacion: true,
         tecnicoAsignado: {
           select: {
             id: true,
@@ -143,29 +137,25 @@ export async function GET(request: Request) {
             apellidoMaterno: true
           }
         },
-        Presupuesto: true,
-        pagos: {
-          orderBy: {
-            fecha: 'desc'
+        creador: {
+          select: {
+            id: true,
+            nombre: true
           }
         },
-        Reparacion: true,
-        TicketProblema: true,
-        dispositivos: true,
-        entregas: true,
-        direcciones: true
+        dispositivos: true
       },
       orderBy: {
-        createdAt: 'desc',
-      },
+        createdAt: 'desc'
+      }
     });
+
+    console.log('Tickets encontrados:', tickets.length);
+    console.log('Primer ticket:', JSON.stringify(tickets[0], null, 2));
 
     return NextResponse.json(tickets);
   } catch (error) {
     console.error('Error al obtener tickets:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener tickets' },
-      { status: 500 }
-    );
+    return new NextResponse('Error interno del servidor', { status: 500 });
   }
 } 

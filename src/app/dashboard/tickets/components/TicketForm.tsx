@@ -17,18 +17,18 @@ interface TicketFormProps {
 export function TicketForm({ initialData, onSubmit, isEditing = false }: TicketFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    clienteId: initialData?.clienteId || '',
-    tipoServicioId: initialData?.tipoServicioId || '',
-    modeloId: initialData?.modeloId || '',
-    descripcion: initialData?.descripcion || '',
-    tecnicoAsignadoId: initialData?.tecnicoAsignadoId || null,
-    estatusReparacionId: initialData?.estatusReparacionId || '',
+    clienteId: initialData?.clienteId?.toString() || '',
+    tipoServicioId: initialData?.tipoServicioId?.toString() || '',
+    modeloId: initialData?.modeloId?.toString() || '',
+    descripcion: initialData?.descripcionProblema || '',
+    tecnicoAsignadoId: initialData?.tecnicoAsignadoId?.toString() || '',
+    estatusReparacionId: initialData?.estatusReparacionId?.toString() || '',
     imei: initialData?.imei || '',
-    capacidad: initialData?.capacidad || '',
-    color: initialData?.color || '',
-    fechaCompra: initialData?.fechaCompra || '',
-    codigoDesbloqueo: initialData?.codigoDesbloqueo || '',
-    redCelular: initialData?.redCelular || '',
+    capacidad: initialData?.dispositivos?.capacidad || '',
+    color: initialData?.dispositivos?.color || '',
+    fechaCompra: initialData?.dispositivos?.fechaCompra ? new Date(initialData.dispositivos.fechaCompra).toISOString().split('T')[0] : '',
+    codigoDesbloqueo: initialData?.dispositivos?.codigoDesbloqueo || '',
+    redCelular: initialData?.dispositivos?.redCelular || '',
   });
 
   const [clientes, setClientes] = useState<any[]>([]);
@@ -88,8 +88,8 @@ export function TicketForm({ initialData, onSubmit, isEditing = false }: TicketF
             </SelectTrigger>
             <SelectContent>
               {clientes.map((cliente) => (
-                <SelectItem key={cliente.id} value={cliente.id}>
-                  {cliente.nombre} {cliente.apellidos}
+                <SelectItem key={cliente.id} value={cliente.id.toString()}>
+                  {cliente.nombre} {cliente.apellidoPaterno} {cliente.apellidoMaterno}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -108,7 +108,7 @@ export function TicketForm({ initialData, onSubmit, isEditing = false }: TicketF
             </SelectTrigger>
             <SelectContent>
               {tiposServicio.map((tipo) => (
-                <SelectItem key={tipo.id} value={tipo.id}>
+                <SelectItem key={tipo.id} value={tipo.id.toString()}>
                   {tipo.nombre}
                 </SelectItem>
               ))}
@@ -128,8 +128,8 @@ export function TicketForm({ initialData, onSubmit, isEditing = false }: TicketF
             </SelectTrigger>
             <SelectContent>
               {modelos.map((modelo) => (
-                <SelectItem key={modelo.id} value={modelo.id}>
-                  {modelo.marca.nombre} {modelo.nombre}
+                <SelectItem key={modelo.id} value={modelo.id.toString()}>
+                  {modelo.marcas.nombre} {modelo.nombre}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -199,25 +199,16 @@ export function TicketForm({ initialData, onSubmit, isEditing = false }: TicketF
         <div className="space-y-2">
           <Label htmlFor="tecnicoAsignadoId">Técnico Asignado</Label>
           <Select
-            value={formData.tecnicoAsignadoId?.toString() || ''}
-            onValueChange={(value) => {
-              setFormData(prev => ({
-                ...prev,
-                tecnicoAsignadoId: value ? parseInt(value, 10) : null
-              }));
-            }}
+            value={formData.tecnicoAsignadoId}
+            onValueChange={(value) => setFormData({ ...formData, tecnicoAsignadoId: value })}
           >
             <SelectTrigger>
-              <SelectValue>
-                {formData.tecnicoAsignadoId 
-                  ? tecnicos.find(t => t.id === formData.tecnicoAsignadoId)?.nombre 
-                  : "Seleccionar técnico"}
-              </SelectValue>
+              <SelectValue placeholder="Seleccionar técnico" />
             </SelectTrigger>
             <SelectContent>
               {tecnicos.map((tecnico) => (
                 <SelectItem key={tecnico.id} value={tecnico.id.toString()}>
-                  {tecnico.nombre}
+                  {tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -235,7 +226,7 @@ export function TicketForm({ initialData, onSubmit, isEditing = false }: TicketF
             </SelectTrigger>
             <SelectContent>
               {estatusReparacion.map((estatus) => (
-                <SelectItem key={estatus.id} value={estatus.id}>
+                <SelectItem key={estatus.id} value={estatus.id.toString()}>
                   {estatus.nombre}
                 </SelectItem>
               ))}

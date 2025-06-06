@@ -29,39 +29,24 @@ const clienteSchema = z.object({
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    console.log('Session en GET /api/clientes:', session);
+
+    if (!session?.user) {
+      return new NextResponse('No autorizado', { status: 401 });
+    }
+
     const clientes = await prisma.cliente.findMany({
-      select: {
-        id: true,
-        nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true,
-        telefonoCelular: true,
-        telefonoContacto: true,
-        email: true,
-        calle: true,
-        numeroExterior: true,
-        numeroInterior: true,
-        colonia: true,
-        ciudad: true,
-        estado: true,
-        codigoPostal: true,
-        latitud: true,
-        longitud: true,
-        fuenteReferencia: true,
-        rfc: true,
-        activo: true,
-        tipoRegistro: true,
-        createdAt: true,
-        updatedAt: true
-      }
+      orderBy: {
+        nombre: 'asc',
+      },
     });
+
+    console.log('Clientes encontrados:', clientes.length);
     return NextResponse.json(clientes);
   } catch (error) {
     console.error('Error al obtener clientes:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener los clientes' },
-      { status: 500 }
-    );
+    return new NextResponse('Error al obtener los clientes', { status: 500 });
   }
 }
 

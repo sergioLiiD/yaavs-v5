@@ -1,22 +1,23 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 // GET: Obtener todas las marcas - Sin autenticación
 export async function GET() {
   try {
-    // Datos estáticos de marcas
-    const marcas = [
-      { id: 1, nombre: 'Apple' },
-      { id: 2, nombre: 'Samsung' },
-      { id: 3, nombre: 'Xiaomi' },
-      { id: 4, nombre: 'Huawei' },
-      { id: 5, nombre: 'Motorola' },
-      { id: 6, nombre: 'LG' },
-      { id: 7, nombre: 'Sony' },
-      { id: 8, nombre: 'OnePlus' },
-      { id: 9, nombre: 'Google' }
-    ];
+    const session = await getServerSession(authOptions);
 
-    console.log('API: Enviando datos de marcas:', marcas);
+    if (!session?.user) {
+      return new NextResponse('No autorizado', { status: 401 });
+    }
+
+    const marcas = await prisma.marca.findMany({
+      orderBy: {
+        nombre: 'asc'
+      }
+    });
+
     return NextResponse.json(marcas);
   } catch (error) {
     console.error('Error al obtener marcas:', error);

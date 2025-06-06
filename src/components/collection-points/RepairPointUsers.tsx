@@ -178,15 +178,24 @@ export default function RepairPointUsers({
       setIsSubmitting(true);
       const userData = { ...formData };
       
-      if (isEditing && !userData.password && editingUser) {
+      if (isEditing && editingUser) {
         const { password, confirmPassword, ...userDataWithoutPassword } = userData;
         const response = await fetch(`/api/puntos-recoleccion/${collectionPointId}/usuarios/${editingUser.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userDataWithoutPassword)
+          body: JSON.stringify({
+            email: userDataWithoutPassword.email,
+            nombre: userDataWithoutPassword.nombre,
+            apellidoPaterno: userDataWithoutPassword.apellidoPaterno,
+            apellidoMaterno: userDataWithoutPassword.apellidoMaterno,
+            rolId: userDataWithoutPassword.rolId
+          })
         });
 
-        if (!response.ok) throw new Error('Error al actualizar usuario');
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Error al actualizar usuario');
+        }
         toast.success('Usuario actualizado exitosamente');
       } else {
         const response = await fetch(`/api/puntos-recoleccion/${collectionPointId}/usuarios`, {
@@ -195,7 +204,10 @@ export default function RepairPointUsers({
           body: JSON.stringify(userData)
         });
 
-        if (!response.ok) throw new Error('Error al crear usuario');
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Error al crear usuario');
+        }
         toast.success('Usuario creado exitosamente');
       }
 
@@ -204,7 +216,7 @@ export default function RepairPointUsers({
       resetForm();
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Error al guardar usuario');
+      toast.error(error instanceof Error ? error.message : 'Error al guardar usuario');
     } finally {
       setIsSubmitting(false);
     }
@@ -219,7 +231,7 @@ export default function RepairPointUsers({
       nombre: user.Usuario.nombre.split(' ')[0],
       apellidoPaterno: user.Usuario.apellidoPaterno,
       apellidoMaterno: user.Usuario.apellidoMaterno || '',
-      rolId: user.rolId
+      rolId: user.rolId || 0
     });
     onEditStart();
   };
@@ -312,7 +324,7 @@ export default function RepairPointUsers({
                 <div className="space-y-2">
                   <Label htmlFor="rolId">Rol</Label>
                   <Select
-                    value={formData.rolId.toString()}
+                    value={formData.rolId ? formData.rolId.toString() : ''}
                     onValueChange={(value) => setFormData(prev => ({ ...prev, rolId: parseInt(value) }))}
                   >
                     <SelectTrigger>

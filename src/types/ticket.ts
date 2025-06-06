@@ -46,7 +46,9 @@ export type ReparacionWithChecklist = {
   }>;
 };
 
-export type Ticket = {
+export type EstadoTicket = 'ABIERTO' | 'EN_PROGRESO' | 'CERRADO';
+
+export interface Ticket {
   id: number;
   numeroTicket: string;
   fechaRecepcion: Date;
@@ -68,6 +70,7 @@ export type Ticket = {
   fechaFinReparacion: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  imei: string | null;
   cliente: {
     id: number;
     nombre: string;
@@ -83,7 +86,7 @@ export type Ticket = {
   modelo: {
     id: number;
     nombre: string;
-    marca: {
+    marcas: {
       id: number;
       nombre: string;
     };
@@ -151,4 +154,4 @@ export type Ticket = {
     fecha: Date;
     metodoPago: string;
   }>;
-}; 
+} 

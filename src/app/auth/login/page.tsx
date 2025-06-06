@@ -8,7 +8,12 @@ import { Button } from '@/components/ui/button';
 
 function LoginForm() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, status } = useSession({
+    required: false,
+    onUnauthenticated() {
+      // No hacer nada, el usuario no está autenticado
+    }
+  });
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   
@@ -19,11 +24,7 @@ function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
-    console.log('Login page loaded');
-    console.log('Session status:', status);
-    console.log('Current session:', session);
-    
-    if (status === 'authenticated') {
+    if (status === 'authenticated' && session) {
       console.log('User is authenticated, redirecting to:', callbackUrl);
       router.push(callbackUrl);
     }
@@ -33,31 +34,38 @@ function LoginForm() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-
-    console.log('Attempting to sign in with:', { email });
     
     try {
       const result = await signIn('credentials', {
         redirect: false,
         email,
         password,
+        callbackUrl
       });
-
-      console.log('Sign in result:', result);
 
       if (result?.error) {
         setError('Credenciales inválidas');
-        setIsLoading(false);
       } else if (result?.ok) {
-        console.log('Authentication successful, redirecting to:', callbackUrl);
         router.push(callbackUrl);
       }
     } catch (err) {
       console.error('Sign in error:', err);
       setError('Error durante el inicio de sesión');
+    } finally {
       setIsLoading(false);
     }
   };
+
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FEBF19] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
@@ -157,7 +165,14 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div>Cargando...</div>}>
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FEBF19] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    }>
       <LoginForm />
     </Suspense>
   );

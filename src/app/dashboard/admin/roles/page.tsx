@@ -20,6 +20,8 @@ import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@
 import { toast } from 'sonner';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Checkbox } from '@/components/ui/checkbox';
+import RestrictedAccess from '@/components/restricted-access';
+import RouteGuard from '@/components/route-guard';
 
 interface Rol {
   id: number;
@@ -44,6 +46,7 @@ interface Permiso {
   nombre: string;
   descripcion: string;
   codigo: string;
+  categoria: string;
 }
 
 export default function RolesPage() {
@@ -65,21 +68,11 @@ export default function RolesPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
-      return;
-    }
-
     if (status === 'authenticated' && session?.user) {
-      if (session.user.role !== 'ADMINISTRADOR') {
-        router.push('/dashboard');
-        return;
-      }
-
       fetchRoles();
       fetchPermisos();
     }
-  }, [status, session, router]);
+  }, [status, session]);
 
   const fetchRoles = async () => {
     try {
@@ -204,135 +197,162 @@ export default function RolesPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Gestión de Roles</h1>
-        <Button
-          onClick={() => {
-            setIsEditing(false);
-            setEditingId(null);
-            setCurrentRol({
-              nombre: '',
-              descripcion: '',
-              permisos: []
-            });
-            setIsModalOpen(true);
-          }}
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Nuevo Rol
-        </Button>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 text-red-500 p-4 rounded-lg mb-6">
-          {error}
+    <RouteGuard requiredPermissions={['ROLES_VIEW']} section="Roles">
+      <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Gestión de Roles</h1>
+          <Button
+            onClick={() => {
+              setIsEditing(false);
+              setEditingId(null);
+              setCurrentRol({
+                nombre: '',
+                descripcion: '',
+                permisos: []
+              });
+              setIsModalOpen(true);
+            }}
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Nuevo Rol
+          </Button>
         </div>
-      )}
 
-      <div className="bg-white rounded-lg shadow">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Descripción</TableHead>
-              <TableHead>Permisos</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {roles.map((rol) => (
-              <TableRow key={rol.id}>
-                <TableCell>{rol.nombre}</TableCell>
-                <TableCell>{rol.descripcion}</TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {rol.permisos.map((permiso) => (
-                      <span
-                        key={permiso.id}
-                        className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                      >
-                        {permiso.nombre}
-                      </span>
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEdit(rol)}
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(rol.id)}
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </Button>
-                </TableCell>
+        {error && (
+          <div className="bg-red-50 text-red-500 p-4 rounded-lg mb-6">
+            {error}
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg shadow">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead>Permisos</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {roles.map((rol) => (
+                <TableRow key={rol.id}>
+                  <TableCell>{rol.nombre}</TableCell>
+                  <TableCell>{rol.descripcion}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {rol.permisos.map((permiso) => (
+                        <span
+                          key={permiso.id}
+                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                        >
+                          {permiso.nombre}
+                        </span>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(rol)}
+                    >
+                      <PencilIcon className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(rol.id)}
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{isEditing ? 'Editar Rol' : 'Nuevo Rol'}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="nombre">Nombre</Label>
-              <Input
-                id="nombre"
-                name="nombre"
-                value={currentRol.nombre || ''}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="descripcion">Descripción</Label>
-              <Textarea
-                id="descripcion"
-                name="descripcion"
-                value={currentRol.descripcion || ''}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Permisos</Label>
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                {permisos.map((permiso) => (
-                  <div key={permiso.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`permiso-${permiso.id}`}
-                      checked={currentRol.permisos?.includes(permiso.id)}
-                      onCheckedChange={() => handlePermisoChange(permiso.id)}
-                    />
-                    <Label htmlFor={`permiso-${permiso.id}`} className="font-medium">
-                      {permiso.nombre}
-                    </Label>
-                  </div>
-                ))}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{isEditing ? 'Editar Rol' : 'Nuevo Rol'}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="nombre">Nombre</Label>
+                <Input
+                  id="nombre"
+                  name="nombre"
+                  value={currentRol.nombre || ''}
+                  onChange={handleInputChange}
+                  required
+                />
               </div>
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={closeModal}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {isEditing ? 'Actualizar' : 'Crear'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+              <div className="space-y-2">
+                <Label htmlFor="descripcion">Descripción</Label>
+                <Textarea
+                  id="descripcion"
+                  name="descripcion"
+                  value={currentRol.descripcion || ''}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Permisos</Label>
+                <div className="max-h-[400px] overflow-y-auto p-4 bg-gray-50 rounded-lg">
+                  {Object.entries(
+                    permisos.reduce((acc, permiso) => {
+                      const categoria = permiso.categoria || 'Otros';
+                      if (!acc[categoria]) {
+                        acc[categoria] = [];
+                      }
+                      acc[categoria].push(permiso);
+                      return acc;
+                    }, {} as Record<string, typeof permisos>)
+                  ).map(([categoria, permisosCategoria]) => (
+                    <div key={categoria} className="mb-6 last:mb-0">
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">{categoria}</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {permisosCategoria.map((permiso) => (
+                          <div key={permiso.id} className="flex items-start space-x-2">
+                            <Checkbox
+                              id={`permiso-${permiso.id}`}
+                              checked={currentRol.permisos?.includes(permiso.id)}
+                              onCheckedChange={() => handlePermisoChange(permiso.id)}
+                              className="mt-1"
+                            />
+                            <div>
+                              <Label 
+                                htmlFor={`permiso-${permiso.id}`} 
+                                className="font-medium text-sm"
+                              >
+                                {permiso.nombre}
+                              </Label>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {permiso.descripcion}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={closeModal}>
+                  Cancelar
+                </Button>
+                <Button type="submit">
+                  {isEditing ? 'Actualizar' : 'Crear'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </RouteGuard>
   );
 } 

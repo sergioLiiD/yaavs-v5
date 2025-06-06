@@ -8,7 +8,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const { email, nombre, apellidoPaterno, apellidoMaterno, nivel } = body;
+    const { email, nombre, apellidoPaterno, apellidoMaterno, rolId } = body;
 
     // Verificar si el usuario existe y pertenece al punto de recolección
     const existingUserPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
@@ -30,7 +30,7 @@ export async function PUT(
 
     // Verificar si el email ya está en uso por otro usuario
     if (email !== existingUserPoint.Usuario.email) {
-      const emailInUse = await prisma.Usuario.findUnique({
+      const emailInUse = await prisma.usuario.findUnique({
         where: { email },
       });
 
@@ -42,34 +42,59 @@ export async function PUT(
       }
     }
 
-    // Actualizar el usuario
-    const updatedUsuario = await prisma.Usuario.update({
-      where: { id: existingUserPoint.Usuario.id },
-      data: {
-        email,
-        nombre: `${nombre} ${apellidoPaterno} ${apellidoMaterno}`.trim(),
-      },
+    // Verificar si el rol existe
+    const rol = await prisma.rol.findUnique({
+      where: { id: rolId },
     });
 
-    // Actualizar la relación con el punto de recolección
-    const updatedUserPoint = await prisma.usuarios_puntos_recoleccion.update({
-      where: { id: params.userId },
-      data: {
-        nivel: nivel as 'ADMINISTRADOR' | 'OPERADOR',
-      },
-      include: {
-        Usuario: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true,
-            nivel: true,
+    if (!rol) {
+      return NextResponse.json(
+        { error: 'El rol seleccionado no existe' },
+        { status: 400 }
+      );
+    }
+
+    try {
+      // Actualizar el usuario
+      const updatedUsuario = await prisma.usuario.update({
+        where: { id: existingUserPoint.Usuario.id },
+        data: {
+          email,
+          nombre: `${nombre} ${apellidoPaterno} ${apellidoMaterno}`.trim(),
+        },
+      });
+
+      // Actualizar la relación con el punto de recolección
+      const updatedUserPoint = await prisma.usuarios_puntos_recoleccion.update({
+        where: { id: params.userId },
+        data: {
+          rolId: rolId,
+        },
+        include: {
+          Usuario: {
+            select: {
+              id: true,
+              nombre: true,
+              email: true,
+            },
+          },
+          Rol: {
+            select: {
+              id: true,
+              nombre: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    return NextResponse.json(updatedUserPoint);
+      return NextResponse.json(updatedUserPoint);
+    } catch (error) {
+      console.error('Error al actualizar usuario:', error);
+      return NextResponse.json(
+        { error: 'Error al actualizar el usuario en la base de datos' },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
     return NextResponse.json(

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { EyeIcon, PencilIcon, MagnifyingGlassIcon, PlusIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PencilIcon, MagnifyingGlassIcon, PlusIcon, WrenchScrewdriverIcon, UserPlusIcon } from '@heroicons/react/24/outline';
 import { useSession } from 'next-auth/react';
 import {
   Table,
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye, Trash2, Pencil, UserPlus, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -34,46 +34,55 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AssignTechnicianModal } from '@/components/tickets/AssignTechnicianModal';
+import { Badge } from "@/components/ui/badge";
 
 interface Ticket {
   id: number;
-  numeroTicket: string;
-  cliente: {
+  cliente?: {
+    id: number;
     nombre: string;
     apellidoPaterno: string;
     apellidoMaterno?: string;
+    telefonoCelular?: string;
+    email?: string;
   };
-  tipoServicio: {
+  modelo?: {
+    id: number;
     nombre: string;
-  };
-  modelo: {
-    nombre: string;
-    marca: {
+    marcas?: {
+      id: number;
       nombre: string;
     };
   };
-  estatusReparacion: {
-    nombre: string;
+  tipoServicio?: {
     id: number;
-    color: string;
-  };
-  tecnicoAsignado: {
     nombre: string;
+  };
+  estatusReparacion?: {
+    id: number;
+    nombre: string;
+  };
+  tecnicoAsignado?: {
+    id: number;
+    nombre: string;
+    apellidoPaterno: string;
+    apellidoMaterno?: string;
   } | null;
   fechaRecepcion: string;
-  descripcionProblema: string | null;
-  presupuesto?: {
-    total: number;
-    anticipo: number;
-    saldo: number;
-  };
-  pagos?: {
-    monto: number;
-    fecha: string;
-    concepto: string;
-    metodoPago: string;
-  }[];
+  createdAt: string;
+  updatedAt: string;
   cancelado: boolean;
+  dispositivos?: {
+    capacidad?: string;
+    color?: string;
+    fechaCompra?: string;
+    codigoDesbloqueo?: string;
+  };
+  creador?: {
+    nombre: string;
+  };
+  observaciones?: string;
 }
 
 export function TicketsTable() {
@@ -87,6 +96,10 @@ export function TicketsTable() {
   const [motivoCancelacion, setMotivoCancelacion] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [ticketToCancel, setTicketToCancel] = useState<number | null>(null);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -171,37 +184,47 @@ export function TicketsTable() {
   });
 
   const renderAcciones = (ticket: Ticket) => {
-    const acciones = [
-      {
-        icon: <EyeIcon className="h-5 w-5" />,
-        onClick: () => router.push(`/dashboard/tickets/${ticket.id}`),
-        title: "Ver detalles",
-        color: "text-blue-500 hover:text-blue-700"
-      }
-    ];
-
-    // Solo mostrar botón de edición si el ticket está en estado inicial
-    if (ticket.estatusReparacion.id === 1) { // 1 = Pendiente
-      acciones.push({
-        icon: <PencilIcon className="h-5 w-5" />,
-        onClick: () => router.push(`/dashboard/tickets/${ticket.id}/edit`),
-        title: "Editar ticket",
-        color: "text-green-500 hover:text-green-700"
-      });
-    }
-
-    // Mostrar botón de reparación si el ticket está en diagnóstico o en reparación
-    if (ticket.estatusReparacion.id === 2 || ticket.estatusReparacion.id === 3 || ticket.estatusReparacion.id === 4) { 
-      // 2 = En Diagnóstico, 3 = En Reparación, 4 = Esperando Aprobación de Presupuesto
-      acciones.push({
-        icon: <WrenchScrewdriverIcon className="h-5 w-5" />,
-        onClick: () => router.push(`/dashboard/tickets/${ticket.id}/repair`),
-        title: "Trabajar en reparación",
-        color: "text-orange-500 hover:text-orange-700"
-      });
-    }
-
-    return acciones;
+    return (
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onViewDetails(ticket)}
+          title="Ver detalles"
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.push(`/dashboard/tickets/${ticket.id}/edit`)}
+          title="Editar ticket"
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            setSelectedTicketId(ticket.id);
+            setIsAssignModalOpen(true);
+          }}
+          title={ticket.tecnicoAsignado ? "Cambiar técnico" : "Asignar técnico"}
+        >
+          <UserPlus className="h-4 w-4" />
+        </Button>
+        {ticket.estatusReparacion?.nombre === 'Recibido' && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push(`/dashboard/tickets/${ticket.id}/repair`)}
+            title="Trabajar en reparación"
+          >
+            <Wrench className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+    );
   };
 
   const handleDelete = async (ticketId: number) => {
@@ -281,178 +304,154 @@ export function TicketsTable() {
     }
   };
 
+  const renderModelo = (ticket: Ticket) => {
+    if (!ticket.modelo) return 'No disponible';
+    return `${ticket.modelo.marcas?.nombre || ''} ${ticket.modelo.nombre}`;
+  };
+
+  const onViewDetails = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setIsDetailsModalOpen(true);
+  };
+
+  const onDelete = (ticketId: number) => {
+    handleDelete(ticketId);
+  };
+
   if (loading) {
     return <div>Cargando...</div>;
   }
 
   return (
-    <>
-      <div className="mt-8 flow-root">
-        {/* Buscador, filtros y botón de nuevo ticket */}
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div className="flex-1 flex items-center gap-4">
-            <div className="relative flex-1 rounded-md shadow-sm">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                placeholder="Buscar por número, cliente, servicio, dispositivo, estado o técnico..."
-              />
-            </div>
-            <Select
-              value={filterStatus}
-              onValueChange={(value: 'active' | 'cancelled' | 'all') => setFilterStatus(value)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filtrar por estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Tickets Activos</SelectItem>
-                <SelectItem value="cancelled">Tickets Cancelados</SelectItem>
-                <SelectItem value="all">Todos los Tickets</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <button
-            onClick={() => router.push('/dashboard/tickets/new')}
-            className="inline-flex items-center gap-x-1.5 rounded-md bg-[#FEBF19] px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm hover:bg-[#FEBF19]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FEBF19]"
-          >
-            <PlusIcon className="-ml-0.5 h-5 w-5" />
-            Nuevo Ticket
-          </button>
-        </div>
-
-        <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Número</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Modelo</TableHead>
-                    <TableHead>Tipo de Servicio</TableHead>
-                    <TableHead>Técnico</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTickets.map((ticket) => (
-                    <TableRow 
-                      key={ticket.id}
-                      className={ticket.cancelado ? 'bg-gray-50' : ''}
-                    >
-                      <TableCell>
-                        <button
-                          onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
-                          className="text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          {ticket.numeroTicket}
-                        </button>
-                      </TableCell>
-                      <TableCell>
-                        {ticket.cliente ? `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno} ${ticket.cliente.apellidoMaterno || ''}` : 'Cliente no disponible'}
-                      </TableCell>
-                      <TableCell>
-                        {ticket.modelo && ticket.modelo.marca ? `${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}` : 'Modelo no disponible'}
-                      </TableCell>
-                      <TableCell>
-                        {ticket.tipoServicio ? ticket.tipoServicio.nombre : 'Servicio no disponible'}
-                      </TableCell>
-                      <TableCell>
-                        {ticket.tecnicoAsignado ? ticket.tecnicoAsignado.nombre : 'Sin asignar'}
-                      </TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
-                          ticket.cancelado 
-                            ? 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20'
-                            : ticket.estatusReparacion 
-                              ? `bg-[${ticket.estatusReparacion.color}]/40 text-[${ticket.estatusReparacion.color}] ring-1 ring-inset ring-[${ticket.estatusReparacion.color}]/20`
-                              : 'bg-gray-50 text-gray-700 ring-1 ring-inset ring-gray-600/20'
-                        }`}>
-                          {ticket.estatusReparacion ? ticket.estatusReparacion.nombre : 'Estado no disponible'}
-                        </span>
-                      </TableCell>
-                      <TableCell>{new Date(ticket.fechaRecepcion).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {renderAcciones(ticket).map((accion, index) => (
-                            <Button
-                              key={index}
-                              variant="ghost"
-                              size="icon"
-                              onClick={accion.onClick}
-                            >
-                              {accion.icon}
-                            </Button>
-                          ))}
-                          {!ticket.cancelado && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleCancelClick(ticket.id)}
-                              disabled={isDeleting === ticket.id}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </div>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Tickets</h2>
+        <Button onClick={() => router.push('/dashboard/tickets/new')}>
+          Nuevo Ticket
+        </Button>
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancelar Ticket</DialogTitle>
-            <DialogDescription>
-              Por favor, proporciona el motivo de la cancelación del ticket.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="motivo">Motivo de Cancelación</Label>
-              <Textarea
-                id="motivo"
-                value={motivoCancelacion}
-                onChange={(e) => setMotivoCancelacion(e.target.value)}
-                placeholder="Ingresa el motivo de la cancelación..."
-                rows={4}
-              />
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Cliente</TableHead>
+              <TableHead>Modelo</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead>Técnico</TableHead>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tickets.map((ticket) => (
+              <TableRow key={ticket.id}>
+                <TableCell>
+                  <Button
+                    variant="link"
+                    onClick={() => onViewDetails(ticket)}
+                  >
+                    {ticket.id}
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  {ticket.cliente
+                    ? `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno}`
+                    : 'No disponible'}
+                </TableCell>
+                <TableCell>{renderModelo(ticket)}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      ticket.estatusReparacion?.nombre === 'Completado'
+                        ? 'default'
+                        : ticket.estatusReparacion?.nombre === 'Cancelado'
+                        ? 'destructive'
+                        : 'secondary'
+                    }
+                  >
+                    {ticket.estatusReparacion?.nombre || 'Pendiente'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {ticket.tecnicoAsignado
+                    ? `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno}`
+                    : 'No asignado'}
+                </TableCell>
+                <TableCell>
+                  {new Date(ticket.fechaRecepcion).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {renderAcciones(ticket)}
+                    {!ticket.cancelado && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(ticket.id)}
+                        title="Eliminar ticket"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Modal de Detalles */}
+      {selectedTicket && (
+        <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Detalles del Ticket {selectedTicket.id}</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="font-semibold mb-2">Información del Cliente</h3>
+                <p>Nombre: {selectedTicket.cliente?.nombre} {selectedTicket.cliente?.apellidoPaterno}</p>
+                <p>Teléfono: {selectedTicket.cliente?.telefonoCelular}</p>
+                <p>Email: {selectedTicket.cliente?.email}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Información del Dispositivo</h3>
+                <p>Modelo: {renderModelo(selectedTicket)}</p>
+                <p>Capacidad: {selectedTicket.dispositivos?.capacidad || 'No disponible'}</p>
+                <p>Color: {selectedTicket.dispositivos?.color || 'No disponible'}</p>
+                <p>Fecha de Compra: {selectedTicket.dispositivos?.fechaCompra || 'No disponible'}</p>
+                <p>PIN/Pattern: {selectedTicket.dispositivos?.codigoDesbloqueo || 'No disponible'}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Información del Servicio</h3>
+                <p>Tipo de Servicio: {selectedTicket.tipoServicio?.nombre}</p>
+                <p>Estado: {selectedTicket.estatusReparacion?.nombre}</p>
+                <p>Técnico Asignado: {selectedTicket.tecnicoAsignado ? `${selectedTicket.tecnicoAsignado.nombre} ${selectedTicket.tecnicoAsignado.apellidoPaterno}` : 'No asignado'}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Información Adicional</h3>
+                <p>Fecha de Recepción: {new Date(selectedTicket.fechaRecepcion).toLocaleDateString()}</p>
+                <p>Creado por: {selectedTicket.creador?.nombre}</p>
+                <p>Observaciones: {selectedTicket.observaciones || 'Sin observaciones'}</p>
+              </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsDialogOpen(false);
-                setMotivoCancelacion("");
-                setTicketToCancel(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleCancelConfirm}
-              disabled={!motivoCancelacion || isDeleting !== null}
-            >
-              {isDeleting !== null ? 'Cancelando...' : 'Confirmar Cancelación'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal de Asignación de Técnico */}
+      <AssignTechnicianModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        ticketId={selectedTicketId || 0}
+        onAssign={() => {
+          setIsAssignModalOpen(false);
+          fetchTickets();
+        }}
+      />
+    </div>
   );
 } 

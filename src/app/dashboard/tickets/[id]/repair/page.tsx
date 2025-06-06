@@ -7,48 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { HiSave, HiX, HiClock, HiCamera } from 'react-icons/hi';
-
-interface Ticket {
-  id: number;
-  numeroTicket: string;
-  cliente: {
-    nombre: string;
-    apellidoPaterno: string;
-    apellidoMaterno?: string;
-  };
-  modelo: {
-    nombre: string;
-    marca: {
-      nombre: string;
-    };
-  };
-  estatusReparacion: {
-    id: number;
-    nombre: string;
-  };
-  reparacion?: {
-    diagnostico: string;
-    piezasNecesarias: string;
-    fechaDiagnostico: string;
-    presupuesto: number;
-    fechaPresupuesto: string;
-    fechaInicio: string;
-    fechaFin: string;
-    observaciones: string;
-  };
-}
+import { HiSave, HiX, HiClock, HiCamera, HiArrowLeft } from 'react-icons/hi';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DiagnosticoSection } from '@/components/diagnostico-section';
+import { PresupuestoSection } from '@/components/presupuesto-section';
+import { PagoSection } from '@/components/pago-section';
+import { ReparacionSection } from '@/components/reparacion-section';
+import { Ticket } from '@/types/ticket';
 
 export default function RepairPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { data: session } = useSession();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
   const [ticket, setTicket] = useState<Ticket | null>(null);
-  const [formData, setFormData] = useState({
-    observaciones: '',
-    completar: false,
-  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTicket = async () => {
@@ -59,51 +31,23 @@ export default function RepairPage({ params }: { params: { id: string } }) {
         }
         const data = await response.json();
         setTicket(data);
-        if (data.reparacion) {
-          setFormData(prev => ({
-            ...prev,
-            observaciones: data.reparacion.observaciones || '',
-          }));
-        }
-      } catch (err) {
-        console.error('Error:', err);
+      } catch (error) {
+        console.error('Error:', error);
         setError('Error al cargar el ticket');
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     fetchTicket();
   }, [params.id]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const response = await fetch(`/api/tickets/${params.id}/reparacion`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al guardar la reparación');
-      }
-
-      router.push(`/dashboard/tickets/${params.id}`);
-    } catch (err) {
-      console.error('Error:', err);
-      setError('Error al guardar la reparación');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isLoading) {
-    return <div>Cargando...</div>;
+  if (loading) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="text-center">Cargando...</div>
+      </div>
+    );
   }
 
   if (error || !ticket) {
@@ -124,65 +68,132 @@ export default function RepairPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reparación - Ticket #{ticket.numeroTicket}</h1>
-          <p className="text-sm text-gray-500">
-            Cliente: {ticket.cliente.nombre} {ticket.cliente.apellidoPaterno} {ticket.cliente.apellidoMaterno || ''}
-          </p>
-          <p className="text-sm text-gray-500">
-            Dispositivo: {ticket.modelo.marca.nombre} {ticket.modelo.nombre}
-          </p>
-        </div>
+    <div className="container mx-auto py-6">
+      <div className="flex items-center mb-6">
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mr-4"
+        >
+          <HiArrowLeft className="h-5 w-5 mr-2" />
+          Volver
+        </Button>
+        <h1 className="text-2xl font-bold">
+          Ticket #{ticket.numeroTicket}
+        </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-6">
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <div className="px-4 py-5 sm:p-6">
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="observaciones">Observaciones de la Reparación</Label>
-                <Textarea
-                  id="observaciones"
-                  value={formData.observaciones}
-                  onChange={(e) => setFormData(prev => ({ ...prev, observaciones: e.target.value }))}
-                  rows={4}
-                  placeholder="Describe el proceso de reparación, piezas utilizadas, etc."
-                />
+                <h3 className="text-lg font-medium text-gray-900">Información del Cliente</h3>
+                <div className="mt-2 space-y-2">
+                  <p className="text-sm text-gray-500">
+                    <span className="font-medium">Nombre:</span> {ticket.cliente.nombre} {ticket.cliente.apellidoPaterno} {ticket.cliente.apellidoMaterno || ''}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <span className="font-medium">Teléfono:</span> {ticket.cliente.telefonoCelular}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <span className="font-medium">Email:</span> {ticket.cliente.email}
+                  </p>
+                </div>
               </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="completar"
-                  checked={formData.completar}
-                  onChange={(e) => setFormData(prev => ({ ...prev, completar: e.target.checked }))}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <Label htmlFor="completar" className="ml-2">
-                  Marcar como completada
-                </Label>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Información del Dispositivo</h3>
+                <div className="mt-2 space-y-2">
+                  <p className="text-sm text-gray-500">
+                    <span className="font-medium">Dispositivo:</span> {ticket.modelo.marcas.nombre} {ticket.modelo.nombre}
+                  </p>
+                  {ticket.dispositivos && (
+                    <>
+                      <p className="text-sm text-gray-500">
+                        <span className="font-medium">Color:</span> {ticket.dispositivos.color || 'No especificado'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        <span className="font-medium">Capacidad:</span> {ticket.dispositivos.capacidad || 'No especificada'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        <span className="font-medium">Red Celular:</span> {ticket.dispositivos.redCelular || 'No especificada'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        <span className="font-medium">Código Desbloqueo:</span> {ticket.dispositivos.codigoDesbloqueo || 'No especificado'}
+                      </p>
+                    </>
+                  )}
+                  <p className="text-sm text-gray-500">
+                    <span className="font-medium">IMEI:</span> {ticket.imei || 'No especificado'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <span className="font-medium">Tipo de Servicio:</span> {ticket.tipoServicio.nombre}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <span className="font-medium">Descripción del Problema:</span>
+                  </p>
+                  <p className="text-sm text-gray-500 pl-4 border-l-2 border-gray-200">
+                    {ticket.descripcionProblema || 'No se proporcionó descripción'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <span className="font-medium">Estado Actual:</span>{' '}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      ticket.estatusReparacion.color ? `bg-${ticket.estatusReparacion.color}-100 text-${ticket.estatusReparacion.color}-800` : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {ticket.estatusReparacion.nombre}
+                    </span>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end space-x-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push(`/dashboard/tickets/${params.id}`)}
-          >
-            <HiX className="mr-2 h-5 w-5" />
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            <HiSave className="mr-2 h-5 w-5" />
-            {isLoading ? 'Guardando...' : 'Guardar'}
-          </Button>
-        </div>
-      </form>
+        <Tabs defaultValue="diagnostico" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
+            <TabsTrigger value="presupuesto">Presupuesto</TabsTrigger>
+            <TabsTrigger value="pago">Pago</TabsTrigger>
+            <TabsTrigger value="reparacion">Reparación</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="diagnostico">
+            <DiagnosticoSection 
+              ticket={ticket} 
+              onUpdate={() => {
+                router.refresh();
+              }} 
+            />
+          </TabsContent>
+
+          <TabsContent value="presupuesto">
+            <PresupuestoSection 
+              ticketId={ticket.id} 
+              onUpdate={() => {
+                router.refresh();
+              }} 
+            />
+          </TabsContent>
+
+          <TabsContent value="pago">
+            <PagoSection 
+              ticketId={ticket.id} 
+              onUpdate={() => {
+                router.refresh();
+              }} 
+            />
+          </TabsContent>
+
+          <TabsContent value="reparacion">
+            <ReparacionSection 
+              ticket={ticket} 
+              onUpdate={() => {
+                router.refresh();
+              }} 
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 } 

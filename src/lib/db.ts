@@ -5,7 +5,15 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-const prisma = new PrismaClient();
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const db = globalForPrisma.prisma ?? new PrismaClient({
+  log: ['query', 'error', 'warn'],
+});
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db;
 
 // Agregar manejador de errores para la conexión
 pool.on('error', (err) => {
@@ -25,10 +33,8 @@ export async function testConnection() {
   }
 }
 
-export const db = pool;
-
 export async function getAllPrecios() {
-  return prisma.precioVenta.findMany({
+  return db.precioVenta.findMany({
     orderBy: {
       created_at: 'desc'
     }
@@ -36,13 +42,13 @@ export async function getAllPrecios() {
 }
 
 export async function getPrecioById(id: string) {
-  return prisma.precioVenta.findUnique({
+  return db.precioVenta.findUnique({
     where: { id }
   });
 }
 
 export async function createPrecio(precio: any) {
-  return prisma.precioVenta.create({
+  return db.precioVenta.create({
     data: {
       tipo: precio.tipo,
       nombre: precio.nombre,
@@ -59,7 +65,7 @@ export async function createPrecio(precio: any) {
 }
 
 export async function updatePrecio(precio: any) {
-  return prisma.precioVenta.update({
+  return db.precioVenta.update({
     where: { id: precio.id },
     data: {
       tipo: precio.tipo,
@@ -76,7 +82,7 @@ export async function updatePrecio(precio: any) {
 }
 
 export async function getPreciosSinVenta() {
-  return prisma.precioVenta.findMany({
+  return db.precioVenta.findMany({
     where: {
       precio_venta: 0
     },
@@ -87,7 +93,7 @@ export async function getPreciosSinVenta() {
 }
 
 export async function searchPrecios(query: string) {
-  return prisma.precioVenta.findMany({
+  return db.precioVenta.findMany({
     where: {
       OR: [
         { nombre: { contains: query, mode: 'insensitive' } },
@@ -102,7 +108,7 @@ export async function searchPrecios(query: string) {
 }
 
 export async function getPreciosByTipo(tipo: 'PRODUCTO' | 'SERVICIO') {
-  return prisma.precioVenta.findMany({
+  return db.precioVenta.findMany({
     where: { tipo },
     orderBy: {
       created_at: 'desc'

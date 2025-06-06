@@ -2,8 +2,17 @@ import { CollectionPoint } from '@/types/collection-point';
 
 const API_URL = '/api/puntos-recoleccion';
 
+const defaultOptions = {
+  credentials: 'include' as const,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+};
+
 export async function getCollectionPoints(): Promise<CollectionPoint[]> {
-  const response = await fetch(API_URL);
+  const response = await fetch(API_URL, {
+    ...defaultOptions,
+  });
   if (!response.ok) {
     throw new Error('Error al obtener puntos de recolección');
   }
@@ -11,7 +20,9 @@ export async function getCollectionPoints(): Promise<CollectionPoint[]> {
 }
 
 export async function getCollectionPoint(id: string): Promise<CollectionPoint> {
-  const response = await fetch(`${API_URL}/${id}`);
+  const response = await fetch(`${API_URL}/${id}`, {
+    ...defaultOptions,
+  });
   if (!response.ok) {
     throw new Error('Error al obtener punto de recolección');
   }
@@ -20,10 +31,8 @@ export async function getCollectionPoint(id: string): Promise<CollectionPoint> {
 
 export async function createCollectionPoint(data: Partial<CollectionPoint>): Promise<CollectionPoint> {
   const response = await fetch(API_URL, {
+    ...defaultOptions,
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(data),
   });
   if (!response.ok) {
@@ -34,10 +43,8 @@ export async function createCollectionPoint(data: Partial<CollectionPoint>): Pro
 
 export async function updateCollectionPoint(id: string, data: Partial<CollectionPoint>): Promise<CollectionPoint> {
   const response = await fetch(`${API_URL}/${id}`, {
+    ...defaultOptions,
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(data),
   });
   if (!response.ok) {
@@ -48,6 +55,7 @@ export async function updateCollectionPoint(id: string, data: Partial<Collection
 
 export async function deleteCollectionPoint(id: string): Promise<void> {
   const response = await fetch(`${API_URL}/${id}`, {
+    ...defaultOptions,
     method: 'DELETE',
   });
   if (!response.ok) {

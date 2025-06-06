@@ -173,7 +173,7 @@ export async function PUT(
         tipoServicio: true,
         modelo: {
           include: {
-            marcas: true,
+            marca: true,
           },
         },
         estatusReparacion: true,
@@ -266,7 +266,7 @@ export async function DELETE(
         tipoServicio: true,
         modelo: {
           include: {
-            marcas: true,
+            marca: true,
           },
         },
         estatusReparacion: true,

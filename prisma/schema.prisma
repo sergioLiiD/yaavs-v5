@@ -58,6 +58,12 @@ model Ticket {
   updatedAt              DateTime          @updatedAt
   fechaCancelacion       DateTime?
   direccionId            Int?              @unique
+  imei                   String?           @unique
+  capacidad              String?
+  color                  String?
+  fechaCompra            DateTime?
+  codigoDesbloqueo       String?
+  redCelular             String?
   Presupuesto            Presupuesto?
   Reparacion             Reparacion?
   TicketProblema         TicketProblema[]
@@ -735,12 +741,13 @@ enum TipoProducto {
 
 // Nuevos modelos para el sistema de permisos granular
 model Permiso {
-  id          Int        @id @default(autoincrement())
-  nombre      String     @unique
-  descripcion String
-  codigo      String     @unique
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id          Int         @id @default(autoincrement())
+  codigo      String      @unique
+  nombre      String
+  descripcion String?
+  categoria   String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   roles       RolPermiso[]
 
   @@map("permisos")
