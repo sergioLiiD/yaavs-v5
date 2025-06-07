@@ -5,11 +5,34 @@ import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
   role: string;
   permissions: string[];
+  repairPointId?: string;
+  canRepair?: boolean;
+  usuarios_puntos_recoleccion?: Array<{
+    id: string;
+    puntoRecoleccionId: string;
+    usuarioId: number;
+    rolId: number;
+    activo: boolean;
+    puntos_recoleccion: {
+      id: string;
+      isRepairPoint: boolean;
+    };
+  }>;
+  roles?: Array<{
+    rol: {
+      nombre: string;
+      permisos: Array<{
+        permiso: {
+          codigo: string;
+        };
+      }>;
+    };
+  }>;
 }
 
 export interface Session {
@@ -18,36 +41,44 @@ export interface Session {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(db),
+  adapter: PrismaAdapter(db) as any,
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 días
   },
   pages: {
-    signIn: '/auth/login',
-    error: '/auth/error',
+    signIn: '/repair-point/login',
+    error: '/repair-point/login'
   },
   providers: [
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+        type: { label: 'Type', type: 'text' }
       },
       async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          console.log('Credenciales faltantes');
+          return null;
+        }
+
         try {
-          if (!credentials?.email || !credentials?.password) {
-            console.log('Credenciales faltantes');
-            return null;
-          }
-
-          console.log('Intentando autenticar:', credentials.email);
-
           const user = await db.usuario.findUnique({
             where: {
-              email: credentials.email
+              email: credentials.email,
             },
             include: {
+              usuariosPuntos: {
+                include: {
+                  puntos_recoleccion: {
+                    select: {
+                      id: true,
+                      isRepairPoint: true
+                    }
+                  }
+                }
+              },
               roles: {
                 include: {
                   rol: {
@@ -69,12 +100,6 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          console.log('Usuario encontrado:', {
-            id: user.id,
-            email: user.email,
-            roles: user.roles.map(r => r.rol.nombre)
-          });
-
           const passwordMatch = await bcrypt.compare(
             credentials.password,
             user.passwordHash
@@ -85,21 +110,56 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          console.log('Autenticación exitosa para:', credentials.email);
+          // Verificar los roles y permisos del usuario
+          const userRoles = user.roles.map(role => ({
+            nombre: role.rol.nombre,
+            permisos: role.rol.permisos.map(p => p.permiso.codigo)
+          }));
 
-          const roles = user.roles.map(r => r.rol.nombre);
-          const permisos = user.roles.flatMap(r => 
-            r.rol.permisos.map(rp => rp.permiso.codigo)
-          );
+          console.log('Roles del usuario:', userRoles);
 
-          console.log('Permisos asignados:', permisos);
+          // Determinar el rol principal y permisos
+          let role = 'USER';
+          let permissions: string[] = [];
+          let puntoRecoleccion = null;
+
+          // Verificar si es administrador
+          const isAdmin = userRoles.some(r => r.nombre === 'ADMINISTRADOR');
+          if (isAdmin) {
+            role = 'ADMINISTRATOR';
+            permissions = ['*']; // Todos los permisos
+          } else {
+            // Verificar si es técnico
+            const isTechnician = userRoles.some(r => r.nombre === 'TECNICO');
+            if (isTechnician) {
+              role = 'TECHNICIAN';
+              // Obtener permisos específicos del técnico
+              const techRole = userRoles.find(r => r.nombre === 'TECNICO');
+              if (techRole) {
+                permissions = techRole.permisos;
+              }
+              // Verificar punto de recolección para técnicos
+              puntoRecoleccion = user.usuariosPuntos?.[0]?.puntos_recoleccion;
+              if (!puntoRecoleccion) {
+                console.log('Técnico no asignado a ningún punto de recolección:', user.email);
+                return null;
+              }
+            } else {
+              // Para otros roles, asignar permisos según su rol
+              userRoles.forEach(r => {
+                permissions = [...permissions, ...r.permisos];
+              });
+            }
+          }
 
           return {
             id: user.id,
             email: user.email,
             name: user.nombre,
-            role: roles[0] || 'USER',
-            permisos: permisos
+            role,
+            permissions,
+            repairPointId: puntoRecoleccion?.id,
+            canRepair: puntoRecoleccion?.isRepairPoint
           };
         } catch (error) {
           console.error('Error en authorize:', error);
@@ -111,26 +171,26 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.id = Number(user.id);
         token.email = user.email;
         token.name = user.name;
         token.role = user.role;
-        token.permisos = user.permisos;
+        token.permissions = user.permissions;
+        token.repairPointId = user.repairPointId;
+        token.canRepair = user.canRepair;
       }
-      console.log('Token generado:', token);
       return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user = {
-          id: token.id as string,
-          email: token.email as string,
-          name: token.name as string,
-          role: token.role as string,
-          permisos: token.permisos as string[]
-        };
+        session.user.id = Number(token.id);
+        session.user.email = token.email || '';
+        session.user.name = token.name || '';
+        session.user.role = token.role || '';
+        session.user.permissions = token.permissions || [];
+        session.user.repairPointId = token.repairPointId || '';
+        session.user.canRepair = token.canRepair || false;
       }
-      console.log('Sesión generada:', session);
       return session;
     }
   },

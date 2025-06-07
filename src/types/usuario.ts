@@ -13,12 +13,30 @@ export interface Usuario {
   email: string;
   nombre: string;
   apellidoPaterno: string;
-  apellidoMaterno: string | null;
+  apellidoMaterno?: string;
   activo: boolean;
   createdAt: Date;
   updatedAt: Date;
-  roles: Array<{
-    rol: Rol;
+  usuariosPuntos?: Array<{
+    id: string;
+    puntoRecoleccionId: string;
+    usuarioId: number;
+    rolId: number;
+    activo: boolean;
+    puntos_recoleccion: {
+      id: string;
+      isRepairPoint: boolean;
+    };
+  }>;
+  roles?: Array<{
+    rol: {
+      nombre: string;
+      permisos: Array<{
+        permiso: {
+          codigo: string;
+        };
+      }>;
+    };
   }>;
 }
 

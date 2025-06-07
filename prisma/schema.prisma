@@ -45,6 +45,7 @@ model Ticket {
   estatusReparacionId    Int
   creadorId              Int
   tecnicoAsignadoId      Int?
+  puntoRecoleccionId     Int
   recogida               Boolean           @default(false)
   fechaEntrega           DateTime?
   entregado              Boolean           @default(false)
@@ -77,6 +78,7 @@ model Ticket {
   tipoServicio           TipoServicio      @relation(fields: [tipoServicioId], references: [id])
   creador                Usuario           @relation("TicketCreador", fields: [creadorId], references: [id])
   tecnicoAsignado        Usuario?          @relation("TicketTecnico", fields: [tecnicoAsignadoId], references: [id])
+  puntoRecoleccion       puntos_recoleccion @relation(fields: [puntoRecoleccionId], references: [id])
 
   @@map("tickets")
 }
@@ -644,22 +646,23 @@ model providers {
 }
 
 model puntos_recoleccion {
-  id            String                        @id @default(uuid())
-  name          String
-  phone         String
-  email         String
-  url           String?
-  schedule      Json                          // Almacenará el array de horarios
-  location      Json                          // Almacenará la ubicación (address, latitude, longitude)
-  isHeadquarters Boolean                      @default(false)
-  isRepairPoint Boolean                       @default(false)
-  parentId      String?                       // ID del punto principal si es sucursal
-  parent        puntos_recoleccion?           @relation("BranchToHeadquarters", fields: [parentId], references: [id])
-  branches      puntos_recoleccion[]          @relation("BranchToHeadquarters")
-  activo        Boolean                       @default(true)
-  createdAt     DateTime                      @default(now())
-  updatedAt     DateTime                      @updatedAt
-  usuarios_puntos_recoleccion usuarios_puntos_recoleccion[]
+  id               Int           @id @default(autoincrement())
+  name             String
+  phone            String
+  email            String
+  url              String?
+  schedule         Json
+  location         Json
+  isHeadquarters   Boolean       @default(false)
+  isRepairPoint    Boolean       @default(false)
+  parentId         Int?
+  activo           Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  parent           puntos_recoleccion?  @relation("BranchToHeadquarters", fields: [parentId], references: [id])
+  branches         puntos_recoleccion[] @relation("BranchToHeadquarters")
+  usuariosPuntos   usuarios_puntos_recoleccion[]
+  tickets          Ticket[]
 }
 
 model reparaciones_frecuentes {
@@ -691,18 +694,19 @@ model users {
 }
 
 model usuarios_puntos_recoleccion {
-  id                 String             @id
-  puntoRecoleccionId String
-  usuarioId          Int
-  rolId              Int
-  activo             Boolean            @default(true)
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  puntos_recoleccion puntos_recoleccion @relation(fields: [puntoRecoleccionId], references: [id])
-  Usuario            Usuario            @relation(fields: [usuarioId], references: [id])
-  Rol                Rol                @relation(fields: [rolId], references: [id])
+  id                  Int               @id @default(autoincrement())
+  puntoRecoleccionId  Int
+  usuarioId           Int
+  rolId               Int
+  activo              Boolean           @default(true)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  puntos_recoleccion  puntos_recoleccion @relation(fields: [puntoRecoleccionId], references: [id])
+  Usuario             Usuario            @relation(fields: [usuarioId], references: [id])
+  rol                 Rol                @relation(fields: [rolId], references: [id])
 
-  @@unique([puntoRecoleccionId, usuarioId])
+  @@unique([usuarioId, puntoRecoleccionId])
+  @@map("usuarios_puntos_recoleccion")
 }
 
 enum TipoProveedor {

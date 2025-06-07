@@ -9,7 +9,9 @@ declare module 'next-auth' {
     email: string;
     name?: string | null;
     role: string;
-    permisos: string[];
+    permissions: string[];
+    repairPointId?: string;
+    canRepair?: boolean;
   }
 
   interface Session {
@@ -19,7 +21,9 @@ declare module 'next-auth' {
       name?: string | null;
       image?: string | null;
       role: string;
-      permisos: string[];
+      permissions: string[];
+      repairPointId?: string;
+      canRepair?: boolean;
     };
   }
 }
@@ -28,6 +32,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: number;
     role: string;
-    permisos: string[];
+    permissions: string[];
+    repairPointId?: string;
+    canRepair?: boolean;
   }
 } 
