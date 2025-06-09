@@ -18,9 +18,7 @@ export async function PUT(
       return new NextResponse('No autorizado', { status: 403 });
     }
 
-    const body = await request.json();
-    const { nombre, descripcion, permisos } = body;
-
+    const { nombre, descripcion, permisos } = await request.json();
     console.log('Datos recibidos:', { nombre, descripcion, permisos });
 
     if (!nombre || !descripcion) {
@@ -37,19 +35,23 @@ export async function PUT(
       );
     }
 
+    // Validar que los permisos sean un array de números
+    const permisosFiltrados = permisos.filter((id: any) => typeof id === 'number');
+    console.log('Permisos filtrados:', permisosFiltrados);
+
     // Verificar que todos los permisos existan
     const permisosExistentes = await prisma.permiso.findMany({
       where: {
         id: {
-          in: permisos
+          in: permisosFiltrados
         }
       }
     });
 
     console.log('Permisos existentes:', permisosExistentes);
 
-    if (permisosExistentes.length !== permisos.length) {
-      const permisosNoExistentes = permisos.filter(
+    if (permisosExistentes.length !== permisosFiltrados.length) {
+      const permisosNoExistentes = permisosFiltrados.filter(
         id => !permisosExistentes.some(p => p.id === id)
       );
       console.log('Permisos no existentes:', permisosNoExistentes);
@@ -63,6 +65,7 @@ export async function PUT(
     }
 
     // Primero eliminamos todos los permisos actuales
+    console.log('Eliminando permisos actuales...');
     await prisma.rolPermiso.deleteMany({
       where: {
         rolId: parseInt(params.id)
@@ -70,6 +73,7 @@ export async function PUT(
     });
 
     // Luego actualizamos el rol y creamos los nuevos permisos
+    console.log('Actualizando rol y creando nuevos permisos...');
     const rol = await prisma.rol.update({
       where: {
         id: parseInt(params.id)
@@ -78,7 +82,7 @@ export async function PUT(
         nombre,
         descripcion,
         permisos: {
-          create: permisos.map((permisoId: number) => ({
+          create: permisosFiltrados.map((permisoId: number) => ({
             permiso: {
               connect: { id: permisoId }
             }
@@ -94,6 +98,8 @@ export async function PUT(
       }
     });
 
+    console.log('Rol actualizado:', rol);
+
     const rolFormateado = {
       id: rol.id,
       nombre: rol.nombre,
@@ -106,6 +112,7 @@ export async function PUT(
       }))
     };
 
+    console.log('Rol formateado para respuesta:', rolFormateado);
     return NextResponse.json(rolFormateado);
   } catch (error) {
     console.error('Error al actualizar rol:', error);

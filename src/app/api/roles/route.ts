@@ -34,6 +34,7 @@ export async function GET(request: Request) {
                 select: {
                   id: true,
                   codigo: true,
+                  nombre: true,
                   descripcion: true
                 }
               }
@@ -45,8 +46,24 @@ export async function GET(request: Request) {
         }
       });
 
-      console.log('Roles encontrados:', roles);
-      return NextResponse.json(roles);
+      // Log detallado de la estructura
+      console.log('Roles encontrados (detalle):', JSON.stringify(roles, null, 2));
+
+      // Formatear la respuesta para asegurar la estructura correcta
+      const rolesFormateados = roles.map(rol => ({
+        id: rol.id,
+        nombre: rol.nombre,
+        descripcion: rol.descripcion,
+        permisos: rol.permisos.map(p => ({
+          id: p.permiso.id,
+          codigo: p.permiso.codigo,
+          nombre: p.permiso.nombre,
+          descripcion: p.permiso.descripcion
+        }))
+      }));
+
+      console.log('Roles formateados:', JSON.stringify(rolesFormateados, null, 2));
+      return NextResponse.json(rolesFormateados);
     } catch (dbError) {
       console.error('Error en consulta a la base de datos:', dbError);
       if (dbError instanceof Prisma.PrismaClientKnownRequestError) {

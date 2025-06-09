@@ -247,7 +247,10 @@ export default function RolesPage() {
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {rol.permisos.map((permiso, idx) => (
-                        <span key={`${permiso.id}-${idx}`}>
+                        <span
+                          key={`${permiso.id}-${idx}`}
+                          className="px-2 py-0.5 text-[10px] rounded-full bg-blue-100 text-blue-800 font-medium"
+                        >
                           {permiso.nombre}
                         </span>
                       ))}

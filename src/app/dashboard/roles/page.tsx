@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
@@ -25,9 +26,12 @@ interface Rol {
   descripcion: string;
   activo: boolean;
   permisos: {
-    id: number;
-    codigo: string;
-    nombre: string;
+    permiso: {
+      id: number;
+      codigo: string;
+      nombre: string;
+      descripcion: string;
+    }
   }[];
 }
 
@@ -47,13 +51,20 @@ export default function RolesPage() {
   
   // Estado para controlar el formulario de rol
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentRol, setCurrentRol] = useState<Partial<CreateRolDTO>>({
+  const [currentRol, setCurrentRol] = useState<{
+    nombre: string;
+    descripcion: string;
+    permisos: number[];
+  }>({
     nombre: '',
     descripcion: '',
     permisos: []
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [rolAEditar, setRolAEditar] = useState<Rol | null>(null);
+  const [selectedPermisos, setSelectedPermisos] = useState<number[]>([]);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -136,30 +147,100 @@ export default function RolesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Filtrar los permisos nulos y asegurarnos de que sean números
+      const permisosFiltrados = currentRol.permisos
+        ?.filter(permiso => permiso !== null && !isNaN(Number(permiso)))
+        .map(permiso => Number(permiso)) || [];
+
+      console.log('Permisos filtrados antes de enviar:', permisosFiltrados);
+
+      const rolData = {
+        ...currentRol,
+        permisos: permisosFiltrados
+      };
+
       if (isEditing && editingId) {
-        await axios.put(`/api/roles/${editingId}`, currentRol);
+        console.log('Enviando datos para actualizar:', rolData);
+        const response = await axios.put(`/api/roles/${editingId}`, rolData);
+        console.log('Respuesta del servidor:', response.data);
         toast.success('Rol actualizado exitosamente');
       } else {
-        await axios.post('/api/roles', currentRol);
+        console.log('Enviando datos para crear:', rolData);
+        const response = await axios.post('/api/roles', rolData);
+        console.log('Respuesta del servidor:', response.data);
         toast.success('Rol creado exitosamente');
       }
       closeModal();
       fetchRoles();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error al guardar rol:', err);
-      toast.error('Error al guardar el rol');
+      console.error('Detalles del error:', err.response?.data);
+      const errorMessage = err.response?.data?.error || err.response?.data || 'Error al guardar el rol';
+      if (err.response?.data?.permisosNoExistentes) {
+        toast.error(`${errorMessage}: ${err.response.data.permisosNoExistentes.join(', ')}`);
+      } else {
+        toast.error(errorMessage);
+      }
     }
   };
 
-  const handleEdit = (rol: Rol) => {
-    setCurrentRol({
-      nombre: rol.nombre,
-      descripcion: rol.descripcion,
-      permisos: rol.permisos.map(p => p.id)
-    });
-    setIsEditing(true);
-    setEditingId(rol.id);
-    setIsModalOpen(true);
+  const handleEdit = (rol: any) => {
+    console.log('Rol a editar:', rol);
+    console.log('Estructura completa de permisos:', JSON.stringify(rol.permisos, null, 2));
+    
+    // Extraer los IDs de los permisos correctamente
+    const permisoIds = rol.permisos.map((p: any) => {
+      console.log('Permiso individual completo:', p);
+      // Intentar diferentes formas de acceder al ID
+      const id = p.permiso?.id || p.id;
+      console.log('ID encontrado:', id);
+      return id;
+    }).filter((id: any) => id !== undefined);
+    
+    console.log('IDs de permisos extraídos:', permisoIds);
+    
+    setRolAEditar(rol);
+    setSelectedPermisos(permisoIds);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!rolAEditar) return;
+
+    try {
+      const dataToUpdate = {
+        nombre: rolAEditar.nombre,
+        descripcion: rolAEditar.descripcion,
+        permisos: selectedPermisos
+      };
+
+      console.log('Enviando datos para actualizar:', dataToUpdate);
+
+      const response = await fetch(`/api/roles/${rolAEditar.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dataToUpdate),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al actualizar el rol');
+      }
+
+      const updatedRol = await response.json();
+      console.log('Rol actualizado:', updatedRol);
+
+      await fetchRoles();
+      setIsEditDialogOpen(false);
+      setRolAEditar(null);
+      setSelectedPermisos([]);
+      toast.success('Rol actualizado exitosamente');
+    } catch (error: any) {
+      console.error('Error:', error);
+      toast.error(error.message || 'Error al actualizar el rol');
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -194,9 +275,12 @@ export default function RolesPage() {
               Nuevo Rol
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px]" aria-describedby="dialog-description">
             <DialogHeader>
               <DialogTitle>{isEditing ? 'Editar Rol' : 'Nuevo Rol'}</DialogTitle>
+              <DialogDescription id="dialog-description">
+                {isEditing ? 'Modifica los permisos asignados a este rol.' : 'Completa los datos del rol y selecciona los permisos correspondientes.'}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -277,10 +361,10 @@ export default function RolesPage() {
                   <div className="flex flex-wrap gap-1">
                     {rol.permisos.map((permiso) => (
                       <span
-                        key={permiso.id}
-                        className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800"
+                        key={permiso.permiso.id}
+                        className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800 font-medium"
                       >
-                        {permiso.nombre}
+                        {permiso.permiso.nombre}
                       </span>
                     ))}
                   </div>

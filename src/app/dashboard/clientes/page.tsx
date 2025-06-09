@@ -29,6 +29,7 @@ interface Cliente {
   tipoRegistro: string;
   createdAt: string;
   updatedAt: string;
+  pais?: string;
 }
 
 export default function ClientesPage() {
@@ -67,6 +68,7 @@ export default function ClientesPage() {
       try {
         setIsLoading(true);
         const response = await axios.get('/api/clientes');
+        console.log('Respuesta de la API:', JSON.stringify(response.data, null, 2));
         setClientes(response.data);
         setError('');
       } catch (err) {
@@ -164,11 +166,18 @@ export default function ClientesPage() {
   };
 
   const toggleCliente = (id: number) => {
-    setExpandedClientes(prev => 
-      prev.includes(id) 
+    console.log('Toggle cliente:', id);
+    const cliente = clientes.find(c => c.id === id);
+    console.log('Cliente actual:', JSON.stringify(cliente, null, 2));
+    console.log('Estado actual de expandedClientes:', expandedClientes);
+    
+    setExpandedClientes(prev => {
+      const newState = prev.includes(id) 
         ? prev.filter(clienteId => clienteId !== id)
-        : [...prev, id]
-    );
+        : [...prev, id];
+      console.log('Nuevo estado de expandedClientes:', newState);
+      return newState;
+    });
   };
 
   const filteredClientes = clientes.filter((cliente) => {
@@ -310,46 +319,62 @@ export default function ClientesPage() {
                           <div>
                             <h4 className="text-sm font-medium text-gray-500">Información de Contacto</h4>
                             <div className="mt-2 space-y-1">
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Teléfono de Contacto:</span> {cliente.telefonoContacto || 'No especificado'}
+                              <p className="text-sm font-medium text-gray-500">Teléfono de Contacto</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {cliente.telefonoContacto || 'Cliente no ha proporcionado esta información'}
                               </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">RFC:</span> {cliente.rfc || 'No especificado'}
+                              <p className="text-sm font-medium text-gray-500">RFC</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {cliente.rfc || 'Cliente no ha proporcionado esta información'}
                               </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Fecha de Registro:</span> {new Date(cliente.createdAt).toLocaleString()}
+                              <p className="text-sm font-medium text-gray-500">Fecha de Registro</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {new Date(cliente.createdAt).toLocaleString()}
                               </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Última Actualización:</span> {new Date(cliente.updatedAt).toLocaleString()}
+                              <p className="text-sm font-medium text-gray-500">Última Actualización</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {new Date(cliente.updatedAt).toLocaleString()}
                               </p>
                             </div>
                           </div>
                           <div>
                             <h4 className="text-sm font-medium text-gray-500">Dirección</h4>
                             <div className="mt-2 space-y-1">
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Calle:</span> {cliente.calle || 'No especificada'}
+                              <p className="text-sm font-medium text-gray-500">Calle</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {cliente.calle || 'Cliente no ha proporcionado esta información'}
                               </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Número Exterior:</span> {cliente.numeroExterior || 'No especificado'}
+                              <p className="text-sm font-medium text-gray-500">Número Exterior</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {cliente.numeroExterior || 'Cliente no ha proporcionado esta información'}
                               </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Número Interior:</span> {cliente.numeroInterior || 'No especificado'}
+                              <p className="text-sm font-medium text-gray-500">Número Interior</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {cliente.numeroInterior || 'Cliente no ha proporcionado esta información'}
                               </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Colonia:</span> {cliente.colonia || 'No especificada'}
+                              <p className="text-sm font-medium text-gray-500">Colonia</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {cliente.colonia || 'Cliente no ha proporcionado esta información'}
                               </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Ciudad:</span> {cliente.ciudad || 'No especificada'}
+                              <p className="text-sm font-medium text-gray-500">Ciudad</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {cliente.ciudad || 'Cliente no ha proporcionado esta información'}
                               </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Estado:</span> {cliente.estado || 'No especificado'}
+                              <p className="text-sm font-medium text-gray-500">Estado</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {cliente.estado || 'Cliente no ha proporcionado esta información'}
                               </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Código Postal:</span> {cliente.codigoPostal || 'No especificado'}
+                              <p className="text-sm font-medium text-gray-500">Código Postal</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {cliente.codigoPostal || 'Cliente no ha proporcionado esta información'}
                               </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Coordenadas:</span> {cliente.latitud && cliente.longitud ? `${cliente.latitud}, ${cliente.longitud}` : 'No especificadas'}
+                              <p className="text-sm font-medium text-gray-500">País</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {cliente.pais || 'Cliente no ha proporcionado esta información'}
+                              </p>
+                              <p className="text-sm font-medium text-gray-500">Coordenadas</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {cliente.latitud && cliente.longitud ? `${cliente.latitud}, ${cliente.longitud}` : 'No especificadas'}
                               </p>
                             </div>
                           </div>

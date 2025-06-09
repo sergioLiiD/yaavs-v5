@@ -198,9 +198,11 @@ model Cliente {
   rfc              String?
   passwordHash     String?
   activo           Boolean  @default(true)
-  tipoRegistro     String   @default("Registro en tienda")
+  tipoRegistro     String   @default("REGISTRO_TIENDA")
   puntoRecoleccionId Int?
   puntoRecoleccion   puntos_recoleccion? @relation(fields: [puntoRecoleccionId], references: [id])
+  creadoPorId      Int?
+  creadoPor        Usuario? @relation("ClienteCreador", fields: [creadoPorId], references: [id])
   tickets          Ticket[]
 
   @@map("cliente")
@@ -322,6 +324,7 @@ model Usuario {
   usuarioRoles     UsuarioRol[]
   reparaciones     Reparacion[] @relation("UsuarioReparaciones")
   usuariosPuntos   usuarios_puntos_recoleccion[] @relation("UsuarioUsuariosPuntos")
+  clientesCreados  Cliente[] @relation("ClienteCreador")
 
   @@map("usuarios")
 }
@@ -678,7 +681,6 @@ model usuarios_puntos_recoleccion {
   usuarioId         Int
   puntoRecoleccionId Int
   rolId             Int
-  nivel             NivelUsuarioPunto
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   puntos_recoleccion puntos_recoleccion @relation(fields: [puntoRecoleccionId], references: [id])

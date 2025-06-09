@@ -22,10 +22,41 @@ const clienteSchema = z.object({
   ciudad: z.string().optional(),
   estado: z.string().optional(),
   codigoPostal: z.string().optional(),
-  latitud: z.number().optional(),
-  longitud: z.number().optional(),
+  latitud: z.number().optional().nullable(),
+  longitud: z.number().optional().nullable(),
   fuenteReferencia: z.string().optional(),
+  password: z.string().optional(),
+  activo: z.boolean().optional(),
+  tipoRegistro: z.string().optional(),
 });
+
+function cleanClienteData(data: any) {
+  return {
+    nombre: data.nombre,
+    apellidoPaterno: data.apellidoPaterno,
+    apellidoMaterno: data.apellidoMaterno,
+    telefonoCelular: data.telefonoCelular,
+    telefonoContacto: data.telefonoContacto,
+    email: data.email,
+    rfc: data.rfc,
+    calle: data.calle,
+    numeroExterior: data.numeroExterior,
+    numeroInterior: data.numeroInterior,
+    colonia: data.colonia,
+    ciudad: data.ciudad,
+    estado: data.estado,
+    codigoPostal: data.codigoPostal,
+    latitud: data.latitud,
+    longitud: data.longitud,
+    fuenteReferencia: data.fuenteReferencia,
+    activo: data.activo ?? true,
+    tipoRegistro: data.tipoRegistro,
+    passwordHash: data.passwordHash,
+    puntoRecoleccionId: data.puntoRecoleccionId,
+    creadoPorId: data.creadoPorId,
+    updatedAt: new Date()
+  };
+}
 
 export async function GET(request: Request) {
   try {
@@ -37,16 +68,44 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const puntoRecoleccionId = searchParams.get('puntoRecoleccionId');
 
+    const where: Prisma.ClienteWhereInput = puntoRecoleccionId ? {
+      puntoRecoleccionId: parseInt(puntoRecoleccionId)
+    } : {};
+
     const clientes = await prisma.cliente.findMany({
-      where: {
-        puntoRecoleccionId: puntoRecoleccionId ? parseInt(puntoRecoleccionId) : undefined
-      },
+      where,
       include: {
-        tickets: true
+        tickets: true,
+        creadoPor: {
+          select: {
+            id: true,
+            nombre: true,
+            apellidoPaterno: true,
+            apellidoMaterno: true,
+            email: true
+          }
+        }
       }
     });
 
-    return NextResponse.json(clientes);
+    // Asegurarnos de que todos los campos opcionales estén presentes
+    const clientesFormateados = clientes.map(cliente => ({
+      ...cliente,
+      telefonoContacto: cliente.telefonoContacto || null,
+      rfc: cliente.rfc || null,
+      calle: cliente.calle || null,
+      numeroExterior: cliente.numeroExterior || null,
+      numeroInterior: cliente.numeroInterior || null,
+      colonia: cliente.colonia || null,
+      ciudad: cliente.ciudad || null,
+      estado: cliente.estado || null,
+      codigoPostal: cliente.codigoPostal || null,
+      latitud: cliente.latitud || null,
+      longitud: cliente.longitud || null,
+      fuenteReferencia: cliente.fuenteReferencia || null
+    }));
+
+    return NextResponse.json(clientesFormateados);
   } catch (error) {
     console.error('Error al obtener clientes:', error);
     return NextResponse.json(
@@ -59,13 +118,42 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
+    const data = await request.json();
+    const validatedData = clienteSchema.parse(data);
+
+    // Caso 1: Registro directo del cliente (sin sesión)
     if (!session) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      if (!validatedData.password) {
+        return NextResponse.json(
+          { error: 'Se requiere contraseña para el registro directo' },
+          { status: 400 }
+        );
+      }
+
+      const passwordHash = await bcrypt.hash(validatedData.password, 10);
+      const { password, ...clienteData } = validatedData;
+      const dataToSave = cleanClienteData({ ...clienteData, passwordHash });
+
+      const cliente = await prisma.cliente.create({
+        data: dataToSave,
+        include: {
+          tickets: true,
+          creadoPor: {
+            select: {
+              id: true,
+              nombre: true,
+              apellidoPaterno: true,
+              apellidoMaterno: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      return NextResponse.json(cliente);
     }
 
-    const data = await request.json();
-
-    // Obtener el punto de recolección del usuario
+    // Caso 2: Registro desde punto de recolección
     const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
         usuarioId: session.user.id
@@ -75,26 +163,63 @@ export async function POST(request: Request) {
       }
     });
 
-    if (!userPoint?.puntoRecoleccionId) {
-      return NextResponse.json(
-        { error: 'Usuario no asociado a un punto de recolección' },
-        { status: 400 }
-      );
+    if (userPoint?.puntoRecoleccionId) {
+      const dataToSave = cleanClienteData({
+        ...validatedData,
+        puntoRecoleccionId: userPoint.puntoRecoleccionId,
+        creadoPorId: session.user.id
+      });
+
+      const cliente = await prisma.cliente.create({
+        data: dataToSave,
+        include: {
+          tickets: true,
+          creadoPor: {
+            select: {
+              id: true,
+              nombre: true,
+              apellidoPaterno: true,
+              apellidoMaterno: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      return NextResponse.json(cliente);
     }
 
-    // Crear el cliente con el punto de recolección
+    // Caso 3: Registro desde sistema central
+    const dataToSave = cleanClienteData({
+      ...validatedData,
+      creadoPorId: session.user.id
+    });
+
     const cliente = await prisma.cliente.create({
-      data: {
-        ...data,
-        puntoRecoleccionId: userPoint.puntoRecoleccionId,
-        activo: true,
-        tipoRegistro: 'REGISTRO_TIENDA'
+      data: dataToSave,
+      include: {
+        tickets: true,
+        creadoPor: {
+          select: {
+            id: true,
+            nombre: true,
+            apellidoPaterno: true,
+            apellidoMaterno: true,
+            email: true
+          }
+        }
       }
     });
 
     return NextResponse.json(cliente);
   } catch (error) {
     console.error('Error al crear cliente:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Datos inválidos', details: error.errors },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: 'Error al crear el cliente' },
       { status: 500 }

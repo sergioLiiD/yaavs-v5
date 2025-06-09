@@ -236,7 +236,7 @@ export default function RepairPointUsers({
       nombre: user.usuario.nombre.split(' ')[0],
       apellidoPaterno: user.usuario.apellidoPaterno,
       apellidoMaterno: user.usuario.apellidoMaterno || '',
-      rolId: user.rolId ? user.rolId.toString() : ''
+      rolId: user.rolId ? user.rolId.toString() : '',
     });
     onEditStart();
   };
