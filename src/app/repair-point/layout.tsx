@@ -1,11 +1,10 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { HiChartPie, HiTicket, HiLogout } from 'react-icons/hi';
+import { HiChartPie, HiTicket, HiLogout, HiUsers } from 'react-icons/hi';
 import Link from 'next/link';
-import { signOut } from 'next-auth/react';
 import { FaSpinner } from 'react-icons/fa';
 
 export default function RepairPointLayout({
@@ -42,7 +41,7 @@ export default function RepairPointLayout({
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
-    router.push('/repair-point/login');
+    router.push('/auth/login');
   };
 
   return (
@@ -97,6 +96,17 @@ export default function RepairPointLayout({
               >
                 <HiTicket className="mr-3 h-6 w-6" />
                 Tickets
+              </Link>
+              <Link
+                href="/repair-point/clientes"
+                className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                  pathname?.includes('/repair-point/clientes')
+                    ? 'bg-[#FEBF19] text-white'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <HiUsers className="mr-3 h-6 w-6" />
+                Clientes
               </Link>
             </div>
           </div>

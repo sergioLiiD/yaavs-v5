@@ -5,11 +5,30 @@ import { Prisma } from '@prisma/client';
 
 export class ClienteService {
   // Obtener todos los clientes
-  static async getAll(): Promise<Cliente[]> {
+  static async getAll(puntoRecoleccionId?: number): Promise<Cliente[]> {
     try {
+      const where: Prisma.ClienteWhereInput = {
+        activo: true
+      };
+
+      // Si se proporciona un puntoRecoleccionId, filtrar por ese punto
+      if (puntoRecoleccionId) {
+        where.puntoRecoleccionId = puntoRecoleccionId;
+      }
+
       const clientes = await prisma.cliente.findMany({
+        where,
         orderBy: {
           nombre: 'asc'
+        },
+        include: {
+          puntoRecoleccion: {
+            select: {
+              id: true,
+              name: true,
+              isRepairPoint: true
+            }
+          }
         }
       });
       return clientes;
@@ -46,7 +65,7 @@ export class ClienteService {
   }
 
   // Crear un nuevo cliente
-  static async create(data: CreateClienteDTO): Promise<Cliente> {
+  static async create(data: CreateClienteDTO, puntoRecoleccionId?: number): Promise<Cliente> {
     try {
       console.log('Iniciando creación de cliente en servicio...');
       const salt = await bcrypt.genSalt(10);
@@ -63,8 +82,18 @@ export class ClienteService {
           passwordHash,
           activo: true,
           tipoRegistro: data.tipoRegistro || 'Registro propio',
+          puntoRecoleccionId: puntoRecoleccionId,
           createdAt: new Date(),
           updatedAt: new Date()
+        },
+        include: {
+          puntoRecoleccion: {
+            select: {
+              id: true,
+              name: true,
+              isRepairPoint: true
+            }
+          }
         }
       });
 

@@ -99,41 +99,27 @@ export default function UsuariosPage() {
   };
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
-      return;
-    }
-
-    if (status === 'authenticated' && session?.user) {
-      if (session.user.role !== 'ADMINISTRADOR') {
-        router.push('/dashboard');
-        return;
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        const [usuariosResponse, rolesResponse] = await Promise.all([
+          axios.get('/api/usuarios'),
+          axios.get('/api/roles')
+        ]);
+        setUsuarios(usuariosResponse.data || []);
+        setRoles(rolesResponse.data || []);
+        setError('');
+      } catch (err) {
+        console.error('Error al cargar datos:', err);
+        setError('Error al cargar los datos. Por favor, intente nuevamente.');
+        toast.error('Error al cargar datos');
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      const loadData = async () => {
-        try {
-          setIsLoading(true);
-          const [usuariosResponse, rolesResponse] = await Promise.all([
-            axios.get('/api/usuarios'),
-            axios.get('/api/roles')
-          ]);
-          console.log('Usuarios cargados:', usuariosResponse.data);
-          console.log('Roles cargados:', rolesResponse.data);
-          setUsuarios(usuariosResponse.data || []);
-          setRoles(rolesResponse.data || []);
-          setError('');
-        } catch (err) {
-          console.error('Error al cargar datos:', err);
-          setError('Error al cargar los datos. Por favor, intente nuevamente.');
-          toast.error('Error al cargar datos');
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      loadData();
-    }
-  }, [status, session, router]);
+    loadData();
+  }, []);
 
   const openModal = () => {
     setIsModalOpen(true);

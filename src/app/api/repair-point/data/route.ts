@@ -17,8 +17,7 @@ export async function GET() {
     // Obtener el punto de reparación del usuario
     const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
-        usuarioId: session.user.id,
-        activo: true
+        usuarioId: session.user.id
       },
       include: {
         puntos_recoleccion: true
@@ -68,7 +67,7 @@ export async function GET() {
     });
 
     // Obtener estatus de reparación
-    const estatusReparacion = await prisma.estatus_reparacion.findMany({
+    const estatusReparacion = await prisma.estatusReparacion.findMany({
       where: {
         activo: true
       },

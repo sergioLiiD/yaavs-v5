@@ -68,11 +68,16 @@ export default function RolesPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
+      return;
+    }
+
     if (status === 'authenticated' && session?.user) {
       fetchRoles();
       fetchPermisos();
     }
-  }, [status, session]);
+  }, [status, session, router]);
 
   const fetchRoles = async () => {
     try {
@@ -241,11 +246,8 @@ export default function RolesPage() {
                   <TableCell>{rol.descripcion}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {rol.permisos.map((permiso) => (
-                        <span
-                          key={permiso.id}
-                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                        >
+                      {rol.permisos.map((permiso, idx) => (
+                        <span key={`${permiso.id}-${idx}`}>
                           {permiso.nombre}
                         </span>
                       ))}

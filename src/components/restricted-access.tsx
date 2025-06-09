@@ -33,7 +33,7 @@ export default function RestrictedAccess({ section, isErrorPage = false }: Restr
           <p className="text-gray-600 mb-8">
             {isErrorPage 
               ? 'No tienes permisos para acceder a esta página'
-              : `No tienes permisos para acceder a la sección de ${section}`
+              : `No tienes permisos para acceder a la sección de ${section}. Por favor, contacta al administrador si crees que esto es un error.`
             }
           </p>
           <div className="space-y-4">

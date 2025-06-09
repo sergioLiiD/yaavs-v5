@@ -15,15 +15,7 @@ export async function GET() {
       );
     }
 
-    const puntos = await prisma.puntos_recoleccion.findMany({
-      include: {
-        branches: true,
-        parent: true,
-      },
-      where: {
-        activo: true,
-      },
-    });
+    const puntos = await prisma.puntos_recoleccion.findMany();
 
     return NextResponse.json(puntos);
   } catch (error) {
@@ -155,15 +147,14 @@ export async function POST(request: Request) {
     
     const punto = await prisma.puntos_recoleccion.create({
       data: {
-        name: data.name,
-        phone: data.phone,
-        email: data.email,
-        url: data.url,
-        schedule,
-        location,
+        nombre: data.name,
+        phone: data.phone || null,
+        email: data.email || null,
+        url: data.url || null,
+        schedule: JSON.stringify(data.schedule),
+        location: data.location,
         isHeadquarters: data.isHeadquarters,
-        isRepairPoint: data.isRepairPoint,
-        parentId: data.parentId,
+        parentId: data.parentId ? Number(data.parentId) : null,
       },
     });
 

@@ -11,7 +11,7 @@ import { toast } from 'react-hot-toast';
 import { Usuario } from '@/types/usuario';
 
 interface RepairPointUsersProps {
-  collectionPointId: string;
+  collectionPointId: number;
   isRepairPoint: boolean;
   showModal: boolean;
   onCloseModal: () => void;
@@ -20,17 +20,21 @@ interface RepairPointUsersProps {
 }
 
 interface UserPoint {
-  id: string;
-  puntoRecoleccionId: string;
+  id: number;
+  puntoRecoleccionId: number;
   usuarioId: number;
   rolId: number;
   activo: boolean;
-  Usuario: {
+  usuario: {
     id: number;
     nombre: string;
     email: string;
     apellidoPaterno: string;
     apellidoMaterno: string;
+  };
+  rol: {
+    id: number;
+    nombre: string;
   };
 }
 
@@ -60,7 +64,7 @@ export default function RepairPointUsers({
     nombre: '',
     apellidoPaterno: '',
     apellidoMaterno: '',
-    rolId: 0
+    rolId: ''
   });
   const [editingUser, setEditingUser] = useState<UserPoint | null>(null);
   const [passwordError, setPasswordError] = useState('');
@@ -131,12 +135,13 @@ export default function RepairPointUsers({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (name === 'password' || name === 'confirmPassword') {
-      setPasswordError('');
-    }
   };
 
-  const handleDelete = async (userId: string) => {
+  const handleSelectChange = (value: string) => {
+    setFormData(prev => ({ ...prev, rolId: value }));
+  };
+
+  const handleDelete = async (userId: number) => {
     if (!confirm('¿Estás seguro de que deseas eliminar este usuario?')) return;
 
     try {
@@ -161,7 +166,7 @@ export default function RepairPointUsers({
       nombre: '',
       apellidoPaterno: '',
       apellidoMaterno: '',
-      rolId: 0
+      rolId: ''
     });
     setEditingUser(null);
     setPasswordError('');
@@ -225,13 +230,13 @@ export default function RepairPointUsers({
   const handleEdit = (user: UserPoint) => {
     setEditingUser(user);
     setFormData({
-      email: user.Usuario.email,
+      email: user.usuario.email,
       password: '',
       confirmPassword: '',
-      nombre: user.Usuario.nombre.split(' ')[0],
-      apellidoPaterno: user.Usuario.apellidoPaterno,
-      apellidoMaterno: user.Usuario.apellidoMaterno || '',
-      rolId: user.rolId || 0
+      nombre: user.usuario.nombre.split(' ')[0],
+      apellidoPaterno: user.usuario.apellidoPaterno,
+      apellidoMaterno: user.usuario.apellidoMaterno || '',
+      rolId: user.rolId ? user.rolId.toString() : ''
     });
     onEditStart();
   };
@@ -324,11 +329,11 @@ export default function RepairPointUsers({
                 <div className="space-y-2">
                   <Label htmlFor="rolId">Rol</Label>
                   <Select
-                    value={formData.rolId ? formData.rolId.toString() : ''}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, rolId: parseInt(value) }))}
+                    value={formData.rolId}
+                    onValueChange={handleSelectChange}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar rol" />
+                      <SelectValue placeholder="Selecciona un rol" />
                     </SelectTrigger>
                     <SelectContent>
                       {roles.map((rol) => (
@@ -371,7 +376,7 @@ export default function RepairPointUsers({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <p className="text-sm font-medium text-gray-900">
-                      {user.Usuario.nombre} {user.Usuario.apellidoPaterno} {user.Usuario.apellidoMaterno}
+                      {user.usuario.nombre} {user.usuario.apellidoPaterno} {user.usuario.apellidoMaterno}
                     </p>
                     <span className="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
                       {roles.find(r => r.id === user.rolId)?.nombre || 'Sin rol'}
@@ -395,7 +400,7 @@ export default function RepairPointUsers({
                   </div>
                 </div>
                 <div className="mt-2">
-                  <p className="text-sm text-gray-500">{user.Usuario.email}</p>
+                  <p className="text-sm text-gray-500">{user.usuario.email}</p>
                 </div>
               </div>
             </li>

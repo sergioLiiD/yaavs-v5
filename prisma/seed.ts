@@ -405,26 +405,24 @@ async function main() {
         apellidoMaterno: '',
         passwordHash: adminPassword,
         activo: true,
-        roles: {
-          create: {
-            rol: {
-              connect: {
-                nombre: 'ADMINISTRADOR'
-              }
-            }
-          }
-        }
       }
     });
-
     console.log('Usuario administrador creado:', admin.email);
 
     // Buscar el rol de administrador
     const adminRole = await prisma.rol.findUnique({ where: { nombre: 'ADMINISTRADOR' } });
     if (!adminRole) throw new Error('No se encontró el rol ADMINISTRADOR');
+    // Asignar rol al usuario admin
+    await prisma.usuarioRol.create({
+      data: {
+        usuarioId: admin.id,
+        rolId: adminRole.id
+      }
+    });
 
+    // Crear usuario Sergio Velazco
     const passwordSergio = await bcrypt.hash('whoS5un0%', 10);
-    await prisma.usuario.upsert({
+    const sergio = await prisma.usuario.upsert({
       where: { email: 'sergio@hoom.mx' },
       update: {
         nombre: 'Sergio',
@@ -432,12 +430,6 @@ async function main() {
         apellidoMaterno: '',
         passwordHash: passwordSergio,
         activo: true,
-        roles: {
-          deleteMany: {},
-          create: {
-            rolId: adminRole.id
-          }
-        }
       },
       create: {
         nombre: 'Sergio',
@@ -446,17 +438,20 @@ async function main() {
         email: 'sergio@hoom.mx',
         passwordHash: passwordSergio,
         activo: true,
-        roles: {
-          create: {
-            rolId: adminRole.id
-          }
-        }
+      }
+    });
+    // Asignar rol a Sergio
+    await prisma.usuarioRol.create({
+      data: {
+        usuarioId: sergio.id,
+        rolId: adminRole.id
       }
     });
     console.log('Usuario Sergio Velazco creado/actualizado: sergio@hoom.mx');
 
     // Crear usuario técnico
     const tecnicoPassword = await bcrypt.hash('tecnico123', 10);
+    const tecnicoRol = await prisma.rol.findUnique({ where: { nombre: 'TECNICO' } });
     const tecnico = await prisma.usuario.upsert({
       where: { email: 'tecnico@example.com' },
       update: {},
@@ -467,22 +462,21 @@ async function main() {
         apellidoMaterno: '',
         passwordHash: tecnicoPassword,
         activo: true,
-        roles: {
-          create: {
-            rol: {
-              connect: {
-                nombre: 'TECNICO'
-              }
-            }
-          }
-        }
       }
     });
-
+    if (tecnicoRol) {
+      await prisma.usuarioRol.create({
+        data: {
+          usuarioId: tecnico.id,
+          rolId: tecnicoRol.id
+        }
+      });
+    }
     console.log('Usuario técnico creado:', tecnico.email);
 
     // Crear usuario de atención al cliente
     const atencionClientePassword = await bcrypt.hash('atencion123', 10);
+    const atencionRol = await prisma.rol.findUnique({ where: { nombre: 'ATENCION_CLIENTE' } });
     const atencionCliente = await prisma.usuario.upsert({
       where: { email: 'atencion@example.com' },
       update: {},
@@ -493,18 +487,16 @@ async function main() {
         apellidoMaterno: '',
         passwordHash: atencionClientePassword,
         activo: true,
-        roles: {
-          create: {
-            rol: {
-              connect: {
-                nombre: 'ATENCION_CLIENTE'
-              }
-            }
-          }
-        }
       }
     });
-
+    if (atencionRol) {
+      await prisma.usuarioRol.create({
+        data: {
+          usuarioId: atencionCliente.id,
+          rolId: atencionRol.id
+        }
+      });
+    }
     console.log('Usuario de atención al cliente creado:', atencionCliente.email);
 
     // Crear estados de reparación si no existen
@@ -599,6 +591,119 @@ async function main() {
             marcaId: marca.id
           }
         });
+      }
+    }
+
+    // Permisos específicos para puntos de reparación
+    const permisosPuntoReparacion = [
+      {
+        codigo: 'PUNTO_USERS_VIEW',
+        nombre: 'Ver Usuarios del Punto',
+        descripcion: 'Permite ver los usuarios asociados al punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_USERS_CREATE',
+        nombre: 'Crear Usuarios del Punto',
+        descripcion: 'Permite crear nuevos usuarios en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_USERS_EDIT',
+        nombre: 'Editar Usuarios del Punto',
+        descripcion: 'Permite editar usuarios del punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_USERS_DELETE',
+        nombre: 'Eliminar Usuarios del Punto',
+        descripcion: 'Permite eliminar usuarios del punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_TICKETS_VIEW',
+        nombre: 'Ver Tickets del Punto',
+        descripcion: 'Permite ver los tickets del punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_TICKETS_CREATE',
+        nombre: 'Crear Tickets del Punto',
+        descripcion: 'Permite crear tickets en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_TICKETS_EDIT',
+        nombre: 'Editar Tickets del Punto',
+        descripcion: 'Permite editar tickets del punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_TICKETS_DELETE',
+        nombre: 'Eliminar Tickets del Punto',
+        descripcion: 'Permite eliminar tickets del punto de reparación',
+        categoria: 'Punto de Reparación'
+      }
+    ];
+
+    // Roles específicos para puntos de reparación
+    const rolesPuntoReparacion = [
+      {
+        nombre: 'ADMINISTRADOR_PUNTO',
+        descripcion: 'Administrador del punto de reparación',
+        permisos: [
+          'PUNTO_USERS_VIEW',
+          'PUNTO_USERS_CREATE',
+          'PUNTO_USERS_EDIT',
+          'PUNTO_USERS_DELETE',
+          'PUNTO_TICKETS_VIEW',
+          'PUNTO_TICKETS_CREATE',
+          'PUNTO_TICKETS_EDIT',
+          'PUNTO_TICKETS_DELETE'
+        ]
+      },
+      {
+        nombre: 'OPERADOR_PUNTO',
+        descripcion: 'Operador del punto de reparación',
+        permisos: [
+          'PUNTO_TICKETS_VIEW',
+          'PUNTO_TICKETS_CREATE',
+          'PUNTO_TICKETS_EDIT'
+        ]
+      }
+    ];
+
+    // Crear permisos de punto de reparación
+    console.log('Creando permisos de punto de reparación...');
+    for (const permiso of permisosPuntoReparacion) {
+      await prisma.permiso.create({
+        data: permiso
+      });
+    }
+
+    // Crear roles de punto de reparación
+    console.log('Creando roles de punto de reparación...');
+    for (const rol of rolesPuntoReparacion) {
+      const rolCreado = await prisma.rol.create({
+        data: {
+          nombre: rol.nombre,
+          descripcion: rol.descripcion
+        }
+      });
+
+      // Asignar permisos al rol
+      for (const codigoPermiso of rol.permisos) {
+        const permiso = await prisma.permiso.findUnique({
+          where: { codigo: codigoPermiso }
+        });
+        if (permiso) {
+          await prisma.rolPermiso.create({
+            data: {
+              rolId: rolCreado.id,
+              permisoId: permiso.id
+            }
+          });
+        }
       }
     }
 

@@ -98,13 +98,8 @@ export async function GET() {
           }
         },
         modelo: {
-          select: {
-            nombre: true,
-            marca: {
-              select: {
-                nombre: true
-              }
-            }
+          include: {
+            marcas: true
           }
         }
       }
@@ -147,7 +142,7 @@ export async function GET() {
       recentTickets: ticketsRecientes.map(ticket => ({
         id: ticket.id,
         cliente: `${ticket.cliente?.nombre || ''} ${ticket.cliente?.apellidoPaterno || ''}`,
-        modelo: `${ticket.modelo?.marca?.nombre || ''} ${ticket.modelo?.nombre || ''}`,
+        modelo: `${ticket.modelo?.marcas?.nombre || ''} ${ticket.modelo?.nombre || ''}`,
         problema: ticket.descripcionProblema,
         estado: ticket.estatusReparacion?.nombre || ''
       }))

@@ -1,4 +1,7 @@
 export const routePermissions: Record<string, string[]> = {
+  // Dashboard
+  '/dashboard': ['DASHBOARD_VIEW'],
+
   // Costos
   '/dashboard/costos': ['COSTS_VIEW'],
   '/dashboard/costos/precios-venta': ['COSTS_VIEW'],

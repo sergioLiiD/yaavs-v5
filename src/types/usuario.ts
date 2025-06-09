@@ -18,13 +18,13 @@ export interface Usuario {
   createdAt: Date;
   updatedAt: Date;
   usuariosPuntos?: Array<{
-    id: string;
-    puntoRecoleccionId: string;
+    id: number;
+    puntoRecoleccionId: number;
     usuarioId: number;
     rolId: number;
     activo: boolean;
     puntos_recoleccion: {
-      id: string;
+      id: number;
       isRepairPoint: boolean;
     };
   }>;

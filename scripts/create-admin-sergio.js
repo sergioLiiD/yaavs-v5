@@ -36,48 +36,59 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var client_1 = require("@prisma/client");
-var bcryptjs_1 = require("bcryptjs");
-var prisma = new client_1.PrismaClient();
-function main() {
-    return __awaiter(this, void 0, void 0, function () {
-        var passwordHash, usuario;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, bcryptjs_1.default.hash('whoSuno%', 10)];
-                case 1:
-                    passwordHash = _a.sent();
-                    return [4 /*yield*/, prisma.usuario.create({
-                            data: {
-                                email: 'sergio@hoom.mx',
-                                nombre: 'Sergio',
-                                apellidoPaterno: 'Velazco',
-                                passwordHash: passwordHash,
-                                nivel: 'ADMINISTRADOR',
-                                activo: true,
-                                updatedAt: new Date()
-                            }
-                        })];
-                case 2:
-                    usuario = _a.sent();
-                    console.log('Usuario creado:', usuario);
-                    return [2 /*return*/];
-            }
-        });
-    });
-}
-main()
-    .catch(function (e) {
-    console.error(e);
-    process.exit(1);
-})
-    .finally(function () { return __awaiter(void 0, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, prisma.$disconnect()];
-            case 1:
-                _a.sent();
-                return [2 /*return*/];
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+const prisma = new PrismaClient();
+async function main() {
+    try {
+        const email = 'sergio@hoom.mx';
+        const password = 'whoS5uno%';
+        const nombre = 'Sergio';
+        const apellidoPaterno = 'Velazco';
+        const apellidoMaterno = '';
+        // Buscar o crear el rol ADMINISTRADOR
+        let adminRole = await prisma.rol.findFirst({ where: { nombre: 'ADMINISTRADOR' } });
+        if (!adminRole) {
+            adminRole = await prisma.rol.create({
+                data: { nombre: 'ADMINISTRADOR', descripcion: 'Administrador del sistema' }
+            });
         }
-    });
-}); });
+        // Eliminar el usuario si ya existe
+        const existingUser = await prisma.usuario.findUnique({ where: { email } });
+        if (existingUser) {
+            await prisma.usuarioRol.deleteMany({ where: { usuarioId: existingUser.id } });
+            await prisma.usuario.delete({ where: { email } });
+        }
+        // Crear el hash de la contraseña
+        const passwordHash = await bcrypt.hash(password, 10);
+        console.log('Hash de la contraseña generado:', passwordHash);
+        // Crear el usuario
+        const usuario = await prisma.usuario.create({
+            data: {
+                email,
+                nombre,
+                apellidoPaterno,
+                apellidoMaterno,
+                passwordHash,
+                activo: true,
+                updatedAt: new Date(),
+                roles: {
+                    create: [{ rolId: adminRole.id }]
+                }
+            },
+            include: { roles: { include: { rol: true } } }
+        });
+        console.log('Usuario administrador creado exitosamente:', {
+            id: usuario.id,
+            email: usuario.email,
+            nombre: usuario.nombre,
+            apellidoPaterno: usuario.apellidoPaterno,
+            roles: usuario.roles.map(r => r.rol.nombre)
+        });
+    } catch (error) {
+        console.error('Error al crear el usuario:', error);
+    } finally {
+        await prisma.$disconnect();
+    }
+}
+main();

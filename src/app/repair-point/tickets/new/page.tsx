@@ -2,46 +2,51 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { FaSpinner } from 'react-icons/fa';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-interface Cliente {
-  id: string;
-  nombre: string;
-  apellidoPaterno: string;
-  apellidoMaterno: string;
-}
-
-interface Modelo {
-  id: string;
-  nombre: string;
-  marcas: {
-    nombre: string;
-  };
-}
-
-interface EstatusReparacion {
-  id: string;
-  nombre: string;
+interface FormData {
+  clienteId: string;
+  modeloId: string;
+  descripcionProblema: string;
+  capacidad: string;
+  color: string;
+  fechaCompra: string;
+  tipoDesbloqueo: 'pin' | 'patron';
+  codigoDesbloqueo: string;
+  patronDesbloqueo: string[];
+  redCelular: string;
+  imei: string;
 }
 
 export default function NewTicketPage() {
   const router = useRouter();
-  const { data: session } = useSession();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [data, setData] = useState<{
-    clientes: Cliente[];
-    modelos: Modelo[];
-    estatusReparacion: EstatusReparacion[];
-  } | null>(null);
-
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
+  const [data, setData] = useState<any>(null);
+  const [tipoDesbloqueo, setTipoDesbloqueo] = useState<'pin' | 'patron'>('pin');
+  const [patronDesbloqueo, setPatronDesbloqueo] = useState<string[]>([]);
+  const [formData, setFormData] = useState<FormData>({
     clienteId: '',
     modeloId: '',
-    descripcion: '',
-    observaciones: '',
-    estatusReparacionId: ''
+    descripcionProblema: '',
+    capacidad: '',
+    color: '',
+    fechaCompra: '',
+    tipoDesbloqueo: 'pin',
+    codigoDesbloqueo: '',
+    patronDesbloqueo: [],
+    redCelular: '',
+    imei: ''
   });
 
   useEffect(() => {
@@ -49,22 +54,42 @@ export default function NewTicketPage() {
       try {
         const response = await fetch('/api/repair-point/data');
         if (!response.ok) {
-          throw new Error('Error al cargar los datos');
+          throw new Error('Error al cargar datos');
         }
         const data = await response.json();
         setData(data);
       } catch (error) {
-        setError('Error al cargar los datos. Por favor, recargue la página.');
+        console.error('Error:', error);
+      } finally {
+        setLoadingData(false);
       }
     };
 
     fetchData();
   }, []);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handlePatronClick = (numero: number) => {
+    if (patronDesbloqueo.length < 9) {
+      const nuevoPatron = [...patronDesbloqueo, numero.toString()];
+      setPatronDesbloqueo(nuevoPatron);
+      setFormData(prev => ({
+        ...prev,
+        patronDesbloqueo: nuevoPatron
+      }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     try {
       const response = await fetch('/api/repair-point/tickets', {
@@ -81,165 +106,219 @@ export default function NewTicketPage() {
 
       router.push('/repair-point/tickets');
     } catch (error) {
-      setError('Error al crear el ticket. Por favor, intente nuevamente.');
+      console.error('Error:', error);
+      alert('Error al crear el ticket');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  if (!session) {
+  if (loadingData) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <FaSpinner className="w-8 h-8 animate-spin text-blue-500" />
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <FaSpinner className="w-8 h-8 animate-spin text-blue-500" />
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FEBF19]"></div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Crear Nuevo Ticket</h1>
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">Nuevo Ticket</h1>
+      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
+        <div className="space-y-6">
           <div>
-            <label htmlFor="clienteId" className="block text-sm font-medium text-gray-700">
-              Cliente
-            </label>
-            <select
-              id="clienteId"
-              name="clienteId"
+            <Label htmlFor="clienteId">Cliente</Label>
+            <Select
               value={formData.clienteId}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              onValueChange={(value) => setFormData(prev => ({ ...prev, clienteId: value }))}
             >
-              <option value="">Seleccione un cliente</option>
-              {data.clientes.map(cliente => (
-                <option key={cliente.id} value={cliente.id}>
-                  {`${cliente.nombre} ${cliente.apellidoPaterno} ${cliente.apellidoMaterno}`}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccione un cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                {data.clientes.map((cliente: any) => (
+                  <SelectItem key={cliente.id} value={cliente.id.toString()}>
+                    {cliente.nombre} {cliente.apellidoPaterno} {cliente.apellidoMaterno}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <label htmlFor="modeloId" className="block text-sm font-medium text-gray-700">
-              Modelo
-            </label>
-            <select
-              id="modeloId"
-              name="modeloId"
+            <Label htmlFor="modeloId">Modelo</Label>
+            <Select
               value={formData.modeloId}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              onValueChange={(value) => setFormData(prev => ({ ...prev, modeloId: value }))}
             >
-              <option value="">Seleccione un modelo</option>
-              {data.modelos.map(modelo => (
-                <option key={modelo.id} value={modelo.id}>
-                  {`${modelo.marcas.nombre} ${modelo.nombre}`}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccione un modelo" />
+              </SelectTrigger>
+              <SelectContent>
+                {data.modelos.map((modelo: any) => (
+                  <SelectItem key={modelo.id} value={modelo.id.toString()}>
+                    {modelo.marcas.nombre} {modelo.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700">
-              Descripción del Problema
-            </label>
-            <textarea
-              id="descripcion"
-              name="descripcion"
-              value={formData.descripcion}
+            <Label htmlFor="imei">IMEI</Label>
+            <Input
+              type="text"
+              id="imei"
+              name="imei"
+              value={formData.imei}
               onChange={handleChange}
-              required
+              pattern="[0-9]{15}"
+              title="El IMEI debe contener exactamente 15 dígitos"
+              placeholder="Ingrese el IMEI del dispositivo (15 dígitos)"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="descripcionProblema">Descripción del Problema</Label>
+            <Textarea
+              id="descripcionProblema"
+              name="descripcionProblema"
+              value={formData.descripcionProblema}
+              onChange={handleChange}
               rows={4}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="Describe el problema del dispositivo..."
             />
           </div>
 
           <div>
-            <label htmlFor="observaciones" className="block text-sm font-medium text-gray-700">
-              Observaciones
-            </label>
-            <textarea
-              id="observaciones"
-              name="observaciones"
-              value={formData.observaciones}
+            <Label htmlFor="capacidad">Capacidad</Label>
+            <Input
+              type="text"
+              id="capacidad"
+              name="capacidad"
+              value={formData.capacidad}
               onChange={handleChange}
-              rows={3}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="Ej: 128GB"
             />
           </div>
 
           <div>
-            <label htmlFor="estatusReparacionId" className="block text-sm font-medium text-gray-700">
-              Estatus de Reparación
-            </label>
-            <select
-              id="estatusReparacionId"
-              name="estatusReparacionId"
-              value={formData.estatusReparacionId}
+            <Label htmlFor="color">Color</Label>
+            <Input
+              type="text"
+              id="color"
+              name="color"
+              value={formData.color}
               onChange={handleChange}
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            >
-              <option value="">Seleccione un estatus</option>
-              {data.estatusReparacion.map(estatus => (
-                <option key={estatus.id} value={estatus.id}>
-                  {estatus.nombre}
-                </option>
-              ))}
-            </select>
+              placeholder="Color del dispositivo"
+            />
           </div>
 
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <span className="flex items-center">
-                  <FaSpinner className="animate-spin mr-2" />
-                  Creando...
-                </span>
-              ) : (
-                'Crear Ticket'
+          <div>
+            <Label htmlFor="fechaCompra">Fecha de Compra</Label>
+            <Input
+              type="date"
+              id="fechaCompra"
+              name="fechaCompra"
+              value={formData.fechaCompra}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div>
+            <Label>Tipo de Desbloqueo</Label>
+            <div className="flex space-x-4 mt-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="pin"
+                  name="tipoDesbloqueo"
+                  value="pin"
+                  checked={tipoDesbloqueo === 'pin'}
+                  onChange={() => setTipoDesbloqueo('pin')}
+                  className="h-4 w-4 text-[#FEBF19]"
+                />
+                <Label htmlFor="pin">PIN/Contraseña</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="patron"
+                  name="tipoDesbloqueo"
+                  value="patron"
+                  checked={tipoDesbloqueo === 'patron'}
+                  onChange={() => setTipoDesbloqueo('patron')}
+                  className="h-4 w-4 text-[#FEBF19]"
+                />
+                <Label htmlFor="patron">Patrón</Label>
+              </div>
+            </div>
+          </div>
+
+          {tipoDesbloqueo === 'pin' ? (
+            <div>
+              <Label htmlFor="codigoDesbloqueo">Código de Desbloqueo</Label>
+              <Input
+                type="text"
+                id="codigoDesbloqueo"
+                name="codigoDesbloqueo"
+                value={formData.codigoDesbloqueo}
+                onChange={handleChange}
+                placeholder="Ingrese el código de desbloqueo"
+              />
+            </div>
+          ) : (
+            <div>
+              <Label>Patrón de Desbloqueo</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2 max-w-xs mx-auto">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((numero) => (
+                  <button
+                    key={numero}
+                    type="button"
+                    onClick={() => handlePatronClick(numero)}
+                    className="aspect-square border rounded-lg flex items-center justify-center text-lg font-medium hover:bg-gray-100"
+                  >
+                    {numero}
+                  </button>
+                ))}
+              </div>
+              {patronDesbloqueo.length > 0 && (
+                <div className="mt-2 text-sm text-gray-600 text-center">
+                  Patrón actual: {patronDesbloqueo.join(' → ')}
+                </div>
               )}
-            </button>
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="redCelular">Red Celular</Label>
+            <Input
+              type="text"
+              id="redCelular"
+              name="redCelular"
+              value={formData.redCelular}
+              onChange={handleChange}
+              placeholder="Ej: Telcel, AT&T, etc."
+            />
           </div>
-        </form>
-      </div>
+        </div>
+
+        <div className="mt-8 flex justify-end space-x-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? 'Creando...' : 'Crear Ticket'}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 } 

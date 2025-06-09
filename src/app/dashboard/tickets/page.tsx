@@ -1,18 +1,18 @@
 import { Metadata } from 'next';
-import { PermissionRoute } from '@/components/auth/PermissionRoute';
+import RouteGuard from '@/components/route-guard';
 import { TicketsTable } from './components/TicketsTable';
 
 export const metadata: Metadata = {
-  title: 'Tickets | YAAVS',
+  title: 'Tickets | arregla.mx',
   description: 'Gestión de tickets de reparación',
 };
 
 export default function TicketsPage() {
   return (
-    <PermissionRoute requiredPermissions={['TICKETS_VIEW']}>
+    <RouteGuard requiredPermissions={['TICKETS_VIEW']} section="Tickets">
       <div className="container mx-auto py-6">
         <TicketsTable />
       </div>
-    </PermissionRoute>
+    </RouteGuard>
   );
 } 

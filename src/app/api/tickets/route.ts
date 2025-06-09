@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function POST(request: Request) {
   try {
@@ -27,15 +28,64 @@ export async function POST(request: Request) {
       codigoDesbloqueo,
       redCelular,
       imei,
+      puntoRecoleccionId
     } = data;
 
-    // Convertir IDs a números
-    const clienteIdNum = parseInt(clienteId);
-    const tipoServicioIdNum = parseInt(tipoServicioId);
-    const modeloIdNum = parseInt(modeloId);
+    // Validar datos requeridos
+    if (!clienteId || !tipoServicioId || !modeloId || !descripcionProblema) {
+      return NextResponse.json(
+        { error: 'Faltan campos requeridos' },
+        { status: 400 }
+      );
+    }
 
+    // Convertir IDs a números
+    const clienteIdNum = parseInt(clienteId as string);
+    const tipoServicioIdNum = parseInt(tipoServicioId as string);
+    const modeloIdNum = parseInt(modeloId as string);
+
+    // Validar que los IDs sean números válidos
     if (isNaN(clienteIdNum) || isNaN(tipoServicioIdNum) || isNaN(modeloIdNum)) {
-      return new NextResponse('IDs inválidos', { status: 400 });
+      return NextResponse.json(
+        { error: 'IDs inválidos' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar que el cliente existe
+    const cliente = await prisma.cliente.findUnique({
+      where: { id: clienteIdNum }
+    });
+
+    if (!cliente) {
+      return NextResponse.json(
+        { error: 'Cliente no encontrado' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar que el tipo de servicio existe
+    const tipoServicio = await prisma.tipoServicio.findUnique({
+      where: { id: tipoServicioIdNum }
+    });
+
+    if (!tipoServicio) {
+      return NextResponse.json(
+        { error: 'Tipo de servicio no encontrado' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar que el modelo existe
+    const modelo = await prisma.modelo.findUnique({
+      where: { id: modeloIdNum }
+    });
+
+    if (!modelo) {
+      return NextResponse.json(
+        { error: 'Modelo no encontrado' },
+        { status: 400 }
+      );
     }
 
     // Obtener el estatus inicial
@@ -44,49 +94,87 @@ export async function POST(request: Request) {
     });
 
     if (!estatusInicial) {
-      console.log('No se encontró el estatus inicial');
-      return new NextResponse('No se encontró el estatus inicial', { status: 500 });
+      return NextResponse.json(
+        { error: 'No se encontró el estatus inicial' },
+        { status: 500 }
+      );
     }
 
-    console.log('Estatus inicial encontrado:', estatusInicial);
-
-    // Crear el dispositivo primero
+    // Crear el dispositivo
     const dispositivo = await prisma.dispositivos.create({
       data: {
-        capacidad,
-        color,
-        fechaCompra: fechaCompra ? new Date(fechaCompra) : null,
-        codigoDesbloqueo,
-        redCelular,
+        capacidad: capacidad as string,
+        color: color as string,
+        fechaCompra: fechaCompra ? new Date(fechaCompra as string) : null,
+        codigoDesbloqueo: codigoDesbloqueo as string,
+        redCelular: redCelular as string,
         updatedAt: new Date()
       }
     });
 
-    console.log('Dispositivo creado:', dispositivo);
-
     // Crear el ticket
-    const ticket = await prisma.ticket.create({
-      data: {
-        numeroTicket: `TICK-${Date.now()}`,
-        clienteId: clienteIdNum,
-        tipoServicioId: tipoServicioIdNum,
-        modeloId: modeloIdNum,
-        descripcionProblema,
-        estatusReparacionId: estatusInicial.id,
-        creadorId: session.user.id,
-        imei,
-        dispositivos: {
-          connect: {
-            id: dispositivo.id
-          }
+    const ticketData = {
+      numeroTicket: `TICK-${Date.now()}`,
+      descripcionProblema,
+      imei,
+      cliente: {
+        connect: {
+          id: clienteIdNum
         }
       },
+      tipoServicio: {
+        connect: {
+          id: tipoServicioIdNum
+        }
+      },
+      modelo: {
+        connect: {
+          id: modeloIdNum
+        }
+      },
+      estatusReparacion: {
+        connect: {
+          id: estatusInicial.id
+        }
+      },
+      creador: {
+        connect: {
+          id: session.user.id
+        }
+      },
+      dispositivos: {
+        connect: {
+          id: dispositivo.id
+        }
+      }
+    } as Prisma.TicketCreateInput;
+
+    if (puntoRecoleccionId) {
+      Object.assign(ticketData, {
+        puntoRecoleccion: {
+          connect: {
+            id: parseInt(puntoRecoleccionId as string)
+          }
+        }
+      });
+    }
+
+    const ticket = await prisma.ticket.create({
+      data: ticketData,
       include: {
+        cliente: true,
+        tipoServicio: true,
+        modelo: {
+          include: {
+            marcas: true
+          }
+        },
+        estatusReparacion: true,
+        creador: true,
         dispositivos: true
       }
     });
 
-    console.log('Ticket creado:', ticket);
     return NextResponse.json(ticket);
   } catch (error) {
     console.error('Error al crear el ticket:', error);

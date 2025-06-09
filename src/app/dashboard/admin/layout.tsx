@@ -18,14 +18,7 @@ export default function AdminSectionLayout({
       router.push('/auth/login');
       return;
     }
-
-    if (status === 'authenticated' && session?.user) {
-      if (session.user.role !== 'ADMINISTRADOR') {
-        router.push('/dashboard');
-        return;
-      }
-    }
-  }, [status, session, router]);
+  }, [status, router]);
 
   if (status === 'loading') {
     return (
@@ -35,9 +28,7 @@ export default function AdminSectionLayout({
     );
   }
 
-  if (!session || session.user.role !== 'ADMINISTRADOR') {
-    return null;
-  }
-
-  return <AdminLayout>{children}</AdminLayout>;
+  return (
+    <AdminLayout>{children}</AdminLayout>
+  );
 } 

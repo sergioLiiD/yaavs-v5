@@ -132,10 +132,10 @@ export default function CollectionPointsPage() {
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {point.name}
+                        {point.nombre}
                         {point.parent && (
                           <span className="ml-2 text-sm text-gray-500">
-                            (Sucursal de {point.parent.name})
+                            (Sucursal de {point.parent.nombre})
                           </span>
                         )}
                       </div>

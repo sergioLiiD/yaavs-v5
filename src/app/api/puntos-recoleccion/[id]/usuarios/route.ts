@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { hash } from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
+import { hash } from 'bcrypt';
+import { z } from 'zod';
+import { Prisma } from '@prisma/client';
+
+const createUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  nombre: z.string(),
+  apellidoPaterno: z.string(),
+  apellidoMaterno: z.string().optional(),
+  rolId: z.number()
+});
 
 // GET /api/puntos-recoleccion/[id]/usuarios
 export async function GET(
@@ -9,38 +19,46 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log('Obteniendo usuarios para el punto:', params.id);
-    
-    const users = await prisma.usuarios_puntos_recoleccion.findMany({
-      where: {
-        puntoRecoleccionId: params.id,
-      },
-      select: {
-        id: true,
-        puntoRecoleccionId: true,
-        usuarioId: true,
-        activo: true,
-        Usuario: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true,
-            apellidoPaterno: true,
-            apellidoMaterno: true,
-          },
-        },
-      },
+    const id = parseInt(params.id);
+    if (isNaN(id)) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
+    const puntoRecoleccion = await prisma.puntos_recoleccion.findUnique({
+      where: { id }
     });
 
-    console.log('Usuarios encontrados:', JSON.stringify(users, null, 2));
+    if (!puntoRecoleccion) {
+      return NextResponse.json({ error: 'Punto de recolección no encontrado' }, { status: 404 });
+    }
+
+    const users = await prisma.usuarios_puntos_recoleccion.findMany({
+      where: {
+        puntoRecoleccionId: id
+      },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            email: true,
+            nombre: true,
+            apellidoPaterno: true,
+            apellidoMaterno: true
+          }
+        },
+        rol: {
+          select: {
+            id: true,
+            nombre: true
+          }
+        }
+      }
+    });
 
     return NextResponse.json(users);
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener usuarios' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Error al obtener usuarios' }, { status: 500 });
   }
 }
 
@@ -50,95 +68,78 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await request.json();
-    const { email, password, nombre, apellidoPaterno, apellidoMaterno, rolId } = body;
-
-    // Verificar si el punto de recolección existe
-    const collectionPoint = await prisma.puntos_recoleccion.findUnique({
-      where: { id: params.id },
-    });
-
-    if (!collectionPoint) {
-      return NextResponse.json(
-        { error: 'Punto de recolección no encontrado' },
-        { status: 404 }
-      );
+    const id = parseInt(params.id);
+    if (isNaN(id)) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    // Verificar si ya existe un usuario con ese email
+    const puntoRecoleccion = await prisma.puntos_recoleccion.findUnique({
+      where: { id }
+    });
+
+    if (!puntoRecoleccion) {
+      return NextResponse.json({ error: 'Punto de recolección no encontrado' }, { status: 404 });
+    }
+
+    const body = await request.json();
+    const validatedData = createUserSchema.parse({
+      ...body,
+      rolId: parseInt(body.rolId)
+    });
+
     const existingUser = await prisma.usuario.findUnique({
-      where: { email },
+      where: { email: validatedData.email }
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'Ya existe un usuario con ese email' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'El email ya está registrado' }, { status: 400 });
     }
 
-    // Verificar si el rol existe
     const rol = await prisma.rol.findUnique({
-      where: { id: rolId },
+      where: { id: validatedData.rolId }
     });
 
     if (!rol) {
-      return NextResponse.json(
-        { error: 'El rol seleccionado no existe' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Rol no encontrado' }, { status: 404 });
     }
 
-    // Crear el usuario
-    const hashedPassword = await hash(password, 12);
-    const usuario = await prisma.usuario.create({
-      data: {
-        email,
-        nombre,
-        apellidoPaterno,
-        apellidoMaterno,
-        passwordHash: hashedPassword,
-        activo: true,
-        updatedAt: new Date(),
-      },
+    const hashedPassword = await hash(validatedData.password, 10);
+
+    const usuario = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.usuario.create({
+        data: {
+          email: validatedData.email,
+          passwordHash: hashedPassword,
+          nombre: validatedData.nombre,
+          apellidoPaterno: validatedData.apellidoPaterno,
+          apellidoMaterno: validatedData.apellidoMaterno
+        }
+      });
+
+      await tx.usuarioRol.create({
+        data: {
+          usuarioId: newUser.id,
+          rolId: validatedData.rolId
+        }
+      });
+
+      await tx.usuarios_puntos_recoleccion.create({
+        data: {
+          usuarioId: newUser.id,
+          puntoRecoleccionId: id,
+          rolId: validatedData.rolId
+        }
+      });
+
+      return newUser;
     });
 
-    // Asignar el rol al usuario (UsuarioRol)
-    await prisma.usuarioRol.create({
-      data: {
-        usuarioId: usuario.id,
-        rolId: rolId,
-      },
-    });
-
-    // Asignar el usuario al punto de recolección
-    const userPoint = await prisma.usuarios_puntos_recoleccion.create({
-      data: {
-        id: uuidv4(),
-        puntoRecoleccionId: params.id,
-        usuarioId: usuario.id,
-        rolId: rolId,
-        activo: true,
-      },
-      include: {
-        Usuario: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true,
-            apellidoPaterno: true,
-            apellidoMaterno: true,
-          },
-        },
-      },
-    });
-
-    return NextResponse.json(userPoint);
+    return NextResponse.json(usuario);
   } catch (error) {
     console.error('Error al crear usuario:', error);
-    return NextResponse.json(
-      { error: 'Error al crear usuario' },
-      { status: 500 }
-    );
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.errors }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'Error al crear usuario' }, { status: 500 });
   }
 } 

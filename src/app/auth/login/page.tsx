@@ -36,6 +36,12 @@ function LoginForm() {
     setError('');
     
     try {
+      console.log('Intentando iniciar sesión con:', { 
+        email,
+        password,
+        passwordLength: password.length,
+        passwordChars: password.split('').map(c => `${c}(${c.charCodeAt(0)})`).join(', ')
+      });
       const result = await signIn('credentials', {
         redirect: false,
         email,
@@ -43,13 +49,15 @@ function LoginForm() {
         callbackUrl
       });
 
+      console.log('Resultado del inicio de sesión:', result);
+
       if (result?.error) {
         setError('Credenciales inválidas');
       } else if (result?.ok) {
         router.push(callbackUrl);
       }
     } catch (err) {
-      console.error('Sign in error:', err);
+      console.error('Error durante el inicio de sesión:', err);
       setError('Error durante el inicio de sesión');
     } finally {
       setIsLoading(false);

@@ -2,10 +2,10 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, memo } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 
-export default function DashboardLayout({
+const DashboardLayout = memo(function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -37,4 +37,8 @@ export default function DashboardLayout({
   }
 
   return <AdminLayout>{children}</AdminLayout>;
-} 
+});
+
+DashboardLayout.displayName = 'DashboardLayout';
+
+export default DashboardLayout; 

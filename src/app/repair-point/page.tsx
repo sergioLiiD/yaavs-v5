@@ -1,31 +1,80 @@
-'use client';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+export default async function RepairPointPage() {
+  const session = await getServerSession(authOptions);
 
-export default function RepairPointPage() {
-  const router = useRouter();
-  const { data: session, status } = useSession();
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/repair-point/login');
-    }
-  }, [status, router]);
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FEBF19]"></div>
-      </div>
-    );
+  if (!session?.user) {
+    redirect('/auth/login');
   }
 
+  // Obtener el punto de reparación del usuario
+  const user = await prisma.usuario.findUnique({
+    where: { id: session.user.id },
+    include: {
+      puntoRecoleccion: true
+    }
+  });
+
+  if (!user?.puntoRecoleccion) {
+    redirect('/auth/login');
+  }
+
+  // Obtener estadísticas básicas
+  const [totalTickets, ticketsPendientes, ticketsEnProceso] = await Promise.all([
+    prisma.ticket.count({
+      where: { puntoRecoleccionId: user.puntoRecoleccion.id }
+    }),
+    prisma.ticket.count({
+      where: { 
+        puntoRecoleccionId: user.puntoRecoleccion.id,
+        estado: 'PENDIENTE'
+      }
+    }),
+    prisma.ticket.count({
+      where: { 
+        puntoRecoleccionId: user.puntoRecoleccion.id,
+        estado: 'EN_PROCESO'
+      }
+    })
+  ]);
+
   return (
-    <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-6">Dashboard del Punto de Reparación</h1>
-      {/* Aquí irá el contenido del dashboard */}
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">
+        Punto de Reparación: {user.puntoRecoleccion.nombre}
+      </h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-2">Total de Tickets</h3>
+          <p className="text-3xl font-bold">{totalTickets}</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-2">Tickets Pendientes</h3>
+          <p className="text-3xl font-bold text-yellow-600">{ticketsPendientes}</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-2">Tickets en Proceso</h3>
+          <p className="text-3xl font-bold text-blue-600">{ticketsEnProceso}</p>
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-4">Información del Punto</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p className="text-gray-600">Dirección</p>
+            <p className="font-medium">{user.puntoRecoleccion.location.address}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">Horario</p>
+            <p className="font-medium">{user.puntoRecoleccion.schedule}</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 } 

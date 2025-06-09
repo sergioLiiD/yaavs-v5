@@ -56,7 +56,7 @@ interface CollectionPointFormProps {
 
 export default function CollectionPointForm({ collectionPoint, onClose, onSuccess }: CollectionPointFormProps) {
   const [formData, setFormData] = useState<CollectionPointFormData>({
-    name: '',
+    nombre: '',
     phone: '',
     email: '',
     url: '',
@@ -111,7 +111,7 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
       console.log('Datos del punto de recolección:', collectionPoint);
       console.log('Horario del punto:', collectionPoint.schedule);
       setFormData({
-        name: collectionPoint.name,
+        nombre: collectionPoint.nombre,
         phone: collectionPoint.phone,
         email: collectionPoint.email,
         url: collectionPoint.url || '',
@@ -363,8 +363,8 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
               </label>
               <input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="nombre"
+                value={formData.nombre}
                 onChange={handleInputChange}
                 className="mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] focus:ring-2 text-black placeholder-gray-400 outline-none"
                 required

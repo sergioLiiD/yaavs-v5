@@ -7,13 +7,21 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const id = parseInt(params.id);
+    if (isNaN(id)) {
+      return NextResponse.json(
+        { error: 'ID inválido' },
+        { status: 400 }
+      );
+    }
+
     const punto = await prisma.puntos_recoleccion.findUnique({
       where: {
-        id: params.id,
+        id,
       },
       include: {
-        branches: true,
         parent: true,
+        children: true,
       },
     });
 
@@ -40,14 +48,22 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const id = parseInt(params.id);
+    if (isNaN(id)) {
+      return NextResponse.json(
+        { error: 'ID inválido' },
+        { status: 400 }
+      );
+    }
+
     const data = await request.json();
     
     const punto = await prisma.puntos_recoleccion.update({
       where: {
-        id: params.id,
+        id,
       },
       data: {
-        name: data.name,
+        nombre: data.name,
         phone: data.phone,
         email: data.email,
         url: data.url,
@@ -55,7 +71,7 @@ export async function PUT(
         location: data.location,
         isHeadquarters: data.isHeadquarters,
         isRepairPoint: data.isRepairPoint,
-        parentId: data.parentId,
+        parentId: data.parentId ? parseInt(data.parentId) : null,
       },
     });
 
@@ -75,9 +91,17 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const id = parseInt(params.id);
+    if (isNaN(id)) {
+      return NextResponse.json(
+        { error: 'ID inválido' },
+        { status: 400 }
+      );
+    }
+
     await prisma.puntos_recoleccion.delete({
       where: {
-        id: params.id,
+        id,
       },
     });
 

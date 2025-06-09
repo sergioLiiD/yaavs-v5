@@ -23,21 +23,21 @@ export interface Location {
 }
 
 export interface CollectionPoint {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  url?: string;
+  id: number;
+  nombre: string;
+  phone: string | null;
+  email: string | null;
+  url?: string | null;
   isHeadquarters: boolean;
   isRepairPoint: boolean;
   location: Location;
   schedule: Schedule;
-  parentId?: string;
+  parentId?: number | null;
   parent?: {
-    id: string;
-    name: string;
+    id: number;
+    nombre: string;
   };
-  branches?: CollectionPoint[];
+  children?: CollectionPoint[];
   createdAt: Date;
   updatedAt: Date;
 }

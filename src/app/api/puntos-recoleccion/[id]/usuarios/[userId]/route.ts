@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+
+const updateUserSchema = z.object({
+  email: z.string().email(),
+  nombre: z.string(),
+  apellidoPaterno: z.string(),
+  apellidoMaterno: z.string().optional(),
+  rolId: z.string(),
+});
 
 // PUT /api/puntos-recoleccion/[id]/usuarios/[userId]
 export async function PUT(
@@ -8,16 +17,17 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const { email, nombre, apellidoPaterno, apellidoMaterno, rolId } = body;
+    const { email, nombre, apellidoPaterno, apellidoMaterno, rolId } = updateUserSchema.parse(body);
 
     // Verificar si el usuario existe y pertenece al punto de recolección
     const existingUserPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
-        id: params.userId,
-        puntoRecoleccionId: params.id,
+        id: parseInt(params.userId),
+        puntoRecoleccionId: parseInt(params.id),
       },
       include: {
         Usuario: true,
+        Rol: true
       },
     });
 
@@ -44,7 +54,7 @@ export async function PUT(
 
     // Verificar si el rol existe
     const rol = await prisma.rol.findUnique({
-      where: { id: rolId },
+      where: { id: parseInt(rolId) },
     });
 
     if (!rol) {
@@ -60,15 +70,15 @@ export async function PUT(
         where: { id: existingUserPoint.Usuario.id },
         data: {
           email,
-          nombre: `${nombre} ${apellidoPaterno} ${apellidoMaterno}`.trim(),
+          nombre: `${nombre} ${apellidoPaterno} ${apellidoMaterno || ''}`.trim(),
         },
       });
 
       // Actualizar la relación con el punto de recolección
       const updatedUserPoint = await prisma.usuarios_puntos_recoleccion.update({
-        where: { id: params.userId },
+        where: { id: parseInt(params.userId) },
         data: {
-          rolId: rolId,
+          rolId: parseInt(rolId),
         },
         include: {
           Usuario: {
@@ -76,12 +86,22 @@ export async function PUT(
               id: true,
               nombre: true,
               email: true,
+              apellidoPaterno: true,
+              apellidoMaterno: true,
+              activo: true,
             },
           },
           Rol: {
             select: {
               id: true,
               nombre: true,
+              descripcion: true
+            },
+          },
+          puntos_recoleccion: {
+            select: {
+              id: true,
+              name: true,
             },
           },
         },
@@ -96,9 +116,16 @@ export async function PUT(
       );
     }
   } catch (error) {
-    console.error('Error al actualizar usuario:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Datos de entrada inválidos', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    console.error('Error al procesar la solicitud:', error);
     return NextResponse.json(
-      { error: 'Error al actualizar usuario' },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     );
   }
@@ -113,8 +140,8 @@ export async function DELETE(
     // Verificar si el usuario existe y pertenece al punto de recolección
     const existingUserPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
-        id: params.userId,
-        puntoRecoleccionId: params.id,
+        id: parseInt(params.userId),
+        puntoRecoleccionId: parseInt(params.id),
       },
     });
 
@@ -127,7 +154,7 @@ export async function DELETE(
 
     // Eliminar la relación con el punto de recolección
     await prisma.usuarios_puntos_recoleccion.delete({
-      where: { id: params.userId },
+      where: { id: parseInt(params.userId) },
     });
 
     return NextResponse.json({ message: 'Usuario eliminado correctamente' });

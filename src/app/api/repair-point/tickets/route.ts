@@ -13,8 +13,7 @@ export async function GET() {
     // Obtener el punto de recolección asociado al usuario
     const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
-        usuarioId: session.user.id,
-        activo: true
+        usuarioId: session.user.id
       },
       include: {
         puntos_recoleccion: true
@@ -32,12 +31,12 @@ export async function GET() {
     const tickets = await prisma.ticket.findMany({
       where: {
         puntoRecoleccionId: userPoint.puntoRecoleccionId,
-        activo: true
+        cancelado: false
       },
       include: {
         cliente: true,
         modelo: true,
-        estado: true
+        estatusReparacion: true
       },
       orderBy: {
         createdAt: 'desc'
@@ -65,20 +64,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Obtener el punto de reparación del usuario
+    // Obtener el punto de recolección del usuario
     const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
-        usuarioId: session.user.id,
-        activo: true
+        usuarioId: session.user.id
       },
       include: {
         puntos_recoleccion: true
       }
     });
 
-    if (!userPoint || !userPoint.puntos_recoleccion.isRepairPoint) {
+    if (!userPoint) {
       return NextResponse.json(
-        { error: 'Usuario no autorizado para punto de reparación' },
+        { error: 'Usuario no asociado a un punto de recolección' },
         { status: 403 }
       );
     }
@@ -91,7 +89,7 @@ export async function POST(request: Request) {
         ...body,
         puntoRecoleccionId: userPoint.puntoRecoleccionId,
         creadorId: session.user.id,
-        activo: true
+        cancelado: false
       }
     });
 

@@ -34,6 +34,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
+    // Verificar si el usuario es administrador o tiene el permiso USERS_VIEW
+    if (session.user.role !== 'ADMINISTRADOR' && !session.user.permissions.includes('USERS_VIEW')) {
+      console.log('Usuario no tiene permisos');
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const rol = searchParams.get('rol');
     console.log('Rol filtrado:', rol);
@@ -41,7 +47,7 @@ export async function GET(request: Request) {
     try {
       const usuarios = await prisma.usuario.findMany({
         where: rol ? {
-          roles: {
+          usuarioRoles: {
             some: {
               rol: {
                 nombre: rol
@@ -56,7 +62,7 @@ export async function GET(request: Request) {
           apellidoMaterno: true,
           email: true,
           activo: true,
-          roles: {
+          usuarioRoles: {
             select: {
               rol: {
                 select: {
@@ -92,30 +98,6 @@ export async function GET(request: Request) {
     }
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
-    
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return NextResponse.json(
-        { 
-          error: 'Error en la base de datos', 
-          code: error.code,
-          message: error.message,
-          meta: error.meta
-        },
-        { status: 500 }
-      );
-    }
-
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { 
-          error: 'Error al obtener usuarios',
-          message: error.message,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json(
       { error: 'Error al obtener usuarios' },
       { status: 500 }

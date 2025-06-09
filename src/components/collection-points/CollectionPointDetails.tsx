@@ -85,7 +85,7 @@ export default function CollectionPointDetails({ collectionPoint }: CollectionPo
         <div className="p-6">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{collectionPoint.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{collectionPoint.nombre}</h1>
               <div className="mt-2 flex items-center space-x-2">
                 {collectionPoint.isHeadquarters && (
                   <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
@@ -151,14 +151,15 @@ export default function CollectionPointDetails({ collectionPoint }: CollectionPo
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-gray-900">Horario de Atención</h3>
                   <div className="mt-1 text-sm text-gray-500">
-                    {Object.entries(collectionPoint.schedule).map(([day, schedule]) => {
-                      const dayName = DAYS_OF_WEEK[DAYS_MAP[day as keyof typeof DAYS_MAP] || day as keyof typeof DAYS_OF_WEEK];
+                    {Object.keys(DAYS_OF_WEEK).map((day) => {
+                      const schedule = collectionPoint.schedule[day as keyof typeof DAYS_OF_WEEK];
+                      const dayName = DAYS_OF_WEEK[day as keyof typeof DAYS_OF_WEEK];
                       return (
                         <div key={day} className="flex justify-between">
                           <span>{dayName}:</span>
                           <span>
-                            {schedule.isOpen
-                              ? `${schedule.openTime} - ${schedule.closeTime}`
+                            {schedule?.open
+                              ? `${schedule.start} - ${schedule.end}`
                               : 'Cerrado'}
                           </span>
                         </div>
@@ -190,17 +191,17 @@ export default function CollectionPointDetails({ collectionPoint }: CollectionPo
             </div>
           </div>
 
-          {collectionPoint.isHeadquarters && collectionPoint.branches && collectionPoint.branches.length > 0 && (
+          {collectionPoint.isHeadquarters && collectionPoint.children && collectionPoint.children.length > 0 && (
             <div className="mt-8">
               <h2 className="text-lg font-medium text-gray-900 mb-4">Sucursales</h2>
               <div className="bg-white shadow overflow-hidden sm:rounded-md">
                 <ul className="divide-y divide-gray-200">
-                  {collectionPoint.branches.map((branch) => (
+                  {collectionPoint.children.map((branch) => (
                     <li key={branch.id}>
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
-                            <p className="text-sm font-medium text-gray-900">{branch.name}</p>
+                            <p className="text-sm font-medium text-gray-900">{branch.nombre}</p>
                             {branch.isRepairPoint && (
                               <span className="ml-2 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
                                 Reparación
@@ -237,7 +238,7 @@ export default function CollectionPointDetails({ collectionPoint }: CollectionPo
               <div className="ml-3 flex-1">
                 <div className="mt-4">
                   <RepairPointUsers
-                    collectionPointId={collectionPoint.id}
+                    collectionPointId={collectionPoint.id.toString()}
                     isRepairPoint={collectionPoint.isRepairPoint}
                     showModal={showUserModal}
                     onCloseModal={() => {

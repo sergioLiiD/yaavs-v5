@@ -339,14 +339,29 @@ export function TicketsTable() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Tickets</h2>
-        <Button onClick={() => router.push('/dashboard/tickets/new')}>
-          Nuevo Ticket
-        </Button>
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Tickets</h1>
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Input
+              type="text"
+              placeholder="Buscar tickets..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+          </div>
+          <Button
+            onClick={() => router.push('/dashboard/tickets/nuevo')}
+            className="bg-[#FEBF19] hover:bg-[#FEBF19]/90 text-black"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Nuevo Ticket
+          </Button>
+        </div>
       </div>
-
       <div className="rounded-md border">
         <Table>
           <TableHeader>
