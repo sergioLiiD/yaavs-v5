@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, Cliente, Usuario } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
@@ -31,7 +31,7 @@ const clienteSchema = z.object({
 });
 
 function cleanClienteData(data: any) {
-  return {
+  const cleanedData: any = {
     nombre: data.nombre,
     apellidoPaterno: data.apellidoPaterno,
     apellidoMaterno: data.apellidoMaterno,
@@ -49,13 +49,26 @@ function cleanClienteData(data: any) {
     latitud: data.latitud,
     longitud: data.longitud,
     fuenteReferencia: data.fuenteReferencia,
-    activo: data.activo ?? true,
-    tipoRegistro: data.tipoRegistro,
     passwordHash: data.passwordHash,
     puntoRecoleccionId: data.puntoRecoleccionId,
-    creadoPorId: data.creadoPorId,
     updatedAt: new Date()
   };
+
+  // Agregar tipoRegistro si está presente
+  if (data.tipoRegistro) {
+    cleanedData.tipoRegistro = data.tipoRegistro;
+  }
+
+  // Agregar la relación creadoPor si hay un creadoPorId
+  if (data.creadoPorId) {
+    cleanedData.creadoPor = {
+      connect: {
+        id: data.creadoPorId
+      }
+    };
+  }
+
+  return cleanedData;
 }
 
 export async function GET(request: Request) {
@@ -65,28 +78,44 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const puntoRecoleccionId = searchParams.get('puntoRecoleccionId');
-
-    const where: Prisma.ClienteWhereInput = puntoRecoleccionId ? {
-      puntoRecoleccionId: parseInt(puntoRecoleccionId)
-    } : {};
-
-    const clientes = await prisma.cliente.findMany({
-      where,
-      include: {
-        tickets: true,
-        creadoPor: {
-          select: {
-            id: true,
-            nombre: true,
-            apellidoPaterno: true,
-            apellidoMaterno: true,
-            email: true
-          }
-        }
+    // Verificar si el usuario es de un punto de recolección
+    const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
+      where: {
+        usuarioId: session.user.id
+      },
+      select: {
+        puntoRecoleccionId: true
       }
     });
+
+    // Construir el where para filtrar por creador si es necesario
+    const where: any = {};
+    if (userPoint?.puntoRecoleccionId) {
+      where.creadoPorId = session.user.id;
+    }
+
+    type ClienteWithRelations = Cliente & {
+      creadoPor: Pick<Usuario, 'id' | 'nombre' | 'apellidoPaterno' | 'apellidoMaterno' | 'email'> | null;
+    };
+
+    const include: any = {
+      tickets: true,
+      direcciones: true,
+      creadoPor: {
+        select: {
+          id: true,
+          nombre: true,
+          apellidoPaterno: true,
+          apellidoMaterno: true,
+          email: true
+        }
+      }
+    };
+
+    const clientes = (await prisma.cliente.findMany({
+      where,
+      include
+    })) as unknown as ClienteWithRelations[];
 
     // Asegurarnos de que todos los campos opcionales estén presentes
     const clientesFormateados = clientes.map(cliente => ({
@@ -102,7 +131,14 @@ export async function GET(request: Request) {
       codigoPostal: cliente.codigoPostal || null,
       latitud: cliente.latitud || null,
       longitud: cliente.longitud || null,
-      fuenteReferencia: cliente.fuenteReferencia || null
+      fuenteReferencia: cliente.fuenteReferencia || null,
+      creadoPor: cliente.creadoPor ? {
+        id: cliente.creadoPor.id,
+        nombre: cliente.creadoPor.nombre,
+        apellidoPaterno: cliente.creadoPor.apellidoPaterno,
+        apellidoMaterno: cliente.creadoPor.apellidoMaterno,
+        email: cliente.creadoPor.email
+      } : null
     }));
 
     return NextResponse.json(clientesFormateados);
@@ -118,6 +154,10 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const data = await request.json();
     const validatedData = clienteSchema.parse(data);
 
@@ -137,16 +177,7 @@ export async function POST(request: Request) {
       const cliente = await prisma.cliente.create({
         data: dataToSave,
         include: {
-          tickets: true,
-          creadoPor: {
-            select: {
-              id: true,
-              nombre: true,
-              apellidoPaterno: true,
-              apellidoMaterno: true,
-              email: true
-            }
-          }
+          tickets: true
         }
       });
 
@@ -154,7 +185,7 @@ export async function POST(request: Request) {
     }
 
     // Caso 2: Registro desde punto de recolección
-    const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
+    const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
       where: {
         usuarioId: session.user.id
       },
@@ -173,16 +204,7 @@ export async function POST(request: Request) {
       const cliente = await prisma.cliente.create({
         data: dataToSave,
         include: {
-          tickets: true,
-          creadoPor: {
-            select: {
-              id: true,
-              nombre: true,
-              apellidoPaterno: true,
-              apellidoMaterno: true,
-              email: true
-            }
-          }
+          tickets: true
         }
       });
 
@@ -198,16 +220,7 @@ export async function POST(request: Request) {
     const cliente = await prisma.cliente.create({
       data: dataToSave,
       include: {
-        tickets: true,
-        creadoPor: {
-          select: {
-            id: true,
-            nombre: true,
-            apellidoPaterno: true,
-            apellidoMaterno: true,
-            email: true
-          }
-        }
+        tickets: true
       }
     });
 

@@ -29,10 +29,13 @@ model Cliente {
   fuenteReferencia String?     @map("fuente_referencia")
   rfc              String?
   passwordHash     String?     @map("password_hash")
+  tipoRegistro     String?     @map("tipo_registro")
   createdAt        DateTime    @default(now()) @map("created_at")
   updatedAt        DateTime    @updatedAt @map("updated_at")
   direcciones      Direccion[]
   tickets          Ticket[]
+  creadoPorId      Int?        @map("creado_por_id")
+  creadoPor        Usuario?    @relation("ClienteCreador", fields: [creadoPorId], references: [id])
 
   @@map("clientes")
 }
@@ -54,6 +57,7 @@ model Usuario {
   ticketsAsignados  Ticket[]                  @relation("TicketTecnico")
   puntosRecoleccion UsuarioPuntoRecoleccion[]
   usuarioRoles      UsuarioRol[]
+  clientesCreados   Cliente[]                 @relation("ClienteCreador")
 
   @@map("usuarios")
 }

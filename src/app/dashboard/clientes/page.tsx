@@ -25,7 +25,6 @@ interface Cliente {
   longitud?: number;
   fuenteReferencia?: string;
   rfc?: string;
-  activo: boolean;
   tipoRegistro: string;
   createdAt: string;
   updatedAt: string;
@@ -57,7 +56,6 @@ export default function ClientesPage() {
     latitud: undefined,
     longitud: undefined,
     fuenteReferencia: '',
-    activo: true,
     tipoRegistro: 'REGISTRO_TIENDA'
   });
   const [isEditing, setIsEditing] = useState(false);
@@ -106,7 +104,6 @@ export default function ClientesPage() {
       latitud: undefined,
       longitud: undefined,
       fuenteReferencia: '',
-      activo: true,
       tipoRegistro: 'REGISTRO_TIENDA'
     });
     setIsEditing(false);
@@ -237,9 +234,6 @@ export default function ClientesPage() {
                   Tipo de Registro
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fecha Registro
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -273,15 +267,6 @@ export default function ClientesPage() {
                           : 'bg-blue-100 text-blue-800'
                       }`}>
                         {cliente.tipoRegistro}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        cliente.activo 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {cliente.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
