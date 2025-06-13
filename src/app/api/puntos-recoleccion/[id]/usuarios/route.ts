@@ -24,7 +24,7 @@ export async function GET(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const puntoRecoleccion = await prisma.puntos_recoleccion.findUnique({
+    const puntoRecoleccion = await prisma.puntoRecoleccion.findUnique({
       where: { id }
     });
 
@@ -32,7 +32,7 @@ export async function GET(
       return NextResponse.json({ error: 'Punto de recolección no encontrado' }, { status: 404 });
     }
 
-    const users = await prisma.usuarios_puntos_recoleccion.findMany({
+    const users = await prisma.usuarioPuntoRecoleccion.findMany({
       where: {
         puntoRecoleccionId: id
       },
@@ -43,19 +43,32 @@ export async function GET(
             email: true,
             nombre: true,
             apellidoPaterno: true,
-            apellidoMaterno: true
-          }
-        },
-        rol: {
-          select: {
-            id: true,
-            nombre: true
+            apellidoMaterno: true,
+            usuarioRoles: {
+              include: {
+                rol: {
+                  select: {
+                    id: true,
+                    nombre: true
+                  }
+                }
+              }
+            }
           }
         }
       }
     });
 
-    return NextResponse.json(users);
+    // Transformar la respuesta para mantener el formato esperado
+    const formattedUsers = users.map(user => ({
+      ...user,
+      usuario: {
+        ...user.usuario,
+        rol: user.usuario.usuarioRoles[0]?.rol
+      }
+    }));
+
+    return NextResponse.json(formattedUsers);
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
     return NextResponse.json({ error: 'Error al obtener usuarios' }, { status: 500 });
@@ -73,7 +86,7 @@ export async function POST(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const puntoRecoleccion = await prisma.puntos_recoleccion.findUnique({
+    const puntoRecoleccion = await prisma.puntoRecoleccion.findUnique({
       where: { id }
     });
 
@@ -123,11 +136,11 @@ export async function POST(
         }
       });
 
-      await tx.usuarios_puntos_recoleccion.create({
+      await tx.usuarioPuntoRecoleccion.create({
         data: {
           usuarioId: newUser.id,
           puntoRecoleccionId: id,
-          rolId: validatedData.rolId
+          nivel: validatedData.rolId === 4 ? 'ADMIN' : 'OPERADOR' // 4 es el ID del rol ADMINISTRADOR_PUNTO
         }
       });
 

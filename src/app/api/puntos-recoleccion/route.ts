@@ -15,7 +15,7 @@ export async function GET() {
       );
     }
 
-    const puntos = await prisma.puntos_recoleccion.findMany();
+    const puntos = await prisma.puntoRecoleccion.findMany();
 
     return NextResponse.json(puntos);
   } catch (error) {
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
     // Verificar que el parentId existe si se proporciona
     if (data.parentId) {
-      const parentExists = await prisma.puntos_recoleccion.findUnique({
+      const parentExists = await prisma.puntoRecoleccion.findUnique({
         where: { id: data.parentId }
       });
 
@@ -145,16 +145,16 @@ export async function POST(request: Request) {
       );
     }
     
-    const punto = await prisma.puntos_recoleccion.create({
+    const punto = await prisma.puntoRecoleccion.create({
       data: {
-        nombre: data.name,
-        phone: data.phone || null,
+        nombre: data.nombre,
+        telefono: data.phone || null,
         email: data.email || null,
         url: data.url || null,
-        schedule: JSON.stringify(data.schedule),
-        location: data.location,
-        isHeadquarters: data.isHeadquarters,
-        parentId: data.parentId ? Number(data.parentId) : null,
+        horario: data.schedule,
+        ubicacion: data.location,
+        esSedePrincipal: data.isHeadquarters,
+        sedePrincipalId: data.parentId ? Number(data.parentId) : null,
       },
     });
 

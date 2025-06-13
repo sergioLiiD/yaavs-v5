@@ -140,6 +140,26 @@ export class ChecklistService {
 | API          | `/api/inventario/productos`   | `GET /api/inventario/productos`          |
 | Frontend     | `Producto`                    | `nombre`, `marcaId`, `modeloId`, `proveedorId`, `categoriaId`, `precioPromedio`, `stock`, `tipoServicioId`, `stockMaximo`, `stockMinimo`, `tipo` |
 
+### Modelo PuntoRecoleccion
+| Capa | Nombre | Ejemplo |
+|------|---------|---------|
+| Base de Datos | `puntos_recoleccion` | `nombre`, `phone`, `schedule`, `location`, `is_headquarters`, `parent_id` |
+| Prisma | `PuntoRecoleccion` | `nombre`, `telefono`, `horario`, `ubicacion`, `esSedePrincipal`, `sedePrincipalId` |
+| API | `/api/puntos-recoleccion` | `GET /api/puntos-recoleccion` |
+| Frontend | `PuntoRecoleccion` | `nombre`, `telefono`, `horario`, `ubicacion`, `esSedePrincipal`, `sedePrincipalId` |
+
+#### Relaciones de PuntoRecoleccion
+| Relación | Descripción | Ejemplo |
+|----------|-------------|---------|
+| `sedePrincipal` | Referencia a la sede principal (si es sucursal) | `punto.sedePrincipal.nombre` |
+| `sucursales` | Lista de sucursales (si es sede principal) | `punto.sucursales.map(s => s.nombre)` |
+
+#### Reglas de Validación
+1. Un punto debe ser o sede principal o sucursal, no ambos
+2. Las sucursales deben tener una sede principal asignada
+3. Las sedes principales no pueden tener una sede principal asignada
+4. El horario y la ubicación deben ser objetos JSON válidos
+
 ### Relaciones
 | Modelo | Campo | Tipo | Ejemplo |
 |--------|-------|------|---------|

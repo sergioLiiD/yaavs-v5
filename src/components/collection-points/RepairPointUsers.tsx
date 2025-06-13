@@ -55,8 +55,9 @@ export default function RepairPointUsers({
   const [users, setUsers] = useState<UserPoint[]>([]);
   const [roles, setRoles] = useState<Rol[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -64,7 +65,7 @@ export default function RepairPointUsers({
     nombre: '',
     apellidoPaterno: '',
     apellidoMaterno: '',
-    rolId: ''
+    rolId: '',
   });
   const [editingUser, setEditingUser] = useState<UserPoint | null>(null);
   const [passwordError, setPasswordError] = useState('');
@@ -166,16 +167,18 @@ export default function RepairPointUsers({
       nombre: '',
       apellidoPaterno: '',
       apellidoMaterno: '',
-      rolId: ''
+      rolId: '',
     });
     setEditingUser(null);
     setPasswordError('');
+    setFormErrors({});
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validatePasswords()) {
+    setFormErrors({});
+
+    if (!isEditing && !validatePasswords()) {
       return;
     }
 
@@ -199,7 +202,12 @@ export default function RepairPointUsers({
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || 'Error al actualizar usuario');
+          if (error.detalles) {
+            setFormErrors(error.detalles);
+            return;
+          }
+          setFormErrors({ general: error.error || 'Error al actualizar usuario' });
+          return;
         }
         toast.success('Usuario actualizado exitosamente');
       } else {
@@ -211,7 +219,12 @@ export default function RepairPointUsers({
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || 'Error al crear usuario');
+          if (error.detalles) {
+            setFormErrors(error.detalles);
+            return;
+          }
+          setFormErrors({ general: error.error || 'Error al crear usuario' });
+          return;
         }
         toast.success('Usuario creado exitosamente');
       }
@@ -220,8 +233,7 @@ export default function RepairPointUsers({
       fetchUsers();
       resetForm();
     } catch (error) {
-      console.error('Error:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al guardar usuario');
+      setFormErrors({ general: 'Error al guardar usuario' });
     } finally {
       setIsSubmitting(false);
     }
@@ -263,6 +275,11 @@ export default function RepairPointUsers({
               <DialogTitle>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {formErrors.general && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+                  {formErrors.general}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="nombre">Nombre</Label>
@@ -272,7 +289,11 @@ export default function RepairPointUsers({
                     value={formData.nombre}
                     onChange={handleInputChange}
                     required
+                    className={formErrors.nombre ? 'border-red-500' : ''}
                   />
+                  {formErrors.nombre && (
+                    <p className="text-red-500 text-sm">{formErrors.nombre}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="apellidoPaterno">Apellido Paterno</Label>
@@ -282,7 +303,11 @@ export default function RepairPointUsers({
                     value={formData.apellidoPaterno}
                     onChange={handleInputChange}
                     required
+                    className={formErrors.apellidoPaterno ? 'border-red-500' : ''}
                   />
+                  {formErrors.apellidoPaterno && (
+                    <p className="text-red-500 text-sm">{formErrors.apellidoPaterno}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="apellidoMaterno">Apellido Materno</Label>
@@ -302,7 +327,11 @@ export default function RepairPointUsers({
                     value={formData.email}
                     onChange={handleInputChange}
                     required
+                    className={formErrors.email ? 'border-red-500' : ''}
                   />
+                  {formErrors.email && (
+                    <p className="text-red-500 text-sm">{formErrors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Contraseña</Label>
@@ -313,7 +342,11 @@ export default function RepairPointUsers({
                     value={formData.password}
                     onChange={handleInputChange}
                     required={!isEditing}
+                    className={formErrors.password ? 'border-red-500' : ''}
                   />
+                  {formErrors.password && (
+                    <p className="text-red-500 text-sm">{formErrors.password}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
@@ -324,7 +357,11 @@ export default function RepairPointUsers({
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     required={!isEditing}
+                    className={formErrors.confirmPassword ? 'border-red-500' : ''}
                   />
+                  {formErrors.confirmPassword && (
+                    <p className="text-red-500 text-sm">{formErrors.confirmPassword}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="rolId">Rol</Label>
@@ -332,7 +369,7 @@ export default function RepairPointUsers({
                     value={formData.rolId}
                     onValueChange={handleSelectChange}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={formErrors.rolId ? 'border-red-500' : ''}>
                       <SelectValue placeholder="Selecciona un rol" />
                     </SelectTrigger>
                     <SelectContent>
@@ -343,6 +380,9 @@ export default function RepairPointUsers({
                       ))}
                     </SelectContent>
                   </Select>
+                  {formErrors.rolId && (
+                    <p className="text-red-500 text-sm">{formErrors.rolId}</p>
+                  )}
                 </div>
               </div>
               {passwordError && (

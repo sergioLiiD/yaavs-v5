@@ -9,162 +9,127 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums
-enum TipoProveedor {
-  FISICA
-  MORAL
-}
-
-enum TipoSalida {
-  VENTA
-  REPARACION
-  PERDIDA
-  AJUSTE
-}
-
-enum MetodoPago {
-  EFECTIVO
-  TRANSFERENCIA
-  TARJETA
-}
-
-enum NivelUsuarioPunto {
-  ADMIN
-  OPERADOR
-}
-
-enum TipoEntrega {
-  DOMICILIO
-  PUNTO_RECOLECCION
-}
-
-enum TipoProducto {
-  PRODUCTO
-  SERVICIO
-}
-
-// Modelos principales
 model Cliente {
-  id               Int      @id @default(autoincrement())
+  id               Int         @id @default(autoincrement())
   nombre           String
-  apellidoPaterno  String   @map("apellido_paterno")
-  apellidoMaterno  String?  @map("apellido_materno")
-  telefonoCelular  String   @map("telefono_celular")
-  telefonoContacto String?  @map("telefono_contacto")
-  email            String   @unique
+  apellidoPaterno  String      @map("apellido_paterno")
+  apellidoMaterno  String?     @map("apellido_materno")
+  telefonoCelular  String      @map("telefono_celular")
+  telefonoContacto String?     @map("telefono_contacto")
+  email            String      @unique
   calle            String?
-  numeroExterior   String?  @map("numero_exterior")
-  numeroInterior   String?  @map("numero_interior")
+  numeroExterior   String?     @map("numero_exterior")
+  numeroInterior   String?     @map("numero_interior")
   colonia          String?
   ciudad           String?
   estado           String?
-  codigoPostal     String?  @map("codigo_postal")
+  codigoPostal     String?     @map("codigo_postal")
   latitud          Float?
   longitud         Float?
-  fuenteReferencia String?  @map("fuente_referencia")
+  fuenteReferencia String?     @map("fuente_referencia")
   rfc              String?
-  passwordHash     String?  @map("password_hash")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-  tickets          Ticket[]
+  passwordHash     String?     @map("password_hash")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
   direcciones      Direccion[]
+  tickets          Ticket[]
 
   @@map("clientes")
 }
 
 model Usuario {
-  id                Int                    @id @default(autoincrement())
+  id                Int                       @id @default(autoincrement())
   nombre            String
-  apellidoPaterno   String                 @map("apellido_paterno")
-  apellidoMaterno   String?                @map("apellido_materno")
-  email             String                 @unique
-  passwordHash      String                 @map("password_hash")
+  apellidoPaterno   String                    @map("apellido_paterno")
+  apellidoMaterno   String?                   @map("apellido_materno")
+  email             String                    @unique
+  passwordHash      String                    @map("password_hash")
   telefono          String?
-  activo            Boolean                @default(true)
-  createdAt         DateTime               @default(now()) @map("created_at")
-  updatedAt         DateTime               @updatedAt @map("updated_at")
-  ticketsCreados    Ticket[]               @relation("TicketCreador")
-  ticketsAsignados  Ticket[]               @relation("TicketTecnico")
+  activo            Boolean                   @default(true)
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
   entradasAlmacen   EntradaAlmacen[]
   salidasAlmacen    SalidaAlmacen[]
-  usuarioRoles      UsuarioRol[]
+  ticketsCreados    Ticket[]                  @relation("TicketCreador")
+  ticketsAsignados  Ticket[]                  @relation("TicketTecnico")
   puntosRecoleccion UsuarioPuntoRecoleccion[]
+  usuarioRoles      UsuarioRol[]
 
   @@map("usuarios")
 }
 
 model Ticket {
-  id                    Int                    @id @default(autoincrement())
-  numeroTicket          String                 @unique @map("numero_ticket")
-  fechaRecepcion        DateTime               @default(now()) @map("fecha_recepcion")
-  clienteId             Int                    @map("cliente_id")
-  tipoServicioId        Int                    @map("tipo_servicio_id")
-  modeloId              Int                    @map("modelo_id")
-  descripcionProblema   String?                @map("descripcion_problema")
-  estatusReparacionId   Int                    @map("estatus_reparacion_id")
-  creadorId             Int                    @map("creador_id")
-  tecnicoAsignadoId     Int?                   @map("tecnico_asignado_id")
-  puntoRecoleccionId    Int?                   @map("punto_recoleccion_id")
-  recogida              Boolean                @default(false)
-  fechaEntrega          DateTime?              @map("fecha_entrega")
-  entregado             Boolean                @default(false)
-  cancelado             Boolean                @default(false)
-  motivoCancelacion     String?                @map("motivo_cancelacion")
-  fechaInicioDiagnostico DateTime?             @map("fecha_inicio_diagnostico")
-  fechaFinDiagnostico   DateTime?              @map("fecha_fin_diagnostico")
-  fechaInicioReparacion DateTime?              @map("fecha_inicio_reparacion")
-  fechaFinReparacion    DateTime?              @map("fecha_fin_reparacion")
-  fechaCancelacion      DateTime?              @map("fecha_cancelacion")
-  direccionId           Int?                   @unique @map("direccion_id")
-  imei                  String?                @unique
-  capacidad             String?
-  color                 String?
-  fechaCompra           DateTime?              @map("fecha_compra")
-  codigoDesbloqueo      String?                @map("codigo_desbloqueo")
-  redCelular            String?                @map("red_celular")
-  patronDesbloqueo      Int[]                  @default([]) @map("patron_desbloqueo")
-  createdAt             DateTime               @default(now()) @map("created_at")
-  updatedAt             DateTime               @updatedAt @map("updated_at")
-  presupuesto           Presupuesto?
-  reparacion            Reparacion?
-  ticketProblemas       TicketProblema[]
-  dispositivo           Dispositivo?
-  entrega               Entrega?
-  pagos                 Pago[]
-  cliente               Cliente                @relation(fields: [clienteId], references: [id])
-  direccion             Direccion?             @relation(fields: [direccionId], references: [id])
-  estatusReparacion     EstatusReparacion      @relation(fields: [estatusReparacionId], references: [id])
-  modelo                Modelo                 @relation(fields: [modeloId], references: [id])
-  tipoServicio          TipoServicio           @relation(fields: [tipoServicioId], references: [id])
-  creador               Usuario                @relation("TicketCreador", fields: [creadorId], references: [id])
-  tecnicoAsignado       Usuario?               @relation("TicketTecnico", fields: [tecnicoAsignadoId], references: [id])
-  puntoRecoleccion      PuntoRecoleccion?      @relation(fields: [puntoRecoleccionId], references: [id])
+  id                     Int               @id @default(autoincrement())
+  numeroTicket           String            @unique @map("numero_ticket")
+  fechaRecepcion         DateTime          @default(now()) @map("fecha_recepcion")
+  clienteId              Int               @map("cliente_id")
+  tipoServicioId         Int               @map("tipo_servicio_id")
+  modeloId               Int               @map("modelo_id")
+  descripcionProblema    String?           @map("descripcion_problema")
+  estatusReparacionId    Int               @map("estatus_reparacion_id")
+  creadorId              Int               @map("creador_id")
+  tecnicoAsignadoId      Int?              @map("tecnico_asignado_id")
+  puntoRecoleccionId     Int?              @map("punto_recoleccion_id")
+  recogida               Boolean           @default(false)
+  fechaEntrega           DateTime?         @map("fecha_entrega")
+  entregado              Boolean           @default(false)
+  cancelado              Boolean           @default(false)
+  motivoCancelacion      String?           @map("motivo_cancelacion")
+  fechaInicioDiagnostico DateTime?         @map("fecha_inicio_diagnostico")
+  fechaFinDiagnostico    DateTime?         @map("fecha_fin_diagnostico")
+  fechaInicioReparacion  DateTime?         @map("fecha_inicio_reparacion")
+  fechaFinReparacion     DateTime?         @map("fecha_fin_reparacion")
+  fechaCancelacion       DateTime?         @map("fecha_cancelacion")
+  direccionId            Int?              @unique @map("direccion_id")
+  imei                   String?           @unique
+  capacidad              String?
+  color                  String?
+  fechaCompra            DateTime?         @map("fecha_compra")
+  codigoDesbloqueo       String?           @map("codigo_desbloqueo")
+  redCelular             String?           @map("red_celular")
+  patronDesbloqueo       Int[]             @default([]) @map("patron_desbloqueo")
+  createdAt              DateTime          @default(now()) @map("created_at")
+  updatedAt              DateTime          @updatedAt @map("updated_at")
+  dispositivo            Dispositivo?
+  entrega                Entrega?
+  pagos                  Pago[]
+  presupuesto            Presupuesto?
+  reparacion             Reparacion?
+  ticketProblemas        TicketProblema[]
+  cliente                Cliente           @relation(fields: [clienteId], references: [id])
+  creador                Usuario           @relation("TicketCreador", fields: [creadorId], references: [id])
+  direccion              Direccion?        @relation(fields: [direccionId], references: [id])
+  estatusReparacion      EstatusReparacion @relation(fields: [estatusReparacionId], references: [id])
+  modelo                 Modelo            @relation(fields: [modeloId], references: [id])
+  puntoRecoleccion       PuntoRecoleccion? @relation(fields: [puntoRecoleccionId], references: [id])
+  tecnicoAsignado        Usuario?          @relation("TicketTecnico", fields: [tecnicoAsignadoId], references: [id])
+  tipoServicio           TipoServicio      @relation(fields: [tipoServicioId], references: [id])
 
   @@map("tickets")
 }
 
 model TipoServicio {
-  id          Int        @id @default(autoincrement())
-  nombre      String     @unique
-  descripcion String?
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  productos   Producto[]
-  tickets     Ticket[]
+  id           Int           @id @default(autoincrement())
+  nombre       String        @unique
+  descripcion  String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
   preciosVenta PrecioVenta[]
+  productos    Producto[]
+  tickets      Ticket[]
 
   @@map("tipos_servicio")
 }
 
 model EstatusReparacion {
-  id          Int        @id @default(autoincrement())
-  nombre      String     @unique
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
   descripcion String?
-  orden       Int        // Para el orden de los estados
-  color       String?    // Para el color del estado
-  activo      Boolean?   // Para activar/desactivar estados
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  activo      Boolean?
+  color       String?
+  orden       Int
   tickets     Ticket[]
 
   @@map("estatus_reparacion")
@@ -173,14 +138,14 @@ model EstatusReparacion {
 model Modelo {
   id          Int        @id @default(autoincrement())
   nombre      String
-  descripcion String?
   marcaId     Int        @map("marca_id")
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
+  descripcion String?
   marca       Marca      @relation(fields: [marcaId], references: [id])
-  tickets     Ticket[]
-  productos   Producto[]
   piezas      Pieza[]
+  productos   Producto[]
+  tickets     Ticket[]
 
   @@map("modelos")
 }
@@ -199,63 +164,63 @@ model Marca {
 }
 
 model Presupuesto {
-  id                Int                    @id @default(autoincrement())
-  ticketId          Int                    @unique @map("ticket_id")
-  total             Float
-  descuento         Float                  @default(0)
-  totalFinal        Float                  @map("total_final")
-  aprobado          Boolean                @default(false)
-  fechaAprobacion   DateTime?              @map("fecha_aprobacion")
-  createdAt         DateTime               @default(now()) @map("created_at")
-  updatedAt         DateTime               @updatedAt @map("updated_at")
-  ticket            Ticket                 @relation(fields: [ticketId], references: [id])
-  conceptos         ConceptoPresupuesto[]
+  id              Int                   @id @default(autoincrement())
+  ticketId        Int                   @unique @map("ticket_id")
+  total           Float
+  descuento       Float                 @default(0)
+  totalFinal      Float                 @map("total_final")
+  aprobado        Boolean               @default(false)
+  fechaAprobacion DateTime?             @map("fecha_aprobacion")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  conceptos       ConceptoPresupuesto[]
+  ticket          Ticket                @relation(fields: [ticketId], references: [id])
 
   @@map("presupuestos")
 }
 
 model ConceptoPresupuesto {
-  id            Int         @id @default(autoincrement())
-  presupuestoId Int         @map("presupuesto_id")
-  descripcion   String
-  cantidad      Int
-  precioUnitario Float      @map("precio_unitario")
-  total         Float
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  presupuesto   Presupuesto @relation(fields: [presupuestoId], references: [id])
+  id             Int         @id @default(autoincrement())
+  presupuestoId  Int         @map("presupuesto_id")
+  descripcion    String
+  cantidad       Int
+  precioUnitario Float       @map("precio_unitario")
+  total          Float
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  presupuesto    Presupuesto @relation(fields: [presupuestoId], references: [id])
 
   @@map("conceptos_presupuesto")
 }
 
 model Reparacion {
-  id                    Int                    @id @default(autoincrement())
-  ticketId              Int                    @unique @map("ticket_id")
-  diagnostico           String?
-  solucion              String?
-  observaciones         String?
-  fechaInicio           DateTime               @map("fecha_inicio")
-  fechaFin              DateTime?              @map("fecha_fin")
-  createdAt             DateTime               @default(now()) @map("created_at")
-  updatedAt             DateTime               @updatedAt @map("updated_at")
-  ticket                Ticket                 @relation(fields: [ticketId], references: [id])
-  piezasReparacion      PiezaReparacion[]
-  checklistDiagnostico  ChecklistDiagnostico?
+  id                   Int                   @id @default(autoincrement())
+  ticketId             Int                   @unique @map("ticket_id")
+  diagnostico          String?
+  solucion             String?
+  observaciones        String?
+  fechaInicio          DateTime              @map("fecha_inicio")
+  fechaFin             DateTime?             @map("fecha_fin")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  checklistDiagnostico ChecklistDiagnostico?
+  piezasReparacion     PiezaReparacion[]
+  ticket               Ticket                @relation(fields: [ticketId], references: [id])
 
   @@map("reparaciones")
 }
 
 model Pieza {
-  id          Int        @id @default(autoincrement())
-  nombre      String
-  marcaId     Int        @map("marca_id")
-  modeloId    Int        @map("modelo_id")
-  stock       Int        @default(0)
-  precio      Float
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  marca       Marca      @relation(fields: [marcaId], references: [id])
-  modelo      Modelo     @relation(fields: [modeloId], references: [id])
+  id           Int               @id @default(autoincrement())
+  nombre       String
+  marcaId      Int               @map("marca_id")
+  modeloId     Int               @map("modelo_id")
+  stock        Int               @default(0)
+  precio       Float
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  marca        Marca             @relation(fields: [marcaId], references: [id])
+  modelo       Modelo            @relation(fields: [modeloId], references: [id])
   reparaciones PiezaReparacion[]
 
   @@map("piezas")
@@ -270,177 +235,183 @@ model PiezaReparacion {
   total        Float
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
-  reparacion   Reparacion @relation(fields: [reparacionId], references: [id])
   pieza        Pieza      @relation(fields: [piezaId], references: [id])
+  reparacion   Reparacion @relation(fields: [reparacionId], references: [id])
 
   @@map("piezas_reparacion")
 }
 
 model ChecklistDiagnostico {
-  id           Int        @id @default(autoincrement())
-  reparacionId Int        @unique @map("reparacion_id")
+  id           Int             @id @default(autoincrement())
+  reparacionId Int             @unique @map("reparacion_id")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  reparacion   Reparacion      @relation(fields: [reparacionId], references: [id])
   items        ChecklistItem[]
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  reparacion   Reparacion @relation(fields: [reparacionId], references: [id])
 
   @@map("checklist_diagnostico")
 }
 
 model ChecklistItem {
-  id                    Int                 @id @default(autoincrement()) @map("id")
-  nombre                String              @map("nombre")
-  descripcion           String?             @map("descripcion")
-  paraDiagnostico       Boolean             @default(false) @map("para_diagnostico")
-  paraReparacion        Boolean             @default(false) @map("para_reparacion")
-  checklistDiagnostico  ChecklistDiagnostico? @relation(fields: [checklistDiagnosticoId], references: [id])
-  checklistDiagnosticoId Int?               @map("checklist_diagnostico_id")
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
+  id                     Int                   @id @default(autoincrement()) @map("id")
+  checklistDiagnosticoId Int?                  @map("checklist_diagnostico_id")
+  descripcion            String?               @map("descripcion")
+  createdAt              DateTime              @default(now()) @map("created_at")
+  updatedAt              DateTime              @updatedAt @map("updated_at")
+  nombre                 String                @map("nombre")
+  paraDiagnostico        Boolean               @default(false) @map("para_diagnostico")
+  paraReparacion         Boolean               @default(false) @map("para_reparacion")
+  checklistDiagnostico   ChecklistDiagnostico? @relation(fields: [checklistDiagnosticoId], references: [id])
 
   @@map("checklist_items")
 }
 
 model TicketProblema {
-  id          Int        @id @default(autoincrement())
-  ticketId    Int        @map("ticket_id")
-  problemaId  Int        @map("problema_id")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  ticket      Ticket     @relation(fields: [ticketId], references: [id])
-  problema    ProblemaFrecuente @relation(fields: [problemaId], references: [id])
+  id         Int               @id @default(autoincrement())
+  ticketId   Int               @map("ticket_id")
+  problemaId Int               @map("problema_id")
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+  problema   ProblemaFrecuente @relation(fields: [problemaId], references: [id])
+  ticket     Ticket            @relation(fields: [ticketId], references: [id])
 
   @@map("ticket_problemas")
 }
 
 model ProblemaFrecuente {
-  id          Int        @id @default(autoincrement())
+  id          Int              @id @default(autoincrement())
   nombre      String
   descripcion String?
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
   tickets     TicketProblema[]
 
   @@map("problemas_frecuentes")
 }
 
 model Dispositivo {
-  id          Int        @id @default(autoincrement())
-  ticketId    Int        @unique @map("ticket_id")
-  tipo        String
-  marca       String
-  modelo      String
-  serie       String?
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  ticket      Ticket     @relation(fields: [ticketId], references: [id])
+  id        Int      @id @default(autoincrement())
+  ticketId  Int      @unique @map("ticket_id")
+  tipo      String
+  marca     String
+  modelo    String
+  serie     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
 
   @@map("dispositivos")
 }
 
 model Direccion {
-  id          Int        @id @default(autoincrement())
-  clienteId   Int        @map("cliente_id")
-  calle       String
-  numeroExterior String  @map("numero_exterior")
-  numeroInterior String? @map("numero_interior")
-  colonia     String
-  ciudad      String
-  estado      String
-  codigoPostal String    @map("codigo_postal")
-  latitud     Float?
-  longitud    Float?
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  cliente     Cliente    @relation(fields: [clienteId], references: [id])
-  tickets     Ticket[]
+  id             Int      @id @default(autoincrement())
+  clienteId      Int      @map("cliente_id")
+  calle          String
+  numeroExterior String   @map("numero_exterior")
+  numeroInterior String?  @map("numero_interior")
+  colonia        String
+  ciudad         String
+  estado         String
+  codigoPostal   String   @map("codigo_postal")
+  latitud        Float?
+  longitud       Float?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  cliente        Cliente  @relation(fields: [clienteId], references: [id])
+  tickets        Ticket?
 
   @@map("direcciones")
 }
 
 model Entrega {
-  id          Int        @id @default(autoincrement())
-  ticketId    Int        @unique @map("ticket_id")
-  tipo        TipoEntrega
-  direccion   String?
-  notas       String?
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  ticket      Ticket     @relation(fields: [ticketId], references: [id])
+  id        Int         @id @default(autoincrement())
+  ticketId  Int         @unique @map("ticket_id")
+  tipo      TipoEntrega
+  direccion String?
+  notas     String?
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  ticket    Ticket      @relation(fields: [ticketId], references: [id])
 
   @@map("entregas")
 }
 
 model Pago {
-  id          Int        @id @default(autoincrement())
-  ticketId    Int        @map("ticket_id")
-  monto       Float
-  metodo      MetodoPago
-  referencia  String?
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  ticket      Ticket     @relation(fields: [ticketId], references: [id])
+  id         Int        @id @default(autoincrement())
+  ticketId   Int        @map("ticket_id")
+  monto      Float
+  metodo     MetodoPago
+  referencia String?
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  ticket     Ticket     @relation(fields: [ticketId], references: [id])
 
   @@map("pagos")
 }
 
 model PuntoRecoleccion {
-  id          Int        @id @default(autoincrement())
-  nombre      String
-  direccion   String
-  latitud     Float?
-  longitud    Float?
-  activo      Boolean    @default(true)
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  tickets     Ticket[]
-  usuarios    UsuarioPuntoRecoleccion[]
+  id              Int                       @id @default(autoincrement())
+  nombre          String
+  activo          Boolean                   @default(true)
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+  email           String?
+  esSedePrincipal Boolean                   @default(false) @map("is_headquarters")
+  ubicacion       Json                      @map("location")
+  sedePrincipalId Int?                      @map("parent_id")
+  telefono        String?                   @map("phone")
+  horario         Json                      @map("schedule")
+  url             String?
+  sedePrincipal   PuntoRecoleccion?         @relation("PuntoRecoleccionToSede", fields: [sedePrincipalId], references: [id])
+  sucursales      PuntoRecoleccion[]        @relation("PuntoRecoleccionToSede")
+  tickets         Ticket[]
+  usuarios        UsuarioPuntoRecoleccion[]
 
   @@map("puntos_recoleccion")
 }
 
 model UsuarioPuntoRecoleccion {
-  id                Int              @id @default(autoincrement())
-  usuarioId         Int              @map("usuario_id")
-  puntoRecoleccionId Int             @map("punto_recoleccion_id")
-  nivel             NivelUsuarioPunto
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  usuario           Usuario          @relation(fields: [usuarioId], references: [id])
-  puntoRecoleccion  PuntoRecoleccion @relation(fields: [puntoRecoleccionId], references: [id])
+  id                 Int               @id @default(autoincrement())
+  usuarioId          Int               @map("usuario_id")
+  puntoRecoleccionId Int               @map("punto_recoleccion_id")
+  nivel              NivelUsuarioPunto
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  puntoRecoleccion   PuntoRecoleccion  @relation(fields: [puntoRecoleccionId], references: [id])
+  usuario            Usuario           @relation(fields: [usuarioId], references: [id])
 
   @@map("usuarios_puntos_recoleccion")
 }
 
 model Producto {
-  id                Int             @id @default(autoincrement())
-  sku               String          @unique
-  nombre            String
-  descripcion       String?
-  notasInternas     String?         @map("notas_internas")
-  garantiaValor     Int?            @map("garantia_valor")
-  garantiaUnidad    String?         @map("garantia_unidad")
-  categoriaId       Int?            @map("categoria_id")
-  marcaId           Int?            @map("marca_id")
-  modeloId          Int?            @map("modelo_id")
-  proveedorId       Int?            @map("proveedor_id")
-  precioPromedio    Float           @default(0) @map("precio_promedio")
-  stock             Int             @default(0)
-  tipoServicioId    Int?            @map("tipo_servicio_id")
-  stockMaximo        Int?            @map("stock_maximo")
-  stockMinimo        Int?            @map("stock_minimo")
-  tipo              TipoProducto
-  createdAt         DateTime        @default(now()) @map("created_at")
-  updatedAt         DateTime        @updatedAt @map("updated_at")
-  categoria         Categoria?      @relation(fields: [categoriaId], references: [id])
-  marca             Marca?          @relation(fields: [marcaId], references: [id])
-  modelo            Modelo?         @relation(fields: [modeloId], references: [id])
-  proveedor         Proveedor?      @relation(fields: [proveedorId], references: [id])
-  tipoServicio      TipoServicio?   @relation(fields: [tipoServicioId], references: [id])
-  entradasAlmacen   EntradaAlmacen[]
-  salidasAlmacen    SalidaAlmacen[]
-  fotos             FotoProducto[]
-  preciosVenta       PrecioVenta[]
+  id              Int              @id @default(autoincrement())
+  sku             String           @unique
+  nombre          String
+  descripcion     String?
+  notasInternas   String?          @map("notas_internas")
+  garantiaValor   Int?             @map("garantia_valor")
+  garantiaUnidad  String?          @map("garantia_unidad")
+  categoriaId     Int?             @map("categoria_id")
+  marcaId         Int?             @map("marca_id")
+  modeloId        Int?             @map("modelo_id")
+  proveedorId     Int?             @map("proveedor_id")
+  precioPromedio  Float            @default(0) @map("precio_promedio")
+  stock           Int              @default(0)
+  tipoServicioId  Int?             @map("tipo_servicio_id")
+  stockMaximo     Int?             @map("stock_maximo")
+  stockMinimo     Int?             @map("stock_minimo")
+  tipo            TipoProducto
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  entradasAlmacen EntradaAlmacen[]
+  fotos           FotoProducto[]
+  preciosVenta    PrecioVenta[]
+  categoria       Categoria?       @relation(fields: [categoriaId], references: [id])
+  marca           Marca?           @relation(fields: [marcaId], references: [id])
+  modelo          Modelo?          @relation(fields: [modeloId], references: [id])
+  proveedor       Proveedor?       @relation(fields: [proveedorId], references: [id])
+  tipoServicio    TipoServicio?    @relation(fields: [tipoServicioId], references: [id])
+  salidasAlmacen  SalidaAlmacen[]
 
   @@map("productos")
 }
@@ -457,22 +428,22 @@ model Categoria {
 }
 
 model Proveedor {
-  id                Int              @id @default(autoincrement())
-  nombre            String
-  contacto          String
-  telefono          String
-  email             String?
-  direccion         String?
-  notas             String?
-  banco             String
-  clabeInterbancaria String          @map("clabe_interbancaria")
-  cuentaBancaria    String           @map("cuenta_bancaria")
-  rfc               String
-  tipo              TipoProveedor    @default(FISICA)
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  entradas          EntradaAlmacen[]
-  productos         Producto[]
+  id                 Int              @id @default(autoincrement())
+  nombre             String
+  contacto           String
+  telefono           String
+  email              String?
+  direccion          String?
+  notas              String?
+  banco              String
+  clabeInterbancaria String           @map("clabe_interbancaria")
+  cuentaBancaria     String           @map("cuenta_bancaria")
+  rfc                String
+  tipo               TipoProveedor    @default(FISICA)
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  entradas           EntradaAlmacen[]
+  productos          Producto[]
 
   @@map("proveedores")
 }
@@ -513,38 +484,37 @@ model SalidaAlmacen {
 }
 
 model FotoProducto {
-  id          Int        @id @default(autoincrement())
-  productoId  Int        @map("producto_id")
-  url         String
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  producto    Producto   @relation(fields: [productoId], references: [id])
+  id         Int      @id @default(autoincrement())
+  productoId Int      @map("producto_id")
+  url        String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  producto   Producto @relation(fields: [productoId], references: [id])
 
   @@map("fotos_producto")
 }
 
-// Modelos de permisos y roles
 model Permiso {
-  id          Int        @id @default(autoincrement())
-  codigo      String     @unique
+  id          Int          @id @default(autoincrement())
+  codigo      String       @unique
   nombre      String
   descripcion String?
   categoria   String
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
   roles       RolPermiso[]
 
   @@map("permisos")
 }
 
 model Rol {
-  id          Int        @id @default(autoincrement())
-  nombre      String     @unique
+  id          Int          @id @default(autoincrement())
+  nombre      String       @unique
   descripcion String?
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  usuarios    UsuarioRol[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
   permisos    RolPermiso[]
+  usuarios    UsuarioRol[]
 
   @@map("roles")
 }
@@ -555,8 +525,8 @@ model UsuarioRol {
   rolId     Int      @map("rol_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
   rol       Rol      @relation(fields: [rolId], references: [id])
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
 
   @@unique([usuarioId, rolId])
   @@map("usuarios_roles")
@@ -568,29 +538,62 @@ model RolPermiso {
   permisoId Int      @map("permiso_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  rol       Rol      @relation(fields: [rolId], references: [id])
   permiso   Permiso  @relation(fields: [permisoId], references: [id])
+  rol       Rol      @relation(fields: [rolId], references: [id])
 
   @@unique([rolId, permisoId])
   @@map("roles_permisos")
 }
 
 model PrecioVenta {
-  id                    Int       @id @default(autoincrement())
-  tipo                  TipoProducto
-  nombre                String
-  marca                 String?
-  modelo                String?
-  precioCompraPromedio  Float     @map("precio_compra_promedio")
-  precioVenta           Float     @map("precio_venta")
-  productoId            Int?      @map("producto_id")
-  servicioId            Int?      @map("servicio_id")
-  createdBy             String    @map("created_by")
-  updatedBy             String    @map("updated_by")
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
-  producto              Producto? @relation(fields: [productoId], references: [id])
-  servicio              TipoServicio? @relation(fields: [servicioId], references: [id])
+  id                   Int           @id @default(autoincrement())
+  tipo                 TipoProducto
+  nombre               String
+  marca                String?
+  modelo               String?
+  precioCompraPromedio Float         @map("precio_compra_promedio")
+  precioVenta          Float         @map("precio_venta")
+  productoId           Int?          @map("producto_id")
+  servicioId           Int?          @map("servicio_id")
+  createdBy            String        @map("created_by")
+  updatedBy            String        @map("updated_by")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+  producto             Producto?     @relation(fields: [productoId], references: [id])
+  servicio             TipoServicio? @relation(fields: [servicioId], references: [id])
 
   @@map("precios_venta")
+}
+
+enum TipoProveedor {
+  FISICA
+  MORAL
+}
+
+enum TipoSalida {
+  VENTA
+  REPARACION
+  PERDIDA
+  AJUSTE
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+}
+
+enum NivelUsuarioPunto {
+  ADMIN
+  OPERADOR
+}
+
+enum TipoEntrega {
+  DOMICILIO
+  PUNTO_RECOLECCION
+}
+
+enum TipoProducto {
+  PRODUCTO
+  SERVICIO
 }

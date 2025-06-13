@@ -19,47 +19,87 @@ export async function PUT(
     const body = await request.json();
     const { email, nombre, apellidoPaterno, apellidoMaterno, rolId } = updateUserSchema.parse(body);
 
+    // Validar que todos los campos requeridos estén presentes
+    if (!email || !nombre || !apellidoPaterno || !rolId) {
+      return NextResponse.json(
+        { 
+          error: 'Faltan campos requeridos',
+          detalles: {
+            email: !email ? 'El email es requerido' : null,
+            nombre: !nombre ? 'El nombre es requerido' : null,
+            apellidoPaterno: !apellidoPaterno ? 'El apellido paterno es requerido' : null,
+            rolId: !rolId ? 'Debe seleccionar un rol' : null
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validar formato del email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'El formato del email no es válido' },
+        { status: 400 }
+      );
+    }
+
     // Verificar si el usuario existe y pertenece al punto de recolección
-    const existingUserPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
+    const existingUserPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
       where: {
         id: parseInt(params.userId),
         puntoRecoleccionId: parseInt(params.id),
       },
       include: {
-        Usuario: true,
-        Rol: true
+        usuario: {
+          include: {
+            usuarioRoles: {
+              include: {
+                rol: true
+              }
+            }
+          }
+        }
       },
     });
 
     if (!existingUserPoint) {
       return NextResponse.json(
-        { error: 'Usuario no encontrado' },
+        { error: 'No se encontró el usuario en este punto de recolección' },
         { status: 404 }
       );
     }
 
     // Verificar si el email ya está en uso por otro usuario
-    if (email !== existingUserPoint.Usuario.email) {
+    if (email !== existingUserPoint.usuario.email) {
       const emailInUse = await prisma.usuario.findUnique({
         where: { email },
       });
 
       if (emailInUse) {
         return NextResponse.json(
-          { error: 'Ya existe un usuario con ese email' },
+          { error: 'Ya existe un usuario registrado con ese email' },
           { status: 400 }
         );
       }
     }
 
-    // Verificar si el rol existe
+    // Validar el rol
+    const rolIdNum = parseInt(rolId);
+    if (isNaN(rolIdNum)) {
+      return NextResponse.json(
+        { error: 'El rol seleccionado no es válido' },
+        { status: 400 }
+      );
+    }
+
     const rol = await prisma.rol.findUnique({
-      where: { id: parseInt(rolId) },
+      where: { id: rolIdNum },
     });
 
     if (!rol) {
       return NextResponse.json(
-        { error: 'El rol seleccionado no existe' },
+        { error: 'El rol seleccionado no existe en el sistema' },
         { status: 400 }
       );
     }
@@ -67,51 +107,57 @@ export async function PUT(
     try {
       // Actualizar el usuario
       const updatedUsuario = await prisma.usuario.update({
-        where: { id: existingUserPoint.Usuario.id },
+        where: { id: existingUserPoint.usuario.id },
         data: {
           email,
-          nombre: `${nombre} ${apellidoPaterno} ${apellidoMaterno || ''}`.trim(),
+          nombre,
+          apellidoPaterno,
+          apellidoMaterno
         },
       });
 
       // Actualizar la relación con el punto de recolección
-      const updatedUserPoint = await prisma.usuarios_puntos_recoleccion.update({
+      const updatedUserPoint = await prisma.usuarioPuntoRecoleccion.update({
         where: { id: parseInt(params.userId) },
         data: {
-          rolId: parseInt(rolId),
+          nivel: rolIdNum === 4 ? 'ADMIN' : 'OPERADOR'
         },
         include: {
-          Usuario: {
+          usuario: {
+            include: {
+              usuarioRoles: {
+                include: {
+                  rol: true
+                }
+              }
+            }
+          },
+          puntoRecoleccion: {
             select: {
               id: true,
               nombre: true,
-              email: true,
-              apellidoPaterno: true,
-              apellidoMaterno: true,
-              activo: true,
-            },
-          },
-          Rol: {
-            select: {
-              id: true,
-              nombre: true,
-              descripcion: true
-            },
-          },
-          puntos_recoleccion: {
-            select: {
-              id: true,
-              name: true,
             },
           },
         },
       });
 
-      return NextResponse.json(updatedUserPoint);
+      // Transformar la respuesta para mantener el formato esperado
+      const formattedResponse = {
+        ...updatedUserPoint,
+        usuario: {
+          ...updatedUserPoint.usuario,
+          rol: updatedUserPoint.usuario.usuarioRoles[0]?.rol
+        }
+      };
+
+      return NextResponse.json(formattedResponse);
     } catch (error) {
       console.error('Error al actualizar usuario:', error);
       return NextResponse.json(
-        { error: 'Error al actualizar el usuario en la base de datos' },
+        { 
+          error: 'No se pudo actualizar el usuario',
+          detalles: 'Ocurrió un error al intentar guardar los cambios. Por favor, intente nuevamente.'
+        },
         { status: 500 }
       );
     }
@@ -138,7 +184,7 @@ export async function DELETE(
 ) {
   try {
     // Verificar si el usuario existe y pertenece al punto de recolección
-    const existingUserPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
+    const existingUserPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
       where: {
         id: parseInt(params.userId),
         puntoRecoleccionId: parseInt(params.id),
@@ -153,7 +199,7 @@ export async function DELETE(
     }
 
     // Eliminar la relación con el punto de recolección
-    await prisma.usuarios_puntos_recoleccion.delete({
+    await prisma.usuarioPuntoRecoleccion.delete({
       where: { id: parseInt(params.userId) },
     });
 
