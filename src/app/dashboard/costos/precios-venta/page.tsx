@@ -237,11 +237,11 @@ export default function PreciosVentaPage() {
 
       // Actualizar el estado local
       setPrecios(prevPrecios => {
+        const precioId = currentPrecio.id || data.id.toString();
         return prevPrecios.map(p => {
-          if (p.id === data.productoId) {
+          if (p.precio_id === precioId) {
             return {
               ...p,
-              precio_id: data.id.toString(),
               precio: data.precioVenta,
               precio_compra: data.precioCompraPromedio
             };
@@ -252,6 +252,9 @@ export default function PreciosVentaPage() {
 
       setIsModalOpen(false);
       setCurrentPrecio(null);
+      
+      // Recargar los datos para asegurar consistencia
+      await fetchData();
     } catch (error) {
       console.error('Error:', error);
       alert(error instanceof Error ? error.message : 'Error al guardar el precio');
@@ -361,7 +364,7 @@ export default function PreciosVentaPage() {
                       <TableCell>{precio.marca}</TableCell>
                       <TableCell>{precio.modelo}</TableCell>
                       <TableCell>${precio.precio_compra?.toFixed(2) || '0.00'}</TableCell>
-                      <TableCell>${precio.precio?.toFixed(2) || '0.00'}</TableCell>
+                      <TableCell className="font-bold text-lg">${precio.precio?.toFixed(2) || '0.00'}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <button

@@ -19,6 +19,14 @@ export function TicketStatusBadge({ status }: TicketStatusBadgeProps) {
         return 'secondary';
       case 'cancelado':
         return 'destructive';
+      case 'pendiente':
+        return 'outline';
+      case 'en espera de repuestos':
+        return 'secondary';
+      case 'en espera de aprobación':
+        return 'outline';
+      case 'en espera de pago':
+        return 'secondary';
       default:
         return 'default';
     }

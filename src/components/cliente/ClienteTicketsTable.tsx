@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import { toast } from "sonner";
+import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
 
 interface Ticket {
   id: number;
@@ -120,13 +121,7 @@ export function ClienteTicketsTable() {
                     <TableCell>{ticket.tipoServicio?.nombre || 'Servicio no disponible'}</TableCell>
                     <TableCell>{ticket.tecnicoAsignado ? ticket.tecnicoAsignado.nombre : 'Sin asignar'}</TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
-                        ticket.cancelado 
-                          ? 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20'
-                          : 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20'
-                      }`}>
-                        {ticket.estatusReparacion?.nombre || 'Estado no disponible'}
-                      </span>
+                      <TicketStatusBadge status={ticket.estatusReparacion?.nombre || ""} />
                     </TableCell>
                     <TableCell>{new Date(ticket.fechaRecepcion).toLocaleDateString()}</TableCell>
                     <TableCell>

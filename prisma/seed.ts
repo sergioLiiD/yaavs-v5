@@ -446,6 +446,40 @@ async function main() {
       }
     }
 
+    // Crear tipos de servicio
+    const tiposServicio = [
+      {
+        nombre: 'Reparación de Pantalla',
+        descripcion: 'Servicio de reparación o reemplazo de pantallas de dispositivos móviles'
+      },
+      {
+        nombre: 'Cambio de Batería',
+        descripcion: 'Servicio de reemplazo de baterías en dispositivos móviles'
+      },
+      {
+        nombre: 'Reparación de Cámara',
+        descripcion: 'Servicio de reparación o reemplazo de cámaras en dispositivos móviles'
+      },
+      {
+        nombre: 'Reparación de Placa',
+        descripcion: 'Servicio de reparación de placas base en dispositivos móviles'
+      },
+      {
+        nombre: 'Desbloqueo',
+        descripcion: 'Servicio de desbloqueo de dispositivos móviles'
+      }
+    ];
+
+    for (const tipo of tiposServicio) {
+      await prisma.tipoServicio.upsert({
+        where: { nombre: tipo.nombre },
+        update: {},
+        create: tipo
+      });
+    }
+
+    console.log('Tipos de servicio creados exitosamente');
+
     console.log('Seed completado exitosamente');
   } catch (error) {
     console.error('Error durante el seed:', error);

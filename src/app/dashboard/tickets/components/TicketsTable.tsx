@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { EyeIcon, PencilIcon, MagnifyingGlassIcon, PlusIcon, WrenchScrewdriverIcon, UserPlusIcon } from '@heroicons/react/24/outline';
-import { useSession } from 'next-auth/react';
 import {
   Table,
   TableBody,
@@ -14,28 +12,6 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2, Pencil, UserPlus, Wrench } from "lucide-react";
-import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { AssignTechnicianModal } from '@/components/tickets/AssignTechnicianModal';
-import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { TicketDetailsModal } from "@/components/tickets/TicketDetailsModal";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
@@ -111,9 +87,9 @@ interface TicketsTableProps {
 }
 
 export function TicketsTable({ tickets, onAssignTechnician }: TicketsTableProps) {
-  const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const router = useRouter();
 
   const filteredTickets = tickets.filter((ticket) => {
     const searchLower = searchTerm.toLowerCase();
@@ -164,71 +140,81 @@ export function TicketsTable({ tickets, onAssignTechnician }: TicketsTableProps)
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTickets.map((ticket) => (
-              <TableRow key={ticket.id}>
-                <TableCell className="font-medium">
-                  <button
-                    onClick={() => handleViewDetails(ticket)}
-                    className="text-blue-600 hover:text-blue-800 hover:underline"
-                  >
-                    #{ticket.numeroTicket}
-                  </button>
+            {filteredTickets.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  {searchTerm ? 'No se encontraron tickets que coincidan con la búsqueda' : 'No hay tickets disponibles'}
                 </TableCell>
-                <TableCell>
-                  {ticket.cliente
-                    ? `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno}`
-                    : "No disponible"}
-                </TableCell>
-                <TableCell>
-                  {ticket.modelo
-                    ? `${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}`
-                    : "No disponible"}
-                </TableCell>
-                <TableCell>
-                  <TicketStatusBadge status={ticket.estatusReparacion?.nombre || ""} />
-                </TableCell>
-                <TableCell>{formatDate(ticket.fechaRecepcion)}</TableCell>
-                <TableCell>
-                  {ticket.tecnicoAsignado
-                    ? `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno}`
-                    : "No asignado"}
-                </TableCell>
-                <TableCell>
-                  {ticket.presupuesto ? (
-                    <div className="flex items-center gap-2">
-                      <span className={ticket.presupuesto.aprobado ? "text-green-600" : "text-yellow-600"}>
-                        ${ticket.presupuesto.totalFinal.toFixed(2)}
-                      </span>
-                      {ticket.presupuesto.aprobado && (
-                        <span className="text-xs text-green-600">✓</span>
-                      )}
-                    </div>
-                  ) : (
-                    "Sin presupuesto"
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(ticket.id)}
+              </TableRow>
+            ) : (
+              filteredTickets.map((ticket) => (
+                <TableRow key={ticket.id}>
+                  <TableCell className="font-medium">
+                    <button
+                      onClick={() => handleViewDetails(ticket)}
+                      className="text-blue-600 hover:text-blue-800 hover:underline"
                     >
-                      Editar
-                    </Button>
-                    {onAssignTechnician && !ticket.tecnicoAsignado && (
+                      #{ticket.numeroTicket}
+                    </button>
+                  </TableCell>
+                  <TableCell>
+                    {ticket.cliente
+                      ? `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno} ${
+                        ticket.cliente.apellidoMaterno || ''
+                      }`
+                      : "No disponible"}
+                  </TableCell>
+                  <TableCell>
+                    {ticket.modelo
+                      ? `${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}`
+                      : "No disponible"}
+                  </TableCell>
+                  <TableCell>
+                    <TicketStatusBadge status={ticket.estatusReparacion?.nombre || ""} />
+                  </TableCell>
+                  <TableCell>{formatDate(ticket.fechaRecepcion)}</TableCell>
+                  <TableCell>
+                    {ticket.tecnicoAsignado
+                      ? `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno}`
+                      : "No asignado"}
+                  </TableCell>
+                  <TableCell>
+                    {ticket.presupuesto ? (
+                      <div className="flex items-center gap-2">
+                        <span className={ticket.presupuesto.aprobado ? "text-green-600" : "text-yellow-600"}>
+                          ${ticket.presupuesto.totalFinal.toFixed(2)}
+                        </span>
+                        {ticket.presupuesto.aprobado && (
+                          <span className="text-xs text-green-600">✓</span>
+                        )}
+                      </div>
+                    ) : (
+                      "Sin presupuesto"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onAssignTechnician(ticket.id)}
+                        onClick={() => handleEdit(ticket.id)}
                       >
-                        Asignar Técnico
+                        Editar
                       </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                      {onAssignTechnician && !ticket.tecnicoAsignado && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onAssignTechnician(ticket.id)}
+                        >
+                          Asignar Técnico
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

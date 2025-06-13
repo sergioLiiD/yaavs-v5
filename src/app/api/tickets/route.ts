@@ -100,19 +100,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Crear el dispositivo
-    const dispositivo = await prisma.dispositivo.create({
-      data: {
-        capacidad: capacidad as string,
-        color: color as string,
-        fechaCompra: fechaCompra ? new Date(fechaCompra as string) : null,
-        codigoDesbloqueo: codigoDesbloqueo as string,
-        redCelular: redCelular as string,
-        updatedAt: new Date()
-      }
-    });
-
-    // Crear el ticket
+    // Crear el ticket primero
     const ticketData = {
       numeroTicket: `TICK-${Date.now()}`,
       descripcionProblema,
@@ -146,11 +134,6 @@ export async function POST(request: Request) {
         connect: {
           id: session.user.id
         }
-      },
-      dispositivo: {
-        connect: {
-          id: dispositivo.id
-        }
       }
     } as Prisma.TicketCreateInput;
 
@@ -175,12 +158,50 @@ export async function POST(request: Request) {
           }
         },
         estatusReparacion: true,
+        creador: true
+      }
+    });
+
+    // Crear el dispositivo después
+    const dispositivo = await prisma.dispositivo.create({
+      data: {
+        tipo: 'Celular',
+        marca: ticket.modelo.marca.nombre,
+        modelo: ticket.modelo.nombre,
+        serie: imei as string,
+        ticket: {
+          connect: {
+            id: ticket.id
+          }
+        }
+      }
+    });
+
+    // Actualizar el ticket con el dispositivo
+    const ticketActualizado = await prisma.ticket.update({
+      where: { id: ticket.id },
+      data: {
+        dispositivo: {
+          connect: {
+            id: dispositivo.id
+          }
+        }
+      },
+      include: {
+        cliente: true,
+        tipoServicio: true,
+        modelo: {
+          include: {
+            marca: true
+          }
+        },
+        estatusReparacion: true,
         creador: true,
         dispositivo: true
       }
     });
 
-    return NextResponse.json(ticket);
+    return NextResponse.json(ticketActualizado);
   } catch (error) {
     console.error('Error al crear el ticket:', error);
     if (error instanceof Error) {
@@ -192,6 +213,7 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
+    console.log('=== INICIO DE CONSULTA DE TICKETS ===');
     const session = await getServerSession(authOptions);
     console.log('Sesión:', session);
 
@@ -199,6 +221,8 @@ export async function GET() {
       console.log('No hay sesión de usuario');
       return new NextResponse('No autorizado', { status: 401 });
     }
+
+    console.log('Usuario autenticado:', session.user);
 
     const tickets = await prisma.ticket.findMany({
       where: {
@@ -236,7 +260,28 @@ export async function GET() {
             nombre: true
           }
         },
-        dispositivo: true
+        dispositivo: {
+          select: {
+            id: true,
+            ticketId: true,
+            tipo: true,
+            marca: true,
+            modelo: true,
+            serie: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        },
+        presupuesto: {
+          include: {
+            conceptos: true
+          }
+        },
+        pagos: {
+          orderBy: {
+            createdAt: 'desc'
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc'
@@ -245,10 +290,44 @@ export async function GET() {
 
     console.log('Tickets encontrados:', tickets.length);
     console.log('Primer ticket:', JSON.stringify(tickets[0], null, 2));
+    console.log('=== FIN DE CONSULTA DE TICKETS ===');
 
     return NextResponse.json(tickets);
   } catch (error) {
-    console.error('Error al obtener tickets:', error);
-    return new NextResponse('Error interno del servidor', { status: 500 });
+    console.error('=== ERROR EN CONSULTA DE TICKETS ===');
+    console.error('Error completo:', error);
+    
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error('Error de Prisma:', {
+        code: error.code,
+        message: error.message,
+        meta: error.meta
+      });
+      return new NextResponse(
+        JSON.stringify({ 
+          error: 'Error de base de datos',
+          details: error.message
+        }), 
+        { 
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+    
+    return new NextResponse(
+      JSON.stringify({ 
+        error: 'Error interno del servidor',
+        details: error instanceof Error ? error.message : 'Error desconocido'
+      }), 
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
   }
 } 

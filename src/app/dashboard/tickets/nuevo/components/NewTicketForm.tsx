@@ -189,7 +189,7 @@ export function NewTicketForm() {
         }
 
         // Cargar tipos de servicio
-        const tiposServicioResponse = await fetch('/api/tipos-servicio');
+        const tiposServicioResponse = await fetch('/api/catalogo/tipos-servicio');
         if (tiposServicioResponse.ok) {
           const tiposServicioData = await tiposServicioResponse.json();
           setTiposServicio(tiposServicioData);

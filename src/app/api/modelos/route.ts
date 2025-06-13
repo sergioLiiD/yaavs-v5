@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
 
     const modelos = await prisma.modelo.findMany({
       include: {
-        marcas: true,
+        marca: true,
+        piezas: true,
+        productos: true,
+        tickets: true
       },
       orderBy: {
         nombre: 'asc',

@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Ticket } from '@/types/ticket';
+import { TicketStatusBadge } from '@/components/tickets/TicketStatusBadge';
 
 interface EntregaSectionProps {
   ticket: Ticket;
@@ -18,7 +19,7 @@ export const EntregaSection: React.FC<EntregaSectionProps> = ({ ticket, onUpdate
         <div className="space-y-4">
           <div>
             <h3 className="font-medium">Estado de la Entrega</h3>
-            <p className="text-gray-500">{ticket.estatusReparacion?.nombre}</p>
+            <TicketStatusBadge status={ticket.estatusReparacion?.nombre || ""} />
           </div>
 
           {ticket.reparacion && (
