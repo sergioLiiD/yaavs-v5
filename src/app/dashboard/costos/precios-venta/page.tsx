@@ -2,8 +2,11 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { HiPencilAlt, HiSearch, HiFilter } from 'react-icons/hi';
+import { HiPencilAlt, HiSearch, HiFilter, HiPlus } from 'react-icons/hi';
 import axios from 'axios';
+import { Button } from '@/components/ui/button';
+import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
+import { Pencil } from 'lucide-react';
 
 // Tipo para representar un precio de venta
 interface PrecioVenta {
@@ -93,38 +96,56 @@ export default function PreciosVentaPage() {
   // Cargar los precios al montar el componente
   const fetchData = useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
+      const [productosResponse, preciosResponse, preciosPromedioResponse] = await Promise.all([
+        fetch('/api/inventario/productos?limit=1000'),
+        fetch('/api/precios-venta'),
+        fetch('/api/inventario/stock/precios-promedio')
+      ]);
 
-      // Obtener productos y servicios
-      const productosResponse = await fetch('/api/inventario/productos');
-      if (!productosResponse.ok) throw new Error('Error al obtener productos');
-      const productosData = await productosResponse.json();
+      const [productos, precios, preciosPromedio] = await Promise.all([
+        productosResponse.json(),
+        preciosResponse.json(),
+        preciosPromedioResponse.json()
+      ]);
 
-      // Obtener precios de venta
-      const preciosResponse = await fetch('/api/precios-venta');
-      if (!preciosResponse.ok) throw new Error('Error al obtener precios');
-      const preciosData = await preciosResponse.json();
+      // Crear un mapa de precios promedio por producto
+      const preciosPromedioMap = new Map(
+        preciosPromedio.map((p: any) => [p.producto_id, p.precio_promedio])
+      );
 
-      // Obtener precios promedio de compra
-      const preciosPromedioResponse = await fetch('/api/inventario/stock/precios-promedio');
-      if (!preciosPromedioResponse.ok) throw new Error('Error al obtener precios promedio');
-      const preciosPromedioData = await preciosPromedioResponse.json();
+      // Crear un mapa de precios de venta por producto
+      const preciosVentaMap = new Map(
+        precios.map((p: any) => [p.productoId, p])
+      );
 
-      setProductos(productosData);
-      setPrecios(preciosData);
-      setPreciosPromedio(preciosPromedioData);
-    } catch (err) {
-      console.error('Error al cargar datos:', err);
-      setError('Error al cargar los datos. Por favor, intente nuevamente.');
-    } finally {
-      setIsLoading(false);
+      // Combinar los datos - incluir todos los productos
+      const preciosCombinados = productos.map((producto: any) => {
+        const precioVenta = preciosVentaMap.get(producto.id);
+        return {
+          id: producto.id,
+          precio_id: precioVenta?.id?.toString() || '',
+          nombre: producto.nombre,
+          tipo: 'PRODUCTO',
+          marca: producto.marca?.nombre || '-',
+          modelo: producto.modelo?.nombre || '-',
+          precio: precioVenta?.precioVenta || 0,
+          precio_compra: preciosPromedioMap.get(producto.id) || 0,
+          producto_id: producto.id
+        };
+      });
+
+      // Ordenar por nombre
+      preciosCombinados.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+      setPrecios(preciosCombinados);
+    } catch (error) {
+      console.error('Error al cargar los datos:', error);
     }
   }, []); // Dependencias vacías ya que no depende de ningún estado
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [fetchData]); // Solo se ejecuta cuando cambia fetchData
 
   // Funciones para gestionar el modal
   const openModal = (item: {
@@ -161,33 +182,79 @@ export default function PreciosVentaPage() {
     setCurrentPrecio(null);
   };
 
+  const handleEdit = (item: PrecioVentaItem) => {
+    console.log('Editando precio:', item);
+    setCurrentPrecio({
+      id: item.precio_id,
+      tipo: item.tipo,
+      nombre: item.nombre,
+      marca: item.marca || '-',
+      modelo: item.modelo || '-',
+      precio_compra_promedio: item.precio_compra || 0,
+      precio_venta: item.precio || 0,
+      producto_id: item.tipo === 'PRODUCTO' ? item.id : undefined,
+      servicio_id: item.tipo === 'SERVICIO' ? item.id : undefined
+    });
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPrecio) return;
 
     try {
-      const response = await fetch('/api/precios-venta', {
-        method: currentPrecio.id ? 'PUT' : 'POST',
+      const method = currentPrecio.id ? 'PUT' : 'POST';
+      const url = '/api/precios-venta';
+      
+      const requestBody = {
+        ...currentPrecio,
+        id: currentPrecio.id ? Number(currentPrecio.id) : undefined,
+        tipo: currentPrecio.tipo || 'PRODUCTO',
+        nombre: currentPrecio.nombre,
+        marca: currentPrecio.marca || '-',
+        modelo: currentPrecio.modelo || '-',
+        precioCompraPromedio: Number(currentPrecio.precio_compra_promedio) || 0,
+        precioVenta: Number(currentPrecio.precio_venta) || 0,
+        productoId: currentPrecio.producto_id ? Number(currentPrecio.producto_id) : null,
+        servicioId: currentPrecio.servicio_id ? Number(currentPrecio.servicio_id) : null,
+        updatedBy: 'system'
+      };
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...currentPrecio,
-          updated_by: session?.user?.email || 'system'
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-        throw new Error('Error al guardar el precio');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al guardar el precio');
       }
 
-      // Recargar los datos
-      await fetchData();
+      const data = await response.json();
+
+      // Actualizar el estado local
+      setPrecios(prevPrecios => {
+        return prevPrecios.map(p => {
+          if (p.id === data.productoId) {
+            return {
+              ...p,
+              precio_id: data.id.toString(),
+              precio: data.precioVenta,
+              precio_compra: data.precioCompraPromedio
+            };
+          }
+          return p;
+        });
+      });
+
       setIsModalOpen(false);
       setCurrentPrecio(null);
     } catch (error) {
       console.error('Error:', error);
-      // Aquí podrías mostrar un mensaje de error al usuario
+      alert(error instanceof Error ? error.message : 'Error al guardar el precio');
     }
   };
 
@@ -227,25 +294,6 @@ export default function PreciosVentaPage() {
       ...prev,
       [id]: !prev[id]
     }));
-  };
-
-  const handleEdit = (item: PrecioVentaItem) => {
-    setCurrentPrecio({
-      id: item.precio_id,
-      nombre: item.nombre,
-      precio_venta: item.precio,
-      tipo: item.tipo,
-      producto_id: item.tipo === 'PRODUCTO' ? item.id : undefined,
-      servicio_id: item.tipo === 'SERVICIO' ? item.id : undefined,
-      precio_compra_promedio: item.precio_compra,
-      marca: item.marca,
-      modelo: item.modelo,
-      created_at: new Date(),
-      updated_at: new Date(),
-      created_by: session?.user?.email || '',
-      updated_by: session?.user?.email || ''
-    });
-    setIsModalOpen(true);
   };
 
   const content = (
@@ -293,157 +341,41 @@ export default function PreciosVentaPage() {
         <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
             <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-              <table className="min-w-full divide-y divide-gray-300">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                      Tipo
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Nombre
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Marca
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Modelo
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      <div className="flex flex-col">
-                        <span>Precio de</span>
-                        <span>Venta</span>
-                      </div>
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      <div className="flex flex-col">
-                        <span>Precio Compra</span>
-                        <span>Promedio</span>
-                      </div>
-                    </th>
-                    {showDetalles && (
-                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        <div className="flex flex-col">
-                          <span>Última</span>
-                          <span>Actualización</span>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Marca</TableHead>
+                    <TableHead>Modelo</TableHead>
+                    <TableHead>Precio Compra Promedio</TableHead>
+                    <TableHead>Precio Venta</TableHead>
+                    <TableHead>Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {precios.map((precio) => (
+                    <TableRow key={precio.precio_id}>
+                      <TableCell>{precio.nombre}</TableCell>
+                      <TableCell>{precio.tipo}</TableCell>
+                      <TableCell>{precio.marca}</TableCell>
+                      <TableCell>{precio.modelo}</TableCell>
+                      <TableCell>${precio.precio_compra?.toFixed(2) || '0.00'}</TableCell>
+                      <TableCell>${precio.precio?.toFixed(2) || '0.00'}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEdit(precio)}
+                            className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
+                          >
+                            <HiPencilAlt className="h-5 w-5" />
+                          </button>
                         </div>
-                      </th>
-                    )}
-                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                      <span className="sr-only">Acciones</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {filteredItems.map((item) => (
-                    <React.Fragment key={`${item.tipo}-${item.id}`}>
-                      <tr>
-                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            item.tipo === 'PRODUCTO' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {item.tipo === 'PRODUCTO' ? 'Producto' : 'Servicio'}
-                          </span>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {item.nombre}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {item.marca}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {item.modelo}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-base font-semibold text-gray-900">
-                          {item.precio > 0 ? `$${item.precio.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Sin precio'}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {item.tipo === 'PRODUCTO' ? `$${item.precio_compra.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                        </td>
-                        {showDetalles && (
-                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                            {item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '-'}
-                          </td>
-                        )}
-                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                          <div className="flex justify-end space-x-3">
-                            <button
-                              onClick={() => toggleDetalles(`${item.tipo}-${item.id}`)}
-                              className="text-[#FEBF19] hover:text-[#FEBF19]/90"
-                            >
-                              {detallesVisibles[`${item.tipo}-${item.id}`] ? 'Ocultar' : 'Mostrar'}
-                            </button>
-                            <button
-                              onClick={() => handleEdit(item)}
-                              className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
-                            >
-                              <HiPencilAlt className="h-5 w-5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      {detallesVisibles[`${item.tipo}-${item.id}`] && (
-                        <tr>
-                          <td colSpan={showDetalles ? 8 : 6} className="px-3 py-4 bg-gray-50">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <h4 className="text-sm font-medium text-gray-900">Información General</h4>
-                                <dl className="mt-2 space-y-1">
-                                  <div className="flex justify-between">
-                                    <dt className="text-sm text-gray-500">Tipo:</dt>
-                                    <dd className="text-sm text-gray-900">{item.tipo}</dd>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <dt className="text-sm text-gray-500">Nombre:</dt>
-                                    <dd className="text-sm text-gray-900">{item.nombre}</dd>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <dt className="text-sm text-gray-500">Marca:</dt>
-                                    <dd className="text-sm text-gray-900">{item.marca}</dd>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <dt className="text-sm text-gray-500">Modelo:</dt>
-                                    <dd className="text-sm text-gray-900">{item.modelo}</dd>
-                                  </div>
-                                </dl>
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-medium text-gray-900">Precios</h4>
-                                <dl className="mt-2 space-y-1">
-                                  <div className="flex justify-between">
-                                    <dt className="text-sm text-gray-500">Precio de Venta:</dt>
-                                    <dd className="text-sm text-gray-900">
-                                      {item.precio > 0 ? `$${item.precio.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Sin precio'}
-                                    </dd>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <dt className="text-sm text-gray-500">Precio Compra Promedio:</dt>
-                                    <dd className="text-sm text-gray-900">${item.precio_compra.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</dd>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <dt className="text-sm text-gray-500">Última Actualización:</dt>
-                                    <dd className="text-sm text-gray-900">
-                                      {item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '-'}
-                                    </dd>
-                                  </div>
-                                </dl>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                  {filteredItems.length === 0 && !isLoading && (
-                    <tr>
-                      <td colSpan={showDetalles ? 8 : 6} className="px-6 py-4 text-center text-sm text-gray-500">
-                        No hay precios registrados
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         </div>
@@ -487,15 +419,30 @@ export default function PreciosVentaPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-800">
+                        Precio de Compra Promedio (Referencia)
+                      </label>
+                      <input
+                        type="number"
+                        value={currentPrecio?.precio_compra_promedio || 0}
+                        disabled
+                        className="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-800">
                         Precio de Venta <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="number"
-                        value={currentPrecio.precio_venta || ''}
-                        onChange={(e) => setCurrentPrecio({
-                          ...currentPrecio,
-                          precio_venta: parseFloat(e.target.value) || 0
-                        })}
+                        value={currentPrecio?.precio_venta || ''}
+                        onChange={(e) => {
+                          const value = e.target.value === '' ? 0 : Number(e.target.value);
+                          console.log('Nuevo precio de venta:', value);
+                          setCurrentPrecio(prev => prev ? {
+                            ...prev,
+                            precio_venta: value
+                          } : null);
+                        }}
                         className="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
                         min="0"
                         step="0.01"

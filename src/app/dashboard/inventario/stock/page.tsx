@@ -13,8 +13,8 @@ interface Producto {
   stock: number;
   precioPromedio: number;
   entradas: EntradaAlmacen[];
-  marcas: { nombre: string };
-  Modelo: { nombre: string };
+  marca: { nombre: string };
+  modelo: { nombre: string };
   sku?: string;
   descripcion?: string;
   tipo: string;
@@ -55,7 +55,8 @@ export default function StockPage() {
     cantidad: 0,
     precioCompra: 0,
     notas: '',
-    proveedorId: 0
+    proveedorId: 0,
+    productoId: 0
   });
   const [productosExpandidos, setProductosExpandidos] = useState<Set<number>>(new Set());
   const [ordenamiento, setOrdenamiento] = useState<Ordenamiento>({ campo: 'stock', direccion: 'asc' });
@@ -169,7 +170,8 @@ export default function StockPage() {
         cantidad: 0,
         precioCompra: 0,
         notas: '',
-        proveedorId: 0
+        proveedorId: 0,
+        productoId: 0
       });
 
       // Recargar los datos
@@ -246,7 +248,8 @@ export default function StockPage() {
       cantidad: 0,
       precioCompra: 0,
       notas: '',
-      proveedorId: 0
+      proveedorId: 0,
+      productoId: 0
     });
     setHasUnsavedChanges(false);
   };
@@ -518,7 +521,7 @@ export default function StockPage() {
                   <tr>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{producto.nombre}</div>
-                      <div className="text-sm text-gray-500">{producto.marcas.nombre} - {producto.Modelo.nombre}</div>
+                      <div className="text-sm text-gray-500">{producto.marca.nombre} - {producto.modelo.nombre}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`text-sm ${

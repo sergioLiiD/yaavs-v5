@@ -55,27 +55,21 @@ export async function GET(request: Request) {
             }
           }
         } : undefined,
-        select: {
-          id: true,
-          nombre: true,
-          apellidoPaterno: true,
-          apellidoMaterno: true,
-          email: true,
-          activo: true,
+        orderBy: { nombre: 'asc' },
+        include: {
           usuarioRoles: {
-            select: {
+            include: {
               rol: {
-                select: {
-                  id: true,
-                  nombre: true,
-                  descripcion: true
+                include: {
+                  permisos: {
+                    include: {
+                      permiso: true
+                    }
+                  }
                 }
               }
             }
           }
-        },
-        orderBy: {
-          nombre: 'asc'
         }
       });
 
@@ -154,37 +148,34 @@ export async function POST(request: Request) {
         activo: validatedData.activo,
         updatedAt: new Date(),
         createdAt: new Date(),
-        roles: {
+        usuarioRoles: {
           create: body.roles?.map((rolId: number) => ({
-            rol: {
-              connect: { id: rolId }
-            }
+            rolId
           })) || []
         }
       },
       include: {
-        roles: {
+        usuarioRoles: {
           include: {
-            rol: true
+            rol: {
+              include: {
+                permisos: {
+                  include: {
+                    permiso: true
+                  }
+                }
+              }
+            }
           }
         }
       }
     });
     console.log('Usuario creado:', usuario.id);
-
     return NextResponse.json(usuario);
   } catch (error) {
     console.error('Error al crear usuario:', error);
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Datos inválidos', details: error.errors },
-        { status: 400 }
-      );
-    }
-
     return NextResponse.json(
-      { error: 'Error al crear usuario' },
+      { error: 'Error al crear usuario', details: error instanceof Error ? error.message : 'Error desconocido' },
       { status: 500 }
     );
   }

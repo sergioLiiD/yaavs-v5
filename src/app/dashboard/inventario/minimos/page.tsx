@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Producto, inventarios_minimos } from '@prisma/client';
+import { Producto } from '@prisma/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,10 +18,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner';
 
 type ProductoConInventarioMinimo = Producto & {
-  inventarios_minimos: inventarios_minimos | null;
-  marcas: { nombre: string };
-  Modelo: { nombre: string };
-  proveedores: { nombre: string };
+  marca: { nombre: string };
+  modelo: { nombre: string };
+  proveedor: { nombre: string };
 };
 
 export default function InventariosMinimosPage() {
@@ -122,8 +121,8 @@ export default function InventariosMinimosPage() {
     const searchLower = searchTerm.toLowerCase();
     return (
       producto.tipo === 'PRODUCTO' && (
-        (producto.marcas?.nombre?.toLowerCase() || '').includes(searchLower) ||
-        (producto.Modelo?.nombre?.toLowerCase() || '').includes(searchLower) ||
+        (producto.marca?.nombre?.toLowerCase() || '').includes(searchLower) ||
+        (producto.modelo?.nombre?.toLowerCase() || '').includes(searchLower) ||
         (producto.nombre?.toLowerCase() || '').includes(searchLower)
       )
     );
@@ -176,10 +175,10 @@ export default function InventariosMinimosPage() {
                   {filteredProductos?.map((producto) => (
                     <tr key={producto.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {producto.marcas?.nombre || '-'}
+                        {producto.marca?.nombre || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {producto.Modelo?.nombre || '-'}
+                        {producto.modelo?.nombre || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {producto.nombre}
@@ -188,15 +187,15 @@ export default function InventariosMinimosPage() {
                         {producto.stock}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {producto.inventarios_minimos?.cantidadMinima || 0}
+                        {producto.stockMinimo || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          producto.stock <= (producto.inventarios_minimos?.cantidadMinima || 0)
+                          producto.stock <= (producto.stockMinimo || 0)
                             ? 'bg-red-100 text-red-800'
                             : 'bg-green-100 text-green-800'
                         }`}>
-                          {producto.stock <= (producto.inventarios_minimos?.cantidadMinima || 0)
+                          {producto.stock <= (producto.stockMinimo || 0)
                             ? 'Stock Bajo'
                             : 'Stock Normal'}
                         </span>
@@ -207,7 +206,7 @@ export default function InventariosMinimosPage() {
                             if (!open) setEditingProductId(null);
                             else {
                               setEditingProductId(producto.id);
-                              setNewMinimo(producto.inventarios_minimos?.cantidadMinima.toString() || '0');
+                              setNewMinimo(producto.stockMinimo?.toString() || '0');
                             }
                           }}>
                             <DialogTrigger asChild>

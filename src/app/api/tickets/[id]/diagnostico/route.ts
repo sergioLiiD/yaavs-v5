@@ -2,10 +2,14 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { Prisma, ChecklistDiagnostico } from '@prisma/client';
+import { Prisma, checklistDiagnostico } from '@prisma/client';
 
 interface ReparacionPayload {
-  checklist: Omit<ChecklistDiagnostico, 'id' | 'reparacionId' | 'createdAt' | 'updatedAt'>[];
+  checklist: Array<{
+    item: string;
+    respuesta: boolean;
+    observacion?: string;
+  }>;
   saludBateria: number;
   versionSO: string;
   diagnostico: string;
@@ -33,9 +37,9 @@ export async function POST(
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
       include: { 
-        reparacion: {
+        Reparacion: {
           include: {
-            checklistItems: true
+            checklistDiagnostico: true
           }
         }
       }
@@ -83,10 +87,11 @@ export async function POST(
     
     const reparacionData = {
       ticketId: ticketId,
-      tecnicoId: parseInt(session.user.id),
-      diagnostico: body.diagnostico,
+      tecnicoId: session.user.id,
+      descripcion: body.diagnostico,
       saludBateria: body.saludBateria,
       versionSO: body.versionSO,
+      updatedAt: new Date()
     };
 
     console.log('Datos de reparación:', reparacionData);
@@ -98,23 +103,24 @@ export async function POST(
       },
       create: reparacionData,
       update: {
-        diagnostico: body.diagnostico,
+        descripcion: body.diagnostico,
         saludBateria: body.saludBateria,
-        versionSO: body.versionSO
+        versionSO: body.versionSO,
+        updatedAt: new Date()
       }
     });
 
     // Eliminar los items del checklist existentes solo si hay nuevos items
-    if (ticket.reparacion && body.checklist.length > 0) {
+    if (ticket.Reparacion && body.checklist.length > 0) {
       await prisma.checklistDiagnostico.deleteMany({
         where: {
-          reparacionId: ticket.reparacion.id
+          reparacionId: ticket.Reparacion.id
         }
       });
     }
 
     // Crear los nuevos items del checklist solo si hay items
-    let checklistItems: ChecklistDiagnostico[] = [];
+    let checklistItems: checklistDiagnostico[] = [];
     if (body.checklist.length > 0) {
       checklistItems = await Promise.all(
         body.checklist.map(item =>
@@ -123,7 +129,8 @@ export async function POST(
               reparacionId: reparacion.id,
               item: item.item,
               respuesta: item.respuesta,
-              observacion: item.observacion
+              observacion: item.observacion,
+              updatedAt: new Date()
             }
           })
         )
@@ -141,39 +148,30 @@ export async function POST(
     });
 
     if (!estatusDiagnostico) {
-      console.log('No se encontró el estatus de diagnóstico');
-      return NextResponse.json(
-        { error: 'No se encontró el estatus de diagnóstico' },
-        { status: 500 }
-      );
+      throw new Error('No se encontró el estatus de diagnóstico');
     }
 
-    console.log('Actualizando estatus del ticket a:', estatusDiagnostico.nombre);
     // Actualizar el estatus del ticket
-    await prisma.ticket.update({
+    const ticketActualizado = await prisma.ticket.update({
       where: { id: ticketId },
       data: {
-        estatusReparacionId: estatusDiagnostico.id
-      }
-    });
-
-    // Obtener la reparación actualizada con los items del checklist
-    const reparacionActualizada = await prisma.reparacion.findUnique({
-      where: { id: reparacion.id },
+        estatusReparacionId: estatusDiagnostico.id,
+        fechaInicioDiagnostico: new Date()
+      },
       include: {
-        checklistItems: true
+        Reparacion: {
+          include: {
+            checklistDiagnostico: true
+          }
+        }
       }
     });
 
-    console.log('Diagnóstico guardado exitosamente');
-    return NextResponse.json(reparacionActualizada);
+    return NextResponse.json(ticketActualizado);
   } catch (error) {
     console.error('Error detallado en el endpoint de diagnóstico:', error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error('Error de Prisma:', error.code, error.message);
-    }
     return NextResponse.json(
-      { error: `Error al procesar el diagnóstico: ${error instanceof Error ? error.message : 'Error desconocido'}` },
+      { error: 'Error al procesar el diagnóstico: ' + (error instanceof Error ? error.message : 'Error desconocido') },
       { status: 500 }
     );
   }

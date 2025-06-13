@@ -58,6 +58,7 @@ function getRequiredPermissions(pathname: string): string[] {
     '/dashboard/admin/usuarios': ['USERS_VIEW'],
     '/dashboard/admin/roles': ['ROLES_VIEW'],
     '/dashboard/admin/permisos': ['PERMISSIONS_VIEW'],
+    '/dashboard/tickets/nuevo': ['TICKETS_CREATE'],
     // Agregar más rutas y permisos según sea necesario
   };
 

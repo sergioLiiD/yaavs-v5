@@ -8,7 +8,71 @@ import {
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatDate } from "@/lib/utils";
-import { Ticket } from "./TicketsList";
+
+interface Ticket {
+  id: number;
+  numeroTicket: string;
+  fechaRecepcion: string;
+  descripcionProblema: string | null;
+  cliente?: {
+    id: number;
+    nombre: string;
+    apellidoPaterno: string;
+    apellidoMaterno?: string;
+    telefonoCelular: string;
+    email: string;
+  };
+  modelo?: {
+    id: number;
+    nombre: string;
+    marca: {
+      id: number;
+      nombre: string;
+    };
+  };
+  tipoServicio?: {
+    id: number;
+    nombre: string;
+  };
+  estatusReparacion?: {
+    id: number;
+    nombre: string;
+  };
+  tecnicoAsignado?: {
+    id: number;
+    nombre: string;
+    apellidoPaterno: string;
+    apellidoMaterno?: string;
+  } | null;
+  dispositivo?: {
+    id: number;
+    tipo: string;
+    marca: string;
+    modelo: string;
+    serie?: string;
+  };
+  presupuesto?: {
+    id: number;
+    total: number;
+    descuento: number;
+    totalFinal: number;
+    aprobado: boolean;
+    fechaAprobacion?: string;
+    conceptos: {
+      id: number;
+      descripcion: string;
+      cantidad: number;
+      precioUnitario: number;
+      total: number;
+    }[];
+  };
+  pagos?: {
+    id: number;
+    monto: number;
+    fecha: string;
+    metodoPago: string;
+  }[];
+}
 
 interface TicketDetailsModalProps {
   ticket: Ticket | null;
@@ -19,12 +83,12 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
   if (!ticket) return null;
 
   return (
-    <Dialog open={!!ticket} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Detalles del Ticket #{ticket.numeroTicket}</DialogTitle>
           <DialogDescription>
-            Información detallada del ticket y el dispositivo
+            Información completa del ticket de reparación
           </DialogDescription>
         </DialogHeader>
 
@@ -36,10 +100,7 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
               <div>
                 <p className="text-sm text-muted-foreground">Nombre</p>
                 <p className="font-medium">
-                  {ticket.cliente ? 
-                    `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno} ${ticket.cliente.apellidoMaterno || ''}` :
-                    'No disponible'
-                  }
+                  {ticket.cliente ? `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno} ${ticket.cliente.apellidoMaterno || ''}` : 'No disponible'}
                 </p>
               </div>
               <div>
@@ -59,33 +120,19 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Marca</p>
-                <p className="font-medium">{ticket.modelo?.marcas?.nombre || 'No disponible'}</p>
+                <p className="font-medium">{ticket.modelo?.marca.nombre || 'No disponible'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Modelo</p>
                 <p className="font-medium">{ticket.modelo?.nombre || 'No disponible'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">IMEI</p>
-                <p className="font-medium">{ticket.imei || 'No disponible'}</p>
+                <p className="text-sm text-muted-foreground">Tipo</p>
+                <p className="font-medium">{ticket.dispositivo?.tipo || 'No disponible'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Capacidad</p>
-                <p className="mt-1 text-sm text-gray-900">{ticket.dispositivos?.capacidad || 'No disponible'}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Color</p>
-                <p className="mt-1 text-sm text-gray-900">{ticket.dispositivos?.color || 'No disponible'}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Fecha de Compra</p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {ticket.dispositivos?.fechaCompra ? new Date(ticket.dispositivos.fechaCompra).toLocaleDateString() : 'No disponible'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">PIN / Patrón</p>
-                <p className="mt-1 text-sm text-gray-900">{ticket.dispositivos?.codigoDesbloqueo || 'No disponible'}</p>
+                <p className="text-sm text-muted-foreground">Serie</p>
+                <p className="font-medium">{ticket.dispositivo?.serie || 'No disponible'}</p>
               </div>
             </div>
           </div>
@@ -107,8 +154,12 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
                 <p className="font-medium">{formatDate(ticket.fechaRecepcion)}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Fecha Estimada de Entrega</p>
-                <p className="font-medium">{ticket.fechaEstimadaEntrega ? formatDate(ticket.fechaEstimadaEntrega) : 'No disponible'}</p>
+                <p className="text-sm text-muted-foreground">Técnico Asignado</p>
+                <p className="font-medium">
+                  {ticket.tecnicoAsignado ? 
+                    `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno} ${ticket.tecnicoAsignado.apellidoMaterno || ''}` : 
+                    'No asignado'}
+                </p>
               </div>
             </div>
           </div>
@@ -119,20 +170,70 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
             <p className="text-sm">{ticket.descripcionProblema || 'No disponible'}</p>
           </div>
 
-          {/* Información del Ticket */}
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold">Información del Ticket</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Creado por</p>
-                <p className="font-medium">{ticket.creador?.nombre || 'No disponible'}</p>
+          {/* Presupuesto */}
+          {ticket.presupuesto && (
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">Presupuesto</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total</p>
+                  <p className="font-medium">${ticket.presupuesto.totalFinal.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Descuento</p>
+                  <p className="font-medium">${ticket.presupuesto.descuento.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Estado</p>
+                  <p className="font-medium">{ticket.presupuesto.aprobado ? 'Aprobado' : 'Pendiente'}</p>
+                </div>
+                {ticket.presupuesto.fechaAprobacion && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Fecha de Aprobación</p>
+                    <p className="font-medium">{formatDate(ticket.presupuesto.fechaAprobacion)}</p>
+                  </div>
+                )}
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Fecha de creación</p>
-                <p className="font-medium">{formatDate(ticket.createdAt)}</p>
+
+              {/* Conceptos del Presupuesto */}
+              {ticket.presupuesto.conceptos.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-md font-semibold mb-2">Conceptos</h4>
+                  <div className="space-y-2">
+                    {ticket.presupuesto.conceptos.map((concepto) => (
+                      <div key={concepto.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <div>
+                          <p className="font-medium">{concepto.descripcion}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {concepto.cantidad} x ${concepto.precioUnitario.toFixed(2)}
+                          </p>
+                        </div>
+                        <p className="font-medium">${concepto.total.toFixed(2)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Pagos */}
+          {ticket.pagos && ticket.pagos.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">Pagos</h3>
+              <div className="space-y-2">
+                {ticket.pagos.map((pago) => (
+                  <div key={pago.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <div>
+                      <p className="font-medium">{formatDate(pago.fecha)}</p>
+                      <p className="text-sm text-muted-foreground">{pago.metodoPago}</p>
+                    </div>
+                    <p className="font-medium">${pago.monto.toFixed(2)}</p>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

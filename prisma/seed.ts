@@ -35,273 +35,71 @@ async function main() {
 
     console.log('Datos existentes eliminados');
 
-    // Crear permisos básicos
-    const permisos = [
-      // Permisos de Tickets
-      {
-        nombre: 'Ver Tickets',
-        descripcion: 'Permite ver la lista de tickets',
-        codigo: 'TICKETS_VIEW',
-        categoria: 'TICKETS'
-      },
-      {
-        nombre: 'Ver Ticket Detalle',
-        descripcion: 'Permite ver los detalles de un ticket específico',
-        codigo: 'TICKETS_VIEW_DETAIL',
-        categoria: 'TICKETS'
-      },
-      {
-        nombre: 'Crear Ticket',
-        descripcion: 'Permite crear nuevos tickets',
-        codigo: 'TICKETS_CREATE',
-        categoria: 'TICKETS'
-      },
-      {
-        nombre: 'Editar Ticket',
-        descripcion: 'Permite editar tickets existentes',
-        codigo: 'TICKETS_EDIT',
-        categoria: 'TICKETS'
-      },
-      {
-        nombre: 'Eliminar Ticket',
-        descripcion: 'Permite eliminar tickets',
-        codigo: 'TICKETS_DELETE',
-        categoria: 'TICKETS'
-      },
-      {
-        nombre: 'Asignar Ticket',
-        descripcion: 'Permite asignar tickets a técnicos',
-        codigo: 'TICKETS_ASSIGN',
-        categoria: 'TICKETS'
-      },
+    // === PERMISOS DEL SISTEMA ===
+    const permisosSistema = [
+      // Dashboard
+      { codigo: 'DASHBOARD_VIEW', nombre: 'Ver Dashboard', descripcion: 'Permite ver el dashboard principal', categoria: 'DASHBOARD' },
 
-      // Permisos de Costos
-      {
-        nombre: 'Ver Costos',
-        descripcion: 'Permite ver los costos',
-        codigo: 'COSTS_VIEW',
-        categoria: 'COSTS'
-      },
-      {
-        nombre: 'Crear Costo',
-        descripcion: 'Permite crear nuevos costos',
-        codigo: 'COSTS_CREATE',
-        categoria: 'COSTS'
-      },
-      {
-        nombre: 'Editar Costo',
-        descripcion: 'Permite editar costos existentes',
-        codigo: 'COSTS_EDIT',
-        categoria: 'COSTS'
-      },
-      {
-        nombre: 'Eliminar Costo',
-        descripcion: 'Permite eliminar costos',
-        codigo: 'COSTS_DELETE',
-        categoria: 'COSTS'
-      },
+      // Costos
+      { codigo: 'COSTS_VIEW', nombre: 'Ver Costos', descripcion: 'Permite ver la sección de costos', categoria: 'COSTS' },
+      { codigo: 'COSTS_EDIT', nombre: 'Editar Costos', descripcion: 'Permite editar información de costos', categoria: 'COSTS' },
 
-      // Permisos de Catálogo
-      {
-        nombre: 'Ver Catálogo',
-        descripcion: 'Permite ver el catálogo',
-        codigo: 'CATALOG_VIEW',
-        categoria: 'CATALOG'
-      },
-      {
-        nombre: 'Crear Item Catálogo',
-        descripcion: 'Permite crear nuevos items en el catálogo',
-        codigo: 'CATALOG_CREATE',
-        categoria: 'CATALOG'
-      },
-      {
-        nombre: 'Editar Item Catálogo',
-        descripcion: 'Permite editar items del catálogo',
-        codigo: 'CATALOG_EDIT',
-        categoria: 'CATALOG'
-      },
-      {
-        nombre: 'Eliminar Item Catálogo',
-        descripcion: 'Permite eliminar items del catálogo',
-        codigo: 'CATALOG_DELETE',
-        categoria: 'CATALOG'
-      },
+      // Catálogo
+      { codigo: 'CATALOG_VIEW', nombre: 'Ver Catálogo', descripcion: 'Permite ver el catálogo', categoria: 'CATALOG' },
+      { codigo: 'CATALOG_CREATE', nombre: 'Crear Catálogo', descripcion: 'Permite crear elementos en el catálogo', categoria: 'CATALOG' },
+      { codigo: 'CATALOG_EDIT', nombre: 'Editar Catálogo', descripcion: 'Permite editar elementos del catálogo', categoria: 'CATALOG' },
+      { codigo: 'CATALOG_DELETE', nombre: 'Eliminar Catálogo', descripcion: 'Permite eliminar elementos del catálogo', categoria: 'CATALOG' },
 
-      // Permisos de Inventario
-      {
-        nombre: 'Ver Inventario',
-        descripcion: 'Permite ver el inventario',
-        codigo: 'INVENTORY_VIEW',
-        categoria: 'INVENTORY'
-      },
-      {
-        nombre: 'Crear Item Inventario',
-        descripcion: 'Permite crear nuevos items en el inventario',
-        codigo: 'INVENTORY_CREATE',
-        categoria: 'INVENTORY'
-      },
-      {
-        nombre: 'Editar Item Inventario',
-        descripcion: 'Permite editar items del inventario',
-        codigo: 'INVENTORY_EDIT',
-        categoria: 'INVENTORY'
-      },
-      {
-        nombre: 'Eliminar Item Inventario',
-        descripcion: 'Permite eliminar items del inventario',
-        codigo: 'INVENTORY_DELETE',
-        categoria: 'INVENTORY'
-      },
+      // Inventario
+      { codigo: 'INVENTORY_VIEW', nombre: 'Ver Inventario', descripcion: 'Permite ver el inventario', categoria: 'INVENTORY' },
+      { codigo: 'INVENTORY_CREATE', nombre: 'Crear Inventario', descripcion: 'Permite crear elementos en el inventario', categoria: 'INVENTORY' },
+      { codigo: 'INVENTORY_EDIT', nombre: 'Editar Inventario', descripcion: 'Permite editar elementos del inventario', categoria: 'INVENTORY' },
+      { codigo: 'INVENTORY_DELETE', nombre: 'Eliminar Inventario', descripcion: 'Permite eliminar elementos del inventario', categoria: 'INVENTORY' },
 
-      // Permisos de Clientes
-      {
-        nombre: 'Ver Clientes',
-        descripcion: 'Permite ver la lista de clientes',
-        codigo: 'CLIENTS_VIEW',
-        categoria: 'CLIENTS'
-      },
-      {
-        nombre: 'Crear Cliente',
-        descripcion: 'Permite crear nuevos clientes',
-        codigo: 'CLIENTS_CREATE',
-        categoria: 'CLIENTS'
-      },
-      {
-        nombre: 'Editar Cliente',
-        descripcion: 'Permite editar clientes existentes',
-        codigo: 'CLIENTS_EDIT',
-        categoria: 'CLIENTS'
-      },
-      {
-        nombre: 'Eliminar Cliente',
-        descripcion: 'Permite eliminar clientes',
-        codigo: 'CLIENTS_DELETE',
-        categoria: 'CLIENTS'
-      },
+      // Clientes
+      { codigo: 'CLIENTS_VIEW', nombre: 'Ver Clientes', descripcion: 'Permite ver la lista de clientes', categoria: 'CLIENTS' },
+      { codigo: 'CLIENTS_CREATE', nombre: 'Crear Cliente', descripcion: 'Permite crear nuevos clientes', categoria: 'CLIENTS' },
+      { codigo: 'CLIENTS_EDIT', nombre: 'Editar Cliente', descripcion: 'Permite editar clientes existentes', categoria: 'CLIENTS' },
+      { codigo: 'CLIENTS_DELETE', nombre: 'Eliminar Cliente', descripcion: 'Permite eliminar clientes', categoria: 'CLIENTS' },
 
-      // Permisos de Reparaciones
-      {
-        nombre: 'Ver Reparaciones',
-        descripcion: 'Permite ver las reparaciones',
-        codigo: 'REPAIRS_VIEW',
-        categoria: 'REPAIRS'
-      },
-      {
-        nombre: 'Crear Reparación',
-        descripcion: 'Permite crear nuevas reparaciones',
-        codigo: 'REPAIRS_CREATE',
-        categoria: 'REPAIRS'
-      },
-      {
-        nombre: 'Editar Reparación',
-        descripcion: 'Permite editar reparaciones existentes',
-        codigo: 'REPAIRS_EDIT',
-        categoria: 'REPAIRS'
-      },
-      {
-        nombre: 'Eliminar Reparación',
-        descripcion: 'Permite eliminar reparaciones',
-        codigo: 'REPAIRS_DELETE',
-        categoria: 'REPAIRS'
-      },
+      // Tickets
+      { codigo: 'TICKETS_VIEW', nombre: 'Ver Tickets', descripcion: 'Permite ver la lista de tickets', categoria: 'TICKETS' },
+      { codigo: 'TICKETS_VIEW_DETAIL', nombre: 'Ver Detalle de Ticket', descripcion: 'Permite ver el detalle de un ticket', categoria: 'TICKETS' },
+      { codigo: 'TICKETS_CREATE', nombre: 'Crear Ticket', descripcion: 'Permite crear nuevos tickets', categoria: 'TICKETS' },
+      { codigo: 'TICKETS_EDIT', nombre: 'Editar Ticket', descripcion: 'Permite editar tickets existentes', categoria: 'TICKETS' },
+      { codigo: 'TICKETS_DELETE', nombre: 'Eliminar Ticket', descripcion: 'Permite eliminar tickets', categoria: 'TICKETS' },
+      { codigo: 'TICKETS_ASSIGN', nombre: 'Asignar Ticket', descripcion: 'Permite asignar tickets a técnicos', categoria: 'TICKETS' },
 
-      // Permisos de Usuarios
-      {
-        nombre: 'Ver Usuarios',
-        descripcion: 'Permite ver la lista de usuarios',
-        codigo: 'USERS_VIEW',
-        categoria: 'USERS'
-      },
-      {
-        nombre: 'Crear Usuario',
-        descripcion: 'Permite crear nuevos usuarios',
-        codigo: 'USERS_CREATE',
-        categoria: 'USERS'
-      },
-      {
-        nombre: 'Editar Usuario',
-        descripcion: 'Permite editar usuarios existentes',
-        codigo: 'USERS_EDIT',
-        categoria: 'USERS'
-      },
-      {
-        nombre: 'Eliminar Usuario',
-        descripcion: 'Permite eliminar usuarios',
-        codigo: 'USERS_DELETE',
-        categoria: 'USERS'
-      },
+      // Reparaciones
+      { codigo: 'REPAIRS_VIEW', nombre: 'Ver Reparaciones', descripcion: 'Permite ver las reparaciones', categoria: 'REPAIRS' },
+      { codigo: 'REPAIRS_CREATE', nombre: 'Crear Reparación', descripcion: 'Permite crear nuevas reparaciones', categoria: 'REPAIRS' },
+      { codigo: 'REPAIRS_EDIT', nombre: 'Editar Reparación', descripcion: 'Permite editar reparaciones existentes', categoria: 'REPAIRS' },
+      { codigo: 'REPAIRS_DELETE', nombre: 'Eliminar Reparación', descripcion: 'Permite eliminar reparaciones', categoria: 'REPAIRS' },
 
-      // Permisos de Roles
-      {
-        nombre: 'Ver Roles',
-        descripcion: 'Permite ver la lista de roles',
-        codigo: 'ROLES_VIEW',
-        categoria: 'ROLES'
-      },
-      {
-        nombre: 'Crear Rol',
-        descripcion: 'Permite crear nuevos roles',
-        codigo: 'ROLES_CREATE',
-        categoria: 'ROLES'
-      },
-      {
-        nombre: 'Editar Rol',
-        descripcion: 'Permite editar roles existentes',
-        codigo: 'ROLES_EDIT',
-        categoria: 'ROLES'
-      },
-      {
-        nombre: 'Eliminar Rol',
-        descripcion: 'Permite eliminar roles',
-        codigo: 'ROLES_DELETE',
-        categoria: 'ROLES'
-      },
+      // Usuarios
+      { codigo: 'USERS_VIEW', nombre: 'Ver Usuarios', descripcion: 'Permite ver la lista de usuarios', categoria: 'USERS' },
+      { codigo: 'USERS_CREATE', nombre: 'Crear Usuario', descripcion: 'Permite crear nuevos usuarios', categoria: 'USERS' },
+      { codigo: 'USERS_EDIT', nombre: 'Editar Usuario', descripcion: 'Permite editar usuarios existentes', categoria: 'USERS' },
+      { codigo: 'USERS_DELETE', nombre: 'Eliminar Usuario', descripcion: 'Permite eliminar usuarios', categoria: 'USERS' },
 
-      // Permisos de Puntos de Recolección
-      {
-        nombre: 'Ver Puntos de Recolección',
-        descripcion: 'Permite ver los puntos de recolección',
-        codigo: 'COLLECTION_POINTS_VIEW',
-        categoria: 'COLLECTION_POINTS'
-      },
-      {
-        nombre: 'Crear Punto de Recolección',
-        descripcion: 'Permite crear nuevos puntos de recolección',
-        codigo: 'COLLECTION_POINTS_CREATE',
-        categoria: 'COLLECTION_POINTS'
-      },
-      {
-        nombre: 'Editar Punto de Recolección',
-        descripcion: 'Permite editar puntos de recolección existentes',
-        codigo: 'COLLECTION_POINTS_EDIT',
-        categoria: 'COLLECTION_POINTS'
-      },
-      {
-        nombre: 'Eliminar Punto de Recolección',
-        descripcion: 'Permite eliminar puntos de recolección',
-        codigo: 'COLLECTION_POINTS_DELETE',
-        categoria: 'COLLECTION_POINTS'
-      }
+      // Roles
+      { codigo: 'ROLES_VIEW', nombre: 'Ver Roles', descripcion: 'Permite ver la lista de roles', categoria: 'ROLES' },
+      { codigo: 'ROLES_CREATE', nombre: 'Crear Rol', descripcion: 'Permite crear nuevos roles', categoria: 'ROLES' },
+      { codigo: 'ROLES_EDIT', nombre: 'Editar Rol', descripcion: 'Permite editar roles existentes', categoria: 'ROLES' },
+      { codigo: 'ROLES_DELETE', nombre: 'Eliminar Rol', descripcion: 'Permite eliminar roles', categoria: 'ROLES' },
+
+      // Permisos
+      { codigo: 'PERMISSIONS_VIEW', nombre: 'Ver Permisos', descripcion: 'Permite ver la lista de permisos', categoria: 'PERMISSIONS' },
+
+      // Puntos de Recolección
+      { codigo: 'COLLECTION_POINTS_VIEW', nombre: 'Ver Puntos de Recolección', descripcion: 'Permite ver los puntos de recolección', categoria: 'COLLECTION_POINTS' },
+      { codigo: 'COLLECTION_POINTS_CREATE', nombre: 'Crear Punto de Recolección', descripcion: 'Permite crear nuevos puntos de recolección', categoria: 'COLLECTION_POINTS' },
+      { codigo: 'COLLECTION_POINTS_EDIT', nombre: 'Editar Punto de Recolección', descripcion: 'Permite editar puntos de recolección existentes', categoria: 'COLLECTION_POINTS' },
+      { codigo: 'COLLECTION_POINTS_DELETE', nombre: 'Eliminar Punto de Recolección', descripcion: 'Permite eliminar puntos de recolección', categoria: 'COLLECTION_POINTS' },
     ];
 
-    // Crear roles básicos con sus descripciones actualizadas
-    const roles = [
-      {
-        nombre: 'ADMINISTRADOR',
-        descripcion: 'Acceso total al sistema con todos los permisos'
-      },
-      {
-        nombre: 'TECNICO',
-        descripcion: 'Acceso a tickets y reparaciones asignadas'
-      },
-      {
-        nombre: 'ATENCION_CLIENTE',
-        descripcion: 'Acceso a tickets y puntos de recolección'
-      }
-    ];
-
-    // Crear permisos
-    for (const permiso of permisos) {
+    // Crear todos los permisos
+    for (const permiso of permisosSistema) {
       await prisma.permiso.upsert({
         where: { codigo: permiso.codigo },
         update: {},
@@ -309,88 +107,32 @@ async function main() {
       });
     }
 
-    // Crear roles y asignar permisos
-    for (const rol of roles) {
-      const rolCreado = await prisma.rol.upsert({
-        where: { nombre: rol.nombre },
-        update: {},
-        create: rol
-      });
-
-      // Asignar permisos según el rol
-      if (rol.nombre === 'ADMINISTRADOR') {
-        // El administrador tiene todos los permisos
-        const todosLosPermisos = await prisma.permiso.findMany();
-        for (const permiso of todosLosPermisos) {
-          await prisma.rolPermiso.upsert({
-            where: {
-              rolId_permisoId: {
-                rolId: rolCreado.id,
-                permisoId: permiso.id
-              }
-            },
-            update: {},
-            create: {
-              rolId: rolCreado.id,
-              permisoId: permiso.id
-            }
-          });
-        }
-      } else if (rol.nombre === 'TECNICO') {
-        // El técnico solo puede ver y gestionar tickets y reparaciones asignadas
-        const permisosTecnico = await prisma.permiso.findMany({
-          where: {
-            OR: [
-              { codigo: 'TICKETS_VIEW' },
-              { codigo: 'TICKETS_VIEW_DETAIL' },
-              { codigo: 'REPAIRS_VIEW' },
-              { codigo: 'REPAIRS_EDIT' }
-            ]
-          }
-        });
-        for (const permiso of permisosTecnico) {
-          await prisma.rolPermiso.upsert({
-            where: {
-              rolId_permisoId: {
-                rolId: rolCreado.id,
-                permisoId: permiso.id
-              }
-            },
-            update: {},
-            create: {
-              rolId: rolCreado.id,
-              permisoId: permiso.id
-            }
-          });
-        }
-      } else if (rol.nombre === 'ATENCION_CLIENTE') {
-        // El personal de atención al cliente puede ver tickets y puntos de recolección
-        const permisosAtencionCliente = await prisma.permiso.findMany({
-          where: {
-            OR: [
-              { codigo: 'TICKETS_VIEW' },
-              { codigo: 'TICKETS_VIEW_DETAIL' },
-              { codigo: 'COLLECTION_POINTS_VIEW' },
-              { codigo: 'CLIENTS_VIEW' }
-            ]
-          }
-        });
-        for (const permiso of permisosAtencionCliente) {
-          await prisma.rolPermiso.upsert({
-            where: {
-              rolId_permisoId: {
-                rolId: rolCreado.id,
-                permisoId: permiso.id
-              }
-            },
-            update: {},
-            create: {
-              rolId: rolCreado.id,
-              permisoId: permiso.id
-            }
-          });
-        }
+    // Obtener el rol ADMINISTRADOR
+    const adminRole = await prisma.rol.upsert({
+      where: { nombre: 'ADMINISTRADOR' },
+      update: {},
+      create: {
+        nombre: 'ADMINISTRADOR',
+        descripcion: 'Acceso total al sistema con todos los permisos'
       }
+    });
+
+    // Asignar todos los permisos al rol ADMINISTRADOR
+    const todosLosPermisos = await prisma.permiso.findMany();
+    for (const permiso of todosLosPermisos) {
+      await prisma.rolPermiso.upsert({
+        where: {
+          rolId_permisoId: {
+            rolId: adminRole.id,
+            permisoId: permiso.id
+          }
+        },
+        update: {},
+        create: {
+          rolId: adminRole.id,
+          permisoId: permiso.id
+        }
+      });
     }
 
     // Crear usuario administrador
@@ -409,9 +151,6 @@ async function main() {
     });
     console.log('Usuario administrador creado:', admin.email);
 
-    // Buscar el rol de administrador
-    const adminRole = await prisma.rol.findUnique({ where: { nombre: 'ADMINISTRADOR' } });
-    if (!adminRole) throw new Error('No se encontró el rol ADMINISTRADOR');
     // Asignar rol al usuario admin
     await prisma.usuarioRol.create({
       data: {

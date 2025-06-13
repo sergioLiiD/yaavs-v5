@@ -33,7 +33,6 @@ export async function GET(request: Request) {
               permiso: {
                 select: {
                   id: true,
-                  codigo: true,
                   nombre: true,
                   descripcion: true
                 }
@@ -56,7 +55,6 @@ export async function GET(request: Request) {
         descripcion: rol.descripcion,
         permisos: rol.permisos.map(p => ({
           id: p.permiso.id,
-          codigo: p.permiso.codigo,
           nombre: p.permiso.nombre,
           descripcion: p.permiso.descripcion
         }))

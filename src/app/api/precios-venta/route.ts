@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrecioVentaInput, PrecioVentaUpdate } from '@/types/precios-venta';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db/prisma';
 
 export async function GET(request: Request) {
   try {
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
 
     let precios;
     if (q) {
-      precios = await prisma.precios_venta.findMany({
+      precios = await prisma.PrecioVenta.findMany({
         where: {
           OR: [
             { nombre: { contains: q, mode: 'insensitive' } },
@@ -20,29 +20,29 @@ export async function GET(request: Request) {
           ]
         },
         orderBy: {
-          created_at: 'desc'
+          createdAt: 'desc'
         }
       });
     } else if (tipo) {
-      precios = await prisma.precios_venta.findMany({
+      precios = await prisma.PrecioVenta.findMany({
         where: { tipo: tipo as 'PRODUCTO' | 'SERVICIO' },
         orderBy: {
-          created_at: 'desc'
+          createdAt: 'desc'
         }
       });
     } else if (sinPrecio === 'true') {
-      precios = await prisma.precios_venta.findMany({
+      precios = await prisma.PrecioVenta.findMany({
         where: {
           precio_venta: 0
         },
         orderBy: {
-          created_at: 'desc'
+          createdAt: 'desc'
         }
       });
     } else {
-      precios = await prisma.precios_venta.findMany({
+      precios = await prisma.PrecioVenta.findMany({
         orderBy: {
-          created_at: 'desc'
+          createdAt: 'desc'
         }
       });
     }
@@ -57,18 +57,18 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const precio = await request.json();
-    const nuevoPrecio = await prisma.precios_venta.create({
+    const nuevoPrecio = await prisma.PrecioVenta.create({
       data: {
         tipo: precio.tipo,
         nombre: precio.nombre,
         marca: precio.marca,
         modelo: precio.modelo,
-        precio_compra_promedio: precio.precio_compra_promedio,
-        precio_venta: precio.precio_venta,
-        producto_id: precio.producto_id || null,
-        servicio_id: precio.servicio_id || null,
-        created_by: 'system',
-        updated_by: 'system'
+        precioCompraPromedio: precio.precioCompraPromedio || 0,
+        precioVenta: precio.precioVenta,
+        productoId: precio.productoId || null,
+        servicioId: precio.servicioId || null,
+        createdBy: 'system',
+        updatedBy: 'system'
       }
     });
     return NextResponse.json(nuevoPrecio);
@@ -81,18 +81,18 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const precio = await request.json();
-    const precioActualizado = await prisma.precios_venta.update({
+    const precioActualizado = await prisma.PrecioVenta.update({
       where: { id: precio.id },
       data: {
         tipo: precio.tipo,
         nombre: precio.nombre,
         marca: precio.marca,
         modelo: precio.modelo,
-        precio_compra_promedio: precio.precio_compra_promedio,
-        precio_venta: precio.precio_venta,
-        producto_id: precio.producto_id || null,
-        servicio_id: precio.servicio_id || null,
-        updated_by: 'system'
+        precioCompraPromedio: precio.precioCompraPromedio || 0,
+        precioVenta: precio.precioVenta,
+        productoId: precio.productoId || null,
+        servicioId: precio.servicioId || null,
+        updatedBy: 'system'
       }
     });
     return NextResponse.json(precioActualizado);

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/db/prisma';
 
 export async function PUT(
   request: Request,
@@ -41,58 +41,17 @@ export async function PUT(
       );
     }
 
-    // Buscar inventario mínimo existente
-    const inventarioExistente = await prisma.inventarios_minimos.findUnique({
-      where: { productoId },
-    });
-
-    console.log('Inventario existente:', inventarioExistente);
-
-    let inventario;
-    if (inventarioExistente) {
-      console.log('Actualizando inventario existente');
-      inventario = await prisma.$transaction(async (tx) => {
-        const updated = await tx.inventarios_minimos.update({
-          where: { productoId },
-          data: { cantidadMinima },
-        });
-        return updated;
-      });
-    } else {
-      console.log('Creando nuevo inventario');
-      inventario = await prisma.$transaction(async (tx) => {
-        const created = await tx.inventarios_minimos.create({
-          data: {
-            productoId,
-            cantidadMinima,
-            updatedAt: new Date(),
-            createdAt: new Date(),
-          },
-        });
-        return created;
-      });
-    }
-
-    // Obtener el producto actualizado con su inventario mínimo
-    const productoActualizado = await prisma.producto.findUnique({
+    // Actualizar el stock mínimo directamente en el producto
+    const productoActualizado = await prisma.producto.update({
       where: { id: productoId },
+      data: { stockMinimo: cantidadMinima },
       include: {
-        marcas: true,
-        Modelo: true,
-        proveedores: true,
-        inventarios_minimos: true,
+        marca: true,
+        modelo: true,
+        proveedor: true,
       },
     });
 
-    if (!productoActualizado) {
-      console.error('No se pudo obtener el producto actualizado');
-      return NextResponse.json(
-        { error: 'Error al obtener el producto actualizado' },
-        { status: 500 }
-      );
-    }
-
-    console.log('Inventario actualizado/creado:', inventario);
     console.log('Producto actualizado:', productoActualizado);
     
     // Devolver el producto actualizado
@@ -122,22 +81,23 @@ export async function DELETE(
       );
     }
 
-    // Verificar si existe el inventario mínimo
-    const inventarioExistente = await prisma.inventarios_minimos.findUnique({
-      where: { productoId },
+    // Verificar si existe el producto
+    const producto = await prisma.producto.findUnique({
+      where: { id: productoId },
     });
 
-    if (!inventarioExistente) {
-      console.error('Inventario mínimo no encontrado:', productoId);
+    if (!producto) {
+      console.error('Producto no encontrado:', productoId);
       return NextResponse.json(
-        { error: 'Inventario mínimo no encontrado' },
+        { error: 'Producto no encontrado' },
         { status: 404 }
       );
     }
 
-    console.log('Eliminando inventario:', inventarioExistente);
-    await prisma.inventarios_minimos.delete({
-      where: { productoId },
+    // Actualizar el stock mínimo a 0
+    await prisma.producto.update({
+      where: { id: productoId },
+      data: { stockMinimo: 0 },
     });
 
     return NextResponse.json({ message: 'Inventario mínimo eliminado correctamente' });

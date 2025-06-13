@@ -22,6 +22,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
@@ -63,6 +65,10 @@ export default function UsuariosPage() {
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<Usuario | null>(null);
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [usuarioAEditar, setUsuarioAEditar] = useState<Usuario | null>(null);
+  const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
 
   const filteredUsuarios = usuarios.filter(usuario => {
     const matchesSearch = 
@@ -238,19 +244,59 @@ export default function UsuariosPage() {
 
   const handleEdit = (usuario: Usuario) => {
     console.log('Usuario a editar:', usuario);
-    const rolesIds = usuario.roles?.map(ur => ur.rol.id) || [];
+    const rolesIds = usuario.usuarioRoles?.map(ur => ur.rol.id).filter(id => id !== undefined) || [];
+    console.log('Roles IDs:', rolesIds);
     
-    setCurrentUsuario({
-      nombre: usuario.nombre || '',
-      apellidoPaterno: usuario.apellidoPaterno || '',
-      apellidoMaterno: usuario.apellidoMaterno || '',
-      email: usuario.email || '',
-      activo: usuario.activo,
-      roles: rolesIds
+    setUsuarioAEditar({
+      ...usuario,
+      apellidoMaterno: usuario.apellidoMaterno || ''
     });
-    setIsEditing(true);
-    setEditingId(usuario.id);
-    setIsModalOpen(true);
+    setSelectedRoles(rolesIds);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!usuarioAEditar) return;
+
+    try {
+      console.log('Enviando datos para actualización:', {
+        nombre: usuarioAEditar.nombre,
+        apellidoPaterno: usuarioAEditar.apellidoPaterno,
+        apellidoMaterno: usuarioAEditar.apellidoMaterno,
+        email: usuarioAEditar.email,
+        activo: usuarioAEditar.activo,
+        roles: selectedRoles
+      });
+
+      const response = await axios.put(`/api/usuarios/${usuarioAEditar.id}`, {
+        nombre: usuarioAEditar.nombre,
+        apellidoPaterno: usuarioAEditar.apellidoPaterno,
+        apellidoMaterno: usuarioAEditar.apellidoMaterno,
+        email: usuarioAEditar.email,
+        activo: usuarioAEditar.activo,
+        roles: selectedRoles
+      });
+
+      console.log('Respuesta del servidor:', response.data);
+
+      if (response.status === 200) {
+        toast.success('Usuario actualizado correctamente');
+        setIsEditDialogOpen(false);
+        // Actualizar la lista de usuarios
+        const updatedUsuarios = usuarios.map(u => 
+          u.id === usuarioAEditar.id ? response.data : u
+        );
+        setUsuarios(updatedUsuarios);
+      }
+    } catch (error) {
+      console.error('Error al guardar usuario:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Detalles del error:', error.response?.data);
+        toast.error(`Error al actualizar el usuario: ${error.response?.data?.message || error.message}`);
+      } else {
+        toast.error('Error al actualizar el usuario');
+      }
+    }
   };
 
   const handleDeleteClick = (usuario: Usuario) => {
@@ -498,14 +544,16 @@ export default function UsuariosPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {usuario.roles && usuario.roles.length > 0 ? (
-                          usuario.roles.map((ur) => (
-                            <Badge key={ur.rol.id} variant="secondary">
-                              {ur.rol.nombre}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-gray-500">Sin roles asignados</span>
+                        {usuario.usuarioRoles?.map((usuarioRol) => (
+                          <span
+                            key={`${usuario.id}-${usuarioRol.rolId}`}
+                            className="px-2 py-0.5 text-[10px] rounded-full bg-blue-100 text-blue-800 font-medium"
+                          >
+                            {usuarioRol.rol.nombre}
+                          </span>
+                        ))}
+                        {(!usuario.usuarioRoles || usuario.usuarioRoles.length === 0) && (
+                          <span className="text-gray-500 text-sm">Sin roles asignados</span>
                         )}
                       </div>
                     </TableCell>
@@ -609,6 +657,98 @@ export default function UsuariosPage() {
               </Button>
             </div>
           )}
+
+          {/* Diálogo de edición */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Editar Usuario</DialogTitle>
+                <DialogDescription>
+                  Modifica los datos del usuario y sus roles asignados.
+                </DialogDescription>
+              </DialogHeader>
+              
+              {usuarioAEditar && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="nombre">Nombre</Label>
+                      <Input
+                        id="nombre"
+                        value={usuarioAEditar.nombre}
+                        onChange={(e) => setUsuarioAEditar({...usuarioAEditar, nombre: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="apellidoPaterno">Apellido Paterno</Label>
+                      <Input
+                        id="apellidoPaterno"
+                        value={usuarioAEditar.apellidoPaterno}
+                        onChange={(e) => setUsuarioAEditar({...usuarioAEditar, apellidoPaterno: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="apellidoMaterno">Apellido Materno</Label>
+                      <Input
+                        id="apellidoMaterno"
+                        value={usuarioAEditar.apellidoMaterno || ''}
+                        onChange={(e) => setUsuarioAEditar({...usuarioAEditar, apellidoMaterno: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={usuarioAEditar.email}
+                        onChange={(e) => setUsuarioAEditar({...usuarioAEditar, email: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Roles</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {roles.map((rol) => (
+                        <div key={rol.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`rol-${rol.id}`}
+                            checked={selectedRoles.includes(rol.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedRoles([...selectedRoles, rol.id]);
+                              } else {
+                                setSelectedRoles(selectedRoles.filter(id => id !== rol.id));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`rol-${rol.id}`}>{rol.nombre}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="activo"
+                      checked={usuarioAEditar.activo}
+                      onCheckedChange={(checked) => setUsuarioAEditar({...usuarioAEditar, activo: checked as boolean})}
+                    />
+                    <Label htmlFor="activo">Usuario Activo</Label>
+                  </div>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleSaveEdit}>
+                  Guardar Cambios
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </RouteGuard>

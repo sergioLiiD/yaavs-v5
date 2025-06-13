@@ -25,19 +25,19 @@ interface Producto {
     id: number;
     nombre: string;
   };
-  marca: {
+  marca?: {
     id: number;
     nombre: string;
   };
-  modelo: {
+  modelo?: {
     id: number;
     nombre: string;
   };
-  proveedor: {
+  proveedor?: {
     id: number;
     nombre: string;
   };
-  fotos: {
+  fotos?: {
     id: number;
     url: string;
   }[];
@@ -47,11 +47,7 @@ interface Producto {
   stockMaximo: number;
   stockMinimo: number;
   categoriaId?: number;
-  marcas?: {
-    id: number;
-    nombre: string;
-  };
-  Modelo?: {
+  categoria?: {
     id: number;
     nombre: string;
   };
@@ -499,10 +495,10 @@ export default function CatalogoPage() {
                       {producto.nombre}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {producto.marcas?.nombre || '-'}
+                      {producto.marca?.nombre || '-'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {producto.Modelo?.nombre || '-'}
+                      {producto.modelo?.nombre || '-'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <button

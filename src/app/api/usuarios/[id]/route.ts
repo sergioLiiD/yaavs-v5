@@ -50,81 +50,50 @@ export async function GET(request: Request, { params }: RouteParams) {
   }
 }
 
-export async function PUT(request: Request, { params }: RouteParams) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMINISTRADOR') {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
+    console.log('Sesión actualizada:', session?.user?.email);
+
+    if (!session) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const id = parseInt(params.id);
-    if (isNaN(id)) {
-      return NextResponse.json(
-        { error: 'ID inválido' },
-        { status: 400 }
-      );
-    }
-
     const data = await request.json();
     console.log('Datos recibidos para actualización:', data);
-
-    // Verificar si el usuario existe
-    const existingUser = await UsuarioService.getById(id);
-    if (!existingUser) {
-      return NextResponse.json(
-        { error: 'Usuario no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    // Si se está actualizando el email, verificar que no exista
-    if (data.email && data.email !== existingUser.email) {
-      const emailExists = await UsuarioService.emailExists(data.email, id);
-      if (emailExists) {
-        return NextResponse.json(
-          { error: 'El email ya está registrado' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Preparar los datos de actualización
-    const updateData: any = {
-      nombre: data.nombre,
-      apellidoPaterno: data.apellidoPaterno,
-      apellidoMaterno: data.apellidoMaterno,
-      email: data.email,
-      nivel: data.nivel,
-      activo: data.activo !== undefined ? data.activo : existingUser.activo,
-    };
-
-    // Si se proporciona una nueva contraseña, hashearla
-    if (data.password) {
-      const salt = await bcrypt.genSalt(10);
-      updateData.passwordHash = await bcrypt.hash(data.password, salt);
-    }
 
     // Actualizar usuario y roles
     const updatedUser = await prisma.usuario.update({
       where: { id },
       data: {
-        ...updateData,
-        roles: data.roles ? {
+        nombre: data.nombre,
+        apellidoPaterno: data.apellidoPaterno,
+        apellidoMaterno: data.apellidoMaterno,
+        email: data.email,
+        activo: data.activo,
+        usuarioRoles: data.roles ? {
           deleteMany: {},
           create: data.roles.map((rolId: number) => ({
-            rol: {
-              connect: { id: rolId }
-            }
+            rolId: rolId
           }))
         } : undefined
       },
       include: {
-        roles: {
+        usuarioRoles: {
           include: {
-            rol: true
+            rol: {
+              include: {
+                permisos: {
+                  include: {
+                    permiso: true
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -135,7 +104,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
     return NextResponse.json(
-      { error: 'Error al actualizar usuario' },
+      { error: 'Error al actualizar el usuario', details: error instanceof Error ? error.message : 'Error desconocido' },
       { status: 500 }
     );
   }

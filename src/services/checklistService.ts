@@ -1,12 +1,29 @@
 import { prisma } from '@/lib/prisma';
+import { ChecklistItem } from '@prisma/client';
+
+interface CreateChecklistItemData {
+  nombre: string;
+  descripcion?: string;
+  paraDiagnostico: boolean;
+  paraReparacion: boolean;
+  checklistDiagnosticoId?: number;
+}
+
+interface UpdateChecklistItemData {
+  nombre?: string;
+  descripcion?: string;
+  paraDiagnostico?: boolean;
+  paraReparacion?: boolean;
+  checklistDiagnosticoId?: number;
+}
 
 export class ChecklistService {
-  static async getAll() {
+  static async getAll(): Promise<ChecklistItem[]> {
     try {
-      return await prisma.checklist_items.findMany({
+      return await prisma.checklistItem.findMany({
         orderBy: {
-          nombre: 'asc'
-        }
+          id: 'asc',
+        },
       });
     } catch (error) {
       console.error('Error en getAll:', error);
@@ -14,9 +31,9 @@ export class ChecklistService {
     }
   }
 
-  static async getById(id: number) {
+  static async getById(id: number): Promise<ChecklistItem> {
     try {
-      const item = await prisma.checklist_items.findUnique({
+      const item = await prisma.checklistItem.findUnique({
         where: { id }
       });
 
@@ -31,30 +48,25 @@ export class ChecklistService {
     }
   }
 
-  static async create(data: {
-    nombre: string;
-    descripcion?: string;
-    paraDiagnostico: boolean;
-    paraReparacion: boolean;
-  }) {
+  static async create(data: CreateChecklistItemData): Promise<ChecklistItem> {
     try {
-      // Validar que el nombre no esté vacío
       if (!data.nombre.trim()) {
         throw new Error('El nombre no puede estar vacío');
       }
 
-      // Validar que al menos uno de los tipos esté seleccionado
-      if (!data.paraDiagnostico && !data.paraReparacion) {
-        throw new Error('Debe seleccionar al menos un tipo de checklist');
+      const createData: any = {
+        nombre: data.nombre.trim(),
+        descripcion: data.descripcion?.trim() || '',
+        paraDiagnostico: data.paraDiagnostico,
+        paraReparacion: data.paraReparacion,
+      };
+
+      if (data.checklistDiagnosticoId) {
+        createData.checklistDiagnosticoId = data.checklistDiagnosticoId;
       }
 
-      return await prisma.checklist_items.create({
-        data: {
-          ...data,
-          nombre: data.nombre.trim(),
-          activo: true,
-          updatedAt: new Date()
-        }
+      return await prisma.checklistItem.create({
+        data: createData
       });
     } catch (error) {
       console.error('Error en create:', error);
@@ -62,36 +74,34 @@ export class ChecklistService {
     }
   }
 
-  static async update(id: number, data: {
-    nombre?: string;
-    descripcion?: string;
-    paraDiagnostico?: boolean;
-    paraReparacion?: boolean;
-    activo?: boolean;
-  }) {
+  static async update(id: number, data: UpdateChecklistItemData): Promise<ChecklistItem> {
     try {
-      // Verificar que el item existe
       await this.getById(id);
-
-      // Validar que el nombre no esté vacío si se está actualizando
       if (data.nombre && !data.nombre.trim()) {
         throw new Error('El nombre no puede estar vacío');
       }
 
-      // Validar que al menos uno de los tipos esté seleccionado
-      if (data.paraDiagnostico !== undefined && data.paraReparacion !== undefined) {
-        if (!data.paraDiagnostico && !data.paraReparacion) {
-          throw new Error('Debe seleccionar al menos un tipo de checklist');
-        }
+      const updateData: any = {};
+
+      if (data.nombre) {
+        updateData.nombre = data.nombre.trim();
+      }
+      if (data.descripcion !== undefined) {
+        updateData.descripcion = data.descripcion.trim() || '';
+      }
+      if (data.paraDiagnostico !== undefined) {
+        updateData.paraDiagnostico = data.paraDiagnostico;
+      }
+      if (data.paraReparacion !== undefined) {
+        updateData.paraReparacion = data.paraReparacion;
+      }
+      if (data.checklistDiagnosticoId !== undefined) {
+        updateData.checklistDiagnosticoId = data.checklistDiagnosticoId;
       }
 
-      return await prisma.checklist_items.update({
+      return await prisma.checklistItem.update({
         where: { id },
-        data: {
-          ...data,
-          nombre: data.nombre ? data.nombre.trim() : undefined,
-          updatedAt: new Date()
-        }
+        data: updateData
       });
     } catch (error) {
       console.error('Error en update:', error);
@@ -99,12 +109,10 @@ export class ChecklistService {
     }
   }
 
-  static async delete(id: number) {
+  static async delete(id: number): Promise<void> {
     try {
-      // Verificar que el item existe
       await this.getById(id);
-
-      return await prisma.checklist_items.delete({
+      await prisma.checklistItem.delete({
         where: { id }
       });
     } catch (error) {
@@ -113,23 +121,19 @@ export class ChecklistService {
     }
   }
 
-  static async getByTipo(tipo: 'diagnostico' | 'reparacion') {
+  static async getByChecklistDiagnostico(checklistDiagnosticoId: number): Promise<ChecklistItem[]> {
     try {
-      return await prisma.checklist_items.findMany({
+      return await prisma.checklistItem.findMany({
         where: {
-          activo: true,
-          ...(tipo === 'diagnostico' 
-            ? { paraDiagnostico: true }
-            : { paraReparacion: true }
-          )
+          checklistDiagnosticoId
         },
         orderBy: {
-          nombre: 'asc'
+          id: 'asc'
         }
       });
     } catch (error) {
-      console.error('Error en getByTipo:', error);
-      throw new Error('Error al obtener los items del checklist por tipo');
+      console.error('Error en getByChecklistDiagnostico:', error);
+      throw new Error('Error al obtener los items del checklist de diagnóstico');
     }
   }
 } 

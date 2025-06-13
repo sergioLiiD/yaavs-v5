@@ -25,7 +25,8 @@ export async function GET(
       where: { id: parseInt(params.id) },
       select: {
         id: true,
-        tecnicoAsignadoId: true
+        tecnicoAsignadoId: true,
+        codigoDesbloqueo: true
       }
     });
     console.log('Ticket básico:', ticketBasico);
@@ -40,7 +41,7 @@ export async function GET(
     const reparacion = await prisma.reparacion.findUnique({
       where: { ticketId: parseInt(params.id) },
       include: {
-        Usuario: true
+        checklist_diagnostico: true
       }
     });
     console.log('Reparación:', reparacion);
@@ -54,25 +55,35 @@ export async function GET(
         tipoServicio: true,
         modelo: {
           include: {
-            marcas: true,
-          },
+            marcas: true
+          }
         },
         estatusReparacion: true,
-        Reparacion: {
+        creador: true,
+        tecnicoAsignado: true,
+        Presupuesto: {
           include: {
-            Usuario: true,
-            checklist_diagnostico: true
+            conceptos_presupuesto: true
           }
         },
-        tecnicoAsignado: true,
-        dispositivos: true,
-        creador: true,
-        pagos: {
-          orderBy: {
-            fecha: 'desc'
+        Reparacion: {
+          include: {
+            checklist_diagnostico: true,
+            piezas_reparacion: {
+              include: {
+                piezas: true
+              }
+            }
           }
-        }
-      },
+        },
+        dispositivos: true,
+        entregas: {
+          include: {
+            direcciones: true
+          }
+        },
+        pagos: true
+      }
     });
 
     console.log('=== FIN DE LA CONSULTA ===');
@@ -143,54 +154,76 @@ export async function PUT(
       console.log('Estado actualizado a:', estatusPresupuesto.id);
     }
 
+    // Separar los campos que pertenecen a dispositivos
+    const {
+      capacidad,
+      color,
+      fechaCompra,
+      codigoDesbloqueo,
+      redCelular,
+      patronDesbloqueo,
+      ...ticketData
+    } = data;
+
     // Actualizar el ticket
-    const ticketActualizado = await prisma.ticket.update({
-      where: {
-        id: parseInt(params.id)
-      },
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: parseInt(params.id) },
       data: {
-        estatusReparacionId: data.estatusReparacionId,
-        Presupuesto: data.presupuesto ? {
-          upsert: {
-            create: {
-              ...data.presupuesto,
-              conceptos_presupuesto: {
-                create: data.presupuesto.conceptos
-              }
-            },
-            update: {
-              ...data.presupuesto,
-              conceptos_presupuesto: {
-                deleteMany: {},
-                create: data.presupuesto.conceptos
-              }
-            }
-          }
-        } : undefined
+        codigoDesbloqueo: data.codigoDesbloqueo,
+        updatedAt: new Date()
       },
       include: {
         cliente: true,
         tipoServicio: true,
         modelo: {
           include: {
-            marca: true,
-          },
+            marcas: true
+          }
         },
         estatusReparacion: true,
+        creador: true,
         tecnicoAsignado: true,
-        dispositivos: true,
-        direcciones: true,
-        Presupuesto: true,
-        pagos: {
-          orderBy: {
-            fecha: 'desc'
+        Presupuesto: {
+          include: {
+            conceptos_presupuesto: true
           }
-        }
+        },
+        Reparacion: {
+          include: {
+            checklist_diagnostico: true,
+            piezas_reparacion: {
+              include: {
+                piezas: true
+              }
+            }
+          }
+        },
+        dispositivos: true,
+        entregas: {
+          include: {
+            direcciones: true
+          }
+        },
+        pagos: true
       }
     });
 
-    console.log('Ticket actualizado:', ticketActualizado);
-    return NextResponse.json(ticketActualizado);
+    // Actualizar los datos del dispositivo
+    if (capacidad || color || fechaCompra || codigoDesbloqueo || redCelular) {
+      await prisma.dispositivos.updateMany({
+        where: { ticketId: parseInt(params.id) },
+        data: {
+          capacidad,
+          color,
+          fechaCompra: fechaCompra ? new Date(fechaCompra) : undefined,
+          codigoDesbloqueo,
+          redCelular,
+          updatedAt: new Date()
+        }
+      });
+    }
+
+    return NextResponse.json(updatedTicket);
   } catch (error) {
     console.error('Error al actualizar ticket:', error);
     return NextResponse.json(
@@ -266,11 +299,11 @@ export async function DELETE(
         tipoServicio: true,
         modelo: {
           include: {
-            marca: true,
-          },
+            marcas: true
+          }
         },
         estatusReparacion: true,
-        tecnicoAsignado: true,
+        tecnicoAsignado: true
       }
     });
 

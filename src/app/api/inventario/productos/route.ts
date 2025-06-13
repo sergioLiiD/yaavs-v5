@@ -29,22 +29,11 @@ export async function GET() {
 
     const productos = await prisma.producto.findMany({
       include: {
-        marcas: {
-          select: {
-            id: true,
-            nombre: true
-          }
-        },
-        Modelo: {
-          select: {
-            id: true,
-            nombre: true
-          }
-        },
-        proveedores: true,
-        categorias: true,
-        fotos_producto: true,
-        inventarios_minimos: true,
+        marca: true,
+        modelo: true,
+        proveedor: true,
+        categoria: true,
+        fotos: true,
       },
       orderBy: {
         nombre: 'asc'
@@ -176,11 +165,11 @@ export async function POST(request: Request) {
       const producto = await tx.producto.create({
         data: createData,
         include: {
-          marcas: true,
-          Modelo: true,
-          proveedores: true,
-          categorias: true,
-          fotos_producto: true,
+          marca: true,
+          modelo: true,
+          proveedor: true,
+          categoria: true,
+          fotos: true,
         },
       });
 

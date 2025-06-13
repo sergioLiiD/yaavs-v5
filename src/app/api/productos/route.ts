@@ -11,27 +11,21 @@ export async function GET() {
         stock: true,
         sku: true,
         tipo: true,
-        marcas: {
+        marca: {
           select: {
             id: true,
             nombre: true,
           },
         },
-        Modelo: {
+        modelo: {
           select: {
             id: true,
             nombre: true,
           },
         },
-        inventarios_minimos: {
-          select: {
-            id: true,
-            cantidadMinima: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
-        proveedores: {
+        stockMinimo: true,
+        stockMaximo: true,
+        proveedor: {
           select: {
             id: true,
             nombre: true,

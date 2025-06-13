@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { CreateUsuarioDTO, UpdateUsuarioDTO, Usuario } from '@/types/usuario';
 import bcrypt from 'bcryptjs';
 import { sql } from '@vercel/postgres';
-import { NivelUsuario, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 export class UsuarioService {
   // Obtener todos los usuarios
@@ -12,13 +12,22 @@ export class UsuarioService {
         nombre: 'asc'
       },
       include: {
-        roles: {
+        usuarioRoles: {
           include: {
-            rol: true
+            rol: {
+              include: {
+                permisos: {
+                  include: {
+                    permiso: true
+                  }
+                }
+              }
+            }
           }
         }
       }
     });
+    console.log('Usuarios cargados:', JSON.stringify(usuarios, null, 2));
     return usuarios as Usuario[];
   }
 
@@ -27,14 +36,22 @@ export class UsuarioService {
     const usuario = await prisma.usuario.findUnique({
       where: { id },
       include: {
-        roles: {
+        usuarioRoles: {
           include: {
-            rol: true
+            rol: {
+              include: {
+                permisos: {
+                  include: {
+                    permiso: true
+                  }
+                }
+              }
+            }
           }
         }
       }
     });
-    return usuario as Usuario | null;
+    return usuario as Usuario;
   }
 
   // Obtener un usuario por email
@@ -60,21 +77,28 @@ export class UsuarioService {
         nombre: data.nombre,
         apellidoPaterno: data.apellidoPaterno,
         apellidoMaterno: data.apellidoMaterno,
-        nivel: data.nivel as NivelUsuario,
         activo: data.activo ?? true,
-        roles: {
+        usuarioRoles: {
           create: data.roles?.map(rolId => ({
             rolId
           }))
         }
-      },
+      } as any,
       include: {
-        roles: {
+        usuarioRoles: {
           include: {
-            rol: true
+            rol: {
+              include: {
+                permisos: {
+                  include: {
+                    permiso: true
+                  }
+                }
+              }
+            }
           }
         }
-      }
+      } as any
     });
     return usuario as Usuario;
   }
@@ -82,38 +106,46 @@ export class UsuarioService {
   // Actualizar un usuario
   static async update(id: number, data: UpdateUsuarioDTO): Promise<Usuario> {
     const updateData: Prisma.UsuarioUpdateInput = {
-      ...data
+      email: data.email,
+      nombre: data.nombre,
+      apellidoPaterno: data.apellidoPaterno,
+      apellidoMaterno: data.apellidoMaterno,
+      activo: data.activo
     };
 
     if (data.password) {
       const salt = await bcrypt.genSalt(10);
       updateData.passwordHash = await bcrypt.hash(data.password, salt);
-      delete updateData.password;
     }
-
-    // Primero eliminamos los roles existentes
-    await prisma.usuarioRol.deleteMany({
-      where: { usuarioId: id }
-    });
 
     const usuario = await prisma.usuario.update({
       where: { id },
       data: {
         ...updateData,
-        roles: {
-          create: data.roles?.map(rolId => ({
-            rolId
+        usuarioRoles: data.roles ? {
+          deleteMany: {},
+          create: data.roles.map((rolId: number) => ({
+            rolId: rolId
           }))
-        }
-      },
+        } : undefined
+      } as any,
       include: {
-        roles: {
+        usuarioRoles: {
           include: {
-            rol: true
+            rol: {
+              include: {
+                permisos: {
+                  include: {
+                    permiso: true
+                  }
+                }
+              }
+            }
           }
         }
-      }
+      } as any
     });
+
     return usuario as Usuario;
   }
 

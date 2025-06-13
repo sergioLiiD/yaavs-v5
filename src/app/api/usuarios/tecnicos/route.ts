@@ -10,7 +10,7 @@ export async function GET() {
     // Obtener técnicos usando Prisma
     const tecnicos = await prisma.usuario.findMany({
       where: {
-        roles: {
+        usuarioRoles: {
           some: {
             rol: {
               nombre: 'TECNICO'

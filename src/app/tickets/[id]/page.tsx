@@ -15,9 +15,9 @@ interface PageProps {
   };
 }
 
-async function getTicket(id: string): Promise<Ticket | null> {
+async function getTicket(id: string): Promise<Ticket> {
   const ticket = await prisma.ticket.findUnique({
-    where: { id: parseInt(id) },
+    where: { id: Number(id) },
     include: {
       cliente: true,
       tipoServicio: true,
@@ -28,12 +28,16 @@ async function getTicket(id: string): Promise<Ticket | null> {
       },
       estatusReparacion: true,
       tecnicoAsignado: true,
-      dispositivos: true,
       creador: true,
+      dispositivos: true,
+      Presupuesto: {
+        include: {
+          conceptos_presupuesto: true
+        }
+      },
       Reparacion: {
         include: {
-          Usuario: true,
-          checklist_diagnostico: true,
+          checklistDiagnostico: true,
           piezas_reparacion: {
             include: {
               piezas: true
@@ -41,19 +45,54 @@ async function getTicket(id: string): Promise<Ticket | null> {
           }
         }
       },
-      Presupuesto: true
+      pagos: true
     }
   });
-
-  return ticket;
-}
-
-export default async function TicketPage({ params }: PageProps) {
-  const ticket = await getTicket(params.id);
 
   if (!ticket) {
     notFound();
   }
+
+  const ticketWithCorrectFields: Ticket = {
+    ...ticket,
+    reparacion: ticket.Reparacion
+      ? {
+          ...ticket.Reparacion,
+          checklistItems: ticket.Reparacion.checklistDiagnostico,
+          piezas: ticket.Reparacion.piezas_reparacion.map(pr => ({
+            id: pr.id,
+            cantidad: pr.cantidad,
+            precioUnitario: pr.precioUnitario,
+            pieza: pr.piezas
+          })),
+          tecnico: ticket.tecnicoAsignado
+            ? {
+                id: ticket.tecnicoAsignado.id,
+                nombre: ticket.tecnicoAsignado.nombre,
+                apellidoPaterno: ticket.tecnicoAsignado.apellidoPaterno,
+                apellidoMaterno: ticket.tecnicoAsignado.apellidoMaterno ?? null
+              }
+            : {
+                id: 0,
+                nombre: '',
+                apellidoPaterno: '',
+                apellidoMaterno: null
+              }
+        }
+      : null,
+    presupuesto: ticket.Presupuesto
+      ? {
+          ...ticket.Presupuesto,
+          conceptos: ticket.Presupuesto.conceptos_presupuesto
+        }
+      : null
+  };
+
+  return ticketWithCorrectFields;
+}
+
+export default async function TicketPage({ params }: PageProps) {
+  const ticket = await getTicket(params.id);
 
   return (
     <div className="container mx-auto py-6">

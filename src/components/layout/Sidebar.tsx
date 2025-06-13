@@ -6,64 +6,162 @@ import { HiChevronDown, HiChevronRight } from 'react-icons/hi';
 import { ShoppingCart, Package, Boxes, AlertCircle } from 'lucide-react';
 
 interface MenuItem {
-  name: string;
-  href: string;
-  icon: string;
-  roles?: string[]; // Roles que pueden ver este menú
-  submenu?: {
-    name: string;
-    href: string;
-    icon: string;
-  }[];
+  title: string;
+  path: string;
+  icon?: React.ReactNode;
+  submenu?: MenuItem[];
+  requiredPermissions?: string[];
 }
 
 const menuItems: MenuItem[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
-  { name: 'Tickets', href: '/tickets', icon: 'receipt' },
-  { name: 'Clientes', href: '/clientes', icon: 'person' },
-  { 
-    name: 'Inventario', 
-    href: '/dashboard/inventario', 
-    icon: 'inventory',
-    roles: ['ADMINISTRADOR', 'GERENTE', 'TECNICO'],
+  {
+    title: 'Dashboard',
+    path: '/dashboard',
+    requiredPermissions: ['DASHBOARD_VIEW']
+  },
+  {
+    title: 'Tickets',
+    path: '/dashboard/tickets',
+    requiredPermissions: ['TICKETS_VIEW']
+  },
+  {
+    title: 'Clientes',
+    path: '/dashboard/clientes',
+    requiredPermissions: ['CLIENTS_VIEW']
+  },
+  {
+    title: 'Catálogos',
+    path: '/dashboard/catalogo',
+    requiredPermissions: ['CATALOG_VIEW'],
     submenu: [
-      { name: 'Catálogo', href: '/dashboard/inventario/catalogo', icon: 'inventory_2' },
-      { name: 'Stock', href: '/dashboard/inventario/stock', icon: 'inventory' },
-      { name: 'Inventarios Mínimos', href: '/dashboard/inventario/minimos', icon: 'warning' },
+      {
+        title: 'Tipo de Servicio',
+        path: '/dashboard/catalogo/tipo-servicio',
+        requiredPermissions: ['CATALOG_VIEW']
+      },
+      {
+        title: 'Status de Reparación',
+        path: '/dashboard/catalogo/status-reparacion',
+        requiredPermissions: ['CATALOG_VIEW']
+      },
+      {
+        title: 'Proveedores',
+        path: '/dashboard/catalogo/proveedores',
+        requiredPermissions: ['CATALOG_VIEW']
+      },
+      {
+        title: 'Reparaciones Frecuentes',
+        path: '/dashboard/catalogo/reparaciones-frecuentes',
+        requiredPermissions: ['CATALOG_VIEW']
+      },
+      {
+        title: 'Check List',
+        path: '/dashboard/catalogo/check-list',
+        requiredPermissions: ['CATALOG_VIEW']
+      }
     ]
   },
-  { 
-    name: 'Catálogos', 
-    href: '/dashboard/catalogo', 
-    icon: 'list',
-    roles: ['ADMINISTRADOR', 'GERENTE'],
+  {
+    title: 'Inventario',
+    path: '/dashboard/inventario',
+    requiredPermissions: ['INVENTORY_VIEW'],
     submenu: [
-      { name: 'Marcas', href: '/dashboard/catalogo/marcas', icon: 'branding' },
-      { name: 'Modelos', href: '/dashboard/catalogo/modelos', icon: 'inventory_2' },
-      { name: 'Tipos de Servicio', href: '/dashboard/catalogo/tipo-servicio', icon: 'build' },
-      { name: 'Proveedores', href: '/dashboard/catalogo/proveedores', icon: 'business' }
+      {
+        title: 'Catálogo',
+        path: '/dashboard/inventario/catalogo',
+        requiredPermissions: ['INVENTORY_VIEW']
+      },
+      {
+        title: 'Mínimos',
+        path: '/dashboard/inventario/minimos',
+        requiredPermissions: ['INVENTORY_VIEW']
+      },
+      {
+        title: 'Stock',
+        path: '/dashboard/inventario/stock',
+        requiredPermissions: ['INVENTORY_VIEW']
+      },
+      {
+        title: 'Movimientos',
+        path: '/dashboard/inventario/movimientos',
+        requiredPermissions: ['INVENTORY_VIEW']
+      }
     ]
   },
-  { 
-    name: 'Usuarios', 
-    href: '/usuarios', 
-    icon: 'people',
-    roles: ['ADMINISTRADOR'] 
+  {
+    title: 'Costos',
+    path: '/dashboard/costos',
+    requiredPermissions: ['COSTS_VIEW'],
+    submenu: [
+      {
+        title: 'Precios de Venta',
+        path: '/dashboard/costos/precios-venta',
+        requiredPermissions: ['COSTS_VIEW']
+      },
+      {
+        title: 'Precios de Compra',
+        path: '/dashboard/costos/precios-compra',
+        requiredPermissions: ['COSTS_VIEW']
+      },
+      {
+        title: 'Márgenes',
+        path: '/dashboard/costos/margenes',
+        requiredPermissions: ['COSTS_VIEW']
+      },
+      {
+        title: 'Historial',
+        path: '/dashboard/costos/historial',
+        requiredPermissions: ['COSTS_VIEW']
+      }
+    ]
   },
+  {
+    title: 'Administración',
+    path: '/dashboard/admin',
+    requiredPermissions: ['USERS_VIEW', 'ROLES_VIEW'],
+    submenu: [
+      {
+        title: 'Usuarios',
+        path: '/dashboard/admin/usuarios',
+        requiredPermissions: ['USERS_VIEW']
+      },
+      {
+        title: 'Roles',
+        path: '/dashboard/admin/roles',
+        requiredPermissions: ['ROLES_VIEW']
+      },
+      {
+        title: 'Permisos',
+        path: '/dashboard/admin/permisos',
+        requiredPermissions: ['PERMISSIONS_VIEW']
+      }
+    ]
+  },
+  {
+    title: 'Puntos de Recolección',
+    path: '/dashboard/puntos-recoleccion',
+    requiredPermissions: ['COLLECTION_POINTS_VIEW']
+  }
 ];
 
 const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const userRole = session?.user?.role || '';
+  const userPermissions = session?.user?.permissions || [];
   const [openMenus, setOpenMenus] = useState<string[]>(['Catálogos', 'Inventario']);
   
-  // Filtrar elementos del menú según el rol del usuario
+  // Filtrar elementos del menú según los permisos del usuario
   const filteredMenuItems = menuItems.filter(item => {
-    // Si no se especifican roles, todos pueden ver el elemento
-    if (!item.roles) return true;
-    // Si se especifican roles, verificar si el usuario tiene uno de ellos
-    return item.roles.includes(userRole);
+    // Si no se especifican permisos, todos pueden ver el elemento
+    if (!item.requiredPermissions) return true;
+    
+    // Si el usuario es administrador, tiene acceso a todo
+    if (session?.user?.role === 'ADMINISTRATOR') return true;
+    
+    // Verificar si el usuario tiene alguno de los permisos requeridos
+    return item.requiredPermissions.some(permission => 
+      userPermissions.includes(permission)
+    );
   });
 
   const toggleMenu = (menuName: string) => {
@@ -76,102 +174,79 @@ const Sidebar: React.FC = () => {
 
   return (
     <aside className="hidden md:flex md:flex-shrink-0">
-      <div className="flex flex-col w-64 bg-blue-800 text-white">
-        <div className="flex items-center justify-center h-16 bg-blue-900">
-          <span className="text-xl font-semibold">YAAVS</span>
-        </div>
-        
-        <nav className="mt-5 flex-1 px-2 bg-blue-800 space-y-1">
-          {filteredMenuItems.map((item) => {
-            const isActive = pathname === item.href || 
-                           pathname?.startsWith(`${item.href}/`) ||
-                           (item.submenu?.some(subItem => 
-                             pathname === subItem.href || 
-                             pathname?.startsWith(`${subItem.href}/`)
-                           ));
-            const hasSubmenu = item.submenu && item.submenu.length > 0;
-            const isSubmenuOpen = openMenus.includes(item.name);
-            
-            return (
-              <div key={item.name}>
-                {hasSubmenu ? (
-                  <button
-                    onClick={() => toggleMenu(item.name)}
-                    className={`${
-                      isActive
-                        ? 'bg-blue-900 text-white'
-                        : 'text-blue-100 hover:bg-blue-700'
-                    } group flex items-center justify-between w-full px-2 py-2.5 text-sm font-medium rounded-md`}
-                  >
-                    <div className="flex items-center">
-                      <span className="material-symbols-outlined mr-3 flex-shrink-0 h-6 w-6">
-                        {item.icon}
-                      </span>
-                      {item.name}
-                    </div>
-                    {isSubmenuOpen ? (
-                      <HiChevronDown className="h-5 w-5" />
-                    ) : (
-                      <HiChevronRight className="h-5 w-5" />
+      <div className="flex flex-col w-64">
+        <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto bg-white border-r">
+          <div className="flex items-center flex-shrink-0 px-4">
+            <img
+              className="h-8 w-auto"
+              src="/logo.png"
+              alt="arregla.mx"
+            />
+          </div>
+          <nav className="mt-5 flex-1 px-2 space-y-1">
+            {filteredMenuItems.map((item) => (
+              <div key={item.path}>
+                {item.submenu ? (
+                  <div>
+                    <button
+                      onClick={() => toggleMenu(item.title)}
+                      className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full ${
+                        openMenus.includes(item.title)
+                          ? 'bg-gray-100 text-gray-900'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      {item.icon}
+                      <span className="flex-1">{item.title}</span>
+                      {openMenus.includes(item.title) ? (
+                        <HiChevronDown className="ml-3 h-5 w-5" />
+                      ) : (
+                        <HiChevronRight className="ml-3 h-5 w-5" />
+                      )}
+                    </button>
+                    {openMenus.includes(item.title) && (
+                      <div className="pl-4 space-y-1">
+                        {item.submenu
+                          .filter(subItem => 
+                            !subItem.requiredPermissions || 
+                            session?.user?.role === 'ADMINISTRATOR' ||
+                            subItem.requiredPermissions.some(permission => 
+                              userPermissions.includes(permission)
+                            )
+                          )
+                          .map((subItem) => (
+                            <Link
+                              key={subItem.path}
+                              href={subItem.path}
+                              className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                                pathname === subItem.path
+                                  ? 'bg-gray-100 text-gray-900'
+                                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                              }`}
+                            >
+                              {subItem.icon}
+                              <span>{subItem.title}</span>
+                            </Link>
+                          ))}
+                      </div>
                     )}
-                  </button>
+                  </div>
                 ) : (
                   <Link
-                    href={item.href}
-                    className={`${
-                      isActive
-                        ? 'bg-blue-900 text-white'
-                        : 'text-blue-100 hover:bg-blue-700'
-                    } group flex items-center px-2 py-2.5 text-sm font-medium rounded-md`}
+                    href={item.path}
+                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                      pathname === item.path
+                        ? 'bg-gray-100 text-gray-900'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
                   >
-                    <span className="material-symbols-outlined mr-3 flex-shrink-0 h-6 w-6">
-                      {item.icon}
-                    </span>
-                    {item.name}
+                    {item.icon}
+                    <span>{item.title}</span>
                   </Link>
                 )}
-                
-                {hasSubmenu && isSubmenuOpen && (
-                  <div className="ml-4 mt-1 space-y-1">
-                    {item.submenu?.map((subItem) => {
-                      const isSubItemActive = pathname === subItem.href || pathname?.startsWith(`${subItem.href}/`);
-                      return (
-                        <Link
-                          key={subItem.name}
-                          href={subItem.href}
-                          className={`${
-                            isSubItemActive
-                              ? 'bg-blue-900 text-white'
-                              : 'text-blue-100 hover:bg-blue-700'
-                          } group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
-                        >
-                          <span className="material-symbols-outlined mr-3 flex-shrink-0 h-5 w-5">
-                            {subItem.icon}
-                          </span>
-                          {subItem.name}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
-            );
-          })}
-        </nav>
-        
-        <div className="flex-shrink-0 flex border-t border-blue-700 p-4">
-          <div className="flex-shrink-0 w-full group block">
-            <div className="flex items-center">
-              <div className="ml-3">
-                <p className="text-sm font-medium text-white">
-                  {session?.user?.name || 'Usuario'}
-                </p>
-                <p className="text-xs font-medium text-blue-200">
-                  {userRole || 'Sin rol asignado'}
-                </p>
-              </div>
-            </div>
-          </div>
+            ))}
+          </nav>
         </div>
       </div>
     </aside>

@@ -17,26 +17,29 @@ export interface Usuario {
   activo: boolean;
   createdAt: Date;
   updatedAt: Date;
-  usuariosPuntos?: Array<{
+  usuarioRoles?: Array<{
     id: number;
-    puntoRecoleccionId: number;
     usuarioId: number;
     rolId: number;
-    activo: boolean;
-    puntos_recoleccion: {
-      id: number;
-      isRepairPoint: boolean;
-    };
-  }>;
-  roles?: Array<{
+    createdAt: Date;
+    updatedAt: Date;
     rol: {
+      id: number;
       nombre: string;
+      descripcion?: string;
       permisos: Array<{
+        id: number;
+        rolId: number;
+        permisoId: number;
         permiso: {
+          id: number;
           codigo: string;
-        };
-      }>;
-    };
+          nombre: string;
+          descripcion?: string;
+          categoria: string;
+        }
+      }>
+    }
   }>;
 }
 

@@ -10,6 +10,22 @@ declare module 'next-auth' {
     name?: string | null;
     role: string;
     permissions: string[];
+    roles: Array<{
+      rol: {
+        id: number;
+        nombre: string;
+        descripcion: string;
+        permisos: Array<{
+          permiso: {
+            id: number;
+            codigo: string;
+            nombre: string;
+            descripcion: string;
+            categoria: string;
+          };
+        }>;
+      };
+    }>;
     repairPointId?: string;
     canRepair?: boolean;
   }
@@ -22,6 +38,22 @@ declare module 'next-auth' {
       image?: string | null;
       role: string;
       permissions: string[];
+      roles: Array<{
+        rol: {
+          id: number;
+          nombre: string;
+          descripcion: string;
+          permisos: Array<{
+            permiso: {
+              id: number;
+              codigo: string;
+              nombre: string;
+              descripcion: string;
+              categoria: string;
+            };
+          }>;
+        };
+      }>;
       repairPointId?: string;
       canRepair?: boolean;
     };
@@ -33,6 +65,22 @@ declare module "next-auth/jwt" {
     id: number;
     role: string;
     permissions: string[];
+    roles: Array<{
+      rol: {
+        id: number;
+        nombre: string;
+        descripcion: string;
+        permisos: Array<{
+          permiso: {
+            id: number;
+            codigo: string;
+            nombre: string;
+            descripcion: string;
+            categoria: string;
+          };
+        }>;
+      };
+    }>;
     repairPointId?: string;
     canRepair?: boolean;
   }

@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
         marcaId: parseInt(marcaId)
       },
       include: {
-        marcas: true
+        marca: true
       },
       orderBy: {
         nombre: 'asc'
@@ -100,8 +100,7 @@ export async function POST(req: NextRequest) {
       data: {
         nombre: data.nombre,
         descripcion: data.descripcion || null,
-        marcaId: parseInt(data.marcaId),
-        activo: true
+        marcaId: parseInt(data.marcaId)
       }
     });
 
@@ -109,7 +108,7 @@ export async function POST(req: NextRequest) {
     const modeloConMarca = await prisma.modelo.findUnique({
       where: { id: modelo.id },
       include: {
-        marcas: true
+        marca: true
       }
     });
 

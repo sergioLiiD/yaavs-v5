@@ -101,7 +101,7 @@ export async function POST(request: Request) {
     }
 
     // Crear el dispositivo
-    const dispositivo = await prisma.dispositivos.create({
+    const dispositivo = await prisma.dispositivo.create({
       data: {
         capacidad: capacidad as string,
         color: color as string,
@@ -117,6 +117,11 @@ export async function POST(request: Request) {
       numeroTicket: `TICK-${Date.now()}`,
       descripcionProblema,
       imei,
+      capacidad,
+      color,
+      fechaCompra: fechaCompra ? new Date(fechaCompra as string) : null,
+      codigoDesbloqueo,
+      redCelular,
       cliente: {
         connect: {
           id: clienteIdNum
@@ -142,7 +147,7 @@ export async function POST(request: Request) {
           id: session.user.id
         }
       },
-      dispositivos: {
+      dispositivo: {
         connect: {
           id: dispositivo.id
         }
@@ -166,12 +171,12 @@ export async function POST(request: Request) {
         tipoServicio: true,
         modelo: {
           include: {
-            marcas: true
+            marca: true
           }
         },
         estatusReparacion: true,
         creador: true,
-        dispositivos: true
+        dispositivo: true
       }
     });
 
@@ -212,7 +217,7 @@ export async function GET() {
         },
         modelo: {
           include: {
-            marcas: true
+            marca: true
           }
         },
         tipoServicio: true,
@@ -231,7 +236,7 @@ export async function GET() {
             nombre: true
           }
         },
-        dispositivos: true
+        dispositivo: true
       },
       orderBy: {
         createdAt: 'desc'

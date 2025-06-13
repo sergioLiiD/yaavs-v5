@@ -8,12 +8,13 @@ import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@
 
 // Tipo para representar un item del checklist
 interface ChecklistItem {
-  id: string;
+  id: number;
   nombre: string;
   descripcion?: string;
-  activo?: boolean;
   paraDiagnostico: boolean;
   paraReparacion: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export default function ChecklistPage() {
@@ -40,10 +41,7 @@ export default function ChecklistPage() {
       try {
         setIsLoading(true);
         const response = await axios.get('/api/catalogo/checklist');
-        setChecklistItems(response.data.map((item: any) => ({
-          ...item,
-          id: item.id.toString()
-        })));
+        setChecklistItems(response.data);
         setError('');
       } catch (err) {
         console.error('Error al cargar items del checklist:', err);
@@ -93,14 +91,13 @@ export default function ChecklistPage() {
         const response = await axios.put(`/api/catalogo/checklist/${currentItem.id}`, currentItem);
         setChecklistItems(checklistItems.map(item => 
           item.id === currentItem.id 
-            ? { ...response.data, id: response.data.id.toString() }
+            ? response.data
             : item
         ));
       } else {
         // Agregar un nuevo item
         const response = await axios.post('/api/catalogo/checklist', currentItem);
-        const newItem = { ...response.data, id: response.data.id.toString() };
-        setChecklistItems([...checklistItems, newItem]);
+        setChecklistItems([...checklistItems, response.data]);
       }
       
       closeModal();
@@ -116,7 +113,7 @@ export default function ChecklistPage() {
     openModal();
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     if (!window.confirm('¿Está seguro de que desea eliminar este item del checklist?')) {
       return;
     }
@@ -165,10 +162,9 @@ export default function ChecklistPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nombre</TableHead>
               <TableHead>Descripción</TableHead>
-              <TableHead>Diagnóstico</TableHead>
-              <TableHead>Reparación</TableHead>
+              <TableHead>Completado</TableHead>
+              <TableHead>Notas</TableHead>
               <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -176,7 +172,6 @@ export default function ChecklistPage() {
             {checklistItems.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.nombre}</TableCell>
-                <TableCell>{item.descripcion || '-'}</TableCell>
                 <TableCell>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     item.paraDiagnostico ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
@@ -184,13 +179,7 @@ export default function ChecklistPage() {
                     {item.paraDiagnostico ? 'Sí' : 'No'}
                   </span>
                 </TableCell>
-                <TableCell>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    item.paraReparacion ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {item.paraReparacion ? 'Sí' : 'No'}
-                  </span>
-                </TableCell>
+                <TableCell>{item.descripcion || '-'}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
                     <button

@@ -1,33 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import Link from 'next/link';
-import { TicketDetailsModal } from './TicketDetailsModal';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { formatDate } from "@/lib/utils";
+import { TicketDetailsModal } from "./TicketDetailsModal";
+import { TicketStatusBadge } from "./TicketStatusBadge";
 
-export interface Ticket {
+interface Ticket {
   id: number;
   numeroTicket: string;
   fechaRecepcion: string;
-  descripcionProblema: string;
+  descripcionProblema: string | null;
   cliente?: {
     id: number;
     nombre: string;
     apellidoPaterno: string;
-    apellidoMaterno: string;
+    apellidoMaterno?: string;
     telefonoCelular: string;
     email: string;
   };
   modelo?: {
     id: number;
     nombre: string;
-    marcas?: {
+    marca: {
       id: number;
       nombre: string;
     };
@@ -39,163 +43,151 @@ export interface Ticket {
   estatusReparacion?: {
     id: number;
     nombre: string;
-    color: string;
   };
-  creador?: {
+  tecnicoAsignado?: {
     id: number;
     nombre: string;
-  };
-  dispositivos?: {
+    apellidoPaterno: string;
+    apellidoMaterno?: string;
+  } | null;
+  dispositivo?: {
     id: number;
-    capacidad: string;
-    color: string;
-    fechaCompra: string | null;
-    codigoDesbloqueo: string;
-    redCelular: string;
+    tipo: string;
+    marca: string;
+    modelo: string;
+    serie?: string;
   };
+  presupuesto?: {
+    id: number;
+    total: number;
+    descuento: number;
+    totalFinal: number;
+    aprobado: boolean;
+    fechaAprobacion?: string;
+    conceptos: {
+      id: number;
+      descripcion: string;
+      cantidad: number;
+      precioUnitario: number;
+      total: number;
+    }[];
+  };
+  pagos?: {
+    id: number;
+    monto: number;
+    fecha: string;
+    metodoPago: string;
+  }[];
 }
 
-function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
-  switch (status.toLowerCase()) {
-    case 'recibido':
-      return 'default';
-    case 'en diagnóstico':
-      return 'secondary';
-    case 'en reparación':
-      return 'outline';
-    case 'reparado':
-      return 'default';
-    case 'entregado':
-      return 'secondary';
-    case 'cancelado':
-      return 'destructive';
-    default:
-      return 'default';
-  }
+interface TicketsListProps {
+  tickets: Ticket[];
+  onTicketClick?: (ticket: Ticket) => void;
 }
 
-export default function TicketsList() {
-  const { data: session } = useSession();
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function TicketsList({ tickets, onTicketClick }: TicketsListProps) {
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
-  useEffect(() => {
-    const loadTickets = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/tickets');
-        const data = await response.json();
-        console.log('Datos recibidos de la API:', data);
-        setTickets(data);
-      } catch (err) {
-        console.error('Error al cargar tickets:', err);
-        setError('Error al cargar los tickets');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const filteredTickets = tickets.filter((ticket) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      ticket.numeroTicket.toLowerCase().includes(searchLower) ||
+      ticket.cliente?.nombre.toLowerCase().includes(searchLower) ||
+      ticket.cliente?.apellidoPaterno.toLowerCase().includes(searchLower) ||
+      ticket.modelo?.marca.nombre.toLowerCase().includes(searchLower) ||
+      ticket.modelo?.nombre.toLowerCase().includes(searchLower) ||
+      ticket.estatusReparacion?.nombre.toLowerCase().includes(searchLower)
+    );
+  });
 
-    loadTickets();
-  }, []);
-
-  if (loading) {
-    return <div>Cargando tickets...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  const handleTicketClick = (ticket: Ticket) => {
+    if (onTicketClick) {
+      onTicketClick(ticket);
+    } else {
+      setSelectedTicket(ticket);
+    }
+  };
 
   return (
-    <>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Tickets</CardTitle>
-          <Link href="/dashboard/tickets/nuevo">
-            <Button>Nuevo Ticket</Button>
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {tickets.length === 0 ? (
-            <div className="text-center py-4">
-              No hay tickets disponibles. Crea uno nuevo para comenzar.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Número</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Marca</TableHead>
-                  <TableHead>Modelo</TableHead>
-                  <TableHead>Problema</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Creado por</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tickets.map((ticket) => (
-                  <TableRow key={ticket.id}>
-                    <TableCell className="font-medium">
-                      <button
-                        onClick={() => setSelectedTicket(ticket)}
-                        className="text-blue-600 hover:text-blue-800 hover:underline"
-                      >
-                        {ticket.numeroTicket}
-                      </button>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(ticket.fechaRecepcion), 'dd/MM/yyyy HH:mm', { locale: es })}
-                    </TableCell>
-                    <TableCell>
-                      {ticket.cliente ? 
-                        ticket.cliente.nombre :
-                        'Cliente no disponible'
-                      }
-                    </TableCell>
-                    <TableCell>
-                      {ticket.modelo?.marcas?.nombre || 'Marca no disponible'}
-                    </TableCell>
-                    <TableCell>
-                      {ticket.modelo?.nombre || 'Modelo no disponible'}
-                    </TableCell>
-                    <TableCell>
-                      {ticket.descripcionProblema || 'Sin descripción'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusVariant(ticket.estatusReparacion?.nombre || '')}>
-                        {ticket.estatusReparacion?.nombre || 'Sin estado'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {ticket.creador ? 
-                        ticket.creador.nombre :
-                        'No disponible'
-                      }
-                    </TableCell>
-                    <TableCell>
-                      <Link href={`/dashboard/tickets/${ticket.id}`}>
-                        <Button variant="outline" size="sm">
-                          Ver detalles
-                        </Button>
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <Input
+          placeholder="Buscar tickets..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
 
-      <TicketDetailsModal 
-        ticket={selectedTicket} 
-        onClose={() => setSelectedTicket(null)} 
-      />
-    </>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Ticket</TableHead>
+              <TableHead>Cliente</TableHead>
+              <TableHead>Dispositivo</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Técnico</TableHead>
+              <TableHead>Presupuesto</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredTickets.map((ticket) => (
+              <TableRow
+                key={ticket.id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleTicketClick(ticket)}
+              >
+                <TableCell className="font-medium">
+                  #{ticket.numeroTicket}
+                </TableCell>
+                <TableCell>
+                  {ticket.cliente
+                    ? `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno}`
+                    : "No disponible"}
+                </TableCell>
+                <TableCell>
+                  {ticket.modelo
+                    ? `${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}`
+                    : "No disponible"}
+                </TableCell>
+                <TableCell>
+                  <TicketStatusBadge status={ticket.estatusReparacion?.nombre || ""} />
+                </TableCell>
+                <TableCell>{formatDate(ticket.fechaRecepcion)}</TableCell>
+                <TableCell>
+                  {ticket.tecnicoAsignado
+                    ? `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno}`
+                    : "No asignado"}
+                </TableCell>
+                <TableCell>
+                  {ticket.presupuesto ? (
+                    <div className="flex items-center gap-2">
+                      <span className={ticket.presupuesto.aprobado ? "text-green-600" : "text-yellow-600"}>
+                        ${ticket.presupuesto.totalFinal.toFixed(2)}
+                      </span>
+                      {ticket.presupuesto.aprobado && (
+                        <span className="text-xs text-green-600">✓</span>
+                      )}
+                    </div>
+                  ) : (
+                    "Sin presupuesto"
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {selectedTicket && (
+        <TicketDetailsModal
+          ticket={selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+        />
+      )}
+    </div>
   );
 } 

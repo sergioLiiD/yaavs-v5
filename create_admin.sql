@@ -1,5 +1,5 @@
 -- Crear el usuario administrador
-INSERT INTO usuarios (email, nombre, "apellidoPaterno", "apellidoMaterno", "passwordHash", activo, "createdAt", "updatedAt")
+INSERT INTO usuarios (email, nombre, "apellidoPaterno", "apellidoMaterno", "passwordHash", activo, "createdAt", "updatedAt")npm
 VALUES (
   'sergio@hoom.mx',
   'Sergio',

@@ -13,12 +13,9 @@ export async function GET() {
     }
 
     console.log('Usuario autenticado:', session.user);
-    console.log('Buscando piezas activas...');
+    console.log('Buscando piezas...');
 
-    const piezas = await prisma.pieza.findMany({
-      where: {
-        activo: true
-      },
+    const piezas = await prisma.piezas.findMany({
       include: {
         marca: true,
         modelo: true
@@ -42,21 +39,22 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { nombre, sku, precioVenta, marcaId, modeloId } = body;
+    const { nombre, marcaId, modeloId, stock, precio } = body;
 
     console.log('Creando pieza:', body);
 
-    const pieza = await prisma.pieza.create({
+    const pieza = await prisma.piezas.create({
       data: {
         nombre,
-        sku: sku || null,
-        precioVenta,
-        marcaId: marcaId || null,
-        modeloId: modeloId || null,
-        activo: true,
-        precioCompra: 0,
-        cantidad: 0,
+        marcaId,
+        modeloId,
+        stock: stock || 0,
+        precio,
       },
+      include: {
+        marca: true,
+        modelo: true
+      }
     });
 
     console.log('Pieza creada:', pieza);

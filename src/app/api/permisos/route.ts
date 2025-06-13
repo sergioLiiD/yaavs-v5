@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     try {
       const permisos = await prisma.permiso.findMany({
         orderBy: {
-          codigo: 'asc'
+          nombre: 'asc'
         }
       });
 

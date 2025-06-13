@@ -3,12 +3,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-interface ProductoPresupuesto {
+interface ConceptoPresupuesto {
   id: string;
-  productoId: number;
+  descripcion: string;
   cantidad: number;
-  precioVenta: number;
-  nombre?: string;
+  precioUnitario: number;
+  total: number;
 }
 
 export async function GET(
@@ -27,7 +27,11 @@ export async function GET(
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
       include: {
-        presupuesto: true,
+        presupuesto: {
+          include: {
+            conceptos: true
+          }
+        },
       },
     });
 
@@ -60,11 +64,11 @@ export async function POST(
     const body = await request.json();
     console.log('Datos recibidos en el servidor:', JSON.stringify(body, null, 2));
 
-    const { productos, total } = body;
+    const { conceptos, total } = body;
 
-    if (!productos || !Array.isArray(productos)) {
-      console.error('Datos de productos inválidos:', productos);
-      return new NextResponse('Datos de productos inválidos', { status: 400 });
+    if (!conceptos || !Array.isArray(conceptos)) {
+      console.error('Datos de conceptos inválidos:', conceptos);
+      return new NextResponse('Datos de conceptos inválidos', { status: 400 });
     }
 
     // Verificar que el ticket existe
@@ -82,25 +86,26 @@ export async function POST(
     }
 
     // Calcular subtotales
-    const subtotal = productos.reduce((sum: number, p: any) => {
-      const productoSubtotal = p.cantidad * p.precioUnitario;
-      console.log(`Subtotal para producto ${p.piezaId}: ${productoSubtotal} (cantidad: ${p.cantidad}, precio: ${p.precioUnitario})`);
-      return sum + productoSubtotal;
+    const subtotal = conceptos.reduce((sum: number, c: any) => {
+      const conceptoSubtotal = c.cantidad * c.precioUnitario;
+      console.log(`Subtotal para concepto ${c.descripcion}: ${conceptoSubtotal} (cantidad: ${c.cantidad}, precio: ${c.precioUnitario})`);
+      return sum + conceptoSubtotal;
     }, 0);
     
     const iva = subtotal * 0.16; // 16% IVA
-    const manoDeObra = total - subtotal - iva;
+    const descuento = 0; // Por defecto
+    const totalFinal = total;
 
     console.log('Cálculos detallados:', { 
       subtotal, 
       iva, 
-      manoDeObra, 
-      total,
-      productos: productos.map(p => ({
-        piezaId: p.piezaId,
-        cantidad: p.cantidad,
-        precioUnitario: p.precioUnitario,
-        subtotal: p.cantidad * p.precioUnitario
+      descuento, 
+      totalFinal,
+      conceptos: conceptos.map(c => ({
+        descripcion: c.descripcion,
+        cantidad: c.cantidad,
+        precioUnitario: c.precioUnitario,
+        total: c.cantidad * c.precioUnitario
       }))
     });
 
@@ -115,20 +120,33 @@ export async function POST(
             id: ticketId
           }
         },
-        manoDeObra,
-        subtotal,
-        iva,
-        total,
+        total: totalFinal,
+        descuento,
+        totalFinal,
         aprobado: false,
-        pagado: false,
+        conceptos: {
+          create: conceptos.map((c: any) => ({
+            descripcion: c.descripcion,
+            cantidad: c.cantidad,
+            precioUnitario: c.precioUnitario,
+            total: c.cantidad * c.precioUnitario
+          }))
+        }
       },
       update: {
-        manoDeObra,
-        subtotal,
-        iva,
-        total,
+        total: totalFinal,
+        descuento,
+        totalFinal,
         aprobado: false,
-        pagado: false,
+        conceptos: {
+          deleteMany: {},
+          create: conceptos.map((c: any) => ({
+            descripcion: c.descripcion,
+            cantidad: c.cantidad,
+            precioUnitario: c.precioUnitario,
+            total: c.cantidad * c.precioUnitario
+          }))
+        }
       },
     });
 
@@ -156,75 +174,15 @@ export async function POST(
       },
       include: {
         estatusReparacion: true,
-        presupuesto: true
+        presupuesto: {
+          include: {
+            conceptos: true
+          }
+        }
       }
     });
 
     console.log('Ticket actualizado:', ticketActualizado);
-
-    // Crear o actualizar la reparación
-    const reparacion = await prisma.reparacion.upsert({
-      where: {
-        ticketId: ticketId,
-      },
-      create: {
-        ticketId: ticketId,
-        tecnicoId: parseInt(session.user.id),
-      },
-      update: {},
-    });
-
-    console.log('Reparación creada/actualizada:', reparacion);
-
-    // Verificar que las piezas existen
-    const piezasIds = productos
-      .filter(p => p.piezaId !== null) // Filtrar los conceptos especiales (null)
-      .map(p => p.piezaId);
-    
-    if (piezasIds.length > 0) {
-      const piezasExistentes = await prisma.pieza.findMany({
-        where: {
-          id: {
-            in: piezasIds
-          }
-        },
-        select: {
-          id: true
-        }
-      });
-
-      const piezasExistentesIds = piezasExistentes.map(p => p.id);
-      const piezasNoExistentes = piezasIds.filter(id => !piezasExistentesIds.includes(id));
-
-      if (piezasNoExistentes.length > 0) {
-        return new NextResponse(
-          `Las siguientes piezas no existen: ${piezasNoExistentes.join(', ')}`,
-          { status: 400 }
-        );
-      }
-    }
-
-    // Actualizar los productos del presupuesto
-    await prisma.piezaReparacion.deleteMany({
-      where: {
-        reparacionId: reparacion.id,
-      },
-    });
-
-    const piezasData = productos.map((p: any) => ({
-      reparacionId: reparacion.id,
-      piezaId: p.piezaId,
-      cantidad: p.cantidad,
-      precioUnitario: p.precioUnitario,
-      conceptoExtra: p.conceptoExtra,
-      precioConceptoExtra: p.precioConceptoExtra,
-    }));
-
-    console.log('Creando piezas de reparación:', piezasData);
-
-    await prisma.piezaReparacion.createMany({
-      data: piezasData,
-    });
 
     return NextResponse.json(ticketActualizado);
   } catch (error: any) {
