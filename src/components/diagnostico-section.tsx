@@ -42,6 +42,17 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
     observacion: string;
   }>>([]);
 
+  // Agregar logs para depuración
+  console.log('DiagnosticoSection - Ticket recibido:', ticket);
+  console.log('DiagnosticoSection - Datos del dispositivo:', {
+    capacidad: ticket.capacidad,
+    color: ticket.color,
+    fechaCompra: ticket.fechaCompra,
+    redCelular: ticket.redCelular,
+    codigoDesbloqueo: ticket.codigoDesbloqueo,
+    patronDesbloqueo: ticket.patronDesbloqueo
+  });
+
   // Verificar si el usuario tiene permisos para editar el diagnóstico
   const canEditDiagnostico = React.useMemo(() => {
     if (!session?.user) return false;
@@ -61,42 +72,122 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
     }
   }, [canEditDiagnostico]);
 
-  useEffect(() => {
-    const fetchChecklistItems = async () => {
-      try {
-        const response = await axios.get('/api/catalogo/checklist');
-        const items = response.data.filter((item: ChecklistItem) => item.paraDiagnostico);
-        console.log('Items del catálogo cargados:', items);
-        setChecklistItems(items);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ticket?.id) return;
 
-        if (ticket.reparacion?.checklistDiagnostico?.respuestas?.length > 0) {
-          console.log('Respuestas existentes:', ticket.reparacion.checklistDiagnostico.respuestas);
-          const respuestasExistentes = ticket.reparacion.checklistDiagnostico.respuestas.map(respuesta => ({
-            itemId: respuesta.checklistItemId,
-            item: respuesta.checklistItem.nombre,
-            respuesta: Boolean(respuesta.respuesta),
-            observacion: respuesta.observaciones || ''
-          }));
-          console.log('Procesando respuestas existentes:', respuestasExistentes);
-          setChecklist(respuestasExistentes);
-        } else {
-          console.log('Inicializando checklist con items del catálogo:', items);
-          const checklistInicial = items.map(item => ({
+    try {
+      setIsLoading(true);
+
+      // Guardar el diagnóstico
+      const diagnosticoResponse = await axios.post(`/api/tickets/${ticket.id}/diagnostico`, {
+        diagnostico,
+        saludBateria: Number(saludBateria),
+        versionSO: versionSistema
+      });
+
+      if (!diagnosticoResponse.data) {
+        throw new Error('Error al guardar el diagnóstico');
+      }
+
+      // Guardar el checklist de forma independiente
+      const checklistResponse = await axios.post(`/api/tickets/${ticket.id}/checklist`, {
+        checklist: checklist.map(item => ({
+          itemId: item.itemId,
+          respuesta: item.respuesta,
+          observacion: item.observacion || ''
+        }))
+      });
+
+      if (!checklistResponse.data.success) {
+        throw new Error('Error al guardar el checklist');
+      }
+
+      // Actualizar el estado local con los datos del diagnóstico
+      setDiagnostico(diagnosticoResponse.data.diagnostico || '');
+      setSaludBateria(diagnosticoResponse.data.saludBateria?.toString() || '');
+      setVersionSistema(diagnosticoResponse.data.versionSO || '');
+
+      // Actualizar el estado local con las respuestas del checklist
+      const respuestasActualizadas = checklistResponse.data.checklist.map((respuesta: any) => ({
+        itemId: respuesta.checklistItem.id,
+        item: respuesta.checklistItem.nombre,
+        respuesta: Boolean(respuesta.respuesta),
+        observacion: respuesta.observaciones || ''
+      }));
+      setChecklist(respuestasActualizadas);
+
+      setIsEditing(false);
+      toast.success('Diagnóstico y checklist guardados correctamente');
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      console.error('Error al guardar:', error);
+      toast.error('Error al guardar los cambios');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Función para cargar el checklist
+  const loadChecklist = async () => {
+    try {
+      // Primero cargamos los items del catálogo
+      const response = await fetch('/api/catalogo/checklist');
+      if (!response.ok) throw new Error('Error al cargar items del checklist');
+      const items = await response.json();
+      
+      // Filtrar solo los items para diagnóstico
+      const diagnosticItems = items.filter((item: ChecklistItem) => item.paraDiagnostico);
+
+      // Luego cargamos las respuestas existentes
+      const checklistResponse = await fetch(`/api/tickets/${ticket.id}/checklist`);
+      if (!checklistResponse.ok) throw new Error('Error al cargar respuestas del checklist');
+      const { checklist: respuestasExistentes } = await checklistResponse.json();
+
+      // Si hay respuestas existentes, las usamos
+      if (respuestasExistentes && respuestasExistentes.length > 0) {
+        const checklistConRespuestas = diagnosticItems.map((item: ChecklistItem) => {
+          const respuestaExistente = respuestasExistentes.find(
+            (r: any) => r.checklistItem.id === item.id
+          );
+          return {
             itemId: item.id,
             item: item.nombre,
-            respuesta: false,
-            observacion: ''
-          }));
-          console.log('Checklist inicial creado:', checklistInicial);
-          setChecklist(checklistInicial);
-        }
-      } catch (error) {
-        console.error('Error al cargar items del checklist:', error);
+            respuesta: respuestaExistente ? respuestaExistente.respuesta : false,
+            observacion: respuestaExistente ? respuestaExistente.observaciones || '' : ''
+          };
+        });
+        setChecklist(checklistConRespuestas);
+      } else {
+        // Si no hay respuestas, inicializamos con valores por defecto
+        const initialChecklist = diagnosticItems.map((item: ChecklistItem) => ({
+          itemId: item.id,
+          item: item.nombre,
+          respuesta: false,
+          observacion: ''
+        }));
+        setChecklist(initialChecklist);
       }
-    };
+    } catch (error) {
+      console.error('Error al cargar items del checklist:', error);
+      toast.error('Error al cargar items del checklist');
+    }
+  };
 
-    fetchChecklistItems();
-  }, [ticket.reparacion?.checklistDiagnostico?.respuestas]);
+  // Cargar el checklist cuando se monta el componente o cambia el ticket
+  useEffect(() => {
+    if (ticket?.id) {
+      loadChecklist();
+    }
+  }, [ticket?.id]);
+
+  // Agregar un efecto para monitorear cambios en el checklist
+  useEffect(() => {
+    console.log('Estado actual del checklist:', checklist);
+  }, [checklist]);
+
+  // Agregar un log antes del render
+  console.log('Renderizando DiagnosticoSection con checklist:', checklist);
 
   const handleChecklistChange = (itemId: number, field: 'respuesta' | 'observacion', value: boolean | string) => {
     console.log('handleChecklistChange:', { itemId, field, value });
@@ -113,79 +204,48 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ticket?.id) return;
+  const renderDesbloqueoInfo = () => {
+    if (!ticket.tipoDesbloqueo) return null;
 
-    try {
-      setIsLoading(true);
-
-      // Primero guardamos el checklist
-      const checklistResponse = await axios.post(`/api/tickets/${ticket.id}/checklist`, {
-        checklist: checklist.map(item => ({
-          itemId: item.itemId,
-          respuesta: item.respuesta,
-          observacion: item.observacion || ''
-        }))
-      });
-
-      // Luego guardamos el diagnóstico
-      const response = await axios.post(`/api/tickets/${ticket.id}/diagnostico`, {
-        descripcion: diagnostico,
-        saludBateria: Number(saludBateria),
-        versionSistema: versionSistema
-      });
-
-      // Actualizamos el estado local con las respuestas del checklist
-      if (checklistResponse.data.success) {
-        setChecklist(checklistResponse.data.checklist.map((respuesta: any) => ({
-          itemId: respuesta.checklistItem.id,
-          item: respuesta.checklistItem.nombre,
-          respuesta: Boolean(respuesta.respuesta),
-          observacion: respuesta.observaciones || ''
-        })));
-      }
-
-      // Actualizamos el estado local con los datos del diagnóstico
-      if (response.data.success) {
-        setDiagnostico(response.data.reparacion.diagnostico || '');
-        setSaludBateria(response.data.reparacion.saludBateria || 0);
-        setVersionSistema(response.data.reparacion.versionSO || '');
-        setIsEditing(false);
-        toast.success('Diagnóstico guardado correctamente');
-      }
-    } catch (error) {
-      console.error('Error al guardar el diagnóstico:', error);
-      toast.error('Error al guardar el diagnóstico');
-    } finally {
-      setIsLoading(false);
-    }
+    return (
+      <div className="space-y-2">
+        <h4 className="font-medium text-gray-700">Información de Desbloqueo</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-gray-500">Tipo de Desbloqueo</p>
+            <p className="font-medium">
+              {ticket.tipoDesbloqueo === 'pin' ? 'PIN' : 'Patrón'}
+            </p>
+          </div>
+          {ticket.tipoDesbloqueo === 'pin' ? (
+            <div>
+              <p className="text-sm text-gray-500">Código de Desbloqueo</p>
+              <p className="font-medium">{ticket.codigoDesbloqueo || 'No especificado'}</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-gray-500">Patrón de Desbloqueo</p>
+              <div className="grid grid-cols-3 gap-1 w-24">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`aspect-square border rounded ${
+                      ticket.patronDesbloqueo?.includes(i + 1)
+                        ? 'bg-blue-500 border-blue-600'
+                        : 'bg-gray-100 border-gray-200'
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Secuencia: {ticket.patronDesbloqueo?.join(' → ') || 'No especificada'}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
-
-  // Función para cargar el checklist
-  const loadChecklist = async () => {
-    if (!ticket?.id) return;
-
-    try {
-      const response = await axios.get(`/api/tickets/${ticket.id}/checklist`);
-      if (response.data.success) {
-        setChecklist(response.data.checklist.map((respuesta: any) => ({
-          itemId: respuesta.checklistItem.id,
-          item: respuesta.checklistItem.nombre,
-          respuesta: Boolean(respuesta.respuesta),
-          observacion: respuesta.observaciones || ''
-        })));
-      }
-    } catch (error) {
-      console.error('Error al cargar el checklist:', error);
-      toast.error('Error al cargar el checklist');
-    }
-  };
-
-  // Cargar el checklist cuando se monta el componente
-  useEffect(() => {
-    loadChecklist();
-  }, [ticket?.id]);
 
   return (
     <Card>
@@ -201,6 +261,97 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
         )}
       </CardHeader>
       <CardContent>
+        {/* Información del Dispositivo */}
+        <div className="mb-6 space-y-4">
+          <h3 className="text-lg font-semibold">Información del Dispositivo</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Capacidad</p>
+              <p className="font-medium">{ticket.capacidad || 'No especificada'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Color</p>
+              <p className="font-medium">{ticket.color || 'No especificado'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Fecha de Compra</p>
+              <p className="font-medium">
+                {ticket.fechaCompra ? new Date(ticket.fechaCompra).toLocaleDateString() : 'No especificada'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Red Celular</p>
+              <p className="font-medium">{ticket.redCelular || 'No especificada'}</p>
+            </div>
+            {renderDesbloqueoInfo()}
+          </div>
+        </div>
+
+        {/* Checklist de Verificación - Siempre visible */}
+        <div className="mb-6 space-y-4">
+          <h3 className="text-lg font-semibold">Checklist de Verificación</h3>
+          <div className="space-y-4">
+            {checklist && checklist.length > 0 ? (
+              checklist.map((item, index) => (
+                <div key={index} className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{item.item}</span>
+                    {isEditing ? (
+                      <div className="flex items-center space-x-4">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            checked={item.respuesta === true}
+                            onChange={() => handleChecklistChange(item.itemId, 'respuesta', true)}
+                            className="form-radio"
+                          />
+                          <span>SÍ</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            checked={item.respuesta === false}
+                            onChange={() => handleChecklistChange(item.itemId, 'respuesta', false)}
+                            className="form-radio"
+                          />
+                          <span>NO</span>
+                        </label>
+                      </div>
+                    ) : (
+                      <span className={`px-2 py-1 rounded-full text-sm ${
+                        item.respuesta ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {item.respuesta ? 'Sí' : 'No'}
+                      </span>
+                    )}
+                  </div>
+                  {isEditing ? (
+                    <div className="mt-4">
+                      <Textarea
+                        value={item.observacion || ''}
+                        onChange={(e) => handleChecklistChange(item.itemId, 'observacion', e.target.value)}
+                        placeholder="Observaciones (opcional)"
+                        className="w-full min-h-[100px]"
+                      />
+                    </div>
+                  ) : (
+                    item.observacion && (
+                      <div className="text-sm text-gray-600 mt-2">
+                        {item.observacion}
+                      </div>
+                    )
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-gray-500 py-4">
+                No hay items en el checklist
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Formulario de Diagnóstico */}
         {isEditing && canEditDiagnostico ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -240,49 +391,6 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
               </div>
             </div>
 
-            {checklist.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Checklist de Verificación</h3>
-                <div className="space-y-4">
-                  {checklist.map((item, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{item.item}</span>
-                        <div className="flex items-center space-x-4">
-                          <label className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              checked={item.respuesta === true}
-                              onChange={() => handleChecklistChange(item.itemId, 'respuesta', true)}
-                              className="form-radio"
-                            />
-                            <span>SÍ</span>
-                          </label>
-                          <label className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              checked={item.respuesta === false}
-                              onChange={() => handleChecklistChange(item.itemId, 'respuesta', false)}
-                              className="form-radio"
-                            />
-                            <span>NO</span>
-                          </label>
-                        </div>
-                      </div>
-                      <div className="mt-4">
-                        <Textarea
-                          value={item.observacion || ''}
-                          onChange={(e) => handleChecklistChange(item.itemId, 'observacion', e.target.value)}
-                          placeholder="Observaciones (opcional)"
-                          className="w-full min-h-[100px]"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="flex justify-end gap-4">
               <Button
                 type="button"
@@ -317,31 +425,6 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
                 <div className="text-lg">{versionSistema || 'No especificado'}</div>
               </div>
             </div>
-
-            {checklist.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Checklist de Verificación</h3>
-                <div className="space-y-4">
-                  {checklist.map((item, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{item.item}</span>
-                        <span className={`px-2 py-1 rounded-full text-sm ${
-                          item.respuesta ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {item.respuesta ? 'Sí' : 'No'}
-                        </span>
-                      </div>
-                      {item.observacion && (
-                        <div className="text-sm text-gray-600 mt-1">
-                          {item.observacion}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </CardContent>

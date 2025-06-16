@@ -46,25 +46,30 @@ export async function POST(
       where: { ticketId },
       update: {
         observaciones,
-        fotos: fotos || [],
-        videos: videos || [],
-        fechaFin: completar ? new Date() : undefined
+        fechaFin: completar ? new Date() : undefined,
+        diagnostico: body.descripcion,
+        saludBateria: body.saludBateria,
+        versionSO: body.versionSistema
       },
       create: {
         ticketId,
-        tecnicoId: parseInt(session.user.id),
         observaciones,
-        fotos: fotos || [],
-        videos: videos || [],
         fechaInicio: new Date(),
-        fechaFin: completar ? new Date() : undefined
+        fechaFin: completar ? new Date() : undefined,
+        diagnostico: body.descripcion,
+        saludBateria: body.saludBateria,
+        versionSO: body.versionSistema
       }
     });
 
     console.log('Reparación actualizada:', reparacion);
 
     // Solo actualizar el estado a "En Reparación" si es una nueva reparación
-    if (!ticket.reparacion) {
+    const reparacionExistente = await prisma.reparacion.findUnique({
+      where: { ticketId }
+    });
+
+    if (!reparacionExistente) {
       const estatusReparacion = await prisma.estatusReparacion.findFirst({
         where: { nombre: 'En Reparación' }
       });
@@ -84,7 +89,7 @@ export async function POST(
     // Actualizar el estatus del ticket si se completó la reparación
     if (completar) {
       const estatusCompletado = await prisma.estatusReparacion.findFirst({
-        where: { nombre: 'Reparación Completada' }
+        where: { nombre: 'Reparado' }
       });
 
       if (estatusCompletado) {

@@ -89,6 +89,7 @@ model Ticket {
   capacidad              String?
   color                  String?
   fechaCompra            DateTime?         @map("fecha_compra")
+  tipoDesbloqueo         String?           @map("tipo_desbloqueo")
   codigoDesbloqueo       String?           @map("codigo_desbloqueo")
   redCelular             String?           @map("red_celular")
   patronDesbloqueo       Int[]             @default([]) @map("patron_desbloqueo")
@@ -133,7 +134,7 @@ model EstatusReparacion {
   updatedAt   DateTime @updatedAt @map("updated_at")
   activo      Boolean?
   color       String?
-  orden       Int
+  orden       Int      // 1: Recibido, 2: En diagnóstico, 3: Presupuesto Generado, 4: En Reparación, 5: Reparado, 6: Entregado, 7: Cancelado
   tickets     Ticket[]
 
   @@map("estatus_reparacion")

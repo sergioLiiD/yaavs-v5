@@ -154,6 +154,7 @@ export async function PUT(
     const updatedTicket = await prisma.ticket.update({
       where: { id: parseInt(params.id) },
       data: {
+        tipoDesbloqueo: data.tipoDesbloqueo,
         codigoDesbloqueo: data.codigoDesbloqueo,
         patronDesbloqueo: data.patronDesbloqueo,
         capacidad: data.capacidad,

@@ -38,11 +38,20 @@ export async function POST(
       }
     });
 
-    // Luego actualizamos el ticket con el estado correcto (4 = Completado)
+    // Buscamos el estado "Reparado"
+    const estatusReparado = await prisma.estatusReparacion.findFirst({
+      where: { nombre: 'Reparado' }
+    });
+
+    if (!estatusReparado) {
+      throw new Error('No se encontró el estado "Reparado"');
+    }
+
+    // Actualizamos el ticket con el estado "Reparado"
     const ticket = await prisma.ticket.update({
       where: { id: Number(id) },
       data: {
-        estatusReparacionId: 4, // ID del estado "Completado"
+        estatusReparacionId: estatusReparado.id,
         fechaFinReparacion: new Date()
       }
     });

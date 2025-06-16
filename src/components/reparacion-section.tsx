@@ -197,7 +197,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
         }))
       });
 
-      // Luego guardamos la reparación
+      // Luego guardamos la reparación y actualizamos el estado
       const response = await axios.post(`/api/tickets/${ticket.id}/reparacion/completar`, {
         observaciones,
         tiempoTranscurrido

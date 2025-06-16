@@ -17,27 +17,31 @@ export async function GET() {
     const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    // Obtener tickets del mes actual que no estén completados
-    const currentMonthTickets = await prisma.ticket.count({
+    // Obtener tickets abiertos (Recibido, En Diagnóstico, Diagnóstico Completado, Presupuesto Aprobado)
+    const ticketsAbiertos = await prisma.ticket.count({
       where: {
-        createdAt: {
-          gte: currentMonth
-        },
-        estatusReparacionId: {
-          not: 4 // Excluir tickets completados
+        estatusReparacion: {
+          nombre: {
+            in: ['Recibido', 'En Diagnóstico', 'Diagnóstico Completado', 'Presupuesto Aprobado']
+          }
         }
       }
     }).catch(error => {
-      console.error('Error al contar tickets del mes actual:', error);
+      console.error('Error al contar tickets abiertos:', error);
       return 0;
     });
 
-    // Obtener tickets del mes anterior
+    // Obtener tickets del mes anterior para comparación
     const lastMonthTickets = await prisma.ticket.count({
       where: {
         createdAt: {
           gte: lastMonth,
           lt: currentMonth
+        },
+        estatusReparacion: {
+          nombre: {
+            in: ['Recibido', 'En Diagnóstico', 'Diagnóstico Completado', 'Presupuesto Aprobado']
+          }
         }
       }
     }).catch(error => {
@@ -46,7 +50,7 @@ export async function GET() {
     });
 
     // Calcular el porcentaje de cambio
-    const ticketChange = lastMonthTickets === 0 ? 100 : ((currentMonthTickets - lastMonthTickets) / lastMonthTickets) * 100;
+    const ticketChange = lastMonthTickets === 0 ? 100 : ((ticketsAbiertos - lastMonthTickets) / lastMonthTickets) * 100;
 
     // Obtener tickets en reparación
     const ticketsEnReparacion = await prisma.ticket.count({
@@ -63,7 +67,9 @@ export async function GET() {
     // Obtener tickets reparados
     const ticketsReparados = await prisma.ticket.count({
       where: {
-        estatusReparacionId: 4 // ID del estado "Completado"
+        estatusReparacion: {
+          nombre: 'Reparado'
+        }
       }
     }).catch(error => {
       console.error('Error al contar tickets reparados:', error);
@@ -74,7 +80,7 @@ export async function GET() {
     const ticketsPorEntregar = await prisma.ticket.count({
       where: {
         estatusReparacion: {
-          nombre: 'Por Entregar'
+          nombre: 'Listo para Entrega'
         }
       }
     }).catch(error => {
@@ -113,10 +119,10 @@ export async function GET() {
       stats: [
         {
           title: 'Tickets Abiertos',
-          value: currentMonthTickets.toString(),
+          value: ticketsAbiertos.toString(),
           change: `${ticketChange > 0 ? '+' : ''}${ticketChange.toFixed(0)}%`,
           isUp: ticketChange > 0,
-          description: 'Comparado con el mes anterior'
+          description: 'Tickets en proceso inicial'
         },
         {
           title: 'En Reparación',

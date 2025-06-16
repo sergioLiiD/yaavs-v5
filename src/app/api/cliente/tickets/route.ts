@@ -13,6 +13,11 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     console.log('Datos recibidos:', body);
+    console.log('Datos de desbloqueo:', {
+      tipoDesbloqueo: body.tipoDesbloqueo,
+      codigoDesbloqueo: body.codigoDesbloqueo,
+      patronDesbloqueo: body.patronDesbloqueo
+    });
 
     // Validar datos requeridos
     if (!body.modeloId) {
@@ -22,17 +27,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Obtener el estado inicial
+    // Validar datos de desbloqueo
+    if (body.tipoDesbloqueo === 'pin' && !body.codigoDesbloqueo) {
+      console.log('Error: PIN requerido pero no proporcionado');
+      return NextResponse.json(
+        { error: 'El código de desbloqueo es requerido cuando el tipo es PIN' },
+        { status: 400 }
+      );
+    }
+
+    if (body.tipoDesbloqueo === 'patron' && (!body.patronDesbloqueo || body.patronDesbloqueo.length === 0)) {
+      console.log('Error: Patrón requerido pero no proporcionado');
+      return NextResponse.json(
+        { error: 'El patrón de desbloqueo es requerido cuando el tipo es patrón' },
+        { status: 400 }
+      );
+    }
+
+    // Obtener el estado inicial (RECIBIDO)
     const estadoInicial = await prisma.estatusReparacion.findFirst({
-      where: { nombre: 'Recibido' }
+      where: {
+        nombre: 'Recibido'
+      }
     });
 
     if (!estadoInicial) {
+      console.error('No se encontró el estado Recibido');
       return NextResponse.json(
-        { error: 'No se encontró el estado inicial' },
+        { error: 'Error al obtener el estado inicial' },
         { status: 500 }
       );
     }
+
+    console.log('Estado inicial encontrado:', estadoInicial);
 
     // Obtener el modelo para obtener la marca
     const modelo = await prisma.modelo.findUnique({
@@ -47,7 +74,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Crear el ticket con el dispositivo
+    // Crear el ticket
     const ticket = await prisma.ticket.create({
       data: {
         numeroTicket: `TKT-${Date.now()}`,
@@ -55,19 +82,27 @@ export async function POST(req: NextRequest) {
         tipoServicioId: 1, // Servicio de reparación
         modeloId: Number(body.modeloId),
         descripcionProblema: body.descripcionProblema,
-        estatusReparacionId: estadoInicial.id,
+        estatusReparacionId: estadoInicial.id, // Usar el ID del estado Recibido
         creadorId: Number(session.user.id),
+        capacidad: body.capacidad,
+        color: body.color,
+        fechaCompra: body.fechaCompra ? new Date(body.fechaCompra) : null,
+        tipoDesbloqueo: body.tipoDesbloqueo,
+        codigoDesbloqueo: body.tipoDesbloqueo === 'pin' ? body.codigoDesbloqueo : null,
+        patronDesbloqueo: body.tipoDesbloqueo === 'patron' ? body.patronDesbloqueo : [],
+        redCelular: body.redCelular,
         dispositivo: {
           create: {
             tipo: 'Smartphone',
-            marca: modelo.marca.nombre,
-            modelo: modelo.nombre,
-            serie: body.imei,
+            marca: 'Apple',
+            modelo: 'iPhone 16 Pro',
             updatedAt: new Date()
           }
         }
       }
     });
+
+    console.log('Ticket creado:', ticket);
 
     // Crear la dirección solo si el tipo de recolección es domicilio
     if (body.tipoRecoleccion === 'domicilio' && body.direccion) {
@@ -142,6 +177,8 @@ export async function GET(req: NextRequest) {
         estatusReparacion: true,
         tecnicoAsignado: true,
         presupuesto: true,
+        reparacion: true,
+        dispositivo: true,
         pagos: {
           orderBy: {
             createdAt: 'desc'

@@ -166,16 +166,24 @@ export default function DashboardPage() {
 
 function getStatusClass(status: string): string {
   switch (status) {
-    case 'En diagnóstico':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'Presupuesto enviado':
-      return 'bg-blue-100 text-blue-800';
-    case 'En reparación':
-      return 'bg-purple-100 text-purple-800';
-    case 'Reparación Completada':
-      return 'bg-green-100 text-green-800';
-    case 'Por Entregar':
+    case 'Recibido':
       return 'bg-orange-100 text-orange-800';
+    case 'En Diagnóstico':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'Diagnóstico Completado':
+      return 'bg-blue-100 text-blue-800';
+    case 'Presupuesto Aprobado':
+      return 'bg-green-100 text-green-800';
+    case 'En Reparación':
+      return 'bg-purple-100 text-purple-800';
+    case 'Reparado':
+      return 'bg-green-100 text-green-800';
+    case 'Listo para Entrega':
+      return 'bg-orange-100 text-orange-800';
+    case 'Entregado':
+      return 'bg-blue-100 text-blue-800';
+    case 'Cancelado':
+      return 'bg-red-100 text-red-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }

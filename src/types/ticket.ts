@@ -92,6 +92,7 @@ export interface Ticket {
   capacidad: string | null;
   color: string | null;
   fechaCompra: Date | null;
+  tipoDesbloqueo: string | null;
   codigoDesbloqueo: string | null;
   patronDesbloqueo: number[];
   redCelular: string | null;

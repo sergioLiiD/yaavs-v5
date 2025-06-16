@@ -29,6 +29,13 @@ import { Map } from '@/components/ui/map';
 import { Label } from '@/components/ui/label';
 import { Loader } from '@googlemaps/js-api-loader';
 
+// Declarar el namespace de Google Maps
+declare global {
+  interface Window {
+    google: typeof google;
+  }
+}
+
 // Esquema de validación
 const ticketSchema = z.object({
   // Datos del dispositivo
@@ -40,7 +47,7 @@ const ticketSchema = z.object({
   redCelular: z.string().min(1, 'La red celular es requerida'),
   tipoDesbloqueo: z.enum(['pin', 'patron']).default('pin'),
   codigoDesbloqueo: z.string().optional(),
-  patronDesbloqueo: z.array(z.string()).optional(),
+  patronDesbloqueo: z.array(z.number()).optional(),
   descripcionProblema: z.string().min(1, 'La descripción del problema es requerida'),
 
   // Tipo de recolección
@@ -61,10 +68,16 @@ const ticketSchema = z.object({
     return data.calle && data.numeroExterior && data.colonia && 
            data.ciudad && data.estado && data.codigoPostal;
   }
+  if (data.tipoDesbloqueo === 'pin' && !data.codigoDesbloqueo) {
+    return false;
+  }
+  if (data.tipoDesbloqueo === 'patron' && (!data.patronDesbloqueo || data.patronDesbloqueo.length === 0)) {
+    return false;
+  }
   return true;
 }, {
-  message: "Todos los campos de dirección son requeridos cuando se selecciona recolección a domicilio",
-  path: ["calle"]
+  message: "El código o patrón de desbloqueo es requerido según el tipo seleccionado",
+  path: ["codigoDesbloqueo"]
 });
 
 type TicketFormData = z.infer<typeof ticketSchema>;
@@ -75,12 +88,14 @@ export function NuevoTicketForm() {
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState({ lat: 19.4326, lng: -99.1332 });
-  const [patronDesbloqueo, setPatronDesbloqueo] = useState<string[]>([]);
+  const [patronDesbloqueo, setPatronDesbloqueo] = useState<number[]>([]);
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   const [isLoadingMaps, setIsLoadingMaps] = useState(true);
   const [showMap, setShowMap] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const markerInstanceRef = useRef<google.maps.Marker | null>(null);
 
   const form = useForm<TicketFormData>({
     resolver: zodResolver(ticketSchema),
@@ -162,9 +177,6 @@ export function NuevoTicketForm() {
       return;
     }
 
-    let mapInstance: google.maps.Map | null = null;
-    let markerInstance: google.maps.Marker | null = null;
-
     console.log('Preparando para inicializar el mapa...');
     console.log('Estado del contenedor:', { 
       mapContainerExists: !!mapContainerRef.current,
@@ -190,7 +202,7 @@ export function NuevoTicketForm() {
         }
 
         console.log('Creando instancia del mapa...');
-        mapInstance = new google.maps.Map(mapElement, {
+        mapInstanceRef.current = new google.maps.Map(mapElement, {
           center: selectedLocation,
           zoom: 15,
           mapTypeControl: true,
@@ -199,23 +211,23 @@ export function NuevoTicketForm() {
         });
 
         console.log('Creando marcador...');
-        markerInstance = new google.maps.Marker({
+        markerInstanceRef.current = new google.maps.Marker({
           position: selectedLocation,
-          map: mapInstance,
+          map: mapInstanceRef.current,
           draggable: true,
         });
 
         console.log('Agregando listeners...');
-        mapInstance.addListener('click', (e: google.maps.MapMouseEvent) => {
+        mapInstanceRef.current.addListener('click', (e: google.maps.MapMouseEvent) => {
           if (!e.latLng) return;
-          markerInstance?.setPosition(e.latLng);
+          markerInstanceRef.current?.setPosition(e.latLng);
           handleLocationSelect({
             lat: e.latLng.lat(),
             lng: e.latLng.lng(),
           });
         });
 
-        markerInstance.addListener('dragend', (e: google.maps.MapMouseEvent) => {
+        markerInstanceRef.current.addListener('dragend', (e: google.maps.MapMouseEvent) => {
           if (!e.latLng) return;
           handleLocationSelect({
             lat: e.latLng.lat(),
@@ -240,26 +252,22 @@ export function NuevoTicketForm() {
     return () => {
       clearTimeout(timer);
       console.log('Limpiando mapa...');
-      if (markerInstance) {
+      if (markerInstanceRef.current) {
         try {
-          markerInstance.setMap(null);
+          markerInstanceRef.current.setMap(null);
         } catch (error) {
           console.error('Error al limpiar el marcador:', error);
         }
       }
-      if (mapInstance) {
+      if (mapInstanceRef.current) {
         try {
-          // En lugar de usar setMap, simplemente limpiamos el contenedor
-          if (mapContainerRef.current) {
-            mapContainerRef.current.innerHTML = '';
-          }
+          google.maps.event.clearInstanceListeners(mapInstanceRef.current);
         } catch (error) {
-          console.error('Error al limpiar el mapa:', error);
+          console.error('Error al limpiar los listeners del mapa:', error);
         }
       }
-      setMapLoaded(false);
     };
-  }, [showMap, googleMapsLoaded]);
+  }, [showMap, googleMapsLoaded, selectedLocation]);
 
   useEffect(() => {
     // Cargar marcas
@@ -306,9 +314,8 @@ export function NuevoTicketForm() {
   };
 
   const handlePatternComplete = (pattern: number[]) => {
-    const patternString = pattern.map(num => num.toString());
-    setPatronDesbloqueo(patternString);
-    form.setValue('patronDesbloqueo', patternString);
+    setPatronDesbloqueo(pattern);
+    form.setValue('patronDesbloqueo', pattern);
   };
 
   const handleSearchOnMap = () => {
@@ -368,26 +375,35 @@ export function NuevoTicketForm() {
 
   const onSubmit = async (data: TicketFormData) => {
     try {
+      console.log('Datos del formulario:', data);
+      console.log('Tipo de desbloqueo:', data.tipoDesbloqueo);
+      console.log('Código de desbloqueo:', data.codigoDesbloqueo);
+      console.log('Patrón de desbloqueo:', data.patronDesbloqueo);
+
+      // Validar que se haya proporcionado el código o patrón según el tipo
+      if (data.tipoDesbloqueo === 'pin' && !data.codigoDesbloqueo) {
+        toast.error('Por favor, ingresa el código de desbloqueo');
+        return;
+      }
+
+      if (data.tipoDesbloqueo === 'patron' && (!data.patronDesbloqueo || data.patronDesbloqueo.length === 0)) {
+        toast.error('Por favor, ingresa el patrón de desbloqueo');
+        return;
+      }
+
       const dataToSubmit = {
         modeloId: parseInt(data.modeloId),
         capacidad: data.capacidad,
         color: data.color,
         fechaCompra: data.fechaCompra,
         redCelular: data.redCelular,
-        codigoDesbloqueo: data.codigoDesbloqueo,
-        descripcionProblema: data.descripcionProblema,
-        direccion: {
-          calle: data.calle,
-          numeroExterior: data.numeroExterior,
-          numeroInterior: data.numeroInterior,
-          colonia: data.colonia,
-          ciudad: data.ciudad,
-          estado: data.estado,
-          codigoPostal: data.codigoPostal,
-          latitud: data.latitud,
-          longitud: data.longitud
-        }
+        tipoDesbloqueo: data.tipoDesbloqueo,
+        codigoDesbloqueo: data.tipoDesbloqueo === 'pin' ? data.codigoDesbloqueo : null,
+        patronDesbloqueo: data.tipoDesbloqueo === 'patron' ? data.patronDesbloqueo : [],
+        descripcionProblema: data.descripcionProblema
       };
+
+      console.log('Datos a enviar:', dataToSubmit);
 
       const response = await fetch('/api/cliente/tickets', {
         method: 'POST',
@@ -523,44 +539,30 @@ export function NuevoTicketForm() {
                 </FormItem>
               )}
             />
-            <div className="col-span-2">
-              <FormField
-                control={form.control}
-                name="tipoDesbloqueo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Desbloqueo</FormLabel>
-                    <div className="flex space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          id="pin"
-                          name="tipoDesbloqueo"
-                          value="pin"
-                          checked={field.value === "pin"}
-                          onChange={() => field.onChange("pin")}
-                          className="h-4 w-4 text-blue-600"
-                        />
-                        <Label htmlFor="pin">PIN</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          id="patron"
-                          name="tipoDesbloqueo"
-                          value="patron"
-                          checked={field.value === "patron"}
-                          onChange={() => field.onChange("patron")}
-                          className="h-4 w-4 text-blue-600"
-                        />
-                        <Label htmlFor="patron">Patrón</Label>
-                      </div>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="tipoDesbloqueo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Desbloqueo</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona el tipo de desbloqueo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="pin">PIN</SelectItem>
+                      <SelectItem value="patron">Patrón</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {form.watch('tipoDesbloqueo') === 'pin' ? (
               <FormField
@@ -570,66 +572,42 @@ export function NuevoTicketForm() {
                   <FormItem>
                     <FormLabel>Código de Desbloqueo</FormLabel>
                     <FormControl>
-                      <Input type="text" {...field} />
+                      <Input {...field} type="password" required />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             ) : (
-              <div className="col-span-2">
-                <FormField
-                  control={form.control}
-                  name="patronDesbloqueo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Patrón de Desbloqueo</FormLabel>
-                      <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
-                          const posicion = patronDesbloqueo.indexOf(num.toString());
-                          return (
-                            <button
-                              key={num}
-                              type="button"
-                              className={`h-12 w-12 rounded-full border-2 flex items-center justify-center relative ${
-                                posicion !== -1
-                                  ? 'border-blue-500 bg-blue-100'
-                                  : 'border-gray-300'
-                              }`}
-                              onClick={() => {
-                                if (posicion === -1) {
-                                  // Agregar el número al final del patrón
-                                  const nuevoPatron = [...patronDesbloqueo, num.toString()];
-                                  setPatronDesbloqueo(nuevoPatron);
-                                  field.onChange(nuevoPatron);
-                                } else {
-                                  // Si el número ya está en el patrón, eliminarlo y todos los que le siguen
-                                  const nuevoPatron = patronDesbloqueo.slice(0, posicion);
-                                  setPatronDesbloqueo(nuevoPatron);
-                                  field.onChange(nuevoPatron);
-                                }
-                              }}
-                            >
-                              {num}
-                              {posicion !== -1 && (
-                                <span className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
-                                  {posicion + 1}
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
+              <FormField
+                control={form.control}
+                name="patronDesbloqueo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Patrón de Desbloqueo</FormLabel>
+                    <FormControl>
+                      <div className="grid grid-cols-3 gap-2 max-w-[200px]">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                          <Button
+                            key={num}
+                            type="button"
+                            variant={patronDesbloqueo.includes(num) ? "default" : "outline"}
+                            onClick={() => {
+                              const newPattern = [...patronDesbloqueo, num];
+                              setPatronDesbloqueo(newPattern);
+                              field.onChange(newPattern);
+                            }}
+                            className="h-12 w-12"
+                          >
+                            {num}
+                          </Button>
+                        ))}
                       </div>
-                      {patronDesbloqueo.length > 0 && (
-                        <div className="mt-2 text-sm text-gray-600 text-center">
-                          Patrón actual: {patronDesbloqueo.join(" → ")}
-                        </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
           </div>
           <FormField
