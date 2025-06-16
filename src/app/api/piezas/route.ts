@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { TipoProducto } from '@prisma/client';
 
 export async function GET() {
   try {
@@ -13,19 +14,20 @@ export async function GET() {
     }
 
     console.log('Usuario autenticado:', session.user);
-    console.log('Buscando piezas...');
+    console.log('Buscando productos...');
 
-    const piezas = await prisma.piezas.findMany({
+    const productos = await prisma.producto.findMany({
       include: {
         marca: true,
-        modelo: true
+        modelo: true,
+        categoria: true
       }
     });
 
-    console.log('Piezas encontradas:', piezas);
-    return NextResponse.json(piezas);
+    console.log('Productos encontrados:', productos);
+    return NextResponse.json(productos);
   } catch (error) {
-    console.error('Error al obtener piezas:', error);
+    console.error('Error al obtener productos:', error);
     console.error('Detalles del error:', error);
     return new NextResponse('Error interno del servidor', { status: 500 });
   }
@@ -39,28 +41,34 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { nombre, marcaId, modeloId, stock, precio } = body;
+    const { nombre, marcaId, modeloId, stock, precioPromedio, sku, tipo, tipoServicioId } = body;
 
-    console.log('Creando pieza:', body);
+    console.log('Creando producto:', body);
 
-    const pieza = await prisma.piezas.create({
+    const producto = await prisma.producto.create({
       data: {
         nombre,
         marcaId,
         modeloId,
         stock: stock || 0,
-        precio,
+        precioPromedio: precioPromedio || 0,
+        sku,
+        tipo: (tipo as TipoProducto) || 'PIEZA',
+        garantiaUnidad: 'MESES',
+        garantiaValor: 0,
+        tipoServicioId: tipoServicioId || null
       },
       include: {
         marca: true,
-        modelo: true
+        modelo: true,
+        categoria: true
       }
     });
 
-    console.log('Pieza creada:', pieza);
-    return NextResponse.json(pieza);
+    console.log('Producto creado:', producto);
+    return NextResponse.json(producto);
   } catch (error) {
-    console.error('Error al crear pieza:', error);
+    console.error('Error al crear producto:', error);
     if (error instanceof Error) {
       console.error('Detalles del error:', error.message);
       console.error('Stack trace:', error.stack);

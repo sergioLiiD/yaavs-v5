@@ -26,9 +26,12 @@ export async function POST(request: Request) {
       color,
       fechaCompra,
       codigoDesbloqueo,
+      patronDesbloqueo,
       redCelular,
       imei,
-      puntoRecoleccionId
+      puntoRecoleccionId,
+      marcaId,
+      tipoDesbloqueo
     } = data;
 
     // Validar datos requeridos
@@ -39,22 +42,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Convertir IDs a números
-    const clienteIdNum = parseInt(clienteId as string);
-    const tipoServicioIdNum = parseInt(tipoServicioId as string);
-    const modeloIdNum = parseInt(modeloId as string);
-
-    // Validar que los IDs sean números válidos
-    if (isNaN(clienteIdNum) || isNaN(tipoServicioIdNum) || isNaN(modeloIdNum)) {
-      return NextResponse.json(
-        { error: 'IDs inválidos' },
-        { status: 400 }
-      );
-    }
-
     // Verificar que el cliente existe
     const cliente = await prisma.cliente.findUnique({
-      where: { id: clienteIdNum }
+      where: { id: clienteId }
     });
 
     if (!cliente) {
@@ -66,7 +56,7 @@ export async function POST(request: Request) {
 
     // Verificar que el tipo de servicio existe
     const tipoServicio = await prisma.tipoServicio.findUnique({
-      where: { id: tipoServicioIdNum }
+      where: { id: tipoServicioId }
     });
 
     if (!tipoServicio) {
@@ -78,7 +68,7 @@ export async function POST(request: Request) {
 
     // Verificar que el modelo existe
     const modelo = await prisma.modelo.findUnique({
-      where: { id: modeloIdNum }
+      where: { id: modeloId }
     });
 
     if (!modelo) {
@@ -90,15 +80,21 @@ export async function POST(request: Request) {
 
     // Obtener el estatus inicial
     const estatusInicial = await prisma.estatusReparacion.findFirst({
-      where: { nombre: 'Recibido' }
+      where: { 
+        nombre: 'Recibido',
+        activo: true
+      }
     });
 
     if (!estatusInicial) {
+      console.error('No se encontró el estatus inicial "Recibido"');
       return NextResponse.json(
         { error: 'No se encontró el estatus inicial' },
         { status: 500 }
       );
     }
+
+    console.log('Estatus inicial encontrado:', estatusInicial);
 
     // Crear el ticket primero
     const ticketData = {
@@ -107,22 +103,23 @@ export async function POST(request: Request) {
       imei,
       capacidad,
       color,
-      fechaCompra: fechaCompra ? new Date(fechaCompra as string) : null,
-      codigoDesbloqueo,
+      fechaCompra: fechaCompra ? new Date(fechaCompra) : null,
+      codigoDesbloqueo: tipoDesbloqueo === 'pin' ? codigoDesbloqueo : null,
+      patronDesbloqueo: tipoDesbloqueo === 'patron' ? (Array.isArray(patronDesbloqueo) ? patronDesbloqueo : []) : [],
       redCelular,
       cliente: {
         connect: {
-          id: clienteIdNum
+          id: clienteId
         }
       },
       tipoServicio: {
         connect: {
-          id: tipoServicioIdNum
+          id: tipoServicioId
         }
       },
       modelo: {
         connect: {
-          id: modeloIdNum
+          id: modeloId
         }
       },
       estatusReparacion: {
@@ -137,71 +134,83 @@ export async function POST(request: Request) {
       }
     } as Prisma.TicketCreateInput;
 
-    if (puntoRecoleccionId) {
-      Object.assign(ticketData, {
-        puntoRecoleccion: {
-          connect: {
-            id: parseInt(puntoRecoleccionId as string)
+    console.log('Datos del ticket a crear:', ticketData);
+
+    try {
+      const ticket = await prisma.ticket.create({
+        data: ticketData,
+        include: {
+          cliente: true,
+          tipoServicio: true,
+          modelo: {
+            include: {
+              marca: true
+            }
+          },
+          estatusReparacion: true,
+          creador: true
+        }
+      });
+
+      console.log('Ticket creado:', ticket);
+
+      // Crear el dispositivo después
+      const dispositivo = await prisma.dispositivo.create({
+        data: {
+          tipo: 'Celular',
+          marca: ticket.modelo.marca.nombre,
+          modelo: ticket.modelo.nombre,
+          serie: imei as string,
+          ticket: {
+            connect: {
+              id: ticket.id
+            }
           }
         }
       });
+
+      console.log('Dispositivo creado:', dispositivo);
+
+      // Actualizar el ticket con el dispositivo
+      const ticketActualizado = await prisma.ticket.update({
+        where: { id: ticket.id },
+        data: {
+          dispositivo: {
+            connect: {
+              id: dispositivo.id
+            }
+          }
+        },
+        include: {
+          cliente: true,
+          tipoServicio: true,
+          modelo: {
+            include: {
+              marca: true
+            }
+          },
+          estatusReparacion: true,
+          creador: true,
+          dispositivo: true
+        }
+      });
+
+      console.log('Ticket actualizado:', ticketActualizado);
+
+      return NextResponse.json(ticketActualizado);
+    } catch (error) {
+      console.error('Error en la creación del ticket:', error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        return NextResponse.json(
+          { error: `Error de base de datos: ${error.message}` },
+          { status: 500 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'Error al crear el ticket' },
+        { status: 500 }
+      );
     }
-
-    const ticket = await prisma.ticket.create({
-      data: ticketData,
-      include: {
-        cliente: true,
-        tipoServicio: true,
-        modelo: {
-          include: {
-            marca: true
-          }
-        },
-        estatusReparacion: true,
-        creador: true
-      }
-    });
-
-    // Crear el dispositivo después
-    const dispositivo = await prisma.dispositivo.create({
-      data: {
-        tipo: 'Celular',
-        marca: ticket.modelo.marca.nombre,
-        modelo: ticket.modelo.nombre,
-        serie: imei as string,
-        ticket: {
-          connect: {
-            id: ticket.id
-          }
-        }
-      }
-    });
-
-    // Actualizar el ticket con el dispositivo
-    const ticketActualizado = await prisma.ticket.update({
-      where: { id: ticket.id },
-      data: {
-        dispositivo: {
-          connect: {
-            id: dispositivo.id
-          }
-        }
-      },
-      include: {
-        cliente: true,
-        tipoServicio: true,
-        modelo: {
-          include: {
-            marca: true
-          }
-        },
-        estatusReparacion: true,
-        creador: true,
-        dispositivo: true
-      }
-    });
-
-    return NextResponse.json(ticketActualizado);
   } catch (error) {
     console.error('Error al crear el ticket:', error);
     if (error instanceof Error) {
@@ -226,7 +235,7 @@ export async function GET() {
 
     const tickets = await prisma.ticket.findMany({
       where: {
-        cancelado: false
+        // Quitamos el filtro de cancelado para mostrar todos los tickets
       },
       include: {
         cliente: {
@@ -288,11 +297,27 @@ export async function GET() {
       }
     });
 
-    console.log('Tickets encontrados:', tickets.length);
-    console.log('Primer ticket:', JSON.stringify(tickets[0], null, 2));
+    // Calcular el saldo para cada ticket
+    const ticketsConSaldo = tickets.map(ticket => {
+      if (ticket.presupuesto) {
+        const totalPagado = ticket.pagos?.reduce((sum, pago) => sum + pago.monto, 0) || 0;
+        const saldo = ticket.presupuesto.total - totalPagado;
+        return {
+          ...ticket,
+          presupuesto: {
+            ...ticket.presupuesto,
+            saldo
+          }
+        };
+      }
+      return ticket;
+    });
+
+    console.log('Tickets encontrados:', ticketsConSaldo.length);
+    console.log('Primer ticket:', JSON.stringify(ticketsConSaldo[0], null, 2));
     console.log('=== FIN DE CONSULTA DE TICKETS ===');
 
-    return NextResponse.json(tickets);
+    return NextResponse.json(ticketsConSaldo);
   } catch (error) {
     console.error('=== ERROR EN CONSULTA DE TICKETS ===');
     console.error('Error completo:', error);

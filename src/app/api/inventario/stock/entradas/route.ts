@@ -54,11 +54,11 @@ export async function POST(request: Request) {
     }
 
     // Validar que el proveedor existe
-    const proveedor = await prisma.proveedor.findUnique({
+    const proveedores = await prisma.proveedor.findUnique({
       where: { id: Number(proveedorId) },
     });
 
-    if (!proveedor) {
+    if (!proveedores) {
       console.log('Proveedor no encontrado');
       return new NextResponse('Proveedor no encontrado', { status: 404 });
     }

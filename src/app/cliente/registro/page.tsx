@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function ClienteRegistroPage() {
+function ClienteRegistroForm() {
   const [formData, setFormData] = useState({
     nombre: '',
     apellidoPaterno: '',
@@ -51,8 +51,8 @@ export default function ClienteRegistroPage() {
           email: formData.email,
           telefonoCelular: formData.telefonoCelular,
           password: formData.password,
-          confirmPassword: formData.confirmPassword,
         }),
+        credentials: 'include'
       });
 
       const data = await response.json();
@@ -238,5 +238,17 @@ export default function ClienteRegistroPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ClienteRegistroPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    }>
+      <ClienteRegistroForm />
+    </Suspense>
   );
 } 

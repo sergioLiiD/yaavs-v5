@@ -126,18 +126,18 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name;
         token.role = user.role;
         token.permissions = user.permissions;
-        token.roles = user.roles;
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id;
-        session.user.email = token.email;
-        session.user.name = token.name;
-        session.user.role = token.role;
-        session.user.permissions = token.permissions;
-        session.user.roles = token.roles;
+        session.user = {
+          id: token.id,
+          email: token.email as string,
+          name: token.name as string,
+          role: token.role as string,
+          permissions: token.permissions as string[],
+        };
       }
       return session;
     }
@@ -146,5 +146,24 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
     error: '/auth/error'
   },
-  debug: process.env.NODE_ENV === 'development'
+  debug: process.env.NODE_ENV === 'development',
+  events: {
+    async signOut() {
+      // Limpiar cualquier estado de sesión al cerrar sesión
+    }
+  },
+  logger: {
+    error(code, metadata) {
+      // Solo registrar errores reales, no los 401 esperados
+      if (code !== 'CLIENT_FETCH_ERROR') {
+        console.error(code, metadata);
+      }
+    },
+    warn(code) {
+      console.warn(code);
+    },
+    debug(code, metadata) {
+      console.debug(code, metadata);
+    }
+  }
 }; 

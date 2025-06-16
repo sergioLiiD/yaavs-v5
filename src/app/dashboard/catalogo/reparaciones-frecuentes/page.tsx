@@ -168,15 +168,15 @@ export default function ReparacionesFrecuentesPage() {
       descripcion: reparacion.descripcion || '',
       activo: reparacion.activo,
       productos: reparacion.productos_reparacion_frecuente?.map(p => ({
-        id: p.id.toString(),
+        id: p.id?.toString() || Math.random().toString(36).substr(2, 9),
         productoId: p.productoId,
         cantidad: p.cantidad,
         precioVenta: p.precioVenta,
-        conceptoExtra: p.conceptoExtra,
-        precioConceptoExtra: p.precioConceptoExtra
+        conceptoExtra: p.conceptoExtra || '',
+        precioConceptoExtra: p.precioConceptoExtra || 0
       })) || [],
       pasos: reparacion.pasos_reparacion_frecuente?.map(p => ({
-        id: p.id.toString(),
+        id: p.id?.toString() || Math.random().toString(36).substr(2, 9),
         descripcion: p.descripcion,
         orden: p.orden
       })) || []

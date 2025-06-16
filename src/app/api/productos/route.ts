@@ -9,7 +9,6 @@ export async function GET() {
         nombre: true,
         precioPromedio: true,
         stock: true,
-        sku: true,
         tipo: true,
         marca: {
           select: {
@@ -25,7 +24,7 @@ export async function GET() {
         },
         stockMinimo: true,
         stockMaximo: true,
-        proveedor: {
+        proveedores: {
           select: {
             id: true,
             nombre: true,

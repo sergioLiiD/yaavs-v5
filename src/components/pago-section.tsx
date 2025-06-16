@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { HiSave } from 'react-icons/hi';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface PagoSectionProps {
   ticketId: number;
@@ -36,19 +37,19 @@ interface PagoSectionProps {
 
 interface Pago {
   id: number;
+  ticketId: number;
   monto: number;
-  fecha: string;
-  concepto: string;
-  metodoPago: string;
+  metodo: string;
+  referencia?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
   const queryClient = useQueryClient();
-  const [anticipo, setAnticipo] = useState(0);
-  // const [cuponDescuento, setCuponDescuento] = useState('');
-  // const [descuento, setDescuento] = useState(0);
+  const [anticipo, setAnticipo] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [metodoPago, setMetodoPago] = useState<'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA' | 'PAGO_ENTREGA'>('EFECTIVO');
+  const [metodoPago, setMetodoPago] = useState<string>('EFECTIVO');
   const [pagoToDelete, setPagoToDelete] = useState<Pago | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -80,74 +81,64 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
     },
   });
 
+  const calcularSubtotal = () => {
+    if (!presupuesto) return 0;
+    return presupuesto.total / 1.16;
+  };
+
+  const calcularIVA = () => {
+    if (!presupuesto) return 0;
+    return calcularSubtotal() * 0.16;
+  };
+
   const calcularTotal = () => {
     if (!presupuesto) return 0;
-    const subtotal = presupuesto.subtotal;
-    // const totalConDescuento = subtotal - descuento;
-    const iva = subtotal * 0.16;
-    return subtotal + iva;
+    return presupuesto.total;
   };
 
   const calcularSaldo = () => {
     if (!presupuesto) return 0;
     const total = calcularTotal();
-    const pagosRealizados = pagos?.reduce((sum: number, pago: Pago) => sum + pago.monto, 0) || 0;
-    return total - pagosRealizados;
+    const totalPagado = pagos?.reduce((sum: number, pago: Pago) => sum + pago.monto, 0) || 0;
+    return total - totalPagado;
   };
 
-  const handleGuardarPago = async () => {
+  const calcularTotalPagado = () => {
+    return pagos?.reduce((sum: number, pago: Pago) => sum + pago.monto, 0) || 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ticketId) return;
+
     try {
-      setIsLoading(true);
       const total = calcularTotal();
-      const saldo = calcularSaldo();
-
-      const dataToSend = {
-        total,
-        anticipo,
-        saldo,
-        cuponDescuento: null,
-        descuento: 0,
-        metodoPago,
-      };
-
-      console.log('Enviando datos:', dataToSend);
-
       const response = await fetch(`/api/tickets/${ticketId}/pago`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(dataToSend),
+        body: JSON.stringify({
+          anticipo,
+          metodoPago,
+          total,
+        }),
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error al guardar el pago: ${errorData}`);
+        throw new Error('Error al registrar el pago');
       }
 
-      const responseData = await response.json();
-      console.log('Respuesta del servidor:', responseData);
-
-      // Invalidar y refetch los datos
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['presupuesto', ticketId] }),
-        queryClient.invalidateQueries({ queryKey: ['pagos', ticketId] }),
-        queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] })
-      ]);
+      // Recargar los datos
+      await queryClient.invalidateQueries({ queryKey: ['pagos', ticketId] });
+      await queryClient.invalidateQueries({ queryKey: ['presupuesto', ticketId] });
 
       // Limpiar el formulario
       setAnticipo(0);
       setMetodoPago('EFECTIVO');
-
-      toast.success('Pago guardado correctamente');
-      if (onUpdate) {
-        onUpdate();
-      }
     } catch (error) {
-      console.error('Error al guardar pago:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al guardar el pago');
-    } finally {
-      setIsLoading(false);
+      console.error('Error:', error);
+      toast.error('Error al registrar el pago');
     }
   };
 
@@ -201,159 +192,92 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Pago</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Método de pago */}
-            <div className="space-y-2">
-              <Label>Método de Pago</Label>
-              <Select
-                value={metodoPago}
-                onValueChange={(value: 'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA' | 'PAGO_ENTREGA') => 
-                  setMetodoPago(value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar método de pago" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EFECTIVO">Efectivo</SelectItem>
-                  <SelectItem value="TARJETA">Tarjeta</SelectItem>
-                  <SelectItem value="TRANSFERENCIA">Transferencia</SelectItem>
-                  <SelectItem value="PAGO_ENTREGA">Pago a la entrega</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Registrar Pago</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Método de Pago
+            </label>
+            <select
+              value={metodoPago}
+              onChange={(e) => setMetodoPago(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19]"
+            >
+              <option value="EFECTIVO">Efectivo</option>
+              <option value="TARJETA">Tarjeta</option>
+              <option value="TRANSFERENCIA">Transferencia</option>
+            </select>
+          </div>
 
-            {/* Cupón de descuento - Comentado temporalmente
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Cupón de Descuento</Label>
-                <Input
-                  type="text"
-                  value={cuponDescuento}
-                  onChange={(e) => setCuponDescuento(e.target.value)}
-                  placeholder="Ingrese cupón de descuento"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Descuento</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={descuento}
-                  onChange={(e) => setDescuento(parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-            */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Monto del Anticipo
+            </label>
+            <input
+              type="number"
+              value={anticipo}
+              onChange={(e) => setAnticipo(Number(e.target.value))}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3"
+              min="0"
+              step="0.01"
+              required
+            />
+          </div>
 
-            {/* Anticipo */}
-            <div className="space-y-2">
-              <Label>Anticipo</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={anticipo}
-                onChange={(e) => setAnticipo(parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
-              />
-            </div>
+          <button
+            type="submit"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#FEBF19] hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19]"
+          >
+            Registrar Pago
+          </button>
+        </form>
+      </div>
 
-            {/* Resumen de pagos */}
-            <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
-              <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>${(calcularTotal() / 1.16).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>IVA (16%):</span>
-                <span>${(calcularTotal() - calcularTotal() / 1.16).toFixed(2)}</span>
-              </div>
-              {/* Descuento - Comentado temporalmente
-              {descuento > 0 && (
-                <div className="flex justify-between text-red-600">
-                  <span>Descuento:</span>
-                  <span>-${descuento.toFixed(2)}</span>
-                </div>
-              )}
-              */}
-              <div className="flex justify-between font-semibold">
-                <span>Total:</span>
-                <span>${calcularTotal().toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Pagado:</span>
-                <span>${(pagos?.reduce((sum: number, pago: Pago) => sum + pago.monto, 0) || 0).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-xl font-bold text-red-600">
-                <span>Saldo pendiente:</span>
-                <span>${calcularSaldo().toFixed(2)}</span>
-              </div>
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Resumen de Pagos</h3>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-500">Subtotal</p>
+              <p className="text-lg font-medium">${calcularSubtotal().toFixed(2)}</p>
             </div>
-
-            {/* Botón de guardar */}
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                onClick={handleGuardarPago}
-                disabled={isLoading}
-                className="flex items-center space-x-2"
-              >
-                <div className="p-2 rounded-md border-2 border-orange-500">
-                  <HiSave className="h-5 w-5 text-orange-500" />
-                </div>
-                <span>{isLoading ? 'Guardando...' : 'Guardar Pago'}</span>
-              </Button>
+            <div>
+              <p className="text-sm text-gray-500">IVA (16%)</p>
+              <p className="text-lg font-medium">${calcularIVA().toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Total</p>
+              <p className="text-lg font-medium">${calcularTotal().toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Pagado</p>
+              <p className="text-lg font-medium">${calcularTotalPagado().toFixed(2)}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-sm text-gray-500">Saldo Pendiente</p>
+              <p className="text-lg font-medium">${calcularSaldo().toFixed(2)}</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Historial de pagos */}
-      {pagos && pagos.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Historial de Pagos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {pagos.map((pago: Pago) => (
-                <div key={pago.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                  <div>
-                    <p className="font-medium">{pago.concepto}</p>
-                    <p className="text-sm text-gray-500">
-                      {format(new Date(pago.fecha), "PPP 'a las' p", { locale: es })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <p className="font-medium">${pago.monto.toFixed(2)}</p>
-                      <p className="text-sm text-gray-500">{pago.metodoPago}</p>
-                    </div>
-                    <Button
-                      type="button"
-                      onClick={() => handleDeletePago(pago)}
-                      className="flex items-center space-x-2"
-                    >
-                      <div className="p-2 rounded-md border-2 border-orange-500">
-                        <Trash2 className="h-5 w-5 text-orange-500" />
-                      </div>
-                      <span>Eliminar</span>
-                    </Button>
-                  </div>
-                </div>
-              ))}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Historial de Pagos</h3>
+        <div className="space-y-4">
+          {pagos?.map((pago: Pago) => (
+            <div key={pago.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-medium">${pago.monto.toFixed(2)}</p>
+                <p className="text-sm text-gray-500">{pago.metodo}</p>
+              </div>
+              <p className="text-sm text-gray-500">
+                {new Date(pago.createdAt).toLocaleDateString()}
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ))}
+        </div>
+      </div>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>

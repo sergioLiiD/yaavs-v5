@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Ticket } from '@/types/ticket';
+import type { Ticket } from '@/types/ticket';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -35,11 +35,13 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
     tecnicoAsignadoId: ticket.tecnicoAsignadoId?.toString() || '',
     estatusReparacionId: ticket.estatusReparacionId?.toString() || '',
     diagnostico: ticket.reparacion?.diagnostico || '',
-    capacidad: ticket.dispositivos?.capacidad || '',
-    color: ticket.dispositivos?.color || '',
-    fechaCompra: ticket.dispositivos?.fechaCompra ? new Date(ticket.dispositivos.fechaCompra).toISOString().split('T')[0] : '',
-    codigoDesbloqueo: ticket.dispositivos?.codigoDesbloqueo || '',
-    redCelular: ticket.dispositivos?.redCelular || '',
+    capacidad: ticket.capacidad || '',
+    color: ticket.color || '',
+    fechaCompra: ticket.fechaCompra instanceof Date ? ticket.fechaCompra.toISOString().split('T')[0] : '',
+    tipoDesbloqueo: ticket.patronDesbloqueo?.length ? 'patron' : 'pin',
+    codigoDesbloqueo: ticket.codigoDesbloqueo || '',
+    patronDesbloqueo: ticket.patronDesbloqueo || [],
+    redCelular: ticket.redCelular || '',
   });
 
   useEffect(() => {
@@ -77,7 +79,7 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
     isEditing
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -104,31 +106,32 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
     setIsLoading(true);
 
     try {
+      const dataToSend = {
+        ...formData,
+        codigoDesbloqueo: formData.tipoDesbloqueo === 'pin' ? formData.codigoDesbloqueo : null,
+        patronDesbloqueo: formData.tipoDesbloqueo === 'patron' ? formData.patronDesbloqueo : []
+      };
+
       const response = await fetch(`/api/tickets/${ticket.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          estatusReparacionId: ticket.estatusReparacionId
-        }),
+        body: JSON.stringify(dataToSend),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Error al actualizar el ticket');
+        throw new Error('Error al actualizar el ticket');
       }
 
       toast.success('Ticket actualizado correctamente');
-      setIsEditing(false);
       if (onUpdate) {
         onUpdate();
       }
-      router.refresh();
+      setIsEditing(false);
     } catch (error) {
-      console.error('Error al actualizar el ticket:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al actualizar el ticket');
+      console.error('Error:', error);
+      toast.error('Error al actualizar el ticket');
     } finally {
       setIsLoading(false);
     }
@@ -229,14 +232,66 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="codigoDesbloqueo">Código de Desbloqueo</Label>
-                <Input
-                  id="codigoDesbloqueo"
-                  name="codigoDesbloqueo"
-                  value={formData.codigoDesbloqueo}
-                  onChange={handleInputChange}
+                <Label htmlFor="tipoDesbloqueo">Tipo de Desbloqueo</Label>
+                <Select
+                  value={formData.tipoDesbloqueo}
+                  onValueChange={(value) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      tipoDesbloqueo: value,
+                      codigoDesbloqueo: ''
+                    }));
+                  }}
                   disabled={!isEditing}
-                />
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccionar tipo de desbloqueo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pin">PIN</SelectItem>
+                    <SelectItem value="patron">Patrón</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="codigoDesbloqueo">
+                  {formData.tipoDesbloqueo === 'pin' ? 'PIN' : 'Patrón de Desbloqueo'}
+                </Label>
+                {formData.tipoDesbloqueo === 'pin' ? (
+                  <Input
+                    id="codigoDesbloqueo"
+                    name="codigoDesbloqueo"
+                    value={formData.codigoDesbloqueo}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    placeholder="Ingresa el PIN"
+                  />
+                ) : (
+                  <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((numero) => (
+                      <button
+                        key={numero}
+                        type="button"
+                        className={`aspect-square border rounded-lg flex items-center justify-center text-lg font-medium hover:bg-gray-100 ${
+                          formData.patronDesbloqueo?.includes(numero) ? 'bg-blue-100' : ''
+                        }`}
+                        onClick={() => {
+                          if (!isEditing) return;
+                          const currentPattern = formData.patronDesbloqueo || [];
+                          if (currentPattern.length < 9) {
+                            setFormData(prev => ({
+                              ...prev,
+                              patronDesbloqueo: [...currentPattern, numero]
+                            }));
+                          }
+                        }}
+                      >
+                        {numero}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">

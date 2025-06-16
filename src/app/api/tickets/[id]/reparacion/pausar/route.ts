@@ -9,21 +9,26 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session) {
       return new NextResponse('No autorizado', { status: 401 });
     }
 
     const ticketId = parseInt(params.id);
 
-    // Verificar si el ticket existe y tiene una reparación
+    // Verificar que el ticket existe y está en reparación
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
-      include: { reparacion: true }
+      include: {
+        reparacion: true
+      }
     });
 
-    if (!ticket || !ticket.reparacion) {
-      return new NextResponse('Reparación no encontrada', { status: 404 });
+    if (!ticket) {
+      return new NextResponse('Ticket no encontrado', { status: 404 });
+    }
+
+    if (!ticket.reparacion) {
+      return new NextResponse('El ticket no tiene una reparación iniciada', { status: 400 });
     }
 
     // Actualizar la reparación con la fecha de pausa
@@ -31,12 +36,16 @@ export async function POST(
       where: { ticketId },
       data: {
         fechaPausa: new Date(),
+        fechaReanudacion: null
       }
     });
 
     return NextResponse.json(reparacion);
   } catch (error) {
     console.error('Error al pausar la reparación:', error);
-    return new NextResponse('Error interno del servidor', { status: 500 });
+    return NextResponse.json(
+      { error: 'Error al pausar la reparación' },
+      { status: 500 }
+    );
   }
 } 

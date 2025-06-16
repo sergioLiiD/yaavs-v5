@@ -5,36 +5,27 @@ interface TicketStatusBadgeProps {
 }
 
 export function TicketStatusBadge({ status }: TicketStatusBadgeProps) {
-  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (status.toLowerCase()) {
-      case 'recibido':
-        return 'default';
-      case 'en diagnóstico':
-        return 'secondary';
-      case 'en reparación':
-        return 'outline';
-      case 'reparado':
-        return 'default';
-      case 'entregado':
-        return 'secondary';
-      case 'cancelado':
-        return 'destructive';
-      case 'pendiente':
-        return 'outline';
-      case 'en espera de repuestos':
-        return 'secondary';
-      case 'en espera de aprobación':
-        return 'outline';
-      case 'en espera de pago':
-        return 'secondary';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'En diagnóstico':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Presupuesto enviado':
+        return 'bg-blue-100 text-blue-800';
+      case 'En reparación':
+        return 'bg-purple-100 text-purple-800';
+      case 'Completado':
+      case 'Reparación Completada':
+        return 'bg-green-100 text-green-800';
+      case 'Por Entregar':
+        return 'bg-orange-100 text-orange-800';
       default:
-        return 'default';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <Badge variant={getStatusVariant(status)}>
-      {status || 'Sin estado'}
+    <Badge className={getStatusColor(status)}>
+      {status}
     </Badge>
   );
 } 

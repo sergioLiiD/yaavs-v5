@@ -17,15 +17,16 @@ export async function GET(req: NextRequest) {
     }
 
     const proveedores = await prisma.proveedor.findMany({
-      orderBy: { nombre: 'asc' }
+      orderBy: { nombre: 'asc' },
+      distinct: ['rfc'] // Asegurar que no haya duplicados por RFC
     });
 
     console.log('GET /api/catalogo/proveedores - Proveedores encontrados:', proveedores.length);
     return NextResponse.json(proveedores);
   } catch (error) {
-    console.error('GET /api/catalogo/proveedores - Error:', error);
+    console.error('Error al obtener proveedores:', error);
     return NextResponse.json(
-      { error: 'Error al obtener los proveedores' },
+      { error: 'Error al obtener proveedores' },
       { status: 500 }
     );
   }
@@ -47,11 +48,56 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
     console.log('POST /api/catalogo/proveedores - Datos recibidos:', data);
 
-    // Validar datos requeridos
-    if (!data.nombre || !data.telefono) {
-      console.log('POST /api/catalogo/proveedores - Datos incompletos:', data);
+    // Validar campos obligatorios
+    const camposObligatorios = ['nombre', 'contacto', 'telefono', 'rfc', 'banco', 'cuentaBancaria', 'clabeInterbancaria'];
+    const camposFaltantes = camposObligatorios.filter(campo => !data[campo]);
+    
+    if (camposFaltantes.length > 0) {
+      console.log('POST /api/catalogo/proveedores - Campos obligatorios faltantes:', camposFaltantes);
       return NextResponse.json(
-        { error: 'Los campos nombre y teléfono son obligatorios' },
+        { error: `Los siguientes campos son obligatorios: ${camposFaltantes.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Validar tipo
+    if (data.tipo && !['FISICA', 'MORAL'].includes(data.tipo)) {
+      console.log('POST /api/catalogo/proveedores - Tipo inválido:', data.tipo);
+      return NextResponse.json(
+        { error: 'El tipo debe ser FISICA o MORAL' },
+        { status: 400 }
+      );
+    }
+
+    // Validar email si se proporciona
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      console.log('POST /api/catalogo/proveedores - Email inválido:', data.email);
+      return NextResponse.json(
+        { error: 'El email proporcionado no es válido' },
+        { status: 400 }
+      );
+    }
+
+    // Validar CLABE
+    if (data.clabeInterbancaria && !/^\d{18}$/.test(data.clabeInterbancaria)) {
+      console.log('POST /api/catalogo/proveedores - CLABE inválida:', data.clabeInterbancaria);
+      return NextResponse.json(
+        { error: 'La CLABE debe tener 18 dígitos' },
+        { status: 400 }
+      );
+    }
+
+    // Validar que el RFC no esté duplicado
+    const proveedorExistente = await prisma.proveedor.findFirst({
+      where: {
+        rfc: data.rfc
+      }
+    });
+
+    if (proveedorExistente) {
+      console.log('POST /api/catalogo/proveedores - RFC duplicado:', data.rfc);
+      return NextResponse.json(
+        { error: 'Ya existe un proveedor con ese RFC' },
         { status: 400 }
       );
     }
@@ -60,20 +106,47 @@ export async function POST(req: NextRequest) {
     const proveedor = await prisma.proveedor.create({
       data: {
         nombre: data.nombre,
-        contacto: data.contacto || '',
+        contacto: data.contacto,
         telefono: data.telefono,
         email: data.email || null,
         direccion: data.direccion || null,
         notas: data.notas || null,
         tipo: data.tipo || 'FISICA',
-        rfc: data.rfc || '',
-        banco: data.banco || '',
-        cuentaBancaria: data.cuentaBancaria || '',
-        clabeInterbancaria: data.clabeInterbancaria || ''
+        rfc: data.rfc,
+        banco: data.banco,
+        cuentaBancaria: data.cuentaBancaria,
+        clabeInterbancaria: data.clabeInterbancaria
       }
     });
 
     console.log('POST /api/catalogo/proveedores - Proveedor creado:', proveedor);
+    
+    // Verificar que no haya duplicados
+    try {
+      const proveedoresDespues = await prisma.proveedor.findMany({
+        where: {
+          rfc: data.rfc
+        }
+      });
+      
+      console.log('POST /api/catalogo/proveedores - Proveedores con mismo RFC después de crear:', proveedoresDespues.length);
+      
+      if (proveedoresDespues.length > 1) {
+        console.error('POST /api/catalogo/proveedores - Se detectaron duplicados después de crear el proveedor');
+        // Intentar limpiar los duplicados
+        const [primerProveedor, ...duplicados] = proveedoresDespues;
+        for (const duplicado of duplicados) {
+          await prisma.proveedor.delete({
+            where: { id: duplicado.id }
+          });
+        }
+        console.log('POST /api/catalogo/proveedores - Duplicados eliminados');
+      }
+    } catch (error) {
+      console.error('POST /api/catalogo/proveedores - Error al verificar duplicados:', error);
+      // No lanzamos el error ya que el proveedor se creó correctamente
+    }
+    
     return NextResponse.json(proveedor);
   } catch (error: any) {
     console.error('POST /api/catalogo/proveedores - Error:', error);
@@ -129,7 +202,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     // Actualizar el proveedor
-    const proveedor = await prisma.proveedor.update({
+    const proveedores = await prisma.proveedor.update({
       where: { id: parseInt(params.id) },
       data: {
         nombre: data.nombre,
@@ -146,8 +219,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       }
     });
 
-    console.log('PUT /api/catalogo/proveedores/[id] - Proveedor actualizado:', proveedor);
-    return NextResponse.json(proveedor);
+    console.log('PUT /api/catalogo/proveedores/[id] - Proveedor actualizado:', proveedores);
+    return NextResponse.json(proveedores);
   } catch (error: any) {
     console.error('PUT /api/catalogo/proveedores/[id] - Error:', error);
     

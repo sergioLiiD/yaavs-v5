@@ -66,6 +66,15 @@ export async function POST(
     });
     console.log('Nueva reparación creada:', reparacion);
 
+    // Actualizar el estado del ticket a "En Reparación"
+    const ticketActualizado = await prisma.ticket.update({
+      where: { id: ticketId },
+      data: {
+        estatusReparacionId: 4, // 4 = En Reparación
+      }
+    });
+    console.log('Estado del ticket actualizado:', ticketActualizado);
+
     return NextResponse.json(reparacion);
   } catch (error) {
     console.error('Error al iniciar la reparación:', error);

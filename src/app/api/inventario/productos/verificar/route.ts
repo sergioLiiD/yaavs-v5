@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const productoExistente = await prisma.producto.findFirst({
+    const producto = await prisma.producto.findFirst({
       where: {
         nombre: {
           equals: nombre,
@@ -35,14 +35,13 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         nombre: true,
-        sku: true,
         tipo: true
       }
     });
 
     return NextResponse.json({
-      existe: !!productoExistente,
-      producto: productoExistente
+      existe: !!producto,
+      producto: producto
     });
   } catch (error) {
     console.error('Error al verificar producto:', error);

@@ -160,6 +160,20 @@ export class ChecklistService {
 3. Las sedes principales no pueden tener una sede principal asignada
 4. El horario y la ubicación deben ser objetos JSON válidos
 
+### Modelo Proveedor
+| Capa | Nombre | Ejemplo |
+|------|---------|---------|
+| Base de Datos | `proveedores` | `nombre`, `contacto`, `telefono`, `email`, `direccion`, `notas`, `banco`, `clabe_interbancaria`, `cuenta_bancaria`, `rfc`, `tipo` |
+| Prisma | `Proveedor` | `nombre`, `contacto`, `telefono`, `email`, `direccion`, `notas`, `banco`, `clabeInterbancaria`, `cuentaBancaria`, `rfc`, `tipo` |
+| API | `/api/catalogo/proveedores` | `POST /api/catalogo/proveedores` |
+| Frontend | `Proveedor` | `nombre`, `contacto`, `telefono`, `email`, `direccion`, `notas`, `banco`, `clabeInterbancaria`, `cuentaBancaria`, `rfc`, `tipo` |
+
+#### Reglas de Validación
+1. Los campos `nombre`, `contacto`, `telefono`, `rfc`, `banco`, `cuentaBancaria` y `clabeInterbancaria` son obligatorios
+2. El campo `tipo` debe ser uno de: `FISICA` o `MORAL`
+3. El campo `email` debe ser un email válido si se proporciona
+4. El campo `clabeInterbancaria` debe tener 18 caracteres
+
 ### Relaciones
 | Modelo | Campo | Tipo | Ejemplo |
 |--------|-------|------|---------|

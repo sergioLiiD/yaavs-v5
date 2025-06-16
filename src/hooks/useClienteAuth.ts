@@ -1,52 +1,105 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Cliente } from '@/types/cliente';
+import { useRouter, usePathname } from 'next/navigation';
 
-interface UseClienteAuthReturn {
-  cliente: Cliente | null;
-  loading: boolean;
-  error: string | null;
-  isAuthenticated: boolean;
+interface Cliente {
+  id: number;
+  nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string | null;
+  email: string;
+  telefonoCelular: string;
+  telefonoContacto: string | null;
+  calle: string | null;
+  numeroExterior: string | null;
+  numeroInterior: string | null;
+  colonia: string | null;
+  ciudad: string | null;
+  estado: string | null;
+  codigoPostal: string | null;
+  latitud: number | null;
+  longitud: number | null;
+  fuenteReferencia: string | null;
+  rfc: string | null;
+  tipoRegistro: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export function useClienteAuth(): UseClienteAuthReturn {
+export function useClienteAuth() {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkAuth = async () => {
       try {
+        // No verificar en rutas públicas
+        if (pathname === '/cliente/login' || pathname === '/cliente/registro') {
+          if (isMounted) {
+            setLoading(false);
+          }
+          return;
+        }
+
+        console.log('Verificando autenticación...');
         const response = await fetch('/api/cliente/me', {
-          credentials: 'include'
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
         });
 
         if (!response.ok) {
-          if (response.status === 401) {
-            setCliente(null);
-          } else {
-            throw new Error('Error al verificar la sesión');
-          }
-        } else {
-          const data = await response.json();
-          setCliente(data);
+          throw new Error('No autorizado');
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error al verificar la sesión');
-        setCliente(null);
-      } finally {
-        setLoading(false);
+
+        const data = await response.json();
+        console.log('Datos del cliente:', data);
+
+        if (isMounted) {
+          setCliente(data.cliente);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error verificando autenticación:', error);
+        if (isMounted) {
+          setCliente(null);
+          setLoading(false);
+        }
       }
     };
 
     checkAuth();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [pathname]);
+
+  const logout = async () => {
+    try {
+      await fetch('/api/cliente/logout', { 
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      setCliente(null);
+      router.push('/cliente/login');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
   return {
     cliente,
     loading,
-    error,
-    isAuthenticated: !!cliente
+    logout,
+    isAuthenticated: !!cliente,
   };
 } 

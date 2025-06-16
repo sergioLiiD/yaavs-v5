@@ -4,129 +4,78 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
 
+interface EntregaPayload {
+  observaciones: string;
+  checklist: Array<{
+    id: number;
+    item: string;
+    respuesta: boolean;
+    observacion: string;
+  }>;
+}
+
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    if (!session) {
+      return new NextResponse('No autorizado', { status: 401 });
     }
 
     const ticketId = parseInt(params.id);
-    const body = await request.json();
-    console.log('Datos recibidos para entrega:', body);
+    const body: EntregaPayload = await request.json();
 
-    // Verificar que el ticket existe y está en estado de reparación completada
+    // Verificar que el ticket existe
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
       include: {
-        estatusReparacion: true,
-        entrega: {
-          include: {
-            direccionEntrega: true
-          }
-        },
-        direccion: true
+        reparacion: true
       }
     });
 
     if (!ticket) {
-      return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
+      return new NextResponse('Ticket no encontrado', { status: 404 });
     }
 
-    // Verificar que el ticket está en estado de reparación completada
-    if (ticket.estatusReparacion.nombre !== 'Reparación Completada') {
-      return NextResponse.json(
-        { error: 'El ticket debe estar en estado de reparación completada' },
-        { status: 400 }
-      );
-    }
-
-    // Determinar el tipo de entrega basado en el creador del ticket
-    const tipoEntrega = ticket.creadorId === ticket.clienteId ? 'DOMICILIO' : 'OFICINA';
-
-    // Buscar el estado "En Entrega"
-    const estatusEntrega = await prisma.estatusReparacion.findFirst({
-      where: {
-        nombre: 'En Entrega'
-      }
-    });
-
-    if (!estatusEntrega) {
-      return NextResponse.json(
-        { error: 'Estado "En Entrega" no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    // Crear o actualizar la entrega
-    const entrega = await prisma.entrega.upsert({
-      where: {
-        ticketId: ticketId
-      },
-      create: {
-        ticket: { connect: { id: ticketId } },
-        tipoEntrega: tipoEntrega as 'DOMICILIO' | 'OFICINA',
-        observaciones: body.observaciones,
-        direccionEntrega: tipoEntrega === 'DOMICILIO' ? {
-          create: {
-            calle: ticket.direccion?.calle || '',
-            numeroExterior: ticket.direccion?.numeroExterior || '',
-            numeroInterior: ticket.direccion?.numeroInterior || '',
-            colonia: ticket.direccion?.colonia || '',
-            ciudad: ticket.direccion?.ciudad || '',
-            estado: ticket.direccion?.estado || '',
-            codigoPostal: ticket.direccion?.codigoPostal || '',
-            latitud: ticket.direccion?.latitud || 0,
-            longitud: ticket.direccion?.longitud || 0
-          }
-        } : undefined
-      },
-      update: {
-        observaciones: body.observaciones,
-        direccionEntrega: tipoEntrega === 'DOMICILIO' ? {
-          update: {
-            calle: ticket.direccion?.calle || '',
-            numeroExterior: ticket.direccion?.numeroExterior || '',
-            numeroInterior: ticket.direccion?.numeroInterior || '',
-            colonia: ticket.direccion?.colonia || '',
-            ciudad: ticket.direccion?.ciudad || '',
-            estado: ticket.direccion?.estado || '',
-            codigoPostal: ticket.direccion?.codigoPostal || '',
-            latitud: ticket.direccion?.latitud || 0,
-            longitud: ticket.direccion?.longitud || 0
-          }
-        } : undefined
-      }
-    });
-
-    // Actualizar el estado del ticket
-    const ticketActualizado = await prisma.ticket.update({
-      where: {
-        id: ticketId
-      },
+    // Actualizar la reparación con la fecha de fin y observaciones
+    const reparacion = await prisma.reparacion.update({
+      where: { ticketId },
       data: {
-        estatusReparacionId: estatusEntrega.id
-      },
-      include: {
-        estatusReparacion: true,
-        entrega: {
-          include: {
-            direccionEntrega: true
-          }
-        }
+        fechaFin: new Date(),
+        observaciones: body.observaciones
       }
     });
 
-    return NextResponse.json(ticketActualizado);
+    // Actualizar el estado del ticket a "Entregado"
+    await prisma.ticket.update({
+      where: { id: ticketId },
+      data: {
+        estatusReparacionId: 8, // 8 = Entregado
+        fechaEntrega: new Date()
+      }
+    });
+
+    // Guardar el checklist de entrega
+    if (body.checklist && body.checklist.length > 0) {
+      for (const item of body.checklist) {
+        await prisma.checklistItem.create({
+          data: {
+            nombre: item.item,
+            descripcion: item.observacion || '',
+            paraDiagnostico: false,
+            paraReparacion: true,
+            checklistDiagnosticoId: reparacion.id
+          }
+        });
+      }
+    }
+
+    return NextResponse.json(reparacion);
   } catch (error) {
-    console.error('Error al procesar la entrega:', error);
-    return NextResponse.json(
-      { error: 'Error al procesar la entrega' },
-      { status: 500 }
-    );
+    console.error('Error al registrar la entrega:', error);
+    return new NextResponse('Error interno del servidor', { status: 500 });
   }
 }
 

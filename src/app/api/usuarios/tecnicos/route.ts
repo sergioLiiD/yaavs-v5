@@ -2,10 +2,20 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function GET() {
   try {
     console.log('GET /api/usuarios/tecnicos - Consultando técnicos...');
+    
+    // Primero, veamos qué roles existen
+    const roles = await prisma.rol.findMany({
+      select: {
+        id: true,
+        nombre: true
+      }
+    });
+    console.log('Roles existentes:', roles);
     
     // Obtener técnicos usando Prisma
     const tecnicos = await prisma.usuario.findMany({
@@ -13,7 +23,10 @@ export async function GET() {
         usuarioRoles: {
           some: {
             rol: {
-              nombre: 'TECNICO'
+              nombre: {
+                contains: 'tecnico',
+                mode: 'insensitive'
+              }
             }
           }
         },
@@ -24,7 +37,16 @@ export async function GET() {
         nombre: true,
         apellidoPaterno: true,
         apellidoMaterno: true,
-        email: true
+        email: true,
+        usuarioRoles: {
+          select: {
+            rol: {
+              select: {
+                nombre: true
+              }
+            }
+          }
+        }
       },
       orderBy: {
         nombre: 'asc'
@@ -32,6 +54,7 @@ export async function GET() {
     });
 
     console.log('GET /api/usuarios/tecnicos - Técnicos encontrados:', tecnicos.length);
+    console.log('GET /api/usuarios/tecnicos - Datos de técnicos:', JSON.stringify(tecnicos, null, 2));
     
     if (tecnicos.length === 0) {
       console.log('GET /api/usuarios/tecnicos - No se encontraron técnicos');

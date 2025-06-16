@@ -59,11 +59,12 @@ const formSchema = z.object({
   capacidad: z.string().optional(),
   color: z.string().optional(),
   fechaCompra: z.date().optional(),
+  tipoDesbloqueo: z.enum(['pin', 'patron']).default('pin'),
   codigoDesbloqueo: z.string().optional(),
+  patronDesbloqueo: z.array(z.number()).optional(),
   redCelular: z.string().optional(),
   imei: z.string().optional(),
   puntoRecoleccionId: z.number().optional(),
-  pinPatron: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -76,7 +77,7 @@ export const PatternGrid = ({ value, onChange }: { value: string, onChange: (val
     if (!selectedPoints.includes(point)) {
       const newSelectedPoints = [...selectedPoints, point];
       setSelectedPoints(newSelectedPoints);
-      onChange(newSelectedPoints.join('->'));
+      onChange(newSelectedPoints.join(','));
     }
   };
 
@@ -90,7 +91,7 @@ export const PatternGrid = ({ value, onChange }: { value: string, onChange: (val
     if (isDrawing && !selectedPoints.includes(point)) {
       const newSelectedPoints = [...selectedPoints, point];
       setSelectedPoints(newSelectedPoints);
-      onChange(newSelectedPoints.join('->'));
+      onChange(newSelectedPoints.join(','));
     }
   };
 
@@ -170,11 +171,12 @@ export function NewTicketForm() {
       capacidad: '',
       color: '',
       fechaCompra: undefined,
+      tipoDesbloqueo: 'pin',
       codigoDesbloqueo: '',
+      patronDesbloqueo: [],
       redCelular: '',
       imei: '',
       puntoRecoleccionId: undefined,
-      pinPatron: '',
     }
   });
 
@@ -489,21 +491,72 @@ export function NewTicketForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="pinPatron">PIN o Patrón</Label>
-          <div className="flex items-start space-x-4">
-            <Input
-              {...form.register('pinPatron')}
-              placeholder="Ingrese el PIN o patrón de desbloqueo"
-              className="flex-1"
-            />
-            <div className="flex-1">
-              <PatternGrid
-                value={form.watch('pinPatron')}
-                onChange={(value) => form.setValue('pinPatron', value)}
+          <Label htmlFor="tipoDesbloqueo">Tipo de Desbloqueo</Label>
+          <div className="flex space-x-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id="pin"
+                name="tipoDesbloqueo"
+                value="pin"
+                checked={form.watch('tipoDesbloqueo') === 'pin'}
+                onChange={() => form.setValue('tipoDesbloqueo', 'pin')}
+                className="h-4 w-4 text-blue-600"
               />
+              <Label htmlFor="pin">PIN</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id="patron"
+                name="tipoDesbloqueo"
+                value="patron"
+                checked={form.watch('tipoDesbloqueo') === 'patron'}
+                onChange={() => form.setValue('tipoDesbloqueo', 'patron')}
+                className="h-4 w-4 text-blue-600"
+              />
+              <Label htmlFor="patron">Patrón</Label>
             </div>
           </div>
         </div>
+
+        {form.watch('tipoDesbloqueo') === 'pin' ? (
+          <div className="space-y-2">
+            <Label htmlFor="codigoDesbloqueo">PIN de Desbloqueo</Label>
+            <Input
+              {...form.register('codigoDesbloqueo')}
+              placeholder="Ingrese el PIN"
+            />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label>Patrón de Desbloqueo</Label>
+            <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((numero) => (
+                <button
+                  key={numero}
+                  type="button"
+                  onClick={() => {
+                    const currentPattern = form.watch('patronDesbloqueo') || [];
+                    if (currentPattern.length < 9) {
+                      form.setValue('patronDesbloqueo', [...currentPattern, numero]);
+                    }
+                  }}
+                  className={`aspect-square border rounded-lg flex items-center justify-center text-lg font-medium hover:bg-gray-100 ${
+                    (form.watch('patronDesbloqueo') || []).includes(numero) ? 'bg-blue-100' : ''
+                  }`}
+                >
+                  {numero}
+                </button>
+              ))}
+            </div>
+            {(form.watch('patronDesbloqueo') || []).length > 0 && (
+              <div className="mt-2 text-sm text-gray-600 text-center">
+                Patrón actual: {(form.watch('patronDesbloqueo') || []).join(', ')}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="descripcionProblema">Descripción del Problema</Label>

@@ -80,15 +80,15 @@ export async function GET(request: Request) {
     });
 
     // Combinar entradas con proveedores
-    const entradasConProveedor = entradas.map(entrada => ({
+    const entradasConProveedores = entradas.map(entrada => ({
       ...entrada,
-      proveedor: entrada.proveedorId ? proveedores.find(p => p.id === entrada.proveedorId) : null
+      proveedores: entrada.proveedorId ? proveedores.find(p => p.id === entrada.proveedorId) : null
     }));
 
     // Combinar y ordenar por fecha
     const historial = [
       ...salidas.map(s => ({ ...s, tipo: 'SALIDA' })),
-      ...entradasConProveedor.map(e => ({ ...e, tipo: 'ENTRADA' }))
+      ...entradasConProveedores.map(e => ({ ...e, tipo: 'ENTRADA' }))
     ].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 
     return NextResponse.json(historial);

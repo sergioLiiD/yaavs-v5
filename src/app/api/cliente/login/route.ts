@@ -1,28 +1,35 @@
 import { NextResponse } from 'next/server';
-import { ClienteService } from '@/services/clienteService';
 import { z } from 'zod';
-import { sign } from 'jsonwebtoken';
-import { cookies } from 'next/headers';
+import { ClienteService } from '@/services/clienteService';
+import { generateToken } from '@/lib/jwt';
 
-// Esquema de validación para el login
+// Configurar para usar Node.js runtime
+export const runtime = 'nodejs';
+
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
-  password: z.string().min(1, 'La contraseña es requerida'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
 });
 
 export async function POST(request: Request) {
   try {
+    console.log('Iniciando proceso de login en API...');
     const body = await request.json();
     
-    // Validar los datos de entrada
-    const validatedData = loginSchema.parse(body);
+    // Validar datos de entrada
+    const result = loginSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'Datos de entrada inválidos', details: result.error.errors },
+        { status: 400 }
+      );
+    }
+
+    const { email, password } = result.data;
+    console.log('Verificando credenciales...');
 
     // Verificar credenciales
-    const cliente = await ClienteService.verifyCredentials(
-      validatedData.email,
-      validatedData.password
-    );
-
+    const cliente = await ClienteService.verifyCredentials(email, password);
     if (!cliente) {
       return NextResponse.json(
         { error: 'Credenciales inválidas' },
@@ -31,43 +38,56 @@ export async function POST(request: Request) {
     }
 
     // Generar token JWT
-    const token = sign(
-      {
-        id: cliente.id,
-        email: cliente.email,
-        tipo: 'CLIENTE'
-      },
-      process.env.JWT_SECRET || 'tu_secreto_seguro_para_jwt_aqui',
-      { expiresIn: '24h' }
-    );
+    console.log('Generando token JWT...');
+    const token = await generateToken({
+      id: cliente.id,
+      email: cliente.email,
+    });
 
-    // Configurar la cookie
-    cookies().set('cliente_token', token, {
+    // Crear respuesta
+    const response = NextResponse.json({
+      cliente: {
+        id: cliente.id,
+        nombre: cliente.nombre,
+        apellidoPaterno: cliente.apellidoPaterno,
+        apellidoMaterno: cliente.apellidoMaterno,
+        email: cliente.email,
+        telefonoCelular: cliente.telefonoCelular,
+        telefonoContacto: cliente.telefonoContacto,
+        calle: cliente.calle,
+        numeroExterior: cliente.numeroExterior,
+        numeroInterior: cliente.numeroInterior,
+        colonia: cliente.colonia,
+        ciudad: cliente.ciudad,
+        estado: cliente.estado,
+        codigoPostal: cliente.codigoPostal,
+        latitud: cliente.latitud,
+        longitud: cliente.longitud,
+        fuenteReferencia: cliente.fuenteReferencia,
+        rfc: cliente.rfc,
+        tipoRegistro: cliente.tipoRegistro,
+        createdAt: cliente.createdAt,
+        updatedAt: cliente.updatedAt,
+      },
+      token,
+    });
+
+    // Establecer cookie
+    console.log('Estableciendo cookie...');
+    response.cookies.set('cliente_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60, // 24 horas
       path: '/',
+      maxAge: 7 * 24 * 60 * 60, // 7 días
     });
 
-    // Omitir el passwordHash de la respuesta
-    const { passwordHash, ...clienteSinPassword } = cliente;
-
-    return NextResponse.json({
-      cliente: clienteSinPassword,
-      token
-    });
+    console.log('Login exitoso para cliente:', cliente.id);
+    return response;
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Datos inválidos', details: error.errors },
-        { status: 400 }
-      );
-    }
-
-    console.error('Error en login de cliente:', error);
+    console.error('Error en login:', error);
     return NextResponse.json(
-      { error: 'Error durante el inicio de sesión' },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     );
   }

@@ -31,12 +31,16 @@ export async function POST(
       where: { ticketId },
       data: {
         fechaReanudacion: new Date(),
+        fechaPausa: null // Aseguramos que no haya fecha de pausa
       }
     });
 
     return NextResponse.json(reparacion);
   } catch (error) {
     console.error('Error al reanudar la reparación:', error);
-    return new NextResponse('Error interno del servidor', { status: 500 });
+    return NextResponse.json(
+      { error: 'Error al reanudar la reparación' },
+      { status: 500 }
+    );
   }
 } 

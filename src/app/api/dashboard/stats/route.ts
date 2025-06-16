@@ -17,11 +17,14 @@ export async function GET() {
     const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    // Obtener tickets del mes actual
+    // Obtener tickets del mes actual que no estén completados
     const currentMonthTickets = await prisma.ticket.count({
       where: {
         createdAt: {
           gte: currentMonth
+        },
+        estatusReparacionId: {
+          not: 4 // Excluir tickets completados
         }
       }
     }).catch(error => {
@@ -60,9 +63,7 @@ export async function GET() {
     // Obtener tickets reparados
     const ticketsReparados = await prisma.ticket.count({
       where: {
-        estatusReparacion: {
-          nombre: 'Reparación Completada'
-        }
+        estatusReparacionId: 4 // ID del estado "Completado"
       }
     }).catch(error => {
       console.error('Error al contar tickets reparados:', error);
@@ -88,8 +89,8 @@ export async function GET() {
         createdAt: 'desc'
       },
       include: {
-        direcciones: true,
-        dispositivos: true,
+        direccion: true,
+        dispositivo: true,
         estatusReparacion: true,
         cliente: {
           select: {
@@ -99,7 +100,7 @@ export async function GET() {
         },
         modelo: {
           include: {
-            marcas: true
+            marca: true
           }
         }
       }
@@ -141,8 +142,9 @@ export async function GET() {
       ],
       recentTickets: ticketsRecientes.map(ticket => ({
         id: ticket.id,
-        cliente: `${ticket.cliente?.nombre || ''} ${ticket.cliente?.apellidoPaterno || ''}`,
-        modelo: `${ticket.modelo?.marcas?.nombre || ''} ${ticket.modelo?.nombre || ''}`,
+        numeroTicket: ticket.numeroTicket,
+        cliente: ticket.cliente ? `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno}` : '',
+        modelo: ticket.modelo ? `${ticket.modelo.marca?.nombre || ''} ${ticket.modelo.nombre}` : '',
         problema: ticket.descripcionProblema,
         estado: ticket.estatusReparacion?.nombre || ''
       }))

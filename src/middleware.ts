@@ -1,80 +1,71 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { verifyToken } from '@/lib/jwt';
+
+// Configurar para usar Node.js runtime
+export const runtime = 'nodejs';
 
 export async function middleware(request: NextRequest) {
-  console.log('Middleware - Iniciando middleware');
-  console.log('Middleware - URL:', request.url);
-  console.log('Middleware - Pathname:', request.nextUrl.pathname);
+  const { pathname } = request.nextUrl;
 
-  const token = await getToken({ req: request });
-  console.log('Middleware - Token:', token);
+  // Solo procesar rutas de cliente
+  if (!pathname.startsWith('/cliente') && !pathname.startsWith('/api/cliente')) {
+    return NextResponse.next();
+  }
 
-  // Si no hay token, redirigir al login
-  if (!token) {
-    if (request.nextUrl.pathname.startsWith('/dashboard') || 
-        request.nextUrl.pathname.startsWith('/repair-point')) {
-      return NextResponse.redirect(new URL('/auth/login', request.url));
+  // Si es una ruta de API de cliente, permitir el acceso
+  if (pathname.startsWith('/api/cliente')) {
+    return NextResponse.next();
+  }
+
+  // Rutas públicas del sistema de clientes
+  const publicRoutes = ['/cliente/login', '/cliente/registro'];
+  if (publicRoutes.includes(pathname)) {
+    // Si el usuario ya está autenticado como cliente, redirigir al dashboard
+    const token = request.cookies.get('cliente_token');
+    if (token) {
+      try {
+        const decoded = verifyToken(token.value);
+        if (decoded) {
+          return NextResponse.redirect(new URL('/cliente', request.url));
+        }
+      } catch (error) {
+        console.error('Error verificando token de cliente:', error);
+      }
     }
     return NextResponse.next();
   }
 
-  // Verificar si el usuario es de un punto de reparación
-  const userRole = token.role as string;
-  const isRepairPointUser = userRole === 'ADMINISTRADOR_PUNTO' || userRole === 'OPERADOR_PUNTO';
-
-  // Si es usuario de punto de reparación y no está en /repair-point, redirigir
-  if (isRepairPointUser && !request.nextUrl.pathname.startsWith('/repair-point')) {
-    return NextResponse.redirect(new URL('/repair-point', request.url));
+  // Verificar autenticación para rutas protegidas del sistema de clientes
+  const token = request.cookies.get('cliente_token');
+  
+  if (!token) {
+    const url = new URL('/cliente/login', request.url);
+    url.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(url);
   }
 
-  // Si es usuario del sistema principal y está intentando acceder a /repair-point, redirigir
-  if (!isRepairPointUser && request.nextUrl.pathname.startsWith('/repair-point')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  // Verificar permisos para rutas protegidas
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    // Si es administrador del sistema, permitir acceso
-    if (userRole === 'ADMINISTRADOR') {
-      return NextResponse.next();
+  try {
+    const decoded = verifyToken(token.value);
+    if (!decoded) {
+      const url = new URL('/cliente/login', request.url);
+      url.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(url);
     }
-
-    // Verificar permisos específicos para la ruta
-    const userPermissions = token.permissions as string[] || [];
-    const requiredPermissions = getRequiredPermissions(request.nextUrl.pathname);
-
-    if (!requiredPermissions.every(permission => userPermissions.includes(permission))) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
+  } catch (error) {
+    console.error('Error verificando token de cliente:', error);
+    const url = new URL('/cliente/login', request.url);
+    url.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
-function getRequiredPermissions(pathname: string): string[] {
-  // Mapeo de rutas a permisos requeridos
-  const routePermissions: Record<string, string[]> = {
-    '/dashboard/admin/usuarios': ['USERS_VIEW'],
-    '/dashboard/admin/roles': ['ROLES_VIEW'],
-    '/dashboard/admin/permisos': ['PERMISSIONS_VIEW'],
-    '/dashboard/tickets/nuevo': ['TICKETS_CREATE'],
-    // Agregar más rutas y permisos según sea necesario
-  };
-
-  return routePermissions[pathname] || [];
-}
-
-// Configurar las rutas que deben ser procesadas por el middleware
+// Configurar el matcher para que solo aplique a rutas de cliente
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+    '/cliente/:path*',
+    '/api/cliente/:path*'
+  ]
 }; 

@@ -31,9 +31,8 @@ export async function GET() {
       include: {
         marca: true,
         modelo: true,
-        proveedor: true,
         categoria: true,
-        fotos: true,
+        fotos_producto: true,
       },
       orderBy: {
         nombre: 'asc'
@@ -125,12 +124,21 @@ export async function POST(request: Request) {
 
       let marca = null;
       let modelo = null;
+      let categoria = null;
 
       if (data.tipo === 'PRODUCTO' && marcaId && modeloId) {
         [marca, modelo] = await Promise.all([
           tx.marca.findUnique({ where: { id: marcaId } }),
           tx.modelo.findUnique({ where: { id: modeloId } })
         ]);
+      }
+
+      // Verificar si existe la categoría
+      if (data.categoriaId) {
+        categoria = await tx.categoria.findUnique({ where: { id: data.categoriaId } });
+      } else {
+        // Si no se proporciona categoría, usar la categoría por defecto (id: 1)
+        categoria = await tx.categoria.findUnique({ where: { id: 1 } });
       }
 
       if (!tipoServicio) {
@@ -142,24 +150,24 @@ export async function POST(request: Request) {
         if (!modeloId || !modelo) throw new Error('El modelo seleccionado no existe');
       }
 
+      if (!categoria) {
+        throw new Error('La categoría seleccionada no existe');
+      }
+
       // Preparar los datos para crear el producto
-      const createData = {
-        sku: data.sku || `SKU-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      const createData: any = {
         nombre: data.nombre,
-        descripcion: data.descripcion || null,
-        notasInternas: data.notasInternas || null,
-        garantiaValor: data.garantiaValor || 0,
-        garantiaUnidad: data.garantiaUnidad || 'dias',
-        stock: 0,
-        precioPromedio: 0,
+        sku: data.sku || `${data.nombre}-${Date.now()}`,
+        stock: data.stock || 0,
+        precioPromedio: data.precioPromedio || 0,
         stockMaximo: data.stockMaximo || 0,
         stockMinimo: data.stockMinimo || 0,
         tipo: data.tipo || 'PRODUCTO',
-        tipoServicioId,
-        marcaId: data.tipo === 'PRODUCTO' ? marcaId : null,
-        modeloId: data.tipo === 'PRODUCTO' ? modeloId : null,
-        categoriaId: data.categoriaId || null
-      } as const;
+        tipoServicioId: tipoServicioId,
+        marcaId: data.marcaId,
+        modeloId: data.modeloId,
+        categoriaId: categoria.id
+      };
 
       // Crear el producto
       const producto = await tx.producto.create({
@@ -167,9 +175,8 @@ export async function POST(request: Request) {
         include: {
           marca: true,
           modelo: true,
-          proveedor: true,
           categoria: true,
-          fotos: true,
+          tipoServicio: true
         },
       });
 

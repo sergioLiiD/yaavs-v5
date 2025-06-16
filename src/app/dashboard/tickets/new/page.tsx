@@ -164,22 +164,30 @@ export default function NewTicketPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
+      // Validar campos requeridos
+      if (!formData.clienteId || !formData.tipoServicioId || !formData.modelo || !formData.descripcionProblema) {
+        setError('Por favor complete todos los campos requeridos');
+        setIsLoading(false);
+        return;
+      }
+
       const dataToSubmit = {
         clienteId: formData.clienteId,
         tipoServicioId: formData.tipoServicioId,
+        marcaId: parseInt(formData.marca),
         modeloId: formData.modelo,
         descripcionProblema: formData.descripcionProblema,
-        tecnicoAsignadoId: formData.tecnicoId,
-        capacidad: formData.capacidad,
-        color: formData.color,
-        fechaCompra: formData.fechaCompra,
+        tecnicoAsignadoId: formData.tecnicoId || undefined,
+        capacidad: formData.capacidad || undefined,
+        color: formData.color || undefined,
+        fechaCompra: formData.fechaCompra || undefined,
         tipoDesbloqueo: formData.tipoDesbloqueo,
-        codigoDesbloqueo: formData.tipoDesbloqueo === "pin" 
-          ? formData.codigoDesbloqueo 
-          : formData.patronDesbloqueo.join(","),
-        redCelular: formData.redCelular,
+        codigoDesbloqueo: formData.tipoDesbloqueo === "pin" ? formData.codigoDesbloqueo : null,
+        patronDesbloqueo: formData.tipoDesbloqueo === "patron" ? formData.patronDesbloqueo.map(num => parseInt(num)) : [],
+        redCelular: formData.redCelular || undefined,
         esReparacionDirecta: formData.esReparacionDirecta,
       };
 
@@ -193,13 +201,14 @@ export default function NewTicketPage() {
         body: JSON.stringify(dataToSubmit),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al crear el ticket');
+        throw new Error(responseData.error || 'Error al crear el ticket');
       }
 
-      const data = await response.json();
-      router.push(`/dashboard/tickets/${data.id}`);
+      console.log('Ticket creado:', responseData);
+      router.push('/dashboard/tickets');
     } catch (error) {
       console.error('Error:', error);
       setError(error instanceof Error ? error.message : 'Error al crear el ticket');

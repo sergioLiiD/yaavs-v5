@@ -139,7 +139,7 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
     },
   });
 
-  const { data: presupuesto } = useQuery({
+  const { data: presupuesto, refetch: refetchPresupuesto } = useQuery({
     queryKey: ['presupuesto', ticketId],
     queryFn: async () => {
       const response = await fetch(`/api/tickets/${ticketId}/presupuesto`, {
@@ -169,20 +169,24 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
 
   // Cargar productos del presupuesto existente
   useEffect(() => {
-    if (piezasReparacion && catalogoProductos) {
-      const productosPresupuesto = piezasReparacion.map((pieza: any) => {
-        const producto = catalogoProductos.find((p: Producto) => p.id === pieza.piezaId);
+    if (presupuesto?.conceptos) {
+      const productosPresupuesto = presupuesto.conceptos.map((concepto: any) => {
+        // Buscar el producto en el catálogo por nombre
+        const productoCatalogo = catalogoProductos?.find((p: Producto) => 
+          p.nombre.toLowerCase() === concepto.descripcion.toLowerCase()
+        );
+
         return {
           id: Math.random().toString(36).substr(2, 9),
-          productoId: pieza.piezaId,
-          cantidad: pieza.cantidad,
-          precioVenta: pieza.precioUnitario,
-          nombre: producto?.nombre || '',
+          productoId: productoCatalogo?.id || 0,
+          cantidad: concepto.cantidad,
+          precioVenta: concepto.precioUnitario,
+          nombre: concepto.descripcion,
         };
       });
       setProductos(productosPresupuesto);
     }
-  }, [piezasReparacion, catalogoProductos]);
+  }, [presupuesto, catalogoProductos]);
 
   // Filtrar productos de precios de venta
   const preciosVentaFiltrados = preciosVenta?.filter((precio: PrecioVenta) => {
@@ -250,34 +254,43 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
       }
 
       // Convertir los productos de la reparación frecuente al formato de productos seleccionados
-      const nuevosProductos = reparacion.productos.map((p: {
-        id: string;
+      const nuevosProductos = reparacion.productos_reparacion_frecuente.map((p: {
+        id: number;
         productoId: number;
         cantidad: number;
         precioVenta: number;
         conceptoExtra?: string;
         precioConceptoExtra?: number;
-        producto: {
+        productos: {
           id: number;
           nombre: string;
-          marca?: { nombre: string };
-          modelo?: { nombre: string };
+          precioPromedio: number;
         };
       }) => {
-        const nombreCompleto = p.producto ? 
-          `${p.producto.nombre}${p.producto.marca ? ` - ${p.producto.marca.nombre}` : ''}${p.producto.modelo ? ` ${p.producto.modelo.nombre}` : ''}` : 
-          'Producto no encontrado';
+        // Buscar el producto en el catálogo
+        const productoCatalogo = catalogoProductos?.find((prod: Producto) => prod.id === p.productoId);
         
+        if (!productoCatalogo) {
+          console.error('Producto no encontrado en catálogo:', p);
+          toast.error(`Producto no encontrado en catálogo: ${p.productos?.nombre || 'Desconocido'}`);
+          return null;
+        }
+
         return {
           id: Math.random().toString(36).substr(2, 9),
           productoId: p.productoId,
           cantidad: p.cantidad,
           precioVenta: p.precioVenta,
-          conceptoExtra: p.conceptoExtra,
-          precioConceptoExtra: p.precioConceptoExtra,
-          nombre: nombreCompleto,
+          conceptoExtra: p.conceptoExtra || undefined,
+          precioConceptoExtra: p.precioConceptoExtra || undefined,
+          nombre: productoCatalogo.nombre,
         };
-      });
+      }).filter(Boolean); // Filtrar productos nulos
+
+      if (nuevosProductos.length === 0) {
+        toast.error('No se pudieron cargar los productos de la reparación frecuente');
+        return;
+      }
 
       setProductos(nuevosProductos);
       toast.success('Reparación frecuente aplicada correctamente');
@@ -300,28 +313,35 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
       setIsLoading(true);
       const total = calcularTotal();
       const dataToSend = {
-        productos: productos.map((p) => {
+        conceptos: productos.map((p) => {
+          // Si es un concepto extra de una reparación frecuente
+          if (p.conceptoExtra) {
+            return {
+              descripcion: p.conceptoExtra,
+              cantidad: p.cantidad,
+              precioUnitario: p.precioConceptoExtra || p.precioVenta,
+              total: p.cantidad * (p.precioConceptoExtra || p.precioVenta)
+            };
+          }
+
           // Lista de conceptos especiales que no son productos físicos
           const conceptosEspeciales = ['Mano de Obra', 'Diagnostico', 'Diagnóstico'];
           
           // Si es un concepto especial, lo manejamos diferente
           if (conceptosEspeciales.some(concepto => 
-            p.nombre?.includes(concepto) || 
-            p.conceptoExtra?.includes(concepto)
+            p.nombre?.includes(concepto)
           )) {
             return {
-              piezaId: null,
+              descripcion: p.nombre || 'Concepto sin nombre',
               cantidad: p.cantidad,
               precioUnitario: p.precioVenta,
-              conceptoExtra: p.nombre || p.conceptoExtra,
-              precioConceptoExtra: p.precioVenta,
+              total: p.cantidad * p.precioVenta
             };
           }
 
           // Para productos normales, buscamos en el catálogo
           const productoCatalogo = catalogoProductos?.find((prod: Producto) => 
-            prod.nombre === p.nombre || 
-            (p.nombre && p.nombre.includes(prod.nombre))
+            prod.id === p.productoId
           );
 
           if (!productoCatalogo) {
@@ -330,11 +350,10 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
           }
 
           return {
-            piezaId: productoCatalogo.id,
+            descripcion: productoCatalogo.nombre,
             cantidad: p.cantidad,
             precioUnitario: p.precioVenta,
-            conceptoExtra: p.conceptoExtra,
-            precioConceptoExtra: p.precioConceptoExtra,
+            total: p.cantidad * p.precioVenta
           };
         }),
         total,
@@ -354,6 +373,9 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
         console.error('Error del servidor:', errorData);
         throw new Error(`Error al guardar el presupuesto: ${errorData}`);
       }
+
+      // Recargar el presupuesto
+      await refetchPresupuesto();
 
       toast.success('Presupuesto guardado correctamente');
       if (onUpdate) {
@@ -392,158 +414,129 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
               </Select>
             </div>
 
-            {/* Sección para agregar productos desde precios de venta */}
-            <div className="space-y-2">
-              <Label>Agregar Producto desde Precios de Venta</Label>
-              <div className="flex space-x-2">
-                <Popover open={open} onOpenChange={setOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={open}
-                      className="w-full justify-between"
-                    >
-                      {searchValue || "Buscar producto..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput 
-                        placeholder="Buscar producto..." 
-                        value={searchValue}
-                        onValueChange={setSearchValue}
-                      />
-                      <CommandEmpty>No se encontraron productos.</CommandEmpty>
-                      <CommandGroup className="max-h-[300px] overflow-auto">
-                        {preciosVentaFiltrados.map((precio: PrecioVenta) => {
-                          const nombreCompleto = `${precio.nombre} ${precio.marca ? `- ${precio.marca}` : ''} ${precio.modelo ? `- ${precio.modelo}` : ''}`;
-                          const yaSeleccionado = productos.some(p => p.nombre === nombreCompleto);
-                          
-                          return (
-                            <CommandItem
-                              key={precio.id}
-                              value={nombreCompleto}
-                              onSelect={() => {
-                                if (!yaSeleccionado) {
-                                  setProductos([
-                                    ...productos,
-                                    {
-                                      id: Math.random().toString(36).substr(2, 9),
-                                      productoId: 0,
-                                      cantidad: 1,
-                                      precioVenta: precio.precio_venta,
-                                      nombre: nombreCompleto,
-                                    },
-                                  ]);
-                                  setSearchValue('');
-                                  setOpen(false);
-                                  toast.success('Producto agregado correctamente');
-                                } else {
-                                  toast.info('Este producto ya está en la lista');
-                                }
-                              }}
-                            >
-                              <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center space-x-2">
-                                  {yaSeleccionado && (
-                                    <Check className="h-4 w-4 text-green-500" />
-                                  )}
-                                  <span>{nombreCompleto}</span>
-                                </div>
-                                <span className="text-sm text-gray-500">
-                                  ${precio.precio_venta}
-                                </span>
-                              </div>
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
             {/* Tabla de productos */}
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Producto</TableHead>
-                  <TableHead>Cantidad</TableHead>
-                  <TableHead>Precio Unitario</TableHead>
-                  <TableHead>Subtotal</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {productos.map((producto) => (
-                  <TableRow key={producto.id}>
-                    <TableCell>
-                      {producto.nombre || 'Seleccionar producto...'}
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={producto.cantidad}
-                        onChange={(e) =>
-                          handleProductoChange(producto.id, 'cantidad', parseInt(e.target.value))
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={producto.precioVenta}
-                        onChange={(e) =>
-                          handleProductoChange(producto.id, 'precioVenta', parseFloat(e.target.value))
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      ${(producto.cantidad * producto.precioVenta).toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        type="button"
-                        onClick={() => handleRemoveProducto(producto.id)}
-                        className="flex items-center space-x-2"
-                      >
-                        <div className="p-2 rounded-md border-2 border-orange-500">
-                          <TrashIcon className="h-5 w-5 text-orange-500" />
-                        </div>
-                        <span>Eliminar</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            {/* Total */}
-            <div className="flex justify-end space-x-4">
-              <div className="text-lg font-semibold">
-                Total: ${calcularTotal().toFixed(2)}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium">Productos</h3>
+                <Button onClick={handleAddProducto} size="sm">
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Agregar Producto
+                </Button>
               </div>
-            </div>
 
-            {/* Botón de guardar */}
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                onClick={handleGuardarPresupuesto}
-                disabled={isLoading}
-                className="flex items-center space-x-2"
-              >
-                <div className="p-2 rounded-md border-2 border-orange-500">
-                  <HiSave className="h-5 w-5 text-orange-500" />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Producto</TableHead>
+                    <TableHead>Cantidad</TableHead>
+                    <TableHead>Precio Unitario</TableHead>
+                    <TableHead>Subtotal</TableHead>
+                    <TableHead>Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {productos.map((producto) => (
+                    <TableRow key={producto.id}>
+                      <TableCell>
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={open}
+                              className="w-full justify-between"
+                            >
+                              {producto.nombre || "Seleccionar producto..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0">
+                            <Command>
+                              <CommandInput
+                                placeholder="Buscar producto..."
+                                value={searchValue}
+                                onValueChange={setSearchValue}
+                              />
+                              <CommandEmpty>No se encontraron productos.</CommandEmpty>
+                              <CommandGroup>
+                                {catalogoProductos?.map((producto: Producto) => (
+                                  <CommandItem
+                                    key={producto.id}
+                                    value={producto.nombre}
+                                    onSelect={() => {
+                                      handleProductoChange(producto.id.toString(), 'productoId', producto.id);
+                                      setOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        producto.id === producto.id ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {producto.nombre}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={producto.cantidad}
+                          onChange={(e) => handleProductoChange(producto.id, 'cantidad', parseInt(e.target.value))}
+                          className="w-20"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={producto.precioVenta}
+                          onChange={(e) => handleProductoChange(producto.id, 'precioVenta', parseFloat(e.target.value))}
+                          className="w-32"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        ${(producto.cantidad * producto.precioVenta).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveProducto(producto.id)}
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Total */}
+              <div className="flex justify-end space-x-4">
+                <div className="text-right">
+                  <div className="text-sm text-gray-500">Total</div>
+                  <div className="text-2xl font-bold">${calcularTotal().toFixed(2)}</div>
                 </div>
-                <span>{isLoading ? 'Guardando...' : 'Guardar Presupuesto'}</span>
-              </Button>
+              </div>
+
+              {/* Botón de guardar */}
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleGuardarPresupuesto}
+                  disabled={isLoading}
+                  className="bg-[#FEBF19] hover:bg-[#FEBF19]/90"
+                >
+                  <HiSave className="mr-2 h-5 w-5" />
+                  {isLoading ? 'Guardando...' : 'Guardar Presupuesto'}
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>

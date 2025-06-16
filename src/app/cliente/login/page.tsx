@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useClienteAuth } from '@/hooks/useClienteAuth';
 
 function ClienteLoginForm() {
   const [email, setEmail] = useState('');
@@ -12,6 +13,13 @@ function ClienteLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/cliente';
+  const { cliente } = useClienteAuth();
+
+  // Si ya está autenticado, redirigir al dashboard
+  if (cliente) {
+    router.push(callbackUrl);
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,15 +27,18 @@ function ClienteLoginForm() {
     setLoading(true);
 
     try {
+      console.log('Iniciando proceso de login...');
       const response = await fetch('/api/cliente/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include',
       });
 
       const data = await response.json();
+      console.log('Respuesta del servidor:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Error al iniciar sesión');
@@ -36,16 +47,31 @@ function ClienteLoginForm() {
       // Esperar un momento para asegurar que la cookie se establezca
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Verificar la sesión antes de redirigir
-      const sessionResponse = await fetch('/api/cliente/me');
+      console.log('Verificando sesión...');
+      const sessionResponse = await fetch('/api/cliente/me', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
       if (!sessionResponse.ok) {
         throw new Error('Error al verificar la sesión');
       }
 
-      // Redirigir al usuario
-      window.location.href = decodeURIComponent(callbackUrl);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+      const sessionData = await sessionResponse.json();
+      console.log('Sesión verificada:', sessionData);
+
+      if (sessionData.cliente) {
+        console.log('Redirigiendo a:', callbackUrl);
+        router.push(callbackUrl);
+      } else {
+        throw new Error('No se pudo verificar la sesión');
+      }
+    } catch (err: any) {
+      console.error('Error en login:', err);
+      setError(err.message || 'Error al iniciar sesión');
     } finally {
       setLoading(false);
     }
@@ -140,7 +166,13 @@ function ClienteLoginForm() {
 
 export default function ClienteLoginPage() {
   return (
-    <Suspense fallback={<div>Cargando...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      }
+    >
       <ClienteLoginForm />
     </Suspense>
   );

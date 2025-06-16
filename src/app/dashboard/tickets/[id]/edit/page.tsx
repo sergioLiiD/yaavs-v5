@@ -4,32 +4,74 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { TicketForm } from '@/app/dashboard/tickets/components/TicketForm';
+import RouteGuard from '@/components/route-guard';
+import { toast } from 'sonner';
 
 export default function EditTicketPage({ params }: { params: { id: string } }) {
   const [ticket, setTicket] = useState<any>(null);
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [marcas, setMarcas] = useState<any[]>([]);
+  const [modelos, setModelos] = useState<any[]>([]);
+  const [tiposServicio, setTiposServicio] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { data: session } = useSession();
 
   useEffect(() => {
-    const fetchTicket = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`/api/tickets/${params.id}`);
-        if (!response.ok) {
+        // Obtener el ticket
+        const ticketResponse = await fetch(`/api/tickets/${params.id}`);
+        if (!ticketResponse.ok) {
           throw new Error('Error al cargar el ticket');
         }
-        const data = await response.json();
-        setTicket(data);
+        const ticketData = await ticketResponse.json();
+        setTicket(ticketData);
+
+        // Obtener clientes
+        const clientesResponse = await fetch('/api/clientes');
+        if (!clientesResponse.ok) {
+          throw new Error('Error al cargar los clientes');
+        }
+        const clientesData = await clientesResponse.json();
+        setClientes(clientesData);
+
+        // Obtener marcas
+        const marcasResponse = await fetch('/api/catalogo/marcas');
+        if (!marcasResponse.ok) {
+          throw new Error('Error al cargar las marcas');
+        }
+        const marcasData = await marcasResponse.json();
+        setMarcas(marcasData);
+
+        // Obtener modelos de la marca del ticket
+        if (ticketData.modelo?.marcaId) {
+          const modelosResponse = await fetch(`/api/catalogo/modelos?marcaId=${ticketData.modelo.marcaId}`);
+          if (!modelosResponse.ok) {
+            throw new Error('Error al cargar los modelos');
+          }
+          const modelosData = await modelosResponse.json();
+          setModelos(modelosData);
+        }
+
+        // Obtener tipos de servicio
+        const tiposServicioResponse = await fetch('/api/catalogo/tipos-servicio');
+        if (!tiposServicioResponse.ok) {
+          throw new Error('Error al cargar los tipos de servicio');
+        }
+        const tiposServicioData = await tiposServicioResponse.json();
+        setTiposServicio(tiposServicioData);
       } catch (err) {
-        setError('Error al cargar el ticket');
+        setError('Error al cargar los datos');
         console.error('Error:', err);
+        toast.error('Error al cargar los datos');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTicket();
+    fetchData();
   }, [params.id]);
 
   const handleSubmit = async (formData: any) => {
@@ -85,16 +127,21 @@ export default function EditTicketPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white shadow rounded-lg p-6">
-          <TicketForm
-            initialData={ticket}
-            onSubmit={handleSubmit}
-            isEditing={true}
-          />
+    <RouteGuard requiredPermissions={['TICKETS_EDIT']} section="Tickets">
+      <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white shadow rounded-lg p-6">
+            <h1 className="text-2xl font-bold mb-6">Editar Ticket #{ticket.numeroTicket}</h1>
+            <TicketForm
+              clientes={clientes}
+              marcas={marcas}
+              modelos={modelos}
+              tiposServicio={tiposServicio}
+              ticket={ticket}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </RouteGuard>
   );
 } 

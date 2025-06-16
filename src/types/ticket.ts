@@ -1,13 +1,28 @@
 import { Prisma } from '@prisma/client';
 
+export type ChecklistRespuestaDiagnostico = {
+  id: number;
+  checklistDiagnosticoId: number;
+  checklistItemId: number;
+  respuesta: string;
+  observaciones?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  checklistItem: {
+    id: number;
+    nombre: string;
+    descripcion?: string | null;
+    paraDiagnostico: boolean;
+    paraReparacion: boolean;
+  };
+};
+
 export type ChecklistDiagnostico = {
   id: number;
   reparacionId: number;
-  item: string;
-  respuesta: boolean;
-  observacion?: string | null;
   createdAt: Date;
   updatedAt: Date;
+  respuestas: ChecklistRespuestaDiagnostico[];
 };
 
 export type ReparacionWithChecklist = {
@@ -25,9 +40,12 @@ export type ReparacionWithChecklist = {
   checklist: any | null;
   saludBateria: number | null;
   versionSO: string | null;
+  capacidad: string | null;
+  codigoDesbloqueo: string | null;
+  redCelular: string | null;
   createdAt: Date;
   updatedAt: Date;
-  checklistItems: ChecklistDiagnostico[];
+  checklistDiagnostico: ChecklistDiagnostico | null;
   tecnico: {
     id: number;
     nombre: string;
@@ -71,6 +89,12 @@ export interface Ticket {
   createdAt: Date;
   updatedAt: Date;
   imei: string | null;
+  capacidad: string | null;
+  color: string | null;
+  fechaCompra: Date | null;
+  codigoDesbloqueo: string | null;
+  patronDesbloqueo: number[];
+  redCelular: string | null;
   cliente: {
     id: number;
     nombre: string;
@@ -86,7 +110,7 @@ export interface Ticket {
   modelo: {
     id: number;
     nombre: string;
-    marcas: {
+    marca: {
       id: number;
       nombre: string;
     };

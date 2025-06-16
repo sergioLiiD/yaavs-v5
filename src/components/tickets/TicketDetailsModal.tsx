@@ -14,6 +14,7 @@ interface Ticket {
   numeroTicket: string;
   fechaRecepcion: string;
   descripcionProblema: string | null;
+  imei?: string;
   cliente?: {
     id: number;
     nombre: string;
@@ -49,7 +50,6 @@ interface Ticket {
     tipo: string;
     marca: string;
     modelo: string;
-    serie?: string;
   };
   presupuesto?: {
     id: number;
@@ -131,8 +131,8 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
                 <p className="font-medium">{ticket.dispositivo?.tipo || 'No disponible'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Serie</p>
-                <p className="font-medium">{ticket.dispositivo?.serie || 'No disponible'}</p>
+                <p className="text-sm text-muted-foreground">IMEI</p>
+                <p className="font-medium">{ticket.imei || 'No disponible'}</p>
               </div>
             </div>
           </div>

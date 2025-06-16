@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { HiPlus, HiPencil, HiTrash, HiChevronDown, HiChevronUp, HiSearch } from 'react-icons/hi';
@@ -24,15 +24,28 @@ interface Proveedor {
   notas: string | null;
 }
 
+interface FormData {
+  nombre: string;
+  contacto: string;
+  telefono: string;
+  email: string;
+  direccion: string;
+  tipo: 'FISICA' | 'MORAL';
+  rfc: string;
+  banco: string;
+  cuentaBancaria: string;
+  clabeInterbancaria: string;
+  notas: string;
+}
+
 export default function ProveedoresPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
-  const [proveedoresFiltrados, setProveedoresFiltrados] = useState<Proveedor[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [proveedorExpandido, setProveedorExpandido] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState<Partial<Proveedor>>({
+  const [formData, setFormData] = useState<FormData>({
     nombre: '',
     contacto: '',
     telefono: '',
@@ -42,27 +55,32 @@ export default function ProveedoresPage() {
     rfc: '',
     banco: '',
     cuentaBancaria: '',
-    clabeInterbancaria: ''
+    clabeInterbancaria: '',
+    notas: ''
   });
+  const [errors, setErrors] = useState<Partial<FormData>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (session?.user) {
-      fetchProveedores();
-    }
-  }, [session]);
+    let mounted = true;
 
-  useEffect(() => {
-    const filtrados = proveedores.filter(proveedor => 
-      proveedor.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      proveedor.contacto.toLowerCase().includes(busqueda.toLowerCase()) ||
-      (proveedor.email?.toLowerCase() || '').includes(busqueda.toLowerCase())
-    );
-    setProveedoresFiltrados(filtrados);
-  }, [busqueda, proveedores]);
+    const loadProveedores = async () => {
+      if (session?.user && mounted) {
+        console.log('Cargando proveedores iniciales...');
+        await fetchProveedores();
+      }
+    };
+
+    loadProveedores();
+
+    return () => {
+      mounted = false;
+    };
+  }, [session]);
 
   const fetchProveedores = async () => {
     try {
+      console.log('Fetching proveedores...');
       const response = await fetch('/api/catalogo/proveedores');
       if (response.ok) {
         const data = await response.json();
@@ -76,8 +94,62 @@ export default function ProveedoresPage() {
     }
   };
 
+  // Filtrar proveedores basado en la búsqueda
+  const proveedoresFiltrados = useMemo(() => {
+    console.log('Filtrando proveedores...');
+    return proveedores.filter(proveedor => 
+      proveedor.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      proveedor.contacto.toLowerCase().includes(busqueda.toLowerCase()) ||
+      (proveedor.email?.toLowerCase() || '').includes(busqueda.toLowerCase())
+    );
+  }, [busqueda, proveedores]);
+
+  const validateForm = (): boolean => {
+    console.log('Validando formulario con datos:', formData);
+    const newErrors: Partial<FormData> = {};
+    
+    // Validar campos obligatorios
+    const camposObligatorios: (keyof FormData)[] = [
+      'nombre', 'contacto', 'telefono', 'rfc', 'banco', 
+      'cuentaBancaria', 'clabeInterbancaria'
+    ];
+    
+    camposObligatorios.forEach(campo => {
+      console.log(`Validando campo ${campo}:`, formData[campo]);
+      if (!formData[campo]) {
+        console.log(`Campo ${campo} está vacío`);
+        newErrors[campo] = 'Este campo es obligatorio';
+      }
+    });
+
+    // Validar email si se proporciona
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      console.log('Email inválido:', formData.email);
+      newErrors.email = 'El email no es válido';
+    }
+
+    // Validar CLABE
+    if (formData.clabeInterbancaria && !/^\d{18}$/.test(formData.clabeInterbancaria)) {
+      console.log('CLABE inválida:', formData.clabeInterbancaria);
+      newErrors.clabeInterbancaria = 'La CLABE debe tener 18 dígitos';
+    }
+
+    console.log('Errores encontrados:', newErrors);
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('handleSubmit called');
     e.preventDefault();
+    
+    console.log('Validating form...');
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
+    console.log('Form validation passed');
+
     try {
       const url = editingId 
         ? `/api/catalogo/proveedores/${editingId}`
@@ -85,6 +157,10 @@ export default function ProveedoresPage() {
       
       const method = editingId ? 'PUT' : 'POST';
       
+      console.log('Sending request to:', url);
+      console.log('Request method:', method);
+      console.log('Request data:', formData);
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -93,7 +169,12 @@ export default function ProveedoresPage() {
         body: JSON.stringify(formData),
       });
 
+      console.log('Response status:', response.status);
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+
       if (response.ok) {
+        // Primero limpiamos el formulario y cerramos el modal
         setIsModalOpen(false);
         setFormData({
           nombre: '',
@@ -105,21 +186,39 @@ export default function ProveedoresPage() {
           rfc: '',
           banco: '',
           cuentaBancaria: '',
-          clabeInterbancaria: ''
+          clabeInterbancaria: '',
+          notas: ''
         });
         setEditingId(null);
-        fetchProveedores();
+
+        // Luego actualizamos la lista de proveedores
+        console.log('Actualizando lista de proveedores...');
+        await fetchProveedores();
+        console.log('Lista de proveedores actualizada');
       } else {
-        const errorData = await response.json();
-        console.error('Error al guardar proveedor:', errorData);
+        console.error('Error al guardar proveedor:', responseData);
+        alert(responseData.error || 'Error al guardar el proveedor');
       }
     } catch (error) {
       console.error('Error al guardar proveedor:', error);
+      alert('Error al guardar el proveedor');
     }
   };
 
   const handleEdit = (proveedor: Proveedor) => {
-    setFormData(proveedor);
+    setFormData({
+      nombre: proveedor.nombre,
+      contacto: proveedor.contacto,
+      telefono: proveedor.telefono,
+      email: proveedor.email || '',
+      direccion: proveedor.direccion || '',
+      tipo: proveedor.tipo,
+      rfc: proveedor.rfc,
+      banco: proveedor.banco,
+      cuentaBancaria: proveedor.cuentaBancaria,
+      clabeInterbancaria: proveedor.clabeInterbancaria,
+      notas: proveedor.notas || ''
+    });
     setEditingId(proveedor.id);
     setIsModalOpen(true);
   };
@@ -136,9 +235,11 @@ export default function ProveedoresPage() {
         } else {
           const errorData = await response.json();
           console.error('Error al eliminar proveedor:', errorData);
+          alert(errorData.error || 'Error al eliminar el proveedor');
         }
       } catch (error) {
         console.error('Error al eliminar proveedor:', error);
+        alert('Error al eliminar el proveedor');
       }
     }
   };
@@ -163,7 +264,8 @@ export default function ProveedoresPage() {
               rfc: '',
               banco: '',
               cuentaBancaria: '',
-              clabeInterbancaria: ''
+              clabeInterbancaria: '',
+              notas: ''
             });
             setEditingId(null);
             setIsModalOpen(true);
@@ -305,7 +407,11 @@ export default function ProveedoresPage() {
             <h2 className="text-xl font-semibold mb-4 text-gray-900">
               {editingId ? 'Editar Proveedor' : 'Nuevo Proveedor'}
             </h2>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => {
+              console.log('Form submitted');
+              e.preventDefault();
+              handleSubmit(e);
+            }}>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-900">Tipo</label>
@@ -326,10 +432,11 @@ export default function ProveedoresPage() {
                     name="nombre"
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                    className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900 ${errors.nombre ? 'border-red-500' : ''}`}
                     required
                     placeholder="Nombre del proveedor"
                   />
+                  {errors.nombre && <p className="mt-1 text-sm text-red-600">{errors.nombre}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-900">Contacto</label>
@@ -338,9 +445,10 @@ export default function ProveedoresPage() {
                     name="contacto"
                     value={formData.contacto}
                     onChange={(e) => setFormData({ ...formData, contacto: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                    className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900 ${errors.contacto ? 'border-red-500' : ''}`}
                     placeholder="Nombre del contacto"
                   />
+                  {errors.contacto && <p className="mt-1 text-sm text-red-600">{errors.contacto}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-900">Teléfono *</label>
@@ -349,10 +457,11 @@ export default function ProveedoresPage() {
                     name="telefono"
                     value={formData.telefono}
                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                    className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900 ${errors.telefono ? 'border-red-500' : ''}`}
                     required
                     placeholder="Teléfono del proveedor"
                   />
+                  {errors.telefono && <p className="mt-1 text-sm text-red-600">{errors.telefono}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-900">Email</label>
@@ -372,9 +481,10 @@ export default function ProveedoresPage() {
                     name="rfc"
                     value={formData.rfc}
                     onChange={(e) => setFormData({ ...formData, rfc: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                    className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900 ${errors.rfc ? 'border-red-500' : ''}`}
                     placeholder="RFC del proveedor"
                   />
+                  {errors.rfc && <p className="mt-1 text-sm text-red-600">{errors.rfc}</p>}
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-900">Dirección</label>
@@ -394,9 +504,10 @@ export default function ProveedoresPage() {
                     name="banco"
                     value={formData.banco}
                     onChange={(e) => setFormData({ ...formData, banco: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                    className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900 ${errors.banco ? 'border-red-500' : ''}`}
                     placeholder="Nombre del banco"
                   />
+                  {errors.banco && <p className="mt-1 text-sm text-red-600">{errors.banco}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-900">Cuenta Bancaria</label>
@@ -405,9 +516,10 @@ export default function ProveedoresPage() {
                     name="cuentaBancaria"
                     value={formData.cuentaBancaria}
                     onChange={(e) => setFormData({ ...formData, cuentaBancaria: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                    className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900 ${errors.cuentaBancaria ? 'border-red-500' : ''}`}
                     placeholder="Número de cuenta bancaria"
                   />
+                  {errors.cuentaBancaria && <p className="mt-1 text-sm text-red-600">{errors.cuentaBancaria}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-900">CLABE Interbancaria</label>
@@ -416,9 +528,10 @@ export default function ProveedoresPage() {
                     name="clabeInterbancaria"
                     value={formData.clabeInterbancaria}
                     onChange={(e) => setFormData({ ...formData, clabeInterbancaria: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900"
+                    className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-900 ${errors.clabeInterbancaria ? 'border-red-500' : ''}`}
                     placeholder="CLABE interbancaria"
                   />
+                  {errors.clabeInterbancaria && <p className="mt-1 text-sm text-red-600">{errors.clabeInterbancaria}</p>}
                 </div>
               </div>
               <div className="mt-6 flex justify-end space-x-3">
@@ -431,6 +544,13 @@ export default function ProveedoresPage() {
                 </button>
                 <button
                   type="submit"
+                  onClick={() => {
+                    console.log('Save button clicked');
+                    const form = document.querySelector('form');
+                    if (form) {
+                      form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                    }
+                  }}
                   className="px-4 py-2 bg-[#FEBF19] text-white rounded-md hover:bg-[#FEBF19]/90"
                 >
                   {editingId ? 'Actualizar' : 'Guardar'}

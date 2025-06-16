@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { HiChevronDown, HiChevronRight } from 'react-icons/hi';
-import { ShoppingCart, Package, Boxes, AlertCircle } from 'lucide-react';
+import { ShoppingCart, Package, Boxes, AlertCircle, TruckIcon } from 'lucide-react';
 
 interface MenuItem {
   title: string;
@@ -47,7 +47,7 @@ const menuItems: MenuItem[] = [
       {
         title: 'Proveedores',
         path: '/dashboard/catalogo/proveedores',
-        requiredPermissions: ['CATALOG_VIEW']
+        requiredPermissions: ['PROVEEDORES_VIEW']
       },
       {
         title: 'Reparaciones Frecuentes',

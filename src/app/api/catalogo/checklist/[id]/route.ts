@@ -72,6 +72,16 @@ export async function DELETE(
     return NextResponse.json({ message: 'Item eliminado correctamente' });
   } catch (error) {
     console.error('Error al eliminar item del checklist:', error);
+    
+    // Si el error indica que el ítem está en uso, devolver 409 Conflict
+    if (error instanceof Error && error.message.includes('está en uso')) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 409 }
+      );
+    }
+
+    // Para otros errores, mantener el comportamiento actual
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error al eliminar el item del checklist' },
       { status: error instanceof Error && error.message.includes('no encontrado') ? 404 : 500 }

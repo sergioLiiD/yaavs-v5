@@ -27,7 +27,7 @@ export async function GET(
     // Obtener el historial de pagos
     const pagos = await prisma.pago.findMany({
       where: { ticketId },
-      orderBy: { fecha: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json(pagos);

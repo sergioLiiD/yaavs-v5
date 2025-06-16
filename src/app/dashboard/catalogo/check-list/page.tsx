@@ -121,9 +121,12 @@ export default function ChecklistPage() {
     try {
       await axios.delete(`/api/catalogo/checklist/${id}`);
       setChecklistItems(checklistItems.filter(item => item.id !== id));
-    } catch (err) {
+      setError(''); // Limpiar cualquier error previo
+    } catch (err: any) {
       console.error('Error al eliminar item del checklist:', err);
-      setError('Error al eliminar el item. Por favor, intente nuevamente.');
+      // Mostrar el mensaje de error del backend si existe
+      const errorMessage = err.response?.data?.error || 'Error al eliminar el item. Por favor, intente nuevamente.';
+      setError(errorMessage);
     }
   };
 

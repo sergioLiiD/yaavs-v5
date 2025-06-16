@@ -20,6 +20,9 @@ import { toast } from "sonner";
 interface Tecnico {
   id: number;
   nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno?: string;
+  email?: string;
 }
 
 interface AssignTechnicianModalProps {
@@ -37,12 +40,21 @@ export function AssignTechnicianModal({ isOpen, onClose, ticketId, onAssign }: A
   useEffect(() => {
     const fetchTecnicos = async () => {
       try {
+        console.log('Iniciando fetch de técnicos...');
         const response = await fetch('/api/usuarios/tecnicos');
-        if (!response.ok) throw new Error('Error al cargar técnicos');
+        if (!response.ok) {
+          console.error('Error en la respuesta:', response.status);
+          throw new Error('Error al cargar técnicos');
+        }
         const data = await response.json();
+        console.log('Técnicos cargados:', data);
+        if (!Array.isArray(data)) {
+          console.error('Los datos recibidos no son un array:', data);
+          throw new Error('Formato de datos inválido');
+        }
         setTecnicos(data);
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error al cargar técnicos:', error);
         toast.error('Error al cargar la lista de técnicos');
       }
     };
@@ -68,14 +80,17 @@ export function AssignTechnicianModal({ isOpen, onClose, ticketId, onAssign }: A
         body: JSON.stringify({ tecnicoId: parseInt(selectedTecnico) }),
       });
 
-      if (!response.ok) throw new Error('Error al asignar técnico');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al asignar técnico');
+      }
 
       toast.success('Técnico asignado correctamente');
       onAssign();
       onClose();
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al asignar técnico');
+      console.error('Error al asignar técnico:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al asignar técnico');
     } finally {
       setLoading(false);
     }
@@ -87,7 +102,7 @@ export function AssignTechnicianModal({ isOpen, onClose, ticketId, onAssign }: A
         <DialogHeader>
           <DialogTitle>Asignar Técnico</DialogTitle>
           <DialogDescription>
-            Selecciona el técnico que se encargará de la reparación
+            Selecciona un técnico para asignar a este ticket
           </DialogDescription>
         </DialogHeader>
 
@@ -97,14 +112,20 @@ export function AssignTechnicianModal({ isOpen, onClose, ticketId, onAssign }: A
             onValueChange={setSelectedTecnico}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Seleccionar técnico" />
+              <SelectValue placeholder="Selecciona un técnico" />
             </SelectTrigger>
             <SelectContent>
-              {tecnicos.map((tecnico) => (
-                <SelectItem key={tecnico.id} value={tecnico.id.toString()}>
-                  {tecnico.nombre}
+              {tecnicos.length === 0 ? (
+                <SelectItem value="none" disabled>
+                  No hay técnicos disponibles
                 </SelectItem>
-              ))}
+              ) : (
+                tecnicos.map((tecnico) => (
+                  <SelectItem key={tecnico.id} value={tecnico.id.toString()}>
+                    {`${tecnico.nombre} ${tecnico.apellidoPaterno} ${tecnico.apellidoMaterno || ''}`}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -113,7 +134,7 @@ export function AssignTechnicianModal({ isOpen, onClose, ticketId, onAssign }: A
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={handleAssign} disabled={loading}>
+          <Button onClick={handleAssign} disabled={loading || !selectedTecnico}>
             {loading ? 'Asignando...' : 'Asignar'}
           </Button>
         </DialogFooter>

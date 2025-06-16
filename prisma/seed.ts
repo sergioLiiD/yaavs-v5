@@ -238,30 +238,28 @@ async function main() {
     }
     console.log('Usuario de atención al cliente creado:', atencionCliente.email);
 
-    // Crear estados de reparación si no existen
+    // Crear estados de reparación
     const estadosReparacion = [
-      { nombre: 'Recibido', descripcion: 'El dispositivo ha sido recibido y está pendiente de diagnóstico', orden: 1 },
-      { nombre: 'En Diagnóstico', descripcion: 'El dispositivo está siendo diagnosticado', orden: 2 },
-      { nombre: 'Diagnóstico Completado', descripcion: 'El diagnóstico ha sido completado', orden: 3 },
-      { nombre: 'En Reparación', descripcion: 'El dispositivo está siendo reparado', orden: 4 },
-      { nombre: 'Reparación Completada', descripcion: 'La reparación ha sido completada', orden: 5 },
-      { nombre: 'Listo para Entrega', descripcion: 'El dispositivo está listo para ser entregado', orden: 6 },
-      { nombre: 'Entregado', descripcion: 'El dispositivo ha sido entregado al cliente', orden: 7 },
-      { nombre: 'Cancelado', descripcion: 'El ticket ha sido cancelado', orden: 8 },
+      { nombre: 'Recibido', descripcion: 'El dispositivo ha sido recibido y está pendiente de diagnóstico' },
+      { nombre: 'En Diagnóstico', descripcion: 'El dispositivo está siendo analizado para determinar el problema' },
+      { nombre: 'Diagnóstico Completado', descripcion: 'Se ha completado el diagnóstico del dispositivo' },
+      { nombre: 'En Reparación', descripcion: 'El dispositivo está siendo reparado' },
+      { nombre: 'Reparación Completada', descripcion: 'La reparación del dispositivo ha sido completada' },
+      { nombre: 'En Pruebas', descripcion: 'El dispositivo está siendo probado después de la reparación' },
+      { nombre: 'Listo para Entrega', descripcion: 'El dispositivo está listo para ser entregado al cliente' },
+      { nombre: 'Entregado', descripcion: 'El dispositivo ha sido entregado al cliente' },
+      { nombre: 'Cancelado', descripcion: 'La reparación ha sido cancelada' }
     ];
 
     for (const estado of estadosReparacion) {
       await prisma.estatusReparacion.upsert({
         where: { nombre: estado.nombre },
-        update: {},
-        create: {
-          ...estado,
-          updatedAt: new Date(),
-        },
+        update: estado,
+        create: estado
       });
     }
 
-    console.log('Estados de reparación creados');
+    console.log('Estados de reparación creados correctamente');
 
     // Crear marcas
     const marcas = [
@@ -447,36 +445,27 @@ async function main() {
     }
 
     // Crear tipos de servicio
-    const tiposServicio = [
-      {
-        nombre: 'Reparación de Pantalla',
-        descripcion: 'Servicio de reparación o reemplazo de pantallas de dispositivos móviles'
-      },
-      {
-        nombre: 'Cambio de Batería',
-        descripcion: 'Servicio de reemplazo de baterías en dispositivos móviles'
-      },
-      {
-        nombre: 'Reparación de Cámara',
-        descripcion: 'Servicio de reparación o reemplazo de cámaras en dispositivos móviles'
-      },
-      {
-        nombre: 'Reparación de Placa',
-        descripcion: 'Servicio de reparación de placas base en dispositivos móviles'
-      },
-      {
-        nombre: 'Desbloqueo',
-        descripcion: 'Servicio de desbloqueo de dispositivos móviles'
-      }
-    ];
+    await prisma.tipoServicio.createMany({
+      data: [
+        { nombre: 'Reparación de Celulares' },
+        { nombre: 'Reparación de Tablets' },
+        { nombre: 'Reparación de Laptops' },
+        { nombre: 'Reparación de Consolas' },
+        { nombre: 'Reparación de Smartwatches' },
+        { nombre: 'Reparación de Otros Dispositivos' }
+      ],
+      skipDuplicates: true
+    });
 
-    for (const tipo of tiposServicio) {
-      await prisma.tipoServicio.upsert({
-        where: { nombre: tipo.nombre },
-        update: {},
-        create: tipo
-      });
-    }
+    // Crear categoría por defecto
+    await prisma.categoria.create({
+      data: {
+        id: 1,
+        nombre: 'Reparación de Celulares',
+        descripcion: 'Categoría por defecto para productos de reparación de celulares'
+      },
+      // Si ya existe, no hacer nada
+    }).catch(() => {});
 
     console.log('Tipos de servicio creados exitosamente');
 

@@ -54,13 +54,13 @@ export async function DELETE(
     }
 
     // Primero verificamos si el proveedor existe
-    const proveedor = await prisma.proveedor.findUnique({
+    const proveedores = await prisma.proveedor.findUnique({
       where: {
         id: parseInt(params.id)
       }
     });
 
-    if (!proveedor) {
+    if (!proveedores) {
       return NextResponse.json(
         { error: 'Proveedor no encontrado' },
         { status: 404 }
@@ -70,7 +70,7 @@ export async function DELETE(
     // Verificamos si el proveedor tiene productos asociados
     const productos = await prisma.producto.findMany({
       where: {
-        proveedorId: parseInt(params.id)
+        proveedor_id: parseInt(params.id)
       }
     });
 

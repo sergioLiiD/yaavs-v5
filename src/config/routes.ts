@@ -67,4 +67,13 @@ export const routePermissions: Record<string, string[]> = {
   '/dashboard/puntos-recoleccion/new': ['COLLECTION_POINTS_CREATE'],
   '/dashboard/puntos-recoleccion/[id]/edit': ['COLLECTION_POINTS_EDIT'],
   '/dashboard/puntos-recoleccion/[id]/delete': ['COLLECTION_POINTS_DELETE']
-}; 
+};
+
+export const routes = {
+  // ... existing code ...
+  proveedores: {
+    path: '/dashboard/catalogo/proveedores',
+    label: 'Proveedores'
+  },
+  // ... existing code ...
+} as const; 

@@ -46,14 +46,14 @@ export async function POST(
         cliente: true,
         modelo: {
           include: {
-            marcas: true,
-          },
+            marca: true
+          }
         },
         tipoServicio: true,
         estatusReparacion: true,
         tecnicoAsignado: true,
         creador: true,
-        dispositivos: true,
+        dispositivo: true,
       },
     });
 

@@ -36,8 +36,13 @@ export async function GET(request: Request) {
 
     // Verificar si el usuario es administrador o tiene el permiso USERS_VIEW
     if (session.user.role !== 'ADMINISTRADOR' && !session.user.permissions.includes('USERS_VIEW')) {
-      console.log('Usuario no tiene permisos');
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+      // Si está solicitando técnicos específicamente, permitir el acceso
+      const { searchParams } = new URL(request.url);
+      const rol = searchParams.get('rol');
+      if (rol !== 'TECNICO') {
+        console.log('Usuario no tiene permisos');
+        return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+      }
     }
 
     const { searchParams } = new URL(request.url);

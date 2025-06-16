@@ -320,15 +320,20 @@ export default function CatalogoPage() {
       console.log('tipoServicioId antes de enviar:', formData.tipoServicioId, typeof formData.tipoServicioId);
 
       const data = {
-        ...formData,
+        nombre: formData.nombre,
+        sku: formData.sku || `${formData.nombre}-${Date.now()}`,
+        tipo: formData.tipo,
+        stock: formData.stock,
+        precioPromedio: formData.precioPromedio,
+        stockMaximo: formData.stockMaximo,
+        stockMinimo: formData.stockMinimo,
         tipoServicioId: formData.tipoServicioId,
         marcaId: formData.tipo === 'PRODUCTO' ? formData.marcaId : null,
         modeloId: formData.tipo === 'PRODUCTO' ? formData.modeloId : null,
         garantiaValor: formData.garantiaValor,
-        stock: formData.stock,
-        precioPromedio: formData.precioPromedio,
-        stockMaximo: formData.stockMaximo,
-        stockMinimo: formData.stockMinimo
+        garantiaUnidad: formData.garantiaUnidad,
+        descripcion: formData.descripcion,
+        notasInternas: formData.notasInternas
       };
 
       const response = await fetch('/api/inventario/productos', {
@@ -671,7 +676,7 @@ export default function CatalogoPage() {
 
                     <div>
                       <label htmlFor="sku" className="block text-sm font-medium text-gray-800">
-                        SKU
+                        SKU <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -680,6 +685,7 @@ export default function CatalogoPage() {
                         value={formData.sku}
                         onChange={handleInputChange}
                         className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-sm text-gray-900 border-gray-300 rounded-md p-2 border"
+                        required
                       />
                     </div>
 

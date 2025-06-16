@@ -21,65 +21,44 @@ async function main() {
         activo: true,
       },
       {
-        nombre: 'Diagnóstico Completado',
-        descripcion: 'El diagnóstico ha sido completado y se ha generado el presupuesto',
+        nombre: 'En Presupuesto',
+        descripcion: 'El diagnóstico está completo y se está generando el presupuesto',
         orden: 3,
         color: '#87CEEB', // Azul cielo
         activo: true,
       },
       {
-        nombre: 'Diagnóstico Pendiente',
-        descripcion: 'El diagnóstico está pendiente de aprobación del cliente',
-        orden: 4,
-        color: '#FFB6C1', // Rosa claro
-        activo: true,
-      },
-      {
-        nombre: 'Diagnóstico Aprobado',
-        descripcion: 'El cliente ha aprobado el diagnóstico',
-        orden: 5,
-        color: '#98FB98', // Verde claro
-        activo: true,
-      },
-      {
-        nombre: 'Presupuesto Aprobado',
-        descripcion: 'El cliente ha aprobado el presupuesto',
-        orden: 6,
-        color: '#90EE90', // Verde
-        activo: true,
-      },
-      {
         nombre: 'En Reparación',
         descripcion: 'El dispositivo está siendo reparado',
-        orden: 7,
+        orden: 4,
         color: '#FF69B4', // Rosa
         activo: true,
       },
       {
         nombre: 'Reparación Completada',
         descripcion: 'La reparación ha sido completada',
-        orden: 8,
+        orden: 5,
         color: '#00FF00', // Verde brillante
         activo: true,
       },
       {
         nombre: 'Listo para Entrega',
         descripcion: 'El dispositivo está listo para ser entregado al cliente',
-        orden: 9,
+        orden: 6,
         color: '#008000', // Verde oscuro
         activo: true,
       },
       {
         nombre: 'Entregado',
         descripcion: 'El dispositivo ha sido entregado al cliente',
-        orden: 10,
+        orden: 7,
         color: '#006400', // Verde muy oscuro
         activo: true,
       },
       {
         nombre: 'Cancelado',
         descripcion: 'El ticket ha sido cancelado',
-        orden: 11,
+        orden: 8,
         color: '#FF0000', // Rojo
         activo: true,
       },

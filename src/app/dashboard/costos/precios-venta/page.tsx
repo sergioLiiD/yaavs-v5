@@ -15,14 +15,14 @@ interface PrecioVenta {
   nombre: string;
   marca: string;
   modelo: string;
-  precio_compra_promedio: number;
-  precio_venta: number;
-  producto_id?: number;
-  servicio_id?: number;
-  created_at: Date;
-  updated_at: Date;
-  created_by: string;
-  updated_by: string;
+  precioCompraPromedio: number;
+  precioVenta: number;
+  productoId?: number;
+  servicioId?: number;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string;
+  updatedBy: string;
 }
 
 interface PrecioVentaItem {
@@ -96,56 +96,41 @@ export default function PreciosVentaPage() {
   // Cargar los precios al montar el componente
   const fetchData = useCallback(async () => {
     try {
+      setIsLoading(true);
+      console.log('Iniciando fetchData...');
+      
       const [productosResponse, preciosResponse, preciosPromedioResponse] = await Promise.all([
         fetch('/api/inventario/productos?limit=1000'),
         fetch('/api/precios-venta'),
         fetch('/api/inventario/stock/precios-promedio')
       ]);
 
-      const [productos, precios, preciosPromedio] = await Promise.all([
+      const [productosData, preciosData, preciosPromedioData] = await Promise.all([
         productosResponse.json(),
         preciosResponse.json(),
         preciosPromedioResponse.json()
       ]);
 
-      // Crear un mapa de precios promedio por producto
-      const preciosPromedioMap = new Map(
-        preciosPromedio.map((p: any) => [p.producto_id, p.precio_promedio])
-      );
-
-      // Crear un mapa de precios de venta por producto
-      const preciosVentaMap = new Map(
-        precios.map((p: any) => [p.productoId, p])
-      );
-
-      // Combinar los datos - incluir todos los productos
-      const preciosCombinados = productos.map((producto: any) => {
-        const precioVenta = preciosVentaMap.get(producto.id);
-        return {
-          id: producto.id,
-          precio_id: precioVenta?.id?.toString() || '',
-          nombre: producto.nombre,
-          tipo: 'PRODUCTO',
-          marca: producto.marca?.nombre || '-',
-          modelo: producto.modelo?.nombre || '-',
-          precio: precioVenta?.precioVenta || 0,
-          precio_compra: preciosPromedioMap.get(producto.id) || 0,
-          producto_id: producto.id
-        };
+      console.log('Datos recibidos:', {
+        productos: productosData.length,
+        precios: preciosData.length,
+        preciosPromedio: preciosPromedioData.length
       });
 
-      // Ordenar por nombre
-      preciosCombinados.sort((a, b) => a.nombre.localeCompare(b.nombre));
-
-      setPrecios(preciosCombinados);
+      setProductos(productosData);
+      setPrecios(preciosData);
+      setPreciosPromedio(preciosPromedioData);
     } catch (error) {
       console.error('Error al cargar los datos:', error);
+      setError('Error al cargar los datos');
+    } finally {
+      setIsLoading(false);
     }
-  }, []); // Dependencias vacías ya que no depende de ningún estado
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]); // Solo se ejecuta cuando cambia fetchData
+  }, [fetchData]);
 
   // Funciones para gestionar el modal
   const openModal = (item: {
@@ -162,17 +147,17 @@ export default function PreciosVentaPage() {
     setCurrentPrecio({
       id: item.precio_id.toString(),
       nombre: item.nombre,
-      precio_venta: item.precio,
+      precioVenta: item.precio,
       tipo: item.tipo,
-      producto_id: item.tipo === 'PRODUCTO' ? item.id : undefined,
-      servicio_id: item.tipo === 'SERVICIO' ? item.id : undefined,
-      precio_compra_promedio: item.precio_compra,
+      productoId: item.tipo === 'PRODUCTO' ? item.id : undefined,
+      servicioId: item.tipo === 'SERVICIO' ? item.id : undefined,
+      precioCompraPromedio: item.precio_compra,
       marca: item.marca,
       modelo: item.modelo,
-      created_at: new Date(item.updated_at),
-      updated_at: new Date(item.updated_at),
-      created_by: session?.user?.email || '',
-      updated_by: session?.user?.email || ''
+      createdAt: new Date(item.updated_at),
+      updatedAt: new Date(item.updated_at),
+      createdBy: session?.user?.email || '',
+      updatedBy: session?.user?.email || ''
     });
     setIsModalOpen(true);
   };
@@ -190,10 +175,14 @@ export default function PreciosVentaPage() {
       nombre: item.nombre,
       marca: item.marca || '-',
       modelo: item.modelo || '-',
-      precio_compra_promedio: item.precio_compra || 0,
-      precio_venta: item.precio || 0,
-      producto_id: item.tipo === 'PRODUCTO' ? item.id : undefined,
-      servicio_id: item.tipo === 'SERVICIO' ? item.id : undefined
+      precioCompraPromedio: item.precio_compra || 0,
+      precioVenta: item.precio || 0,
+      productoId: item.tipo === 'PRODUCTO' ? item.id : undefined,
+      servicioId: item.tipo === 'SERVICIO' ? item.id : undefined,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: session?.user?.email || '',
+      updatedBy: session?.user?.email || ''
     });
     setIsModalOpen(true);
   };
@@ -213,12 +202,14 @@ export default function PreciosVentaPage() {
         nombre: currentPrecio.nombre,
         marca: currentPrecio.marca || '-',
         modelo: currentPrecio.modelo || '-',
-        precioCompraPromedio: Number(currentPrecio.precio_compra_promedio) || 0,
-        precioVenta: Number(currentPrecio.precio_venta) || 0,
-        productoId: currentPrecio.producto_id ? Number(currentPrecio.producto_id) : null,
-        servicioId: currentPrecio.servicio_id ? Number(currentPrecio.servicio_id) : null,
+        precioCompraPromedio: Number(currentPrecio.precioCompraPromedio) || 0,
+        precioVenta: Number(currentPrecio.precioVenta) || 0,
+        productoId: currentPrecio.productoId ? Number(currentPrecio.productoId) : null,
+        servicioId: currentPrecio.servicioId ? Number(currentPrecio.servicioId) : null,
         updatedBy: 'system'
       };
+
+      console.log('Enviando datos al servidor:', requestBody);
 
       const response = await fetch(url, {
         method,
@@ -234,27 +225,13 @@ export default function PreciosVentaPage() {
       }
 
       const data = await response.json();
+      console.log('Respuesta del servidor:', data);
 
-      // Actualizar el estado local
-      setPrecios(prevPrecios => {
-        const precioId = currentPrecio.id || data.id.toString();
-        return prevPrecios.map(p => {
-          if (p.precio_id === precioId) {
-            return {
-              ...p,
-              precio: data.precioVenta,
-              precio_compra: data.precioCompraPromedio
-            };
-          }
-          return p;
-        });
-      });
+      // Recargar los datos del servidor inmediatamente después de la actualización
+      await fetchData();
 
       setIsModalOpen(false);
       setCurrentPrecio(null);
-      
-      // Recargar los datos para asegurar consistencia
-      await fetchData();
     } catch (error) {
       console.error('Error:', error);
       alert(error instanceof Error ? error.message : 'Error al guardar el precio');
@@ -265,24 +242,45 @@ export default function PreciosVentaPage() {
   const allItems = useMemo(() => {
     if (!productos.length) return [];
     
-    return productos.map(item => {
-      // Buscar el precio de venta existente por nombre
-      const precio = precios.find(p => p.nombre === item.nombre);
-      // Obtener el precio promedio directamente de la tabla de stock
-      const precioPromedio = preciosPromedio.find(p => p.producto_id === item.id)?.precio_promedio || 0;
-      
+    console.log('Creando allItems con:', {
+      productos: productos.length,
+      precios: precios.length,
+      preciosPromedio: preciosPromedio.length
+    });
+
+    // Crear un mapa de precios por producto_id
+    const preciosMap = new Map(
+      precios.map(precio => [
+        precio.tipo === 'PRODUCTO' ? precio.productoId : precio.servicioId,
+        precio
+      ])
+    );
+
+    // Crear un mapa de precios promedio
+    const preciosPromedioMap = new Map(
+      preciosPromedio.map(pp => [pp.producto_id, pp.precio_promedio])
+    );
+
+    // Combinar productos con sus precios
+    const items = productos.map(producto => {
+      const precio = preciosMap.get(producto.id);
+      const precioPromedio = preciosPromedioMap.get(producto.id) || 0;
+
       return {
-        id: item.id,
-        nombre: String(item.nombre || ''),
-        tipo: item.tipo,
-        precio: precio ? Number(precio.precio_venta) : 0,
-        precio_id: precio ? String(precio.id) : '',
-        marca: item.tipo === 'PRODUCTO' ? String(item.marcas?.nombre || '-') : '-',
-        modelo: item.tipo === 'PRODUCTO' ? String(item.Modelo?.nombre || '-') : '-',
-        precio_compra: item.tipo === 'PRODUCTO' ? Number(precioPromedio) : 0,
-        updated_at: precio?.updated_at ? new Date(precio.updated_at).toISOString() : ''
+        id: producto.id,
+        nombre: producto.nombre,
+        tipo: producto.tipo,
+        precio: precio?.precioVenta || 0,
+        precio_id: precio?.id || '',
+        marca: producto.marca?.nombre || '-',
+        modelo: producto.modelo?.nombre || '-',
+        precio_compra: precioPromedio,
+        updated_at: precio?.updatedAt ? new Date(precio.updatedAt).toISOString() : new Date().toISOString()
       };
     });
+
+    console.log('Items creados:', items.length);
+    return items;
   }, [productos, precios, preciosPromedio]);
 
   // Filtrar items según el término de búsqueda
@@ -357,26 +355,40 @@ export default function PreciosVentaPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {precios.map((precio) => (
-                    <TableRow key={precio.precio_id}>
-                      <TableCell>{precio.nombre}</TableCell>
-                      <TableCell>{precio.tipo}</TableCell>
-                      <TableCell>{precio.marca}</TableCell>
-                      <TableCell>{precio.modelo}</TableCell>
-                      <TableCell>${precio.precio_compra?.toFixed(2) || '0.00'}</TableCell>
-                      <TableCell className="font-bold text-lg">${precio.precio?.toFixed(2) || '0.00'}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEdit(precio)}
-                            className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
-                          >
-                            <HiPencilAlt className="h-5 w-5" />
-                          </button>
-                        </div>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-4">
+                        Cargando...
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : filteredItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-4">
+                        No hay precios de venta registrados
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredItems.map((item) => (
+                      <TableRow key={`${item.id}-${item.precio_id}`}>
+                        <TableCell>{item.nombre}</TableCell>
+                        <TableCell>{item.tipo}</TableCell>
+                        <TableCell>{item.marca}</TableCell>
+                        <TableCell>{item.modelo}</TableCell>
+                        <TableCell>${item.precio_compra?.toFixed(2) || '0.00'}</TableCell>
+                        <TableCell className="font-bold text-lg">${item.precio?.toFixed(2) || '0.00'}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEdit(item)}
+                              className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
+                            >
+                              <HiPencilAlt className="h-5 w-5" />
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -426,7 +438,7 @@ export default function PreciosVentaPage() {
                       </label>
                       <input
                         type="number"
-                        value={currentPrecio?.precio_compra_promedio || 0}
+                        value={currentPrecio?.precioCompraPromedio || 0}
                         disabled
                         className="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-500 sm:text-sm"
                       />
@@ -437,13 +449,13 @@ export default function PreciosVentaPage() {
                       </label>
                       <input
                         type="number"
-                        value={currentPrecio?.precio_venta || ''}
+                        value={currentPrecio?.precioVenta || ''}
                         onChange={(e) => {
                           const value = e.target.value === '' ? 0 : Number(e.target.value);
                           console.log('Nuevo precio de venta:', value);
                           setCurrentPrecio(prev => prev ? {
                             ...prev,
-                            precio_venta: value
+                            precioVenta: value
                           } : null);
                         }}
                         className="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"

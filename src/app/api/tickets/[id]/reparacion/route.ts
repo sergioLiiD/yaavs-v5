@@ -63,6 +63,24 @@ export async function POST(
 
     console.log('Reparación actualizada:', reparacion);
 
+    // Solo actualizar el estado a "En Reparación" si es una nueva reparación
+    if (!ticket.reparacion) {
+      const estatusReparacion = await prisma.estatusReparacion.findFirst({
+        where: { nombre: 'En Reparación' }
+      });
+
+      if (estatusReparacion) {
+        await prisma.ticket.update({
+          where: { id: ticketId },
+          data: { 
+            estatusReparacionId: estatusReparacion.id,
+            fechaInicioReparacion: new Date()
+          }
+        });
+        console.log('Estado del ticket actualizado a:', estatusReparacion.nombre);
+      }
+    }
+
     // Actualizar el estatus del ticket si se completó la reparación
     if (completar) {
       const estatusCompletado = await prisma.estatusReparacion.findFirst({

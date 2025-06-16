@@ -74,8 +74,7 @@ export async function POST(request: Request) {
         longitud: validatedData.longitud || null,
         fuenteReferencia: validatedData.fuenteReferencia || null,
         passwordHash: hashedPassword,
-        tipoRegistro: 'DIRECTO',
-        activo: true,
+        tipoRegistro: 'WEB',
         updatedAt: new Date(),
         createdAt: new Date()
       },
@@ -98,10 +97,9 @@ export async function POST(request: Request) {
         longitud: true,
         fuenteReferencia: true,
         rfc: true,
-        activo: true,
-        tipoRegistro: true,
         createdAt: true,
-        updatedAt: true
+        updatedAt: true,
+        tipoRegistro: true
       }
     });
     console.log('Cliente creado:', cliente.id);
@@ -109,21 +107,6 @@ export async function POST(request: Request) {
     return NextResponse.json(cliente);
   } catch (error) {
     console.error('Error detallado al registrar cliente:', error);
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Datos inválidos', details: error.errors },
-        { status: 400 }
-      );
-    }
-
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json(
       { error: 'Error al registrar el cliente' },
       { status: 500 }

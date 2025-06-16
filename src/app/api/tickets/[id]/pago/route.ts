@@ -40,8 +40,10 @@ export async function POST(
     const presupuestoId = ticket.presupuesto.id;
     console.log('Presupuesto actual:', ticket.presupuesto);
 
-    // Calcular el saldo correcto
-    const saldoActual = data.total - data.anticipo;
+    // Calcular el total y el saldo
+    const total = ticket.presupuesto.total;
+    const saldoActual = total - data.anticipo;
+    console.log('Total calculado:', total);
     console.log('Saldo calculado:', saldoActual);
 
     // Iniciar transacción
@@ -50,8 +52,7 @@ export async function POST(
       const pago = await tx.pago.create({
         data: {
           monto: data.anticipo,
-          fecha: new Date(),
-          metodoPago: data.metodoPago,
+          metodo: data.metodoPago as MetodoPago,
           ticketId: ticketId,
         },
       });
@@ -60,8 +61,8 @@ export async function POST(
       const presupuestoActualizado = await tx.presupuesto.update({
         where: { id: presupuestoId },
         data: {
-          saldo: saldoActual,
-          pagado: saldoActual <= 0,
+          totalFinal: saldoActual,
+          aprobado: saldoActual <= 0,
         },
       });
 

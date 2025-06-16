@@ -41,7 +41,7 @@ export async function GET(
     const reparacion = await prisma.reparacion.findUnique({
       where: { ticketId: parseInt(params.id) },
       include: {
-        checklist_diagnostico: true
+        checklistDiagnostico: true
       }
     });
     console.log('Reparación:', reparacion);
@@ -55,33 +55,29 @@ export async function GET(
         tipoServicio: true,
         modelo: {
           include: {
-            marcas: true
+            marca: true
           }
         },
         estatusReparacion: true,
         creador: true,
         tecnicoAsignado: true,
-        Presupuesto: {
+        presupuesto: {
           include: {
-            conceptos_presupuesto: true
+            conceptos: true
           }
         },
-        Reparacion: {
+        reparacion: {
           include: {
-            checklist_diagnostico: true,
-            piezas_reparacion: {
+            checklistDiagnostico: true,
+            piezasReparacion: {
               include: {
-                piezas: true
+                pieza: true
               }
             }
           }
         },
-        dispositivos: true,
-        entregas: {
-          include: {
-            direcciones: true
-          }
-        },
+        dispositivo: true,
+        entrega: true,
         pagos: true
       }
     });
@@ -154,22 +150,17 @@ export async function PUT(
       console.log('Estado actualizado a:', estatusPresupuesto.id);
     }
 
-    // Separar los campos que pertenecen a dispositivos
-    const {
-      capacidad,
-      color,
-      fechaCompra,
-      codigoDesbloqueo,
-      redCelular,
-      patronDesbloqueo,
-      ...ticketData
-    } = data;
-
     // Actualizar el ticket
     const updatedTicket = await prisma.ticket.update({
       where: { id: parseInt(params.id) },
       data: {
         codigoDesbloqueo: data.codigoDesbloqueo,
+        patronDesbloqueo: data.patronDesbloqueo,
+        capacidad: data.capacidad,
+        redCelular: data.redCelular,
+        color: data.color,
+        imei: data.imei,
+        fechaCompra: data.fechaCompra ? new Date(data.fechaCompra) : undefined,
         updatedAt: new Date()
       },
       include: {
@@ -177,51 +168,32 @@ export async function PUT(
         tipoServicio: true,
         modelo: {
           include: {
-            marcas: true
+            marca: true
           }
         },
         estatusReparacion: true,
         creador: true,
         tecnicoAsignado: true,
-        Presupuesto: {
+        presupuesto: {
           include: {
-            conceptos_presupuesto: true
+            conceptos: true
           }
         },
-        Reparacion: {
+        reparacion: {
           include: {
-            checklist_diagnostico: true,
-            piezas_reparacion: {
+            checklistDiagnostico: true,
+            piezasReparacion: {
               include: {
-                piezas: true
+                pieza: true
               }
             }
           }
         },
-        dispositivos: true,
-        entregas: {
-          include: {
-            direcciones: true
-          }
-        },
+        dispositivo: true,
+        entrega: true,
         pagos: true
       }
     });
-
-    // Actualizar los datos del dispositivo
-    if (capacidad || color || fechaCompra || codigoDesbloqueo || redCelular) {
-      await prisma.dispositivos.updateMany({
-        where: { ticketId: parseInt(params.id) },
-        data: {
-          capacidad,
-          color,
-          fechaCompra: fechaCompra ? new Date(fechaCompra) : undefined,
-          codigoDesbloqueo,
-          redCelular,
-          updatedAt: new Date()
-        }
-      });
-    }
 
     return NextResponse.json(updatedTicket);
   } catch (error) {
@@ -263,8 +235,8 @@ export async function DELETE(
     const ticket = await prisma.ticket.findUnique({
       where: { id: parseInt(params.id) },
       include: {
-        dispositivos: true,
-        Reparacion: true
+        dispositivo: true,
+        reparacion: true
       }
     });
 
@@ -299,7 +271,7 @@ export async function DELETE(
         tipoServicio: true,
         modelo: {
           include: {
-            marcas: true
+            marca: true
           }
         },
         estatusReparacion: true,

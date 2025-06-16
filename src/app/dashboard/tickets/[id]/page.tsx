@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { HiArrowLeft } from 'react-icons/hi';
@@ -19,6 +19,9 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
   const { data: session } = useSession();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'diagnostico';
+  const [activeTab, setActiveTab] = useState(defaultTab);
 
   useEffect(() => {
     const fetchTicket = async () => {
@@ -39,6 +42,17 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
 
     fetchTicket();
   }, [params.id]);
+
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    router.replace(url.toString(), { scroll: false });
+  };
 
   if (loading) {
     return (
@@ -80,12 +94,13 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
           }} 
         />
 
-        <Tabs defaultValue="diagnostico" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
-            <TabsTrigger value="presupuesto">Presupuesto</TabsTrigger>
-            <TabsTrigger value="pago">Pago</TabsTrigger>
-            <TabsTrigger value="reparacion">Reparación</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+          <TabsList className="bg-gray-100">
+            <TabsTrigger value="diagnostico" className={activeTab === 'diagnostico' ? 'bg-[#FEBF19] text-white shadow' : ''}>Diagnóstico</TabsTrigger>
+            <TabsTrigger value="presupuesto" className={activeTab === 'presupuesto' ? 'bg-[#FEBF19] text-white shadow' : ''}>Presupuesto</TabsTrigger>
+            <TabsTrigger value="pago" className={activeTab === 'pago' ? 'bg-[#FEBF19] text-white shadow' : ''}>Pago</TabsTrigger>
+            <TabsTrigger value="reparacion" className={activeTab === 'reparacion' ? 'bg-[#FEBF19] text-white shadow' : ''}>Reparación</TabsTrigger>
+            <TabsTrigger value="entrega" className={activeTab === 'entrega' ? 'bg-[#FEBF19] text-white shadow' : ''}>Entrega</TabsTrigger>
           </TabsList>
 
           <TabsContent value="diagnostico">

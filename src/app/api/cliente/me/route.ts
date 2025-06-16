@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { verify } from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import { verifyToken } from '@/lib/jwt';
+import { ClienteService } from '@/services/clienteService';
 
-export const dynamic = 'force-dynamic';
+// Configurar para usar Node.js runtime
+export const runtime = 'nodejs';
 
 export async function GET() {
   try {
-    // Obtener el token de la cookie
-    const token = cookies().get('cliente_token')?.value;
+    const cookieStore = cookies();
+    const token = cookieStore.get('cliente_token');
 
     if (!token) {
       return NextResponse.json(
@@ -17,42 +18,15 @@ export async function GET() {
       );
     }
 
-    // Verificar el token
-    const decoded = verify(token, process.env.JWT_SECRET || 'tu_secreto_seguro_para_jwt_aqui') as { id: number, email: string };
+    const decoded = await verifyToken(token.value);
+    if (!decoded || !decoded.id) {
+      return NextResponse.json(
+        { error: 'Token inválido' },
+        { status: 401 }
+      );
+    }
 
-    // Buscar el cliente en la base de datos
-    const cliente = await prisma.cliente.findUnique({
-      where: { 
-        id: decoded.id,
-        email: decoded.email,
-        activo: true
-      },
-      select: {
-        id: true,
-        nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true,
-        telefonoCelular: true,
-        telefonoContacto: true,
-        email: true,
-        calle: true,
-        numeroExterior: true,
-        numeroInterior: true,
-        colonia: true,
-        ciudad: true,
-        estado: true,
-        codigoPostal: true,
-        latitud: true,
-        longitud: true,
-        fuenteReferencia: true,
-        rfc: true,
-        activo: true,
-        tipoRegistro: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
-
+    const cliente = await ClienteService.findById(decoded.id);
     if (!cliente) {
       return NextResponse.json(
         { error: 'Cliente no encontrado' },
@@ -60,11 +34,14 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(cliente);
+    // Remover datos sensibles
+    const { passwordHash, ...clienteData } = cliente;
+
+    return NextResponse.json({ cliente: clienteData });
   } catch (error) {
-    console.error('Error al obtener información del cliente:', error);
+    console.error('Error en /api/cliente/me:', error);
     return NextResponse.json(
-      { error: 'Error al obtener la información del cliente' },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     );
   }

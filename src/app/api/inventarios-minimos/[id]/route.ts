@@ -47,8 +47,7 @@ export async function PUT(
       data: { stockMinimo: cantidadMinima },
       include: {
         marca: true,
-        modelo: true,
-        proveedor: true,
+        modelo: true
       },
     });
 

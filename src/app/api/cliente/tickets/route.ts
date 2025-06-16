@@ -34,6 +34,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Obtener el modelo para obtener la marca
+    const modelo = await prisma.modelo.findUnique({
+      where: { id: Number(body.modeloId) },
+      include: { marca: true }
+    });
+
+    if (!modelo) {
+      return NextResponse.json(
+        { error: 'Modelo no encontrado' },
+        { status: 404 }
+      );
+    }
+
     // Crear el ticket con el dispositivo
     const ticket = await prisma.ticket.create({
       data: {
@@ -44,13 +57,12 @@ export async function POST(req: NextRequest) {
         descripcionProblema: body.descripcionProblema,
         estatusReparacionId: estadoInicial.id,
         creadorId: Number(session.user.id),
-        dispositivos: {
+        dispositivo: {
           create: {
-            capacidad: body.capacidad,
-            color: body.color,
-            fechaCompra: body.fechaCompra ? new Date(body.fechaCompra) : null,
-            redCelular: body.redCelular,
-            codigoDesbloqueo: body.codigoDesbloqueo,
+            tipo: 'Smartphone',
+            marca: modelo.marca.nombre,
+            modelo: modelo.nombre,
+            serie: body.imei,
             updatedAt: new Date()
           }
         }
@@ -59,7 +71,7 @@ export async function POST(req: NextRequest) {
 
     // Crear la dirección solo si el tipo de recolección es domicilio
     if (body.tipoRecoleccion === 'domicilio' && body.direccion) {
-      await prisma.direcciones.create({
+      await prisma.direccion.create({
         data: {
           calle: body.direccion.calle,
           numeroExterior: body.direccion.numeroExterior,
@@ -70,6 +82,11 @@ export async function POST(req: NextRequest) {
           codigoPostal: body.direccion.codigoPostal,
           latitud: body.direccion.latitud,
           longitud: body.direccion.longitud,
+          cliente: {
+            connect: {
+              id: Number(session.user.id)
+            }
+          },
           tickets: { connect: { id: ticket.id } },
           updatedAt: new Date()
         }
@@ -80,12 +97,12 @@ export async function POST(req: NextRequest) {
     const ticketCompleto = await prisma.ticket.findUnique({
       where: { id: ticket.id },
       include: {
-        dispositivos: true,
-        direcciones: true,
+        dispositivo: true,
+        direccion: true,
         cliente: true,
         modelo: {
           include: {
-            marcas: true
+            marca: true
           }
         },
         estatusReparacion: true
@@ -119,15 +136,15 @@ export async function GET(req: NextRequest) {
         tipoServicio: true,
         modelo: {
           include: {
-            marcas: true,
+            marca: true,
           },
         },
         estatusReparacion: true,
         tecnicoAsignado: true,
-        Presupuesto: true,
+        presupuesto: true,
         pagos: {
           orderBy: {
-            fecha: 'desc'
+            createdAt: 'desc'
           }
         }
       },

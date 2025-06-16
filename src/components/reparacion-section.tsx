@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Ticket } from '@/types/ticket';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { HiClock, HiCamera, HiVideoCamera, HiSave } from 'react-icons/hi';
+import { HiClock, HiCamera, HiVideoCamera, HiSave, HiPause, HiPlay } from 'react-icons/hi';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
@@ -18,6 +18,13 @@ interface ChecklistItem {
   descripcion?: string;
   paraDiagnostico: boolean;
   paraReparacion: boolean;
+}
+
+interface ChecklistRespuesta {
+  itemId: number;
+  item: string;
+  respuesta: boolean;
+  observacion: string;
 }
 
 interface ReparacionSectionProps {
@@ -30,42 +37,49 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
   const [observaciones, setObservaciones] = useState(ticket.reparacion?.observaciones || '');
   const [isLoading, setIsLoading] = useState(false);
   const [tiempoTranscurrido, setTiempoTranscurrido] = useState(() => {
-    if (ticket.reparacion?.fechaInicio) {
-      const fechaInicio = new Date(ticket.reparacion.fechaInicio).getTime();
-      const ahora = new Date().getTime();
-      return Math.floor((ahora - fechaInicio) / 1000);
+    if (typeof window !== 'undefined') {
+      const savedTime = localStorage.getItem(`timer_${ticket.id}`);
+      return savedTime ? parseInt(savedTime) : 0;
     }
     return 0;
   });
-  const [tiempoPausado, setTiempoPausado] = useState(0);
-  const [checklist, setChecklist] = useState<Array<{
-    id: number;
-    item: string;
-    respuesta: boolean;
-    observacion: string;
-  }>>([]);
+  const [isPaused, setIsPaused] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedPaused = localStorage.getItem(`paused_${ticket.id}`);
+      return savedPaused === 'true';
+    }
+    return false;
+  });
+  const [isTimerRunning, setIsTimerRunning] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedRunning = localStorage.getItem(`running_${ticket.id}`);
+      return savedRunning === 'true';
+    }
+    return false;
+  });
+  const [checklist, setChecklist] = useState<ChecklistRespuesta[]>([]);
   const [fotos, setFotos] = useState<string[]>(ticket.reparacion?.fotos || []);
   const [videos, setVideos] = useState<string[]>(ticket.reparacion?.videos || []);
-  const [isTimerRunning, setIsTimerRunning] = useState(!!ticket.reparacion?.fechaInicio && !ticket.reparacion?.fechaFin);
-  const [isPaused, setIsPaused] = useState(false);
 
   // Verificar si hay pagos realizados
   const hasPayments = ticket.pagos && ticket.pagos.length > 0;
   const totalPaid = ticket.pagos?.reduce((sum, pago) => sum + pago.monto, 0) || 0;
   const hasValidPayment = hasPayments;
 
-  console.log('Estado del ticket:', {
-    ticketId: ticket.id,
-    pagos: ticket.pagos,
-    hasPayments,
-    totalPaid,
-    hasValidPayment,
-    reparacion: ticket.reparacion,
-    isTimerRunning,
-    isPaused,
-    tiempoTranscurrido,
-    tiempoPausado
-  });
+  // Mover el console.log a un useEffect para evitar re-renderizados constantes
+  useEffect(() => {
+    console.log('Estado del ticket:', {
+      ticketId: ticket.id,
+      pagos: ticket.pagos,
+      hasPayments,
+      totalPaid,
+      hasValidPayment,
+      reparacion: ticket.reparacion,
+      isTimerRunning,
+      isPaused,
+      tiempoTranscurrido
+    });
+  }, [ticket, isTimerRunning, isPaused, tiempoTranscurrido]);
 
   // Obtener items del checklist para reparación
   const { data: checklistItems } = useQuery({
@@ -76,44 +90,77 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     },
   });
 
-  // Inicializar checklist cuando se cargan los items
+  // Cargar respuestas existentes del checklist
   useEffect(() => {
-    if (checklistItems && checklist.length === 0) {
-      setChecklist(checklistItems.map((item: ChecklistItem) => ({
-        id: item.id,
-        item: item.nombre,
-        respuesta: false,
-        observacion: ''
-      })));
+    const fetchChecklistRespuestas = async () => {
+      try {
+        const response = await axios.get(`/api/tickets/${ticket.id}/checklist-reparacion`);
+        if (response.data.success && response.data.checklist.length > 0) {
+          const respuestasExistentes = response.data.checklist.map((respuesta: any) => ({
+            itemId: respuesta.checklistItemId,
+            item: respuesta.checklistItem.nombre,
+            respuesta: respuesta.respuesta === 'yes',
+            observacion: respuesta.observaciones || ''
+          }));
+          setChecklist(respuestasExistentes);
+        } else if (checklistItems) {
+          setChecklist(checklistItems.map((item: ChecklistItem) => ({
+            itemId: item.id,
+            item: item.nombre,
+            respuesta: false,
+            observacion: ''
+          })));
+        }
+      } catch (error) {
+        console.error('Error al cargar respuestas del checklist:', error);
+      }
+    };
+
+    if (ticket.id) {
+      fetchChecklistRespuestas();
     }
-  }, [checklistItems]);
+  }, [ticket.id, checklistItems]);
 
   // Timer para el tiempo de reparación
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | null = null;
     
     if (isTimerRunning && !isPaused) {
       interval = setInterval(() => {
-        setTiempoTranscurrido(prev => prev + 1);
+        setTiempoTranscurrido(prev => {
+          const newTime = prev + 1;
+          localStorage.setItem(`timer_${ticket.id}`, newTime.toString());
+          return newTime;
+        });
       }, 1000);
     }
 
     return () => {
-      if (interval) clearInterval(interval);
+      if (interval) {
+        clearInterval(interval);
+      }
     };
-  }, [isTimerRunning, isPaused]);
+  }, [isTimerRunning, isPaused, ticket.id]);
+
+  const handleChecklistChange = (index: number, field: 'respuesta' | 'observacion', value: boolean | string) => {
+    const newChecklist = [...checklist];
+    newChecklist[index] = {
+      ...newChecklist[index],
+      [field]: value
+    };
+    setChecklist(newChecklist);
+  };
 
   const handleStartTimer = async () => {
     try {
-      console.log('Iniciando reparación...');
       const response = await axios.post(`/api/tickets/${ticket.id}/reparacion/iniciar`);
-      console.log('Respuesta del servidor:', response.data);
-      
       if (response.data.fechaInicio) {
         setIsTimerRunning(true);
         setIsPaused(false);
         setTiempoTranscurrido(0);
-        setTiempoPausado(0);
+        localStorage.setItem(`timer_${ticket.id}`, '0');
+        localStorage.setItem(`running_${ticket.id}`, 'true');
+        localStorage.setItem(`paused_${ticket.id}`, 'false');
         toast.success('Reparación iniciada');
         if (onUpdate) {
           onUpdate();
@@ -125,54 +172,58 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     }
   };
 
-  const handlePauseTimer = async () => {
+  const handlePauseTimer = () => {
+    setIsPaused(true);
+    localStorage.setItem(`paused_${ticket.id}`, 'true');
+  };
+
+  const handleResumeTimer = () => {
+    setIsPaused(false);
+    localStorage.setItem(`paused_${ticket.id}`, 'false');
+  };
+
+  const handleCompleteRepair = async () => {
+    if (!ticket?.id) return;
+
     try {
-      const response = await axios.post(`/api/tickets/${ticket.id}/reparacion/pausar`);
-      if (response.data.fechaPausa) {
-        setIsPaused(true);
-        setTiempoPausado(tiempoTranscurrido);
-        toast.success('Reparación pausada');
+      setIsLoading(true);
+
+      // Primero guardamos el checklist
+      const checklistResponse = await axios.post(`/api/tickets/${ticket.id}/checklist-reparacion`, {
+        checklist: checklist.map(item => ({
+          itemId: item.itemId,
+          respuesta: item.respuesta,
+          observacion: item.observacion || ''
+        }))
+      });
+
+      // Luego guardamos la reparación
+      const response = await axios.post(`/api/tickets/${ticket.id}/reparacion/completar`, {
+        observaciones,
+        tiempoTranscurrido
+      });
+
+      if (response.data) {
+        toast.success('Reparación completada exitosamente');
         if (onUpdate) {
           onUpdate();
         }
+        router.push('/dashboard/tickets');
       }
     } catch (error) {
-      console.error('Error al pausar la reparación:', error);
-      toast.error('Error al pausar la reparación');
+      console.error('Error al completar la reparación:', error);
+      toast.error('Error al completar la reparación');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleResumeTimer = async () => {
-    try {
-      const response = await axios.post(`/api/tickets/${ticket.id}/reparacion/reanudar`);
-      if (response.data.fechaReanudacion) {
-        setIsPaused(false);
-        setTiempoTranscurrido(tiempoPausado);
-        toast.success('Reparación reanudada');
-        if (onUpdate) {
-          onUpdate();
-        }
-      }
-    } catch (error) {
-      console.error('Error al reanudar la reparación:', error);
-      toast.error('Error al reanudar la reparación');
-    }
-  };
-
+  // Formatear el tiempo en HH:MM:SS
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  const handleChecklistChange = (index: number, field: 'respuesta' | 'observacion', value: boolean | string) => {
-    const newChecklist = [...checklist];
-    newChecklist[index] = {
-      ...newChecklist[index],
-      [field]: value
-    };
-    setChecklist(newChecklist);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'foto' | 'video') => {
@@ -254,56 +305,48 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
           )}
 
           {/* Timer */}
-          <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <HiClock className="h-5 w-5 text-gray-500" />
-              <span className="text-lg font-mono">{formatTime(tiempoTranscurrido)}</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              {!isTimerRunning && (
+          <div className="bg-white p-4 rounded-lg shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="text-2xl font-mono">
+                  {formatTime(tiempoTranscurrido)}
+                </div>
+                {!isTimerRunning && !ticket.reparacion?.fechaFin && (
+                  <Button
+                    onClick={handleStartTimer}
+                    className="bg-[#FEBF19] hover:bg-[#FEBF19]/90 text-white"
+                  >
+                    Iniciar Reparación
+                  </Button>
+                )}
+                {isTimerRunning && !isPaused && (
+                  <Button
+                    onClick={handlePauseTimer}
+                    variant="outline"
+                    className="text-black"
+                  >
+                    Pausar
+                  </Button>
+                )}
+                {isTimerRunning && isPaused && (
+                  <Button
+                    onClick={handleResumeTimer}
+                    variant="outline"
+                    className="text-black"
+                  >
+                    Reanudar
+                  </Button>
+                )}
+              </div>
+              {!ticket.reparacion?.fechaFin && (
                 <Button
-                  type="button"
-                  onClick={handleStartTimer}
-                  disabled={isTimerRunning || !hasValidPayment}
-                  className="flex items-center space-x-2"
+                  onClick={handleCompleteRepair}
+                  className="bg-[#FEBF19] hover:bg-[#FEBF19]/90 text-white"
+                  disabled={isLoading}
                 >
-                  <div className="p-2 rounded-md border-2 border-orange-500">
-                    <HiClock className="h-5 w-5 text-orange-500" />
-                  </div>
-                  <span>Iniciar Reparación</span>
+                  {isLoading ? 'Completando...' : 'Concluir Reparación'}
                 </Button>
               )}
-              {isTimerRunning && !isPaused && (
-                <Button
-                  type="button"
-                  onClick={handlePauseTimer}
-                  disabled={!isTimerRunning || isPaused}
-                  className="flex items-center space-x-2"
-                >
-                  <div className="p-2 rounded-md border-2 border-orange-500">
-                    <HiClock className="h-5 w-5 text-orange-500" />
-                  </div>
-                  <span>Pausar</span>
-                </Button>
-              )}
-              {isPaused && (
-                <Button
-                  type="button"
-                  onClick={handleResumeTimer}
-                  disabled={!isPaused}
-                  className="flex items-center space-x-2"
-                >
-                  <div className="p-2 rounded-md border-2 border-orange-500">
-                    <HiClock className="h-5 w-5 text-orange-500" />
-                  </div>
-                  <span>Reanudar</span>
-                </Button>
-              )}
-              <span className="text-sm text-gray-500">
-                {ticket.reparacion?.fechaInicio 
-                  ? `Iniciado: ${new Date(ticket.reparacion.fechaInicio).toLocaleString()}`
-                  : 'No iniciado'}
-              </span>
             </div>
           </div>
 
@@ -319,49 +362,60 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
             />
           </div>
 
-          {/* Checklist */}
-          {checklist.length > 0 && (
+          {/* Checklist de Verificación */}
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-4">Checklist de Verificación</h3>
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Checklist de Verificación</h3>
-              <div className="space-y-4">
-                {checklist.map((item, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{item.item}</span>
-                      <div className="flex items-center space-x-4">
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            checked={item.respuesta === true}
-                            onChange={() => handleChecklistChange(index, 'respuesta', true)}
-                            className="form-radio"
-                          />
-                          <span>Sí</span>
-                        </label>
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            checked={item.respuesta === false}
-                            onChange={() => handleChecklistChange(index, 'respuesta', false)}
-                            className="form-radio"
-                          />
-                          <span>No</span>
-                        </label>
-                      </div>
-                    </div>
-                    <Textarea
+              {checklist.map((item, index) => (
+                <div key={index} className="flex items-start space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id={`check-${index}-si`}
+                      name={`check-${index}`}
+                      checked={item.respuesta === true}
+                      onChange={() => handleChecklistChange(index, 'respuesta', true)}
+                      className="w-4 h-4 text-black border-black"
+                    />
+                    <label htmlFor={`check-${index}-si`}>Sí</label>
+                    <input
+                      type="radio"
+                      id={`check-${index}-no`}
+                      name={`check-${index}`}
+                      checked={item.respuesta === false}
+                      onChange={() => handleChecklistChange(index, 'respuesta', false)}
+                      className="w-4 h-4 text-black border-black"
+                    />
+                    <label htmlFor={`check-${index}-no`}>No</label>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">{item.item}</p>
+                    <input
+                      type="text"
                       value={item.observacion}
                       onChange={(e) => handleChecklistChange(index, 'observacion', e.target.value)}
-                      placeholder="Observaciones (opcional)"
-                      className="mt-2"
+                      placeholder="Observaciones..."
+                      className="mt-1 w-full p-2 border rounded"
                     />
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+
+          {/* Botón de Concluir Reparación */}
+          <div className="flex justify-end">
+            <Button
+              onClick={handleCompleteRepair}
+              className="bg-[#FEBF19] hover:bg-[#FEBF19]/90 text-white px-6 py-3"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Completando...' : 'Concluir Reparación'}
+            </Button>
+          </div>
 
           {/* Subida de archivos */}
+          {/* Comentado temporalmente
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Fotos de la Reparación</Label>
@@ -379,9 +433,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                   onClick={() => document.getElementById('foto-upload')?.click()}
                   className="flex items-center space-x-2"
                 >
-                  <div className="p-2 rounded-md border-2 border-orange-500">
-                    <HiCamera className="h-5 w-5 text-orange-500" />
-                  </div>
+                  <HiCamera className="h-5 w-5 text-black" />
                   <span>Subir Fotos</span>
                 </Button>
               </div>
@@ -415,9 +467,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                   onClick={() => document.getElementById('video-upload')?.click()}
                   className="flex items-center space-x-2"
                 >
-                  <div className="p-2 rounded-md border-2 border-orange-500">
-                    <HiVideoCamera className="h-5 w-5 text-orange-500" />
-                  </div>
+                  <HiVideoCamera className="h-5 w-5 text-black" />
                   <span>Subir Videos</span>
                 </Button>
               </div>
@@ -435,21 +485,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
               )}
             </div>
           </div>
-
-          {/* Botón de completar reparación */}
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="flex items-center space-x-2"
-            >
-              <div className="p-2 rounded-md border-2 border-orange-500">
-                <HiSave className="h-5 w-5 text-orange-500" />
-              </div>
-              <span>{isLoading ? 'Guardando...' : 'Completar Reparación'}</span>
-            </Button>
-          </div>
+          */}
         </div>
       </CardContent>
     </Card>

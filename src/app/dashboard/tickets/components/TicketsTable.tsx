@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import { TicketDetailsModal } from "@/components/tickets/TicketDetailsModal";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
+import { Pencil, UserPlus, Wrench, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Ticket {
   id: number;
@@ -72,6 +74,7 @@ interface Ticket {
       precioUnitario: number;
       total: number;
     }[];
+    saldo: number;
   };
   pagos?: {
     id: number;
@@ -79,6 +82,7 @@ interface Ticket {
     fecha: string;
     metodoPago: string;
   }[];
+  cancelado?: boolean;
 }
 
 interface TicketsTableProps {
@@ -90,6 +94,10 @@ export function TicketsTable({ tickets, onAssignTechnician }: TicketsTableProps)
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const router = useRouter();
+
+  console.log('=== TICKETS TABLE ===');
+  console.log('Tickets recibidos:', tickets);
+  console.log('Número de tickets:', tickets.length);
 
   const filteredTickets = tickets.filter((ticket) => {
     const searchLower = searchTerm.toLowerCase();
@@ -103,12 +111,44 @@ export function TicketsTable({ tickets, onAssignTechnician }: TicketsTableProps)
     );
   });
 
+  console.log('Tickets filtrados:', filteredTickets);
+  console.log('Número de tickets filtrados:', filteredTickets.length);
+  console.log('=== FIN TICKETS TABLE ===');
+
   const handleViewDetails = (ticket: Ticket) => {
     setSelectedTicket(ticket);
   };
 
   const handleEdit = (ticketId: number) => {
-    router.push(`/dashboard/tickets/${ticketId}`);
+    router.push(`/dashboard/tickets/${ticketId}/edit`);
+  };
+
+  const handleDelete = async (ticketId: number) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este ticket?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          motivoCancelacion: 'Eliminado por el usuario'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el ticket');
+      }
+
+      toast.success('Ticket eliminado exitosamente');
+      router.refresh();
+    } catch (error) {
+      console.error('Error al eliminar el ticket:', error);
+      toast.error('Error al eliminar el ticket');
+    }
   };
 
   return (
@@ -136,19 +176,23 @@ export function TicketsTable({ tickets, onAssignTechnician }: TicketsTableProps)
               <TableHead>Fecha</TableHead>
               <TableHead>Técnico</TableHead>
               <TableHead>Presupuesto</TableHead>
+              <TableHead>Saldo</TableHead>
               <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredTickets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   {searchTerm ? 'No se encontraron tickets que coincidan con la búsqueda' : 'No hay tickets disponibles'}
                 </TableCell>
               </TableRow>
             ) : (
               filteredTickets.map((ticket) => (
-                <TableRow key={ticket.id}>
+                <TableRow 
+                  key={ticket.id}
+                  className={ticket.cancelado ? 'bg-gray-100 opacity-75' : ''}
+                >
                   <TableCell className="font-medium">
                     <button
                       onClick={() => handleViewDetails(ticket)}
@@ -182,7 +226,7 @@ export function TicketsTable({ tickets, onAssignTechnician }: TicketsTableProps)
                     {ticket.presupuesto ? (
                       <div className="flex items-center gap-2">
                         <span className={ticket.presupuesto.aprobado ? "text-green-600" : "text-yellow-600"}>
-                          ${ticket.presupuesto.totalFinal.toFixed(2)}
+                          ${ticket.presupuesto.total.toFixed(2)}
                         </span>
                         {ticket.presupuesto.aprobado && (
                           <span className="text-xs text-green-600">✓</span>
@@ -193,23 +237,53 @@ export function TicketsTable({ tickets, onAssignTechnician }: TicketsTableProps)
                     )}
                   </TableCell>
                   <TableCell>
+                    {ticket.presupuesto ? (
+                      <span className="font-bold text-red-600">
+                        ${ticket.presupuesto.saldo.toFixed(2)}
+                      </span>
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="icon"
                         onClick={() => handleEdit(ticket.id)}
+                        title="Editar"
                       >
-                        Editar
+                        <Pencil className="h-4 w-4" />
                       </Button>
                       {onAssignTechnician && !ticket.tecnicoAsignado && (
                         <Button
                           variant="outline"
-                          size="sm"
+                          size="icon"
                           onClick={() => onAssignTechnician(ticket.id)}
+                          title="Asignar Técnico"
                         >
-                          Asignar Técnico
+                          <UserPlus className="h-4 w-4" />
                         </Button>
                       )}
+                      {ticket.estatusReparacion?.nombre !== 'Concluido' && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => router.push(`/dashboard/tickets/${ticket.id}?tab=diagnostico`)}
+                          title="Iniciar Reparación"
+                        >
+                          <Wrench className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleDelete(ticket.id)}
+                        title="Eliminar"
+                        className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>

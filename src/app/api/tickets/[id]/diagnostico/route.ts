@@ -2,176 +2,123 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { Prisma, checklistDiagnostico } from '@prisma/client';
-
-interface ReparacionPayload {
-  checklist: Array<{
-    item: string;
-    respuesta: boolean;
-    observacion?: string;
-  }>;
-  saludBateria: number;
-  versionSO: string;
-  diagnostico: string;
-}
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log('Iniciando endpoint de diagnóstico...');
     const session = await getServerSession(authOptions);
-    if (!session) {
-      console.log('No hay sesión activa');
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
     }
 
     const ticketId = parseInt(params.id);
-    if (isNaN(ticketId)) {
-      console.log('ID de ticket inválido:', params.id);
-      return NextResponse.json({ error: 'ID de ticket inválido' }, { status: 400 });
-    }
+    const { descripcion, saludBateria, versionSistema } = await request.json();
 
-    console.log('Buscando ticket con ID:', ticketId);
+    // Validar que el ticket exista
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
-      include: { 
-        Reparacion: {
-          include: {
-            checklistDiagnostico: true
-          }
-        }
+      include: {
+        reparacion: true
       }
     });
 
     if (!ticket) {
-      console.log('Ticket no encontrado');
-      return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
-    }
-
-    console.log('Ticket encontrado:', ticket);
-    const rawBody = await request.text();
-    console.log('Raw body recibido:', rawBody);
-    
-    let body: ReparacionPayload;
-    try {
-      body = JSON.parse(rawBody);
-      console.log('Datos parseados:', body);
-    } catch (error) {
-      console.error('Error al parsear JSON:', error);
       return NextResponse.json(
-        { error: 'Error al procesar los datos: formato JSON inválido' },
-        { status: 400 }
+        { error: 'Ticket no encontrado' },
+        { status: 404 }
       );
     }
 
-    // Validar salud de la batería
-    if (typeof body.saludBateria !== 'number') {
-      console.log('Salud de batería no es un número:', body.saludBateria);
-      return NextResponse.json(
-        { error: 'La salud de la batería debe ser un número' },
-        { status: 400 }
-      );
+    // Validar que el usuario sea el técnico asignado o tenga permisos adecuados
+    if (ticket.tecnicoAsignadoId !== session.user.id) {
+      const hasRepairPermission = session.user.permissions?.includes('REPAIRS_EDIT');
+      if (!hasRepairPermission) {
+        return NextResponse.json(
+          { error: 'No tienes permiso para realizar esta acción' },
+          { status: 403 }
+        );
+      }
     }
-
-    if (body.saludBateria < 0 || body.saludBateria > 100) {
-      console.log('Salud de batería inválida:', body.saludBateria);
-      return NextResponse.json(
-        { error: 'La salud de la batería debe estar entre 0 y 100' },
-        { status: 400 }
-      );
-    }
-
-    console.log('Intentando crear/actualizar reparación...');
-    
-    const reparacionData = {
-      ticketId: ticketId,
-      tecnicoId: session.user.id,
-      descripcion: body.diagnostico,
-      saludBateria: body.saludBateria,
-      versionSO: body.versionSO,
-      updatedAt: new Date()
-    };
-
-    console.log('Datos de reparación:', reparacionData);
 
     // Crear o actualizar la reparación
     const reparacion = await prisma.reparacion.upsert({
       where: {
-        ticketId: ticketId,
+        ticketId: ticketId
       },
-      create: reparacionData,
+      create: {
+        ticketId: ticketId,
+        diagnostico: descripcion,
+        saludBateria: saludBateria,
+        versionSO: versionSistema,
+        fechaInicio: new Date()
+      },
       update: {
-        descripcion: body.diagnostico,
-        saludBateria: body.saludBateria,
-        versionSO: body.versionSO,
-        updatedAt: new Date()
+        diagnostico: descripcion,
+        saludBateria: saludBateria,
+        versionSO: versionSistema
       }
     });
 
-    // Eliminar los items del checklist existentes solo si hay nuevos items
-    if (ticket.Reparacion && body.checklist.length > 0) {
-      await prisma.checklistDiagnostico.deleteMany({
-        where: {
-          reparacionId: ticket.Reparacion.id
-        }
-      });
-    }
+    return NextResponse.json({
+      success: true,
+      reparacion
+    });
 
-    // Crear los nuevos items del checklist solo si hay items
-    let checklistItems: checklistDiagnostico[] = [];
-    if (body.checklist.length > 0) {
-      checklistItems = await Promise.all(
-        body.checklist.map(item =>
-          prisma.checklistDiagnostico.create({
-            data: {
-              reparacionId: reparacion.id,
-              item: item.item,
-              respuesta: item.respuesta,
-              observacion: item.observacion,
-              updatedAt: new Date()
-            }
-          })
-        )
+  } catch (error) {
+    console.error('Error al guardar el diagnóstico:', error);
+    return NextResponse.json(
+      { error: 'Error al guardar el diagnóstico' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
       );
     }
 
-    console.log('Reparación creada/actualizada:', reparacion);
-    console.log('Items del checklist creados:', checklistItems);
+    const ticketId = parseInt(params.id);
 
-    // Buscar el estatus de diagnóstico
-    const estatusDiagnostico = await prisma.estatusReparacion.findFirst({
-      where: { 
-        nombre: 'En Diagnóstico'
+    // Obtener el ticket con su reparación
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+      include: {
+        reparacion: true
       }
     });
 
-    if (!estatusDiagnostico) {
-      throw new Error('No se encontró el estatus de diagnóstico');
+    if (!ticket) {
+      return NextResponse.json(
+        { error: 'Ticket no encontrado' },
+        { status: 404 }
+      );
     }
 
-    // Actualizar el estatus del ticket
-    const ticketActualizado = await prisma.ticket.update({
-      where: { id: ticketId },
-      data: {
-        estatusReparacionId: estatusDiagnostico.id,
-        fechaInicioDiagnostico: new Date()
-      },
-      include: {
-        Reparacion: {
-          include: {
-            checklistDiagnostico: true
-          }
-        }
-      }
+    return NextResponse.json({
+      success: true,
+      reparacion: ticket.reparacion
     });
 
-    return NextResponse.json(ticketActualizado);
   } catch (error) {
-    console.error('Error detallado en el endpoint de diagnóstico:', error);
+    console.error('Error al obtener el diagnóstico:', error);
     return NextResponse.json(
-      { error: 'Error al procesar el diagnóstico: ' + (error instanceof Error ? error.message : 'Error desconocido') },
+      { error: 'Error al obtener el diagnóstico' },
       { status: 500 }
     );
   }

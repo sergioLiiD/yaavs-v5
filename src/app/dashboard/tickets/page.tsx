@@ -6,29 +6,54 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import RouteGuard from '@/components/route-guard';
 import { TicketsTable } from './components/TicketsTable';
+import { AssignTechnicianModal } from '@/components/tickets/AssignTechnicianModal';
+
+interface Ticket {
+  id: number;
+  numeroTicket: string;
+  fechaRecepcion: string;
+  descripcionProblema: string | null;
+  estatusReparacion?: {
+    id: number;
+    nombre: string;
+  };
+  cancelado: boolean;
+}
 
 export default function TicketsPage() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
+    console.log('Iniciando useEffect...');
     fetchTickets();
   }, []);
 
   const fetchTickets = async () => {
     try {
+      console.log('=== INICIO DE FETCH TICKETS ===');
       console.log('Iniciando fetch de tickets...');
       const response = await fetch('/api/tickets');
       console.log('Respuesta recibida:', response.status);
       
       if (!response.ok) {
+        console.error('Error en la respuesta:', response.status);
         throw new Error(`Error al obtener tickets: ${response.status}`);
       }
 
       const data = await response.json();
       console.log('Datos recibidos:', data);
+      console.log('Número de tickets:', data.length);
+      console.log('Estados de los tickets:', data.map((t: Ticket) => ({
+        id: t.id,
+        numeroTicket: t.numeroTicket,
+        estado: t.estatusReparacion?.nombre,
+        cancelado: t.cancelado
+      })));
+      console.log('=== FIN DE FETCH TICKETS ===');
       setTickets(data);
     } catch (error) {
       console.error('Error en fetchTickets:', error);
@@ -37,6 +62,15 @@ export default function TicketsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAssignTechnician = (ticketId: number) => {
+    setSelectedTicketId(ticketId);
+  };
+
+  const handleAssignComplete = () => {
+    setSelectedTicketId(null);
+    fetchTickets(); // Recargar tickets para actualizar la lista
   };
 
   if (loading) {
@@ -58,7 +92,18 @@ export default function TicketsPage() {
   return (
     <RouteGuard requiredPermissions={['TICKETS_VIEW']} section="Tickets">
       <div className="container mx-auto py-6">
-        <TicketsTable tickets={tickets} />
+        <TicketsTable 
+          tickets={tickets} 
+          onAssignTechnician={handleAssignTechnician}
+        />
+        {selectedTicketId && (
+          <AssignTechnicianModal
+            isOpen={true}
+            onClose={() => setSelectedTicketId(null)}
+            ticketId={selectedTicketId}
+            onAssign={handleAssignComplete}
+          />
+        )}
       </div>
     </RouteGuard>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -22,18 +22,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
 
 const ticketSchema = z.object({
   clienteId: z.number().min(1, "Debes seleccionar un cliente"),
   modeloId: z.number().min(1, "Debes seleccionar un modelo"),
   tipoServicioId: z.number().min(1, "Debes seleccionar un tipo de servicio"),
   descripcionProblema: z.string().min(1, "La descripción del problema es requerida"),
-  dispositivo: z.object({
-    tipo: z.string().min(1, "El tipo de dispositivo es requerido"),
-    marca: z.string().min(1, "La marca es requerida"),
-    modelo: z.string().min(1, "El modelo es requerido"),
-    serie: z.string().optional(),
-  }),
+  imei: z.string().optional(),
+  capacidad: z.string().optional(),
+  color: z.string().optional(),
+  fechaCompra: z.string().optional(),
+  tipoDesbloqueo: z.enum(['pin', 'patron']).default('pin'),
+  codigoDesbloqueo: z.string().optional(),
+  patronDesbloqueo: z.array(z.number()).optional(),
+  redCelular: z.string().optional(),
 });
 
 interface Cliente {
@@ -61,6 +64,7 @@ interface TipoServicio {
 
 interface TicketFormProps {
   clientes: Cliente[];
+  marcas: any[];
   modelos: Modelo[];
   tiposServicio: TipoServicio[];
   ticket?: {
@@ -69,32 +73,48 @@ interface TicketFormProps {
     modeloId: number;
     tipoServicioId: number;
     descripcionProblema: string;
-    dispositivo: {
-      tipo: string;
-      marca: string;
-      modelo: string;
-      serie?: string;
-    };
+    codigoDesbloqueo?: string | null;
+    patronDesbloqueo?: number[];
+    imei?: string | null;
+    capacidad?: string | null;
+    color?: string | null;
+    fechaCompra?: Date | null;
+    redCelular?: string | null;
   };
 }
 
-export function TicketForm({ clientes, modelos, tiposServicio, ticket }: TicketFormProps) {
+export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }: TicketFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof ticketSchema>>({
     resolver: zodResolver(ticketSchema),
-    defaultValues: ticket || {
+    defaultValues: ticket ? {
+      clienteId: ticket.clienteId,
+      modeloId: ticket.modeloId,
+      tipoServicioId: ticket.tipoServicioId,
+      descripcionProblema: ticket.descripcionProblema || "",
+      imei: ticket.imei || "",
+      capacidad: ticket.capacidad || "",
+      color: ticket.color || "",
+      fechaCompra: ticket.fechaCompra ? new Date(ticket.fechaCompra).toISOString().split('T')[0] : "",
+      tipoDesbloqueo: ticket.codigoDesbloqueo ? 'pin' : (ticket.patronDesbloqueo?.length ? 'patron' : 'pin'),
+      codigoDesbloqueo: ticket.codigoDesbloqueo || "",
+      patronDesbloqueo: ticket.patronDesbloqueo || [],
+      redCelular: ticket.redCelular || "",
+    } : {
       clienteId: undefined,
       modeloId: undefined,
       tipoServicioId: undefined,
       descripcionProblema: "",
-      dispositivo: {
-        tipo: "",
-        marca: "",
-        modelo: "",
-        serie: "",
-      },
+      imei: "",
+      capacidad: "",
+      color: "",
+      fechaCompra: "",
+      tipoDesbloqueo: "pin",
+      codigoDesbloqueo: "",
+      patronDesbloqueo: [],
+      redCelular: "",
     },
   });
 
@@ -160,35 +180,6 @@ export function TicketForm({ clientes, modelos, tiposServicio, ticket }: TicketF
             )}
           />
 
-          {/* Modelo */}
-          <FormField
-            control={form.control}
-            name="modeloId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Modelo</FormLabel>
-                <Select
-                  onValueChange={(value) => field.onChange(Number(value))}
-                  defaultValue={field.value?.toString()}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un modelo" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {modelos.map((modelo) => (
-                      <SelectItem key={modelo.id} value={modelo.id.toString()}>
-                        {`${modelo.marca.nombre} ${modelo.nombre}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           {/* Tipo de Servicio */}
           <FormField
             control={form.control}
@@ -218,18 +209,52 @@ export function TicketForm({ clientes, modelos, tiposServicio, ticket }: TicketF
             )}
           />
 
+          {/* Modelo */}
+          <FormField
+            control={form.control}
+            name="modeloId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Modelo</FormLabel>
+                <Select
+                  onValueChange={(value) => field.onChange(Number(value))}
+                  defaultValue={field.value?.toString()}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un modelo" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {modelos.map((modelo) => (
+                      <SelectItem key={modelo.id} value={modelo.id.toString()}>
+                        {`${modelo.marca.nombre} ${modelo.nombre}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {/* Información del Dispositivo */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Información del Dispositivo</h3>
             
             <FormField
               control={form.control}
-              name="dispositivo.tipo"
+              name="imei"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo</FormLabel>
+                  <FormLabel>IMEI</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Ej: Smartphone, Tablet, Laptop" />
+                    <Input 
+                      {...field} 
+                      placeholder="Ingrese el IMEI del dispositivo (15 dígitos)"
+                      pattern="[0-9]{15}"
+                      title="El IMEI debe contener exactamente 15 dígitos"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -238,12 +263,12 @@ export function TicketForm({ clientes, modelos, tiposServicio, ticket }: TicketF
 
             <FormField
               control={form.control}
-              name="dispositivo.marca"
+              name="capacidad"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Marca</FormLabel>
+                  <FormLabel>Capacidad</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Ej: Samsung, Apple, HP" />
+                    <Input {...field} placeholder="Ej: 128GB, 256GB" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -252,12 +277,12 @@ export function TicketForm({ clientes, modelos, tiposServicio, ticket }: TicketF
 
             <FormField
               control={form.control}
-              name="dispositivo.modelo"
+              name="color"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Modelo</FormLabel>
+                  <FormLabel>Color</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Ej: iPhone 13, Galaxy S21" />
+                    <Input {...field} placeholder="Ej: Rojo, Azul" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -266,12 +291,112 @@ export function TicketForm({ clientes, modelos, tiposServicio, ticket }: TicketF
 
             <FormField
               control={form.control}
-              name="dispositivo.serie"
+              name="fechaCompra"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Número de Serie (opcional)</FormLabel>
+                  <FormLabel>Fecha de Compra</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Número de serie del dispositivo" />
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="tipoDesbloqueo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Desbloqueo</FormLabel>
+                  <div className="flex space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="pin"
+                        value="pin"
+                        checked={field.value === 'pin'}
+                        onChange={() => field.onChange('pin')}
+                        className="h-4 w-4 text-blue-600"
+                      />
+                      <Label htmlFor="pin">PIN</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="patron"
+                        value="patron"
+                        checked={field.value === 'patron'}
+                        onChange={() => field.onChange('patron')}
+                        className="h-4 w-4 text-blue-600"
+                      />
+                      <Label htmlFor="patron">Patrón</Label>
+                    </div>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {form.watch('tipoDesbloqueo') === 'pin' ? (
+              <FormField
+                control={form.control}
+                name="codigoDesbloqueo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PIN de Desbloqueo</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Ingresa el PIN" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <FormField
+                control={form.control}
+                name="patronDesbloqueo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Patrón de Desbloqueo</FormLabel>
+                    <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((numero) => (
+                        <button
+                          key={numero}
+                          type="button"
+                          onClick={() => {
+                            const currentPattern = field.value || [];
+                            if (currentPattern.length < 9) {
+                              field.onChange([...currentPattern, numero]);
+                            }
+                          }}
+                          className={`aspect-square border rounded-lg flex items-center justify-center text-lg font-medium hover:bg-gray-100 ${
+                            field.value?.includes(numero) ? 'bg-blue-100' : ''
+                          }`}
+                        >
+                          {numero}
+                        </button>
+                      ))}
+                    </div>
+                    {field.value && field.value.length > 0 && (
+                      <div className="mt-2 text-sm text-gray-600 text-center">
+                        Patrón actual: {field.value.join(' → ')}
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={form.control}
+              name="redCelular"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Red Celular</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Ej: Telcel, AT&T" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -40,6 +40,8 @@ interface PrecioVenta {
   marca: string;
   modelo: string;
   precio_venta: number;
+  productoId?: number;
+  servicioId?: number;
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -66,7 +68,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
   const { data: catalogoProductos } = useQuery({
     queryKey: ['catalogoProductos'],
     queryFn: async () => {
-      const response = await fetch('/api/productos');
+      const response = await fetch('/api/inventario/productos');
       if (!response.ok) {
         throw new Error('Error al cargar productos');
       }
@@ -111,6 +113,8 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
         productoId: 0,
         cantidad: 1,
         precioVenta: 0,
+        conceptoExtra: '',
+        precioConceptoExtra: 0
       },
     ]);
   };
@@ -119,38 +123,65 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
     onProductosChange(productos.filter((p) => p.id !== id));
   };
 
-  const handleProductoChange = (id: string, field: keyof ProductoSeleccionado, value: any) => {
+  const handleProductoChange = async (id: string, field: keyof ProductoSeleccionado, value: any) => {
     const productoActualizado = productos.map((p) =>
-      p.id === id ? { ...p, [field]: value } : p
+      p.id === id ? { ...p, [field]: value || (field === 'cantidad' ? 1 : field === 'precioVenta' ? 0 : '') } : p
     );
 
-    // Si se cambia el producto, actualizar el precio de venta
-    if (field === 'productoId' && preciosVenta && catalogoProductos) {
-      const productoSeleccionado = catalogoProductos.find((p: Producto) => p.id === value);
-      if (productoSeleccionado) {
-        // Buscar el precio de venta según el tipo de producto
-        const precioVenta = preciosVenta.find((p: PrecioVenta) => {
-          const nombreCoincide = p.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase();
-          const tipoCoincide = p.tipo === productoSeleccionado.tipo;
-          
+    // Si se cambia el producto, obtener el precio de venta más reciente
+    if (field === 'productoId' && value) {
+      try {
+        const productoSeleccionado = catalogoProductos?.find((p: Producto) => p.id === value);
+        if (!productoSeleccionado) {
+          console.error('Producto no encontrado:', value);
+          return;
+        }
+
+        // Buscar el precio de venta en el array de precios
+        const precioVenta = preciosVenta?.find((p: PrecioVenta) => {
           if (productoSeleccionado.tipo === 'SERVICIO') {
-            return nombreCoincide && tipoCoincide;
-          } else {
-            const marcaCoincide = p.marca.toLowerCase() === (productoSeleccionado.marca?.nombre.toLowerCase() || '');
-            const modeloCoincide = p.modelo.toLowerCase() === (productoSeleccionado.modelo?.nombre.toLowerCase() || '');
-            return nombreCoincide && marcaCoincide && modeloCoincide && tipoCoincide;
+            return p.tipo === 'SERVICIO' && p.servicioId === value;
           }
+          return p.tipo === 'PRODUCTO' && p.productoId === value;
         });
 
         const producto = productoActualizado.find(p => p.id === id);
         if (producto) {
           if (precioVenta) {
-            producto.precioVenta = precioVenta.precio_venta;
-            console.log('Precio de venta encontrado:', precioVenta.precio_venta);
+            producto.precioVenta = Number(precioVenta.precioVenta) || 0;
+            console.log('Precio de venta encontrado:', precioVenta.precioVenta);
           } else {
-            // Si no se encuentra un precio de venta específico, usar el precio promedio
-            producto.precioVenta = productoSeleccionado.precioPromedio;
-            console.log('Usando precio promedio:', productoSeleccionado.precioPromedio);
+            // Si no hay precio de venta, intentar obtenerlo de la API
+            const response = await fetch(`/api/precios-venta?tipo=${productoSeleccionado.tipo}`);
+            if (response.ok) {
+              const precios = await response.json();
+              const precio = precios.find((p: PrecioVenta) => {
+                if (productoSeleccionado.tipo === 'SERVICIO') {
+                  return p.tipo === 'SERVICIO' && p.servicioId === value;
+                }
+                return p.tipo === 'PRODUCTO' && p.productoId === value;
+              });
+              if (precio) {
+                producto.precioVenta = Number(precio.precioVenta) || 0;
+                console.log('Precio de venta encontrado en API:', precio.precioVenta);
+              } else {
+                producto.precioVenta = Number(productoSeleccionado.precioPromedio) || 0;
+                console.log('Usando precio promedio:', productoSeleccionado.precioPromedio);
+              }
+            } else {
+              producto.precioVenta = Number(productoSeleccionado.precioPromedio) || 0;
+              console.log('Usando precio promedio:', productoSeleccionado.precioPromedio);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error al obtener precio de venta:', error);
+        // En caso de error, usar el precio promedio
+        const productoSeleccionado = catalogoProductos?.find((p: Producto) => p.id === value);
+        if (productoSeleccionado) {
+          const producto = productoActualizado.find(p => p.id === id);
+          if (producto) {
+            producto.precioVenta = Number(productoSeleccionado.precioPromedio) || 0;
           }
         }
       }
@@ -177,9 +208,11 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
 
   const calcularTotal = () => {
     return productos.reduce((total, p) => {
-      const subtotal = Number(p.cantidad) * Number(p.precioVenta);
-      const extra = Number(p.precioConceptoExtra) || 0;
-      return total + subtotal + extra;
+      const cantidad = Number(p.cantidad) || 0;
+      const precioVenta = Number(p.precioVenta) || 0;
+      const precioConceptoExtra = Number(p.precioConceptoExtra) || 0;
+      const subtotal = cantidad * precioVenta;
+      return total + subtotal + precioConceptoExtra;
     }, 0);
   };
 
@@ -211,7 +244,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
               <TableCell>
                 <div className="space-y-4">
                   <Select
-                    value={producto.productoId.toString()}
+                    value={producto.productoId?.toString() || ''}
                     onValueChange={(value) =>
                       handleProductoChange(producto.id, 'productoId', parseInt(value))
                     }
@@ -248,51 +281,39 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
                             value={p.id.toString()}
                             className="bg-white text-black hover:bg-gray-100 cursor-pointer data-[highlighted:bg-gray-100]"
                           >
-                            <div className="flex flex-col py-1">
-                              <span className="text-black font-medium">{p.nombre}</span>
-                              <span className="text-sm text-gray-600">
-                                {p.marca?.nombre && p.modelo?.nombre ? `${p.marca.nombre} ${p.modelo.nombre}` : ''}
-                              </span>
-                            </div>
+                            {p.nombre} {p.marca?.nombre ? `- ${p.marca.nombre}` : ''} {p.modelo?.nombre ? ` ${p.modelo.nombre}` : ''}
                           </SelectItem>
                         ))
                       )}
                     </SelectContent>
                   </Select>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-sm text-gray-600">Cantidad</Label>
+                      <Label>Cantidad</Label>
                       <Input
                         type="number"
                         min="1"
                         value={producto.cantidad || 1}
-                        onChange={(e) =>
-                          handleProductoChange(producto.id, 'cantidad', parseInt(e.target.value))
-                        }
-                        className="bg-white text-black border-gray-200 mt-1"
+                        onChange={(e) => handleProductoChange(producto.id, 'cantidad', parseInt(e.target.value))}
+                        className="bg-white text-black border-gray-200"
                       />
                     </div>
                     <div>
-                      <Label className="text-sm text-gray-600">Precio de Venta</Label>
+                      <Label>Precio Unitario</Label>
                       <Input
                         type="number"
                         min="0"
                         step="0.01"
                         value={producto.precioVenta || 0}
-                        onChange={(e) =>
-                          handleProductoChange(producto.id, 'precioVenta', parseFloat(e.target.value))
-                        }
-                        className="bg-white text-black border-gray-200 mt-1"
+                        onChange={(e) => handleProductoChange(producto.id, 'precioVenta', parseFloat(e.target.value))}
+                        className="bg-white text-black border-gray-200"
                       />
                     </div>
                   </div>
                 </div>
               </TableCell>
               <TableCell>
-                <div className="text-sm font-medium">
-                  ${((producto.cantidad || 1) * (producto.precioVenta || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
+                ${((producto.cantidad || 1) * (producto.precioVenta || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </TableCell>
               <TableCell className="text-right">
                 <Button
@@ -300,7 +321,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
                   variant="ghost"
                   size="icon"
                   onClick={() => handleRemoveProducto(producto.id)}
-                  className="bg-white text-black hover:bg-gray-100"
+                  className="text-red-600 hover:text-red-800"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </Button>
@@ -309,13 +330,9 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
           ))}
         </TableBody>
       </Table>
-
-      <div className="flex justify-end">
-        <div className="text-right">
-          <p className="text-sm text-gray-600">Total</p>
-          <p className="text-lg font-semibold text-black">
-            ${calcularTotal().toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
+      <div className="flex justify-end mt-4">
+        <div className="text-lg font-semibold">
+          Total: ${calcularTotal().toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
       </div>
     </div>

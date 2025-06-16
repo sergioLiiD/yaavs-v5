@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { CreateClienteDTO, UpdateClienteDTO, Cliente } from '@/types/cliente';
-import bcrypt from 'bcryptjs';
+import { Cliente, CreateClienteDTO, UpdateClienteDTO } from '@/types/cliente';
+import bcrypt from 'bcrypt';
 import { Prisma } from '@prisma/client';
 
 export class ClienteService {
@@ -42,7 +42,30 @@ export class ClienteService {
   static async getById(id: number): Promise<Cliente | null> {
     try {
       const cliente = await prisma.cliente.findUnique({
-        where: { id }
+        where: { id },
+        select: {
+          id: true,
+          nombre: true,
+          apellidoPaterno: true,
+          apellidoMaterno: true,
+          telefonoCelular: true,
+          telefonoContacto: true,
+          email: true,
+          calle: true,
+          numeroExterior: true,
+          numeroInterior: true,
+          colonia: true,
+          ciudad: true,
+          estado: true,
+          codigoPostal: true,
+          latitud: true,
+          longitud: true,
+          fuenteReferencia: true,
+          rfc: true,
+          createdAt: true,
+          updatedAt: true,
+          tipoRegistro: true
+        }
       });
       return cliente;
     } catch (error) {
@@ -65,44 +88,34 @@ export class ClienteService {
   }
 
   // Crear un nuevo cliente
-  static async create(data: CreateClienteDTO, puntoRecoleccionId?: number): Promise<Cliente> {
-    try {
-      console.log('Iniciando creación de cliente en servicio...');
-      const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash(data.password, salt);
-
-      console.log('Creando cliente en base de datos...');
-      const cliente = await prisma.cliente.create({
-        data: {
-          nombre: data.nombre,
-          apellidoPaterno: data.apellidoPaterno,
-          apellidoMaterno: data.apellidoMaterno,
-          telefonoCelular: data.telefonoCelular,
-          email: data.email,
-          passwordHash,
-          activo: true,
-          tipoRegistro: data.tipoRegistro || 'Registro propio',
-          puntoRecoleccionId: puntoRecoleccionId,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        include: {
-          puntoRecoleccion: {
-            select: {
-              id: true,
-              name: true,
-              isRepairPoint: true
-            }
-          }
-        }
-      });
-
-      console.log('Cliente creado exitosamente en servicio:', cliente.id);
-      return cliente;
-    } catch (error) {
-      console.error('Error al crear cliente en servicio:', error);
-      throw new Error('Error al crear el cliente');
-    }
+  static async create(data: {
+    email: string;
+    password: string;
+    nombre: string;
+    apellidoPaterno: string;
+    apellidoMaterno?: string;
+    telefonoCelular: string;
+    telefonoContacto?: string;
+    calle: string;
+    numeroExterior: string;
+    numeroInterior?: string;
+    colonia: string;
+    ciudad: string;
+    estado: string;
+    codigoPostal: string;
+    latitud?: number;
+    longitud?: number;
+    fuenteReferencia?: string;
+    rfc?: string;
+    tipoRegistro?: string;
+  }): Promise<Cliente> {
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    return prisma.cliente.create({
+      data: {
+        ...data,
+        passwordHash: hashedPassword
+      }
+    });
   }
 
   // Actualizar un cliente
@@ -152,24 +165,64 @@ export class ClienteService {
 
   // Verificar credenciales de cliente
   static async verifyCredentials(email: string, password: string): Promise<Cliente | null> {
-    try {
-      const cliente = await prisma.cliente.findFirst({
-        where: {
-          email,
-          activo: true
-        }
-      });
+    const cliente = await prisma.cliente.findUnique({
+      where: { email }
+    });
 
-      if (!cliente) return null;
-      if (!cliente.passwordHash) return null;
-
-      const isValid = await bcrypt.compare(password, cliente.passwordHash);
-      if (!isValid) return null;
-
-      return cliente;
-    } catch (error) {
-      console.error('Error al verificar credenciales:', error);
-      throw new Error('Error al verificar las credenciales');
+    if (!cliente) {
+      return null;
     }
+
+    const isValid = await bcrypt.compare(password, cliente.passwordHash);
+    if (!isValid) {
+      return null;
+    }
+
+    return cliente;
+  }
+
+  static async findById(id: number) {
+    return prisma.cliente.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        nombre: true,
+        apellidoPaterno: true,
+        apellidoMaterno: true,
+        telefonoCelular: true,
+        telefonoContacto: true,
+        email: true,
+        calle: true,
+        numeroExterior: true,
+        numeroInterior: true,
+        colonia: true,
+        ciudad: true,
+        estado: true,
+        codigoPostal: true,
+        latitud: true,
+        longitud: true,
+        fuenteReferencia: true,
+        rfc: true,
+        createdAt: true,
+        updatedAt: true,
+        tipoRegistro: true,
+        passwordHash: true
+      }
+    });
+  }
+
+  static async findByEmail(email: string) {
+    return prisma.cliente.findUnique({
+      where: { email }
+    });
+  }
+
+  static async findAll(where?: Prisma.ClienteWhereInput) {
+    return prisma.cliente.findMany({
+      where,
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
   }
 } 
