@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/db/prisma';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function GET() {
   try {
@@ -15,16 +16,16 @@ export async function GET() {
     }
 
     // Obtener el punto de reparación del usuario
-    const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
+    const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
       where: {
         usuarioId: session.user.id
       },
       include: {
-        puntos_recoleccion: true
+        puntoRecoleccion: true
       }
     });
 
-    if (!userPoint || !userPoint.puntos_recoleccion.isRepairPoint) {
+    if (!userPoint || !userPoint.puntoRecoleccion) {
       return NextResponse.json(
         { error: 'Usuario no autorizado para punto de reparación' },
         { status: 403 }
@@ -32,31 +33,21 @@ export async function GET() {
     }
 
     // Obtener clientes
-    const clientes = await prisma.cliente.findMany({
-      where: {
-        activo: true
-      },
-      select: {
-        id: true,
-        nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true
-      },
-      orderBy: {
-        nombre: 'asc'
-      }
-    });
+    const clientes = await prisma.$queryRaw`
+      SELECT id, nombre, apellido_paterno as "apellidoPaterno", apellido_materno as "apellidoMaterno"
+      FROM clientes
+      WHERE punto_recoleccion_id = ${userPoint.puntoRecoleccion.id}
+      ORDER BY nombre ASC
+    `;
 
     // Obtener modelos
     const modelos = await prisma.modelo.findMany({
-      where: {
-        activo: true
-      },
       select: {
         id: true,
         nombre: true,
-        marcas: {
+        marca: {
           select: {
+            id: true,
             nombre: true
           }
         }
@@ -81,6 +72,7 @@ export async function GET() {
     });
 
     return NextResponse.json({
+      puntoRecoleccion: userPoint.puntoRecoleccion,
       clientes,
       modelos,
       estatusReparacion

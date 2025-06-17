@@ -33,7 +33,9 @@ model Cliente {
   updatedAt        DateTime    @updatedAt @map("updated_at")
   creadoPorId      Int?        @map("creado_por_id")
   tipoRegistro     String?     @map("tipo_registro")
+  puntoRecoleccionId Int?      @map("punto_recoleccion_id")
   creadoPor        Usuario?    @relation("ClienteCreador", fields: [creadoPorId], references: [id])
+  puntoRecoleccion PuntoRecoleccion? @relation(fields: [puntoRecoleccionId], references: [id])
   direcciones      Direccion[]
   tickets          Ticket[]
 
@@ -395,22 +397,23 @@ model Pago {
 }
 
 model PuntoRecoleccion {
-  id              Int                       @id @default(autoincrement())
-  nombre          String
-  activo          Boolean                   @default(true)
-  createdAt       DateTime                  @default(now()) @map("created_at")
-  updatedAt       DateTime                  @updatedAt @map("updated_at")
-  email           String?
-  esSedePrincipal Boolean                   @default(false) @map("is_headquarters")
-  ubicacion       Json                      @map("location")
-  sedePrincipalId Int?                      @map("parent_id")
-  telefono        String?                   @map("phone")
-  horario         Json                      @map("schedule")
-  url             String?
-  sedePrincipal   PuntoRecoleccion?         @relation("PuntoRecoleccionToSede", fields: [sedePrincipalId], references: [id])
-  sucursales      PuntoRecoleccion[]        @relation("PuntoRecoleccionToSede")
-  tickets         Ticket[]
-  usuarios        UsuarioPuntoRecoleccion[]
+  id                Int                     @id @default(autoincrement())
+  nombre            String
+  email             String?                 @unique
+  telefono          String?                 @map("phone")
+  ubicacion         Json?                   @map("location")
+  horario           Json?                   @map("schedule")
+  url               String?                 @unique
+  activo            Boolean                 @default(true)
+  esSedePrincipal   Boolean                 @default(false) @map("is_headquarters")
+  sedePrincipalId   Int?                    @map("parent_id")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+  sedePrincipal     PuntoRecoleccion?       @relation("SedePrincipal", fields: [sedePrincipalId], references: [id])
+  sedesSecundarias  PuntoRecoleccion[]      @relation("SedePrincipal")
+  usuarios          UsuarioPuntoRecoleccion[]
+  tickets           Ticket[]
+  clientes          Cliente[]
 
   @@map("puntos_recoleccion")
 }

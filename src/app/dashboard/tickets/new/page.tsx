@@ -127,6 +127,11 @@ export default function NewTicketPage() {
           const data = await response.json();
           setModelos(data);
           setModelosFiltrados(data);
+          // Resetear el modelo seleccionado cuando cambia la marca
+          setFormData(prev => ({
+            ...prev,
+            modelo: null
+          }));
         } catch (error) {
           console.error('Error:', error);
           setError('Error al cargar los modelos');
@@ -134,6 +139,10 @@ export default function NewTicketPage() {
       };
 
       fetchModelos();
+    } else {
+      // Si no hay marca seleccionada, limpiar los modelos
+      setModelos([]);
+      setModelosFiltrados([]);
     }
   }, [formData.marca]);
 
@@ -327,6 +336,7 @@ export default function NewTicketPage() {
                   <SelectValue placeholder="Seleccionar marca" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Seleccionar marca</SelectItem>
                   {marcas.length > 0 ? (
                     marcas.map((marca) => (
                       <SelectItem key={marca.id} value={marca.id.toString()}>
@@ -353,6 +363,7 @@ export default function NewTicketPage() {
                   <SelectValue placeholder={!formData.marca ? "Primero selecciona una marca" : "Seleccionar modelo"} />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Seleccionar modelo</SelectItem>
                   {modelosFiltrados.length > 0 ? (
                     modelosFiltrados.map((modelo) => (
                       <SelectItem key={modelo.id} value={modelo.id.toString()}>

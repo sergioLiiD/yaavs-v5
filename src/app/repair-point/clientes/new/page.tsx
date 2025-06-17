@@ -78,7 +78,7 @@ export default function NewClientePage() {
             <input
               type="text"
               {...register('nombre')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19]"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
             />
             {errors.nombre && (
               <p className="mt-1 text-sm text-red-600">{errors.nombre.message}</p>
@@ -92,7 +92,7 @@ export default function NewClientePage() {
             <input
               type="text"
               {...register('apellidoPaterno')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19]"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
             />
             {errors.apellidoPaterno && (
               <p className="mt-1 text-sm text-red-600">
@@ -108,7 +108,7 @@ export default function NewClientePage() {
             <input
               type="text"
               {...register('apellidoMaterno')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19]"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
             />
             {errors.apellidoMaterno && (
               <p className="mt-1 text-sm text-red-600">
@@ -124,7 +124,7 @@ export default function NewClientePage() {
             <input
               type="tel"
               {...register('telefonoCelular')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19]"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
             />
             {errors.telefonoCelular && (
               <p className="mt-1 text-sm text-red-600">
@@ -140,7 +140,7 @@ export default function NewClientePage() {
             <input
               type="tel"
               {...register('telefonoContacto')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19]"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
             />
             {errors.telefonoContacto && (
               <p className="mt-1 text-sm text-red-600">
@@ -156,7 +156,7 @@ export default function NewClientePage() {
             <input
               type="email"
               {...register('email')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19]"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
             />
             {errors.email && (
               <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
@@ -170,7 +170,7 @@ export default function NewClientePage() {
             <input
               type="text"
               {...register('rfc')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19]"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
             />
             {errors.rfc && (
               <p className="mt-1 text-sm text-red-600">{errors.rfc.message}</p>

@@ -24,21 +24,11 @@ export default function ClientesPage() {
   useEffect(() => {
     const fetchClientes = async () => {
       try {
-        // Obtener el punto de recolección del usuario actual
-        const userResponse = await fetch('/api/repair-point/data');
-        if (!userResponse.ok) {
-          throw new Error('Error al obtener datos del punto de reparación');
-        }
-        const userData = await userResponse.json();
-        
-        if (!userData.puntoRecoleccion?.id) {
-          throw new Error('No se encontró el punto de recolección');
-        }
-
         // Obtener los clientes del punto de recolección
-        const response = await fetch(`/api/clientes?puntoRecoleccionId=${userData.puntoRecoleccion.id}`);
+        const response = await fetch('/api/clientes');
         if (!response.ok) {
-          throw new Error('Error al obtener los clientes');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Error al obtener los clientes');
         }
         const data = await response.json();
         setClientes(data);

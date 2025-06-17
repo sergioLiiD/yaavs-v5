@@ -18,10 +18,10 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (status === 'authenticated' && session) {
-      router.push(callbackUrl);
+    if (status === 'authenticated' && session && !isLoading) {
+      router.replace(callbackUrl);
     }
-  }, [status, session, router, callbackUrl]);
+  }, [status, session, router, callbackUrl, isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +39,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Credenciales inválidas');
       } else if (result?.ok) {
-        router.push(callbackUrl);
+        router.replace(callbackUrl);
       }
     } catch (err) {
       console.error('Error durante el inicio de sesión:', err);
@@ -55,6 +55,10 @@ export default function LoginPage() {
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FEBF19]"></div>
       </div>
     );
+  }
+
+  if (status === 'authenticated' && session) {
+    return null;
   }
 
   return (

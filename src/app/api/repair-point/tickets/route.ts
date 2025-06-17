@@ -11,12 +11,12 @@ export async function GET() {
     }
 
     // Obtener el punto de recolección asociado al usuario
-    const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
+    const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
       where: {
         usuarioId: session.user.id
       },
       include: {
-        puntos_recoleccion: true
+        puntoRecoleccion: true
       }
     });
 
@@ -35,7 +35,11 @@ export async function GET() {
       },
       include: {
         cliente: true,
-        modelo: true,
+        modelo: {
+          include: {
+            marca: true
+          }
+        },
         estatusReparacion: true
       },
       orderBy: {
@@ -65,12 +69,12 @@ export async function POST(request: Request) {
     }
 
     // Obtener el punto de recolección del usuario
-    const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
+    const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
       where: {
         usuarioId: session.user.id
       },
       include: {
-        puntos_recoleccion: true
+        puntoRecoleccion: true
       }
     });
 
@@ -83,15 +87,72 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
+    // Obtener el estatus inicial "Recibido"
+    const estatusInicial = await prisma.estatusReparacion.findFirst({
+      where: { 
+        nombre: 'Recibido',
+        activo: true
+      }
+    });
+
+    if (!estatusInicial) {
+      console.error('No se encontró el estatus inicial "Recibido"');
+      return NextResponse.json(
+        { error: 'No se encontró el estatus inicial' },
+        { status: 500 }
+      );
+    }
+
+    console.log('Estatus inicial encontrado:', estatusInicial);
+
     // Crear el ticket
     const ticket = await prisma.ticket.create({
       data: {
-        ...body,
-        puntoRecoleccionId: userPoint.puntoRecoleccionId,
-        creadorId: session.user.id,
-        cancelado: false
+        numeroTicket: `TICK-${Date.now()}`,
+        descripcionProblema: body.descripcionProblema,
+        imei: body.imei,
+        capacidad: body.capacidad,
+        color: body.color,
+        fechaCompra: body.fechaCompra ? new Date(body.fechaCompra) : null,
+        tipoDesbloqueo: body.tipoDesbloqueo,
+        codigoDesbloqueo: body.tipoDesbloqueo === 'pin' ? body.codigoDesbloqueo : null,
+        patronDesbloqueo: body.tipoDesbloqueo === 'patron' ? body.patronDesbloqueo : [],
+        redCelular: body.redCelular,
+        cancelado: false,
+        cliente: {
+          connect: {
+            id: parseInt(body.clienteId)
+          }
+        },
+        modelo: {
+          connect: {
+            id: parseInt(body.modeloId)
+          }
+        },
+        creador: {
+          connect: {
+            id: session.user.id
+          }
+        },
+        estatusReparacion: {
+          connect: {
+            id: estatusInicial.id
+          }
+        },
+        puntoRecoleccion: {
+          connect: {
+            id: userPoint.puntoRecoleccionId
+          }
+        },
+        tipoServicio: {
+          connect: {
+            id: parseInt(body.tipoServicioId) || 1 // Usar 1 como valor por defecto si no hay tipoServicioId
+          }
+        }
       }
     });
+
+    console.log('Ticket creado:', ticket);
 
     return NextResponse.json(ticket);
   } catch (error) {

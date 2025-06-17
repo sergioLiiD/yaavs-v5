@@ -25,7 +25,7 @@ interface Ticket {
   };
   modelo: {
     nombre: string;
-    marcas: {
+    marca: {
       nombre: string;
     };
   };
@@ -114,7 +114,7 @@ export default function RepairPointTicketsPage() {
                   {`${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno} ${ticket.cliente.apellidoMaterno || ''}`}
                 </TableCell>
                 <TableCell>
-                  {`${ticket.modelo.marcas.nombre} ${ticket.modelo.nombre}`}
+                  {`${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}`}
                 </TableCell>
                 <TableCell>
                   <Badge

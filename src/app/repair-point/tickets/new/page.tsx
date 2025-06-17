@@ -30,7 +30,7 @@ interface FormData {
 
 export default function NewTicketPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [data, setData] = useState<any>(null);
   const [tipoDesbloqueo, setTipoDesbloqueo] = useState<'pin' | 'patron'>('pin');
@@ -49,6 +49,9 @@ export default function NewTicketPage() {
     imei: ''
   });
 
+  const [marcaSeleccionada, setMarcaSeleccionada] = useState<string>('none');
+  const [modelosFiltrados, setModelosFiltrados] = useState<any[]>([]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -57,6 +60,7 @@ export default function NewTicketPage() {
           throw new Error('Error al cargar datos');
         }
         const data = await response.json();
+        console.log('Datos cargados:', data); // Para depuración
         setData(data);
       } catch (error) {
         console.error('Error:', error);
@@ -67,6 +71,18 @@ export default function NewTicketPage() {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (marcaSeleccionada !== 'none' && data?.modelos) {
+      const filtrados = data.modelos.filter((modelo: any) => 
+        modelo.marca.id.toString() === marcaSeleccionada
+      );
+      console.log('Modelos filtrados:', filtrados); // Para depuración
+      setModelosFiltrados(filtrados);
+    } else {
+      setModelosFiltrados([]);
+    }
+  }, [marcaSeleccionada, data]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -87,8 +103,26 @@ export default function NewTicketPage() {
     }
   };
 
+  const handleMarcaChange = (value: string) => {
+    console.log('Marca seleccionada:', value); // Para depuración
+    setMarcaSeleccionada(value);
+    setFormData(prev => ({ ...prev, modeloId: 'none' }));
+  };
+
+  const handleModeloChange = (value: string) => {
+    console.log('Modelo seleccionado:', value); // Para depuración
+    setFormData(prev => ({ ...prev, modeloId: value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validar campos requeridos
+    if (!formData.clienteId || !formData.modeloId || !formData.descripcionProblema) {
+      alert('Por favor complete todos los campos requeridos');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -97,18 +131,22 @@ export default function NewTicketPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          tipoDesbloqueo,
+          patronDesbloqueo: tipoDesbloqueo === 'patron' ? patronDesbloqueo : []
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Error al crear el ticket');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al crear el ticket');
       }
 
       router.push('/repair-point/tickets');
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al crear el ticket');
-    } finally {
+      alert(error instanceof Error ? error.message : 'Error al crear el ticket');
       setLoading(false);
     }
   };
@@ -146,20 +184,50 @@ export default function NewTicketPage() {
           </div>
 
           <div>
+            <Label htmlFor="marca">Marca</Label>
+            <Select
+              value={marcaSeleccionada}
+              onValueChange={handleMarcaChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccione una marca" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Seleccione una marca</SelectItem>
+                {data?.modelos?.reduce((marcas: any[], modelo: any) => {
+                  if (modelo?.marca?.id && !marcas.find(m => m.id === modelo.marca.id)) {
+                    marcas.push({
+                      id: modelo.marca.id,
+                      nombre: modelo.marca.nombre
+                    });
+                  }
+                  return marcas;
+                }, []).sort((a, b) => a.nombre.localeCompare(b.nombre)).map((marca: any) => (
+                  <SelectItem key={marca.id} value={marca.id.toString()}>
+                    {marca.nombre}
+                  </SelectItem>
+                )) || []}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
             <Label htmlFor="modeloId">Modelo</Label>
             <Select
               value={formData.modeloId}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, modeloId: value }))}
+              onValueChange={handleModeloChange}
+              disabled={marcaSeleccionada === 'none'}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Seleccione un modelo" />
+                <SelectValue placeholder={marcaSeleccionada === 'none' ? "Primero seleccione una marca" : "Seleccione un modelo"} />
               </SelectTrigger>
               <SelectContent>
-                {data.modelos.map((modelo: any) => (
+                <SelectItem value="none">Seleccione un modelo</SelectItem>
+                {modelosFiltrados?.sort((a, b) => a.nombre.localeCompare(b.nombre)).map((modelo: any) => (
                   <SelectItem key={modelo.id} value={modelo.id.toString()}>
-                    {modelo.marcas.nombre} {modelo.nombre}
+                    {modelo.nombre}
                   </SelectItem>
-                ))}
+                )) || []}
               </SelectContent>
             </Select>
           </div>
@@ -308,12 +376,14 @@ export default function NewTicketPage() {
             type="button"
             variant="outline"
             onClick={() => router.back()}
+            disabled={loading}
           >
             Cancelar
           </Button>
           <Button
             type="submit"
             disabled={loading}
+            className="min-w-[100px]"
           >
             {loading ? 'Creando...' : 'Crear Ticket'}
           </Button>

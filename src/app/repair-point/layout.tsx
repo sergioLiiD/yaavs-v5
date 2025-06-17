@@ -15,13 +15,13 @@ export default function RepairPointLayout({
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const isLoginPage = pathname === '/repair-point/login';
 
   useEffect(() => {
-    if (status === 'unauthenticated' && !isLoginPage) {
-      router.push('/repair-point/login');
+    if (status === 'unauthenticated') {
+      const callbackUrl = encodeURIComponent(pathname);
+      window.location.href = `/auth/login?callbackUrl=${callbackUrl}`;
     }
-  }, [status, isLoginPage, router]);
+  }, [status, pathname]);
 
   if (status === 'loading') {
     return (
@@ -31,17 +31,13 @@ export default function RepairPointLayout({
     );
   }
 
-  if (isLoginPage) {
-    return <>{children}</>;
-  }
-
   if (!session) {
     return null;
   }
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
-    router.push('/auth/login');
+    window.location.href = '/auth/login';
   };
 
   return (
