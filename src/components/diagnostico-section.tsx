@@ -12,14 +12,8 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { HiSave, HiClock, HiCamera, HiX } from 'react-icons/hi';
 import { useSession } from 'next-auth/react';
-
-interface ChecklistItem {
-  id: number;
-  nombre: string;
-  descripcion?: string;
-  paraDiagnostico: boolean;
-  paraReparacion: boolean;
-}
+import { Separator } from '@/components/ui/separator';
+import { ChecklistItem } from '@/types/checklist';
 
 interface DiagnosticoSectionProps {
   ticket: Ticket;
@@ -30,10 +24,11 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
   const router = useRouter();
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(!ticket.reparacion?.diagnostico);
-  const [diagnostico, setDiagnostico] = useState(ticket.reparacion?.diagnostico || '');
-  const [saludBateria, setSaludBateria] = useState(ticket.reparacion?.saludBateria?.toString() || '');
-  const [versionSistema, setVersionSistema] = useState(ticket.reparacion?.versionSO || '');
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [diagnostico, setDiagnostico] = useState('');
+  const [saludBateria, setSaludBateria] = useState('');
+  const [versionSO, setVersionSO] = useState('');
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [checklist, setChecklist] = useState<Array<{
     itemId: number;
@@ -41,17 +36,16 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
     respuesta: boolean;
     observacion: string;
   }>>([]);
+  const [isEditingChecklist, setIsEditingChecklist] = useState(false);
 
-  // Agregar logs para depuración
-  console.log('DiagnosticoSection - Ticket recibido:', ticket);
-  console.log('DiagnosticoSection - Datos del dispositivo:', {
-    capacidad: ticket.capacidad,
-    color: ticket.color,
-    fechaCompra: ticket.fechaCompra,
-    redCelular: ticket.redCelular,
-    codigoDesbloqueo: ticket.codigoDesbloqueo,
-    patronDesbloqueo: ticket.patronDesbloqueo
-  });
+  // Actualizar los estados cuando cambia el ticket
+  useEffect(() => {
+    if (ticket?.reparacion) {
+      setDiagnostico(ticket.reparacion.diagnostico || '');
+      setSaludBateria(ticket.reparacion.saludBateria?.toString() || '');
+      setVersionSO(ticket.reparacion.versionSO || '');
+    }
+  }, [ticket]);
 
   // Verificar si el usuario tiene permisos para editar el diagnóstico
   const canEditDiagnostico = React.useMemo(() => {
@@ -60,11 +54,13 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
     // El usuario puede editar si:
     // 1. Es el técnico asignado al ticket
     // 2. Tiene el permiso REPAIRS_EDIT
+    // 3. El ticket tiene canEdit = true (para puntos de reparación)
     return (
       ticket.tecnicoAsignadoId === session.user.id ||
-      session.user.permissions?.includes('REPAIRS_EDIT')
+      session.user.permissions?.includes('REPAIRS_EDIT') ||
+      ticket.canEdit === true
     );
-  }, [session?.user, ticket.tecnicoAsignadoId]);
+  }, [session?.user, ticket.tecnicoAsignadoId, ticket.canEdit]);
 
   useEffect(() => {
     if (!canEditDiagnostico) {
@@ -77,56 +73,64 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
     if (!ticket?.id) return;
 
     try {
-      setIsLoading(true);
+      setIsSaving(true);
+      const apiUrl = ticket.canEdit 
+        ? `/api/repair-point/tickets/${ticket.id}/diagnostico`
+        : `/api/tickets/${ticket.id}/diagnostico`;
 
-      // Guardar el diagnóstico
-      const diagnosticoResponse = await axios.post(`/api/tickets/${ticket.id}/diagnostico`, {
+      console.log('Enviando datos al servidor:', {
         diagnostico,
         saludBateria: Number(saludBateria),
-        versionSO: versionSistema
+        versionSO
       });
 
-      if (!diagnosticoResponse.data) {
-        throw new Error('Error al guardar el diagnóstico');
-      }
-
-      // Guardar el checklist de forma independiente
-      const checklistResponse = await axios.post(`/api/tickets/${ticket.id}/checklist`, {
-        checklist: checklist.map(item => ({
-          itemId: item.itemId,
-          respuesta: item.respuesta,
-          observacion: item.observacion || ''
-        }))
+      const response = await axios.post(apiUrl, {
+        diagnostico,
+        saludBateria: Number(saludBateria),
+        versionSO
       });
 
-      if (!checklistResponse.data.success) {
-        throw new Error('Error al guardar el checklist');
+      if (response.data.success) {
+        // Actualizar el estado local con los datos devueltos
+        setDiagnostico(response.data.diagnostico || '');
+        setSaludBateria(response.data.saludBateria?.toString() || '');
+        setVersionSO(response.data.versionSO || '');
+        toast.success('Diagnóstico guardado correctamente');
+        setIsEditing(false);
+        if (onUpdate) onUpdate();
+        router.refresh(); // Forzar actualización de la página
       }
-
-      // Actualizar el estado local con los datos del diagnóstico
-      setDiagnostico(diagnosticoResponse.data.diagnostico || '');
-      setSaludBateria(diagnosticoResponse.data.saludBateria?.toString() || '');
-      setVersionSistema(diagnosticoResponse.data.versionSO || '');
-
-      // Actualizar el estado local con las respuestas del checklist
-      const respuestasActualizadas = checklistResponse.data.checklist.map((respuesta: any) => ({
-        itemId: respuesta.checklistItem.id,
-        item: respuesta.checklistItem.nombre,
-        respuesta: Boolean(respuesta.respuesta),
-        observacion: respuesta.observaciones || ''
-      }));
-      setChecklist(respuestasActualizadas);
-
-      setIsEditing(false);
-      toast.success('Diagnóstico y checklist guardados correctamente');
-      if (onUpdate) onUpdate();
     } catch (error) {
-      console.error('Error al guardar:', error);
-      toast.error('Error al guardar los cambios');
+      toast.error('Error al guardar el diagnóstico');
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
+
+  // Cargar el diagnóstico al montar el componente
+  useEffect(() => {
+    const fetchDiagnostico = async () => {
+      try {
+        const apiUrl = ticket.canEdit 
+          ? `/api/repair-point/tickets/${ticket.id}/diagnostico`
+          : `/api/tickets/${ticket.id}/diagnostico`;
+
+        const response = await axios.get(apiUrl);
+
+        if (response.data.success) {
+          setDiagnostico(response.data.diagnostico || '');
+          setSaludBateria(response.data.saludBateria?.toString() || '');
+          setVersionSO(response.data.versionSO || '');
+        }
+      } catch (error) {
+        toast.error('Error al obtener el diagnóstico');
+      }
+    };
+
+    if (ticket.id) {
+      fetchDiagnostico();
+    }
+  }, [ticket.id, ticket.canEdit]);
 
   // Función para cargar el checklist
   const loadChecklist = async () => {
@@ -140,7 +144,11 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
       const diagnosticItems = items.filter((item: ChecklistItem) => item.paraDiagnostico);
 
       // Luego cargamos las respuestas existentes
-      const checklistResponse = await fetch(`/api/tickets/${ticket.id}/checklist`);
+      const apiUrl = ticket.canEdit 
+        ? `/api/repair-point/tickets/${ticket.id}/checklist-diagnostico`
+        : `/api/tickets/${ticket.id}/checklist-diagnostico`;
+
+      const checklistResponse = await fetch(apiUrl);
       if (!checklistResponse.ok) throw new Error('Error al cargar respuestas del checklist');
       const { checklist: respuestasExistentes } = await checklistResponse.json();
 
@@ -153,7 +161,7 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
           return {
             itemId: item.id,
             item: item.nombre,
-            respuesta: respuestaExistente ? respuestaExistente.respuesta : false,
+            respuesta: respuestaExistente ? Boolean(respuestaExistente.respuesta) : false,
             observacion: respuestaExistente ? respuestaExistente.observaciones || '' : ''
           };
         });
@@ -169,7 +177,6 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
         setChecklist(initialChecklist);
       }
     } catch (error) {
-      console.error('Error al cargar items del checklist:', error);
       toast.error('Error al cargar items del checklist');
     }
   };
@@ -183,25 +190,47 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
 
   // Agregar un efecto para monitorear cambios en el checklist
   useEffect(() => {
-    console.log('Estado actual del checklist:', checklist);
   }, [checklist]);
 
-  // Agregar un log antes del render
-  console.log('Renderizando DiagnosticoSection con checklist:', checklist);
-
   const handleChecklistChange = (itemId: number, field: 'respuesta' | 'observacion', value: boolean | string) => {
-    console.log('handleChecklistChange:', { itemId, field, value });
     setChecklist(prev => prev.map(item => {
       if (item.itemId === itemId) {
         const updatedItem = {
           ...item,
           [field]: value
         };
-        console.log('Item actualizado:', updatedItem);
         return updatedItem;
       }
       return item;
     }));
+  };
+
+  // Función para guardar el checklist
+  const handleSaveChecklist = async () => {
+    try {
+      setIsSaving(true);
+      const apiUrl = ticket.canEdit 
+        ? `/api/repair-point/tickets/${ticket.id}/checklist-diagnostico`
+        : `/api/tickets/${ticket.id}/checklist-diagnostico`;
+
+      const response = await axios.post(apiUrl, {
+        checklist: checklist.map(item => ({
+          itemId: item.itemId,
+          respuesta: item.respuesta ? 'yes' : 'no',
+          observacion: item.observacion
+        }))
+      });
+
+      if (response.data.success) {
+        toast.success('Checklist guardado correctamente');
+        setIsEditing(false);
+        if (onUpdate) onUpdate();
+      }
+    } catch (error) {
+      toast.error('Error al guardar el checklist');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const renderDesbloqueoInfo = () => {
@@ -359,13 +388,16 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
               <Textarea
                 id="diagnostico"
                 value={diagnostico}
-                onChange={(e) => setDiagnostico(e.target.value)}
-                placeholder="Describe el diagnóstico del dispositivo..."
+                onChange={(e) => {
+                  setDiagnostico(e.target.value);
+                }}
+                disabled={!isEditing || isLoading}
+                className="min-h-[100px]"
                 required
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="saludBateria">Salud de la Batería (%)</Label>
                 <Input
@@ -374,37 +406,62 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
                   min="0"
                   max="100"
                   value={saludBateria}
-                  onChange={(e) => setSaludBateria(e.target.value)}
+                  onChange={(e) => {
+                    setSaludBateria(e.target.value);
+                  }}
+                  disabled={!isEditing || isLoading}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="versionSistema">Versión del Sistema Operativo</Label>
+                <Label htmlFor="versionSO">Versión del Sistema</Label>
                 <Input
-                  id="versionSistema"
-                  value={versionSistema}
-                  onChange={(e) => setVersionSistema(e.target.value)}
-                  placeholder="Ej: iOS 15.4.1"
+                  id="versionSO"
+                  value={versionSO}
+                  onChange={(e) => {
+                    setVersionSO(e.target.value);
+                  }}
+                  disabled={!isEditing || isLoading}
                   required
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                disabled={isLoading}
-              >
-                <HiX className="h-5 w-5 mr-2" />
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                <HiSave className="h-5 w-5 mr-2" />
-                {isLoading ? 'Guardando...' : 'Guardar Diagnóstico'}
-              </Button>
+            <div className="flex justify-end space-x-2">
+              {isEditing ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false);
+                      // Restaurar valores originales
+                      if (ticket?.reparacion) {
+                        setDiagnostico(ticket.reparacion.diagnostico || '');
+                        setSaludBateria(ticket.reparacion.saludBateria?.toString() || '');
+                        setVersionSO(ticket.reparacion.versionSO || '');
+                      }
+                    }}
+                    disabled={isSaving}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSaving}
+                  >
+                    {isSaving ? 'Guardando...' : 'Guardar'}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditing(true)}
+                  disabled={!canEditDiagnostico}
+                >
+                  Editar
+                </Button>
+              )}
             </div>
           </form>
         ) : (
@@ -422,7 +479,7 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
 
               <div className="space-y-2">
                 <Label>Versión del Sistema Operativo</Label>
-                <div className="text-lg">{versionSistema || 'No especificado'}</div>
+                <div className="text-lg">{versionSO || 'No especificado'}</div>
               </div>
             </div>
           </div>

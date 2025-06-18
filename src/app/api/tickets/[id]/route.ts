@@ -68,8 +68,25 @@ export async function GET(
         },
         reparacion: {
           include: {
-            checklistDiagnostico: true,
-            piezasReparacion: {
+            checklistDiagnostico: {
+              include: {
+                respuestas: {
+                  include: {
+                    checklistItem: true
+                  }
+                }
+              }
+            },
+            checklistReparacion: {
+              include: {
+                respuestas: {
+                  include: {
+                    checklistItem: true
+                  }
+                }
+              }
+            },
+            piezas: {
               include: {
                 pieza: true
               }
@@ -182,8 +199,25 @@ export async function PUT(
         },
         reparacion: {
           include: {
-            checklistDiagnostico: true,
-            piezasReparacion: {
+            checklistDiagnostico: {
+              include: {
+                respuestas: {
+                  include: {
+                    checklistItem: true
+                  }
+                }
+              }
+            },
+            checklistReparacion: {
+              include: {
+                respuestas: {
+                  include: {
+                    checklistItem: true
+                  }
+                }
+              }
+            },
+            piezas: {
               include: {
                 pieza: true
               }
@@ -198,9 +232,9 @@ export async function PUT(
 
     return NextResponse.json(updatedTicket);
   } catch (error) {
-    console.error('Error al actualizar ticket:', error);
+    console.error('Error al actualizar el ticket:', error);
     return NextResponse.json(
-      { error: 'Error al actualizar ticket' },
+      { error: 'Error al actualizar el ticket' },
       { status: 500 }
     );
   }

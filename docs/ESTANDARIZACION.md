@@ -400,3 +400,102 @@ interface Pieza {
 | DB           | `usuarios_roles`       | `usuario_id`, `rol_id`                  |
 | Prisma       | `usuarioRoles`         | `usuarioRoles: UsuarioRol[]`            |
 | API/Frontend | `usuarioRoles`
+
+## Nota sobre relaciones Prisma y nombres de include
+
+**Problema frecuente:**
+Al usar Prisma, el nombre del include para relaciones de arrays no siempre coincide con el nombre de la propiedad en el modelo. Por ejemplo, aunque en el modelo `Reparacion` la relación se define como:
+
+```prisma
+model Reparacion {
+  ...
+  piezas PiezaReparacion[]
+  ...
+}
+```
+
+El include correcto en las consultas Prisma es:
+
+```js
+reparacion: {
+  include: {
+    piezasReparacion: {
+      include: { pieza: true }
+    }
+  }
+}
+```
+
+**Error típico:**
+Si usas `piezas` en el include, Prisma arrojará un error de tipo:
+
+```
+Object literal may only specify known properties, and 'piezas' does not exist in type 'ReparacionInclude<DefaultArgs>'
+```
+
+**Solución:**
+Usar siempre el nombre generado por Prisma, que suele ser el nombre del modelo relacionado en plural y en camelCase, por ejemplo: `piezasReparacion`.
+
+**Recomendación:**
+Si tienes errores similares en otros módulos (como `/repair-point`), revisa el nombre real del include en el tipo generado por Prisma o en la documentación del modelo.
+
+## Nota sobre Checklist y Piezas en Prisma
+
+**Problema frecuente:**
+Las relaciones en Prisma pueden tener nombres diferentes en el modelo vs en las consultas. Por ejemplo, en el modelo `Reparacion`:
+
+```prisma
+model Reparacion {
+  checklistDiagnostico ChecklistDiagnostico?
+  checklistReparacion ChecklistReparacion?
+  piezas PiezaReparacion[]
+}
+```
+
+El include correcto en las consultas Prisma es:
+
+```js
+reparacion: {
+  include: {
+    checklistDiagnostico: {
+      include: {
+        respuestas: {
+          include: {
+            checklistItem: true
+          }
+        }
+      }
+    },
+    checklistReparacion: {
+      include: {
+        respuestas: {
+          include: {
+            checklistItem: true
+          }
+        }
+      }
+    },
+    piezas: {
+      include: {
+        pieza: true
+      }
+    }
+  }
+}
+```
+
+**Error típico:**
+Si usas nombres incorrectos en el include, Prisma arrojará un error de tipo:
+
+```
+Object literal may only specify known properties, and 'piezasReparacion' does not exist in type 'ReparacionInclude<DefaultArgs>'
+```
+
+**Solución:**
+Usar siempre los nombres correctos de las relaciones según el modelo de Prisma:
+- `checklistDiagnostico` para el checklist de diagnóstico
+- `checklistReparacion` para el checklist de reparación
+- `piezas` para las piezas de la reparación
+
+**Recomendación:**
+Al trabajar con relaciones en Prisma, siempre verifica los nombres correctos en el modelo y usa esos mismos nombres en las consultas.

@@ -47,58 +47,64 @@ export async function POST(
       update: {
         observaciones,
         fechaFin: completar ? new Date() : undefined,
-        diagnostico: body.descripcion,
+        diagnostico: body.diagnostico,
         saludBateria: body.saludBateria,
-        versionSO: body.versionSistema
+        versionSO: body.versionSO
       },
       create: {
         ticketId,
         observaciones,
         fechaInicio: new Date(),
         fechaFin: completar ? new Date() : undefined,
-        diagnostico: body.descripcion,
+        diagnostico: body.diagnostico,
         saludBateria: body.saludBateria,
-        versionSO: body.versionSistema
+        versionSO: body.versionSO
       }
     });
 
     console.log('Reparación actualizada:', reparacion);
 
-    // Solo actualizar el estado a "En Reparación" si es una nueva reparación
-    const reparacionExistente = await prisma.reparacion.findUnique({
-      where: { ticketId }
-    });
-
-    if (!reparacionExistente) {
-      const estatusReparacion = await prisma.estatusReparacion.findFirst({
-        where: { nombre: 'En Reparación' }
+    // Guardar las respuestas del checklist
+    if (checklist && Array.isArray(checklist)) {
+      // Usar el endpoint de checklist para guardar las respuestas
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3100';
+      const checklistResponse = await fetch(`${baseUrl}/api/tickets/${ticketId}/checklist-reparacion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': request.headers.get('cookie') || ''
+        },
+        body: JSON.stringify({ checklist })
       });
 
-      if (estatusReparacion) {
-        await prisma.ticket.update({
-          where: { id: ticketId },
-          data: { 
-            estatusReparacionId: estatusReparacion.id,
-            fechaInicioReparacion: new Date()
-          }
-        });
-        console.log('Estado del ticket actualizado a:', estatusReparacion.nombre);
+      if (!checklistResponse.ok) {
+        const errorData = await checklistResponse.json();
+        console.error('Error al guardar el checklist:', errorData);
+        throw new Error('Error al guardar el checklist');
       }
+
+      console.log('Checklist guardado:', checklist);
     }
 
-    // Actualizar el estatus del ticket si se completó la reparación
+    // Actualizar el estado del ticket si es necesario
     if (completar) {
-      const estatusCompletado = await prisma.estatusReparacion.findFirst({
+      const estatusReparado = await prisma.estatusReparacion.findFirst({
         where: { nombre: 'Reparado' }
       });
 
-      if (estatusCompletado) {
-        await prisma.ticket.update({
-          where: { id: ticketId },
-          data: { estatusReparacionId: estatusCompletado.id }
-        });
-        console.log('Estatus del ticket actualizado a:', estatusCompletado.nombre);
+      if (!estatusReparado) {
+        throw new Error('No se encontró el estatus "Reparado"');
       }
+
+      await prisma.ticket.update({
+        where: { id: ticketId },
+        data: {
+          estatusReparacionId: estatusReparado.id,
+          fechaFinReparacion: new Date()
+        }
+      });
+
+      console.log('Estatus del ticket actualizado a: Reparado');
     }
 
     return NextResponse.json(reparacion);

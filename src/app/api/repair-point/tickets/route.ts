@@ -40,7 +40,12 @@ export async function GET() {
             marca: true
           }
         },
-        estatusReparacion: true
+        estatusReparacion: true,
+        puntoRecoleccion: {
+          select: {
+            isRepairPoint: true
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc'

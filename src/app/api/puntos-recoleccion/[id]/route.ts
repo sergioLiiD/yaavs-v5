@@ -35,6 +35,7 @@ export async function GET(
       email: string | null;
       url: string | null;
       is_headquarters: boolean;
+      is_repair_point: boolean;
       location: any;
       schedule: any;
       parent_id: number | null;
@@ -61,6 +62,7 @@ export async function GET(
       email: string | null;
       url: string | null;
       is_headquarters: boolean;
+      is_repair_point: boolean;
       location: any;
       schedule: any;
       parent_id: number | null;
@@ -92,7 +94,7 @@ export async function GET(
       email: p.email || "",
       url: p.url || "",
       isHeadquarters: p.is_headquarters,
-      isRepairPoint: false,
+      isRepairPoint: p.is_repair_point,
       location: p.location as any,
       schedule: p.schedule as any,
       parentId: p.parent_id || undefined,
@@ -104,7 +106,7 @@ export async function GET(
         email: s.email || "",
         url: s.url || "",
         isHeadquarters: s.is_headquarters,
-        isRepairPoint: false,
+        isRepairPoint: s.is_repair_point,
         location: s.location as any,
         schedule: s.schedule as any,
         parentId: s.parent_id || undefined,
@@ -332,6 +334,141 @@ export async function DELETE(
     console.error("Error al eliminar punto de recolección:", error);
     return NextResponse.json(
       { error: "Error al eliminar punto de recolección" },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH /api/puntos-recoleccion/[id]
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const id = parseInt(params.id);
+    const body = await request.json();
+    const { isRepairPoint } = body;
+
+    // Verificar si el punto existe
+    const puntos = await prisma.$queryRaw<Array<{
+      id: number;
+      nombre: string;
+      phone: string | null;
+      email: string | null;
+      url: string | null;
+      is_headquarters: boolean;
+      location: any;
+      schedule: any;
+      parent_id: number | null;
+      createdAt: Date;
+      updatedAt: Date;
+    }>>`
+      SELECT * FROM puntos_recoleccion WHERE id = ${id}
+    `;
+
+    if (puntos.length === 0) {
+      return NextResponse.json(
+        { error: "Punto de recolección no encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // Actualizar el punto
+    await prisma.$executeRaw`
+      UPDATE puntos_recoleccion
+      SET is_repair_point = ${isRepairPoint},
+          updated_at = NOW()
+      WHERE id = ${id}
+    `;
+
+    // Obtener el punto actualizado
+    const puntosActualizados = await prisma.$queryRaw<Array<{
+      id: number;
+      nombre: string;
+      phone: string | null;
+      email: string | null;
+      url: string | null;
+      is_headquarters: boolean;
+      is_repair_point: boolean;
+      location: any;
+      schedule: any;
+      parent_id: number | null;
+      createdAt: Date;
+      updatedAt: Date;
+    }>>`
+      SELECT * FROM puntos_recoleccion WHERE id = ${id}
+    `;
+
+    const p = puntosActualizados[0];
+
+    // Consulta secundaria para sucursales
+    const sucursales = await prisma.$queryRaw<Array<{
+      id: number;
+      nombre: string;
+      phone: string | null;
+      email: string | null;
+      url: string | null;
+      is_headquarters: boolean;
+      is_repair_point: boolean;
+      location: any;
+      schedule: any;
+      parent_id: number | null;
+      createdAt: Date;
+      updatedAt: Date;
+    }>>`
+      SELECT * FROM puntos_recoleccion WHERE parent_id = ${id}
+    `;
+
+    // Si necesitas la sede principal (parent)
+    let parent = null;
+    if (p.parent_id) {
+      const parentResult = await prisma.$queryRaw<Array<{
+        id: number;
+        nombre: string;
+      }>>`
+        SELECT id, nombre FROM puntos_recoleccion WHERE id = ${p.parent_id}
+      `;
+      if (parentResult.length > 0) {
+        parent = parentResult[0];
+      }
+    }
+
+    // Construye la respuesta siguiendo el estándar
+    const response: CollectionPoint = {
+      id: p.id,
+      nombre: p.nombre,
+      phone: p.phone || "",
+      email: p.email || "",
+      url: p.url || "",
+      isHeadquarters: p.is_headquarters,
+      isRepairPoint: p.is_repair_point,
+      location: p.location as any,
+      schedule: p.schedule as any,
+      parentId: p.parent_id || undefined,
+      parent: parent ? { id: parent.id, nombre: parent.nombre } : undefined,
+      children: sucursales.map(s => ({
+        id: s.id,
+        nombre: s.nombre,
+        phone: s.phone || "",
+        email: s.email || "",
+        url: s.url || "",
+        isHeadquarters: s.is_headquarters,
+        isRepairPoint: s.is_repair_point,
+        location: s.location as any,
+        schedule: s.schedule as any,
+        parentId: s.parent_id || undefined,
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt
+      })),
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt
+    };
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error("Error al actualizar punto de recolección:", error);
+    return NextResponse.json(
+      { error: "Error al actualizar punto de recolección" },
       { status: 500 }
     );
   }

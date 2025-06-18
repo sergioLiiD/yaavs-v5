@@ -36,6 +36,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
   const router = useRouter();
   const [observaciones, setObservaciones] = useState(ticket.reparacion?.observaciones || '');
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [tiempoTranscurrido, setTiempoTranscurrido] = useState(() => {
     if (typeof window !== 'undefined') {
       const savedTime = localStorage.getItem(`timer_${ticket.id}`);
@@ -99,7 +100,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
           const respuestasExistentes = response.data.checklist.map((respuesta: any) => ({
             itemId: respuesta.checklistItemId,
             item: respuesta.checklistItem.nombre,
-            respuesta: respuesta.respuesta === 'yes',
+            respuesta: respuesta.respuesta,
             observacion: respuesta.observaciones || ''
           }));
           setChecklist(respuestasExistentes);
@@ -182,37 +183,46 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     localStorage.setItem(`paused_${ticket.id}`, 'false');
   };
 
-  const handleCompleteRepair = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!ticket?.id) return;
+
+    console.log('Iniciando guardado de reparación...', {
+      ticketId: ticket.id,
+      observaciones,
+      checklist,
+      fotos,
+      videos
+    });
 
     try {
       setIsLoading(true);
+      const apiUrl = ticket.canEdit 
+        ? `/api/repair-point/tickets/${ticket.id}/reparacion`
+        : `/api/tickets/${ticket.id}/reparacion`;
 
-      // Primero guardamos el checklist
-      const checklistResponse = await axios.post(`/api/tickets/${ticket.id}/checklist-reparacion`, {
-        checklist: checklist.map(item => ({
-          itemId: item.itemId,
-          respuesta: item.respuesta,
-          observacion: item.observacion || ''
-        }))
-      });
+      console.log('Enviando datos a:', apiUrl);
 
-      // Luego guardamos la reparación y actualizamos el estado
-      const response = await axios.post(`/api/tickets/${ticket.id}/reparacion/completar`, {
+      const response = await axios.post(apiUrl, {
         observaciones,
-        tiempoTranscurrido
+        checklist,
+        fotos,
+        videos,
+        completar: true
       });
 
-      if (response.data) {
-        toast.success('Reparación completada exitosamente');
+      console.log('Respuesta del servidor:', response.data);
+
+      if (response.data.success) {
+        toast.success('Reparación completada correctamente');
         if (onUpdate) {
           onUpdate();
         }
-        router.push('/dashboard/tickets');
+        router.refresh();
       }
     } catch (error) {
-      console.error('Error al completar la reparación:', error);
-      toast.error('Error al completar la reparación');
+      console.error('Error al guardar la reparación:', error);
+      toast.error('Error al guardar la reparación');
     } finally {
       setIsLoading(false);
     }
@@ -255,27 +265,21 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     }
   };
 
-  const handleSubmit = async () => {
+  const fetchReparacion = async () => {
     try {
-      setIsLoading(true);
-      const response = await axios.post(`/api/tickets/${ticket.id}/reparacion`, {
-        observaciones,
-        checklist,
-        fotos,
-        videos,
-        completar: true
-      });
+      const apiUrl = ticket.canEdit 
+        ? `/api/repair-point/tickets/${ticket.id}/reparacion`
+        : `/api/tickets/${ticket.id}/reparacion`;
 
-      toast.success('Reparación completada correctamente');
-      if (onUpdate) {
-        onUpdate();
+      const response = await axios.get(apiUrl);
+      if (response.data.success && response.data.reparacion) {
+        setObservaciones(response.data.reparacion.observaciones || '');
+        setFotos(response.data.reparacion.archivos?.filter((a: any) => a.tipo === 'FOTO').map((a: any) => a.url) || []);
+        setVideos(response.data.reparacion.archivos?.filter((a: any) => a.tipo === 'VIDEO').map((a: any) => a.url) || []);
       }
-      router.refresh();
     } catch (error) {
-      console.error('Error al guardar la reparación:', error);
-      toast.error('Error al guardar la reparación');
-    } finally {
-      setIsLoading(false);
+      console.error('Error al obtener la reparación:', error);
+      toast.error('Error al obtener la reparación');
     }
   };
 
@@ -285,7 +289,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
         <CardTitle>Reparación</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Validación de pago */}
           {!hasValidPayment && (
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
@@ -313,6 +317,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                 </div>
                 {!isTimerRunning && !ticket.reparacion?.fechaFin && (
                   <Button
+                    type="button"
                     onClick={handleStartTimer}
                     className="bg-[#FEBF19] hover:bg-[#FEBF19]/90 text-white"
                   >
@@ -321,6 +326,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                 )}
                 {isTimerRunning && !isPaused && (
                   <Button
+                    type="button"
                     onClick={handlePauseTimer}
                     variant="outline"
                     className="text-black"
@@ -330,6 +336,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                 )}
                 {isTimerRunning && isPaused && (
                   <Button
+                    type="button"
                     onClick={handleResumeTimer}
                     variant="outline"
                     className="text-black"
@@ -338,15 +345,13 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                   </Button>
                 )}
               </div>
-              {!ticket.reparacion?.fechaFin && (
-                <Button
-                  onClick={handleCompleteRepair}
-                  className="bg-[#FEBF19] hover:bg-[#FEBF19]/90 text-white"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Completando...' : 'Concluir Reparación'}
-                </Button>
-              )}
+              <Button
+                type="submit"
+                className="bg-[#FEBF19] hover:bg-[#FEBF19]/90 text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Completando...' : 'Concluir Reparación'}
+              </Button>
             </div>
           </div>
 
@@ -401,17 +406,6 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Botón de Concluir Reparación */}
-          <div className="flex justify-end">
-            <Button
-              onClick={handleCompleteRepair}
-              className="bg-[#FEBF19] hover:bg-[#FEBF19]/90 text-white px-6 py-3"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Completando...' : 'Concluir Reparación'}
-            </Button>
           </div>
 
           {/* Subida de archivos */}
@@ -486,7 +480,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
             </div>
           </div>
           */}
-        </div>
+        </form>
       </CardContent>
     </Card>
   );

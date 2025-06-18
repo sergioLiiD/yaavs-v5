@@ -21,7 +21,8 @@ async function main() {
       'piezas',
       'modelos',
       'marcas',
-      'proveedores'
+      'proveedores',
+      'estatus_reparacion'
     ];
 
     for (const table of tablesToTruncate) {
@@ -240,24 +241,35 @@ async function main() {
 
     // Crear estados de reparación
     const estadosReparacion = [
-      { nombre: 'Recibido', descripcion: 'El dispositivo ha sido recibido y está pendiente de diagnóstico' },
-      { nombre: 'En Diagnóstico', descripcion: 'El dispositivo está siendo analizado para determinar el problema' },
-      { nombre: 'Diagnóstico Completado', descripcion: 'Se ha completado el diagnóstico del dispositivo' },
-      { nombre: 'En Reparación', descripcion: 'El dispositivo está siendo reparado' },
-      { nombre: 'Reparación Completada', descripcion: 'La reparación del dispositivo ha sido completada' },
-      { nombre: 'En Pruebas', descripcion: 'El dispositivo está siendo probado después de la reparación' },
-      { nombre: 'Listo para Entrega', descripcion: 'El dispositivo está listo para ser entregado al cliente' },
-      { nombre: 'Entregado', descripcion: 'El dispositivo ha sido entregado al cliente' },
-      { nombre: 'Cancelado', descripcion: 'La reparación ha sido cancelada' }
+      { nombre: 'Recibido', descripcion: 'El dispositivo ha sido recibido y está pendiente de diagnóstico', orden: 1, activo: true },
+      { nombre: 'En Diagnóstico', descripcion: 'El dispositivo está siendo analizado para determinar el problema', orden: 2, activo: true },
+      { nombre: 'Presupuesto Generado', descripcion: 'Se ha generado el presupuesto para la reparación', orden: 3, activo: true },
+      { nombre: 'En Reparación', descripcion: 'El dispositivo está siendo reparado', orden: 4, activo: true },
+      { nombre: 'Reparado', descripcion: 'La reparación del dispositivo ha sido completada', orden: 5, activo: true },
+      { nombre: 'Entregado', descripcion: 'El dispositivo ha sido entregado al cliente', orden: 6, activo: true },
+      { nombre: 'Cancelado', descripcion: 'La reparación ha sido cancelada', orden: 7, activo: true }
     ];
 
+    // Primero eliminamos todos los estados existentes
+    await prisma.estatusReparacion.deleteMany({});
+
+    // Luego creamos los nuevos estados
     for (const estado of estadosReparacion) {
-      await prisma.estatusReparacion.upsert({
-        where: { nombre: estado.nombre },
-        update: estado,
-        create: estado
+      await prisma.estatusReparacion.create({
+        data: estado
       });
     }
+
+    // Crear estatus de reparación
+    const estatusReparacion = await prisma.estatusReparacion.upsert({
+      where: { id: 1 },
+      update: {},
+      create: {
+        nombre: 'En Proceso',
+        descripcion: 'La reparación está en proceso',
+        orden: 1
+      }
+    });
 
     console.log('Estados de reparación creados correctamente');
 

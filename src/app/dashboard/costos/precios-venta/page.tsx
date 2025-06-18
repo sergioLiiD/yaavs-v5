@@ -204,8 +204,8 @@ export default function PreciosVentaPage() {
         modelo: currentPrecio.modelo || '-',
         precioCompraPromedio: Number(currentPrecio.precioCompraPromedio) || 0,
         precioVenta: Number(currentPrecio.precioVenta) || 0,
-        productoId: currentPrecio.productoId ? Number(currentPrecio.productoId) : null,
-        servicioId: currentPrecio.servicioId ? Number(currentPrecio.servicioId) : null,
+        productoId: currentPrecio.tipo === 'PRODUCTO' ? Number(currentPrecio.productoId) : null,
+        servicioId: currentPrecio.tipo === 'SERVICIO' ? 1 : null,
         updatedBy: 'system'
       };
 
@@ -240,47 +240,30 @@ export default function PreciosVentaPage() {
 
   // Crear lista completa de productos y servicios con sus precios
   const allItems = useMemo(() => {
-    if (!productos.length) return [];
-    
-    console.log('Creando allItems con:', {
-      productos: productos.length,
-      precios: precios.length,
-      preciosPromedio: preciosPromedio.length
-    });
-
-    // Crear un mapa de precios por producto_id
-    const preciosMap = new Map(
-      precios.map(precio => [
-        precio.tipo === 'PRODUCTO' ? precio.productoId : precio.servicioId,
-        precio
-      ])
-    );
-
-    // Crear un mapa de precios promedio
-    const preciosPromedioMap = new Map(
-      preciosPromedio.map(pp => [pp.producto_id, pp.precio_promedio])
-    );
-
-    // Combinar productos con sus precios
-    const items = productos.map(producto => {
-      const precio = preciosMap.get(producto.id);
-      const precioPromedio = preciosPromedioMap.get(producto.id) || 0;
-
+    return productos.map(item => {
+      // Buscar el precio de venta existente
+      const precio = precios.find(p => {
+        if (item.tipo === 'SERVICIO') {
+          return p.tipo === 'SERVICIO' && p.nombre === item.nombre;
+        }
+        return p.nombre === item.nombre;
+      });
+      
+      // Obtener el precio promedio directamente de la tabla de stock
+      const precioPromedio = preciosPromedio.find(p => p.producto_id === item.id)?.precio_promedio || 0;
+      
       return {
-        id: producto.id,
-        nombre: producto.nombre,
-        tipo: producto.tipo,
-        precio: precio?.precioVenta || 0,
-        precio_id: precio?.id || '',
-        marca: producto.marca?.nombre || '-',
-        modelo: producto.modelo?.nombre || '-',
-        precio_compra: precioPromedio,
-        updated_at: precio?.updatedAt ? new Date(precio.updatedAt).toISOString() : new Date().toISOString()
+        id: item.id,
+        nombre: String(item.nombre || ''),
+        tipo: item.tipo,
+        precio: precio ? Number(precio.precioVenta) : 0,
+        precio_id: precio ? String(precio.id) : '',
+        marca: item.tipo === 'PRODUCTO' ? String(item.marcas?.nombre || '-') : '-',
+        modelo: item.tipo === 'PRODUCTO' ? String(item.Modelo?.nombre || '-') : '-',
+        precio_compra: item.tipo === 'PRODUCTO' ? Number(precioPromedio) : 0,
+        updated_at: precio?.updatedAt ? new Date(precio.updatedAt).toISOString() : ''
       };
     });
-
-    console.log('Items creados:', items.length);
-    return items;
   }, [productos, precios, preciosPromedio]);
 
   // Filtrar items según el término de búsqueda

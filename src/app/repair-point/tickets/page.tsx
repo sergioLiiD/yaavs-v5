@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Wrench } from "lucide-react";
 
 interface Ticket {
   id: number;
@@ -33,6 +34,9 @@ interface Ticket {
     nombre: string;
   };
   fechaRecepcion: string;
+  puntoRecoleccion?: {
+    isRepairPoint: boolean;
+  };
 }
 
 export default function RepairPointTicketsPage() {
@@ -97,6 +101,7 @@ export default function RepairPointTicketsPage() {
               <TableHead>Modelo</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Fecha</TableHead>
+              <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -131,6 +136,20 @@ export default function RepairPointTicketsPage() {
                 </TableCell>
                 <TableCell>
                   {new Date(ticket.fechaRecepcion).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {ticket.estatusReparacion.nombre !== 'Completado' && ticket.puntoRecoleccion?.isRepairPoint && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => router.push(`/repair-point/tickets/${ticket.id}/repair`)}
+                      >
+                        <Wrench className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

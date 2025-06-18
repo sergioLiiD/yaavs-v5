@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { CollectionPoint, CollectionPointFormData, Location, Schedule, DaySchedule } from '@/types/collection-point';
 import { createCollectionPoint, updateCollectionPoint } from '@/services/collection-points';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import Map from './Map';
 
 const DAYS_OF_WEEK = {
   monday: 'Lunes',
@@ -108,17 +107,52 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
   // Inicializar el formulario con los datos del punto de recolección si estamos editando
   useEffect(() => {
     if (collectionPoint) {
-      console.log('Datos del punto de recolección:', collectionPoint);
+      console.log('collectionPoint (estructura completa):', JSON.stringify(collectionPoint, null, 2));
       console.log('Horario del punto:', collectionPoint.schedule);
+
+      // Crear un horario por defecto
+      const defaultSchedule = {
+        monday: { open: false, start: '09:00', end: '18:00' },
+        tuesday: { open: false, start: '09:00', end: '18:00' },
+        wednesday: { open: false, start: '09:00', end: '18:00' },
+        thursday: { open: false, start: '09:00', end: '18:00' },
+        friday: { open: false, start: '09:00', end: '18:00' },
+        saturday: { open: false, start: '09:00', end: '18:00' },
+        sunday: { open: false, start: '09:00', end: '18:00' },
+      };
+
+      // Combinar el horario existente con el horario por defecto
+      const schedule = collectionPoint.schedule ? {
+        ...defaultSchedule,
+        ...Object.entries(collectionPoint.schedule).reduce((acc, [day, daySchedule]) => ({
+          ...acc,
+          [day]: {
+            open: Boolean(daySchedule?.open),
+            start: daySchedule?.start || '09:00',
+            end: daySchedule?.end || '18:00'
+          }
+        }), {})
+      } : defaultSchedule;
+
       setFormData({
         nombre: collectionPoint.nombre,
-        phone: collectionPoint.phone,
-        email: collectionPoint.email,
+        phone: collectionPoint.telefono || '',
+        email: collectionPoint.email || '',
         url: collectionPoint.url || '',
-        isHeadquarters: collectionPoint.isHeadquarters,
-        isRepairPoint: collectionPoint.isRepairPoint,
-        location: collectionPoint.location,
-        schedule: collectionPoint.schedule,
+        isHeadquarters: collectionPoint.esSedePrincipal || false,
+        isRepairPoint: collectionPoint.isRepairPoint || false,
+        location: collectionPoint.ubicacion || { address: '', lat: 19.4326, lng: -99.1332 },
+        schedule: collectionPoint.horario ? {
+          ...defaultSchedule,
+          ...Object.entries(collectionPoint.horario).reduce((acc, [day, daySchedule]) => ({
+            ...acc,
+            [day]: {
+              open: Boolean(daySchedule?.open),
+              start: daySchedule?.start || '09:00',
+              end: daySchedule?.end || '18:00'
+            }
+          }), {})
+        } : defaultSchedule,
       });
       setSelectedLocation(collectionPoint.location);
     }

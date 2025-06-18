@@ -100,6 +100,13 @@ export default async function RepairPointPage() {
           Punto de Reparación: {puntoRecoleccion.nombre}
         </h1>
 
+        <div className="mb-6">
+          <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium">
+            <span className={`w-3 h-3 rounded-full mr-2 ${puntoRecoleccion.isRepairPoint ? 'bg-green-500' : 'bg-red-500'}`}></span>
+            {puntoRecoleccion.isRepairPoint ? 'Punto de Reparación Activo' : 'Punto de Reparación Inactivo'}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-semibold mb-2">Total de Tickets</h3>

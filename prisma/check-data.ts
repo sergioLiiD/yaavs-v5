@@ -3,23 +3,25 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  try {
-    const cliente = await prisma.cliente.findFirst();
-    const modelo = await prisma.modelo.findFirst();
-    const tipoServicio = await prisma.tipoServicio.findFirst();
-    const usuario = await prisma.usuario.findFirst();
-    const estatus = await prisma.estatusReparacion.findFirst();
+  console.log('=== Tipos de Servicio ===');
+  const tiposServicio = await prisma.tipoServicio.findMany();
+  console.log(tiposServicio);
 
-    console.log('Cliente:', cliente);
-    console.log('Modelo:', modelo);
-    console.log('Tipo Servicio:', tipoServicio);
-    console.log('Usuario:', usuario);
-    console.log('Estatus:', estatus);
-  } catch (error) {
-    console.error('Error:', error);
-  }
+  console.log('\n=== Precios de Venta ===');
+  const preciosVenta = await prisma.precioVenta.findMany({
+    include: {
+      servicio: true,
+      producto: true
+    }
+  });
+  console.log(JSON.stringify(preciosVenta, null, 2));
 }
 
 main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect()); 
+  .catch(e => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  }); 

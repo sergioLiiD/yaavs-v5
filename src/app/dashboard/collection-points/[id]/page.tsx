@@ -21,6 +21,7 @@ export default function CollectionPointPage({ params }: PageProps) {
         const response = await fetch(`/api/puntos-recoleccion/${params.id}`);
         if (!response.ok) throw new Error('Error al cargar el punto de recolección');
         const data = await response.json();
+        data.id = parseInt(data.id);
         setCollectionPoint(data);
       } catch (error) {
         setError('Error al cargar el punto de recolección');

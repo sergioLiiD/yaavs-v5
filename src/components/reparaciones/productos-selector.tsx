@@ -140,7 +140,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
         // Buscar el precio de venta en el array de precios
         const precioVenta = preciosVenta?.find((p: PrecioVenta) => {
           if (productoSeleccionado.tipo === 'SERVICIO') {
-            return p.tipo === 'SERVICIO' && p.servicioId === value;
+            return p.tipo === 'SERVICIO' && p.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase();
           }
           return p.tipo === 'PRODUCTO' && p.productoId === value;
         });
@@ -157,7 +157,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
               const precios = await response.json();
               const precio = precios.find((p: PrecioVenta) => {
                 if (productoSeleccionado.tipo === 'SERVICIO') {
-                  return p.tipo === 'SERVICIO' && p.servicioId === value;
+                  return p.tipo === 'SERVICIO' && p.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase();
                 }
                 return p.tipo === 'PRODUCTO' && p.productoId === value;
               });

@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { FaSpinner, FaArrowLeft, FaEdit } from 'react-icons/fa';
+import { Button } from '@/components/ui/button';
+import { TableCell } from '@/components/ui/table';
+import { Wrench } from 'lucide-react';
 
 interface Ticket {
   id: string;
@@ -14,16 +17,19 @@ interface Ticket {
   };
   modelo: {
     nombre: string;
-    marcas: {
+    marca: {
       nombre: string;
     };
   };
-  descripcion: string;
+  descripcionProblema: string;
   observaciones: string;
   estatusReparacion: {
     nombre: string;
   };
   createdAt: string;
+  puntoRecoleccion?: {
+    isRepairPoint: boolean;
+  };
 }
 
 export default function TicketDetailsPage({ params }: { params: { id: string } }) {
@@ -101,7 +107,7 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
           </div>
           <button
             onClick={() => router.push(`/repair-point/tickets/${params.id}/update`)}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="flex items-center px-4 py-2 bg-[#FEBF19] text-white rounded-md hover:bg-[#FEBF19]/80"
           >
             <FaEdit className="mr-2" />
             Actualizar Estatus
@@ -119,13 +125,13 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
           <div>
             <h2 className="text-lg font-semibold mb-2">Información del Dispositivo</h2>
             <p className="text-gray-700">
-              {`${ticket.modelo.marcas.nombre} ${ticket.modelo.nombre}`}
+              {`${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}`}
             </p>
           </div>
 
           <div>
             <h2 className="text-lg font-semibold mb-2">Descripción del Problema</h2>
-            <p className="text-gray-700 whitespace-pre-wrap">{ticket.descripcion}</p>
+            <p className="text-gray-700 whitespace-pre-wrap">{ticket.descripcionProblema}</p>
           </div>
 
           {ticket.observaciones && (
@@ -152,6 +158,19 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
               })}
             </p>
           </div>
+
+          {ticket.estatusReparacion.nombre !== 'Completado' && ticket.puntoRecoleccion?.isRepairPoint && (
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-blue-600 hover:text-blue-800"
+                onClick={() => router.push(`/repair-point/tickets/${ticket.id}/repair`)}
+              >
+                <Wrench className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

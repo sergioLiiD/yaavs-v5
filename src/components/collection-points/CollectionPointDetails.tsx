@@ -6,6 +6,8 @@ import { ArrowLeftIcon, MapPinIcon, PhoneIcon, EnvelopeIcon, ClockIcon, Building
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import RepairPointUsers from './RepairPointUsers';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 // Importar el mapa dinámicamente con opciones específicas
 const DynamicMap = dynamic(
@@ -99,6 +101,37 @@ export default function CollectionPointDetails({ collectionPoint }: CollectionPo
                 )}
               </div>
             </div>
+          </div>
+
+          <div className="mb-6 flex items-center space-x-2">
+            <Switch
+              id="repair-point"
+              checked={collectionPoint.isRepairPoint}
+              onCheckedChange={async (checked) => {
+                try {
+                  const response = await fetch(`/api/puntos-recoleccion/${collectionPoint.id.toString()}`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      isRepairPoint: checked,
+                    }),
+                  });
+
+                  if (!response.ok) {
+                    throw new Error('Error al actualizar el punto de recolección');
+                  }
+
+                  // Recargar la página para mostrar los cambios
+                  window.location.reload();
+                } catch (error) {
+                  console.error('Error:', error);
+                  alert('Error al actualizar el punto de recolección');
+                }
+              }}
+            />
+            <Label htmlFor="repair-point">¿Puede hacer reparaciones?</Label>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

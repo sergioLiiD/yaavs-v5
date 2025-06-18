@@ -179,4 +179,5 @@ export interface Ticket {
     fecha: Date;
     metodoPago: string;
   }>;
+  canEdit?: boolean;
 } 
