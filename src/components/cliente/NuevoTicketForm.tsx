@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useClienteAuth } from '@/hooks/useClienteAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -84,7 +84,7 @@ type TicketFormData = z.infer<typeof ticketSchema>;
 
 export function NuevoTicketForm() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { cliente } = useClienteAuth();
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState({ lat: 19.4326, lng: -99.1332 });

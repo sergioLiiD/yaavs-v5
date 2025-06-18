@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptionsRepairPoint } from '@/lib/auth-repair-point';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
@@ -15,7 +15,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptionsRepairPoint);
 
     if (!session?.user) {
       return NextResponse.json(
@@ -85,7 +85,7 @@ export async function POST(
       }
     });
 
-    // Crear nuevas respuestas
+    // Crear las nuevas respuestas
     const respuestas = await Promise.all(
       checklist.map(item =>
         prisma.checklistRespuestaDiagnostico.create({
@@ -101,7 +101,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      checklist: respuestas
+      respuestas
     });
 
   } catch (error) {
@@ -118,7 +118,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptionsRepairPoint);
 
     if (!session?.user) {
       return NextResponse.json(

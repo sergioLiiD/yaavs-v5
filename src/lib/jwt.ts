@@ -8,36 +8,35 @@ export interface ClienteToken {
   exp: number;
 }
 
-// Función para convertir string a ArrayBuffer
-function stringToArrayBuffer(str: string): ArrayBuffer {
+// Función para convertir string a Uint8Array
+function stringToUint8Array(str: string): Uint8Array {
   const encoder = new TextEncoder();
   return encoder.encode(str);
 }
 
-// Función para convertir ArrayBuffer a string
-function arrayBufferToString(buffer: ArrayBuffer): string {
+// Función para convertir Uint8Array a string
+function uint8ArrayToString(buffer: Uint8Array): string {
   const decoder = new TextDecoder();
   return decoder.decode(buffer);
 }
 
-// Función para convertir ArrayBuffer a Base64
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
+// Función para convertir Uint8Array a Base64
+function uint8ArrayToBase64(buffer: Uint8Array): string {
   let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  for (let i = 0; i < buffer.byteLength; i++) {
+    binary += String.fromCharCode(buffer[i]);
   }
   return btoa(binary);
 }
 
-// Función para convertir Base64 a ArrayBuffer
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
+// Función para convertir Base64 a Uint8Array
+function base64ToUint8Array(base64: string): Uint8Array {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
-  return bytes.buffer;
+  return bytes;
 }
 
 export async function generateToken(payload: Omit<ClienteToken, 'iat' | 'exp'>): Promise<string> {
@@ -61,7 +60,7 @@ export async function generateToken(payload: Omit<ClienteToken, 'iat' | 'exp'>):
   const signatureInput = `${encodedHeader}.${encodedPayload}`;
   const key = await crypto.subtle.importKey(
     'raw',
-    stringToArrayBuffer(JWT_SECRET),
+    stringToUint8Array(JWT_SECRET),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
@@ -70,10 +69,10 @@ export async function generateToken(payload: Omit<ClienteToken, 'iat' | 'exp'>):
   const signature = await crypto.subtle.sign(
     'HMAC',
     key,
-    stringToArrayBuffer(signatureInput)
+    stringToUint8Array(signatureInput)
   );
 
-  const encodedSignature = arrayBufferToBase64(signature)
+  const encodedSignature = uint8ArrayToBase64(new Uint8Array(signature))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '');
@@ -88,13 +87,13 @@ export async function verifyToken(token: string): Promise<ClienteToken | null> {
     const signatureInput = `${encodedHeader}.${encodedPayload}`;
     const key = await crypto.subtle.importKey(
       'raw',
-      stringToArrayBuffer(JWT_SECRET),
+      stringToUint8Array(JWT_SECRET),
       { name: 'HMAC', hash: 'SHA-256' },
       false,
       ['verify']
     );
 
-    const signature = base64ToArrayBuffer(
+    const signature = base64ToUint8Array(
       encodedSignature.replace(/-/g, '+').replace(/_/g, '/')
     );
 
@@ -102,7 +101,7 @@ export async function verifyToken(token: string): Promise<ClienteToken | null> {
       'HMAC',
       key,
       signature,
-      stringToArrayBuffer(signatureInput)
+      stringToUint8Array(signatureInput)
     );
 
     if (!isValid) {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db/prisma';
 
 export async function GET() {
   try {
@@ -10,17 +10,38 @@ export async function GET() {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Obtener el punto de recolección asociado al usuario
-    const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
-      where: {
-        usuarioId: session.user.id
-      },
-      include: {
-        puntoRecoleccion: true
-      }
-    });
+    // Si es ADMINISTRADOR, mostrar todos los tickets
+    if (session.user.role === 'ADMINISTRADOR') {
+      const tickets = await prisma.ticket.findMany({
+        where: {
+          cancelado: false
+        },
+        include: {
+          cliente: true,
+          modelo: {
+            include: {
+              marca: true
+            }
+          },
+          estatusReparacion: true,
+          puntoRecoleccion: {
+            select: {
+              isRepairPoint: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
 
-    if (!userPoint) {
+      return NextResponse.json(tickets);
+    }
+
+    // Para otros roles, usar el punto de recolección de la sesión
+    const userPointId = session.user.puntoRecoleccion?.id;
+    
+    if (!userPointId) {
       return NextResponse.json(
         { error: 'Usuario no asociado a un punto de recolección' },
         { status: 403 }
@@ -30,7 +51,7 @@ export async function GET() {
     // Obtener los tickets asociados al punto de recolección
     const tickets = await prisma.ticket.findMany({
       where: {
-        puntoRecoleccionId: userPoint.puntoRecoleccionId,
+        puntoRecoleccionId: userPointId,
         cancelado: false
       },
       include: {
@@ -73,17 +94,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Obtener el punto de recolección del usuario
-    const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
-      where: {
-        usuarioId: session.user.id
-      },
-      include: {
-        puntoRecoleccion: true
-      }
-    });
-
-    if (!userPoint) {
+    // Obtener el punto de recolección del usuario desde la sesión
+    const userPointId = session.user.puntoRecoleccion?.id;
+    
+    if (!userPointId) {
       return NextResponse.json(
         { error: 'Usuario no asociado a un punto de recolección' },
         { status: 403 }
@@ -146,7 +160,7 @@ export async function POST(request: Request) {
         },
         puntoRecoleccion: {
           connect: {
-            id: userPoint.puntoRecoleccionId
+            id: userPointId
           }
         },
         tipoServicio: {

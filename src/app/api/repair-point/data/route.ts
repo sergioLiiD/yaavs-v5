@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
 
 export async function GET() {
@@ -15,30 +15,94 @@ export async function GET() {
       );
     }
 
-    // Obtener el punto de reparación del usuario
-    const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
-      where: {
-        usuarioId: session.user.id
-      },
-      include: {
-        puntoRecoleccion: true
-      }
-    });
+    // Si es ADMINISTRADOR, permitir acceso a todos los datos
+    if (session.user.role === 'ADMINISTRADOR') {
+      const clientes = await prisma.cliente.findMany({
+        select: {
+          id: true,
+          nombre: true,
+          apellidoPaterno: true,
+          apellidoMaterno: true
+        },
+        orderBy: {
+          nombre: 'asc'
+        }
+      });
 
-    if (!userPoint || !userPoint.puntoRecoleccion) {
+      const modelos = await prisma.modelo.findMany({
+        select: {
+          id: true,
+          nombre: true,
+          marca: {
+            select: {
+              id: true,
+              nombre: true
+            }
+          }
+        },
+        orderBy: {
+          nombre: 'asc'
+        }
+      });
+
+      const estatusReparacion = await prisma.estatusReparacion.findMany({
+        where: {
+          activo: true
+        },
+        select: {
+          id: true,
+          nombre: true
+        },
+        orderBy: {
+          nombre: 'asc'
+        }
+      });
+
+      return NextResponse.json({
+        puntoRecoleccion: null, // No hay punto específico para administradores
+        clientes,
+        modelos,
+        estatusReparacion
+      });
+    }
+
+    // Para otros roles, usar el punto de recolección de la sesión
+    const userPointId = session.user.puntoRecoleccion?.id;
+    
+    if (!userPointId) {
       return NextResponse.json(
-        { error: 'Usuario no autorizado para punto de reparación' },
+        { error: 'Usuario no asociado a un punto de recolección' },
         { status: 403 }
       );
     }
 
-    // Obtener clientes
-    const clientes = await prisma.$queryRaw`
-      SELECT id, nombre, apellido_paterno as "apellidoPaterno", apellido_materno as "apellidoMaterno"
-      FROM clientes
-      WHERE punto_recoleccion_id = ${userPoint.puntoRecoleccion.id}
-      ORDER BY nombre ASC
-    `;
+    // Obtener el punto de recolección
+    const puntoRecoleccion = await prisma.puntoRecoleccion.findUnique({
+      where: { id: userPointId }
+    });
+
+    if (!puntoRecoleccion) {
+      return NextResponse.json(
+        { error: 'Punto de recolección no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Obtener clientes del punto de recolección
+    const clientes = await prisma.cliente.findMany({
+      where: {
+        puntoRecoleccionId: userPointId
+      },
+      select: {
+        id: true,
+        nombre: true,
+        apellidoPaterno: true,
+        apellidoMaterno: true
+      },
+      orderBy: {
+        nombre: 'asc'
+      }
+    });
 
     // Obtener modelos
     const modelos = await prisma.modelo.findMany({
@@ -72,7 +136,7 @@ export async function GET() {
     });
 
     return NextResponse.json({
-      puntoRecoleccion: userPoint.puntoRecoleccion,
+      puntoRecoleccion,
       clientes,
       modelos,
       estatusReparacion

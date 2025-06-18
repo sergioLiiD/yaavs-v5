@@ -19,7 +19,32 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated' && session && !isLoading) {
-      router.replace(callbackUrl);
+      // Todos los usuarios van al dashboard principal
+      let redirectUrl = '/dashboard';
+      
+      // Si hay un callbackUrl específico y es válido, usarlo
+      if (callbackUrl && callbackUrl.startsWith('/')) {
+        redirectUrl = callbackUrl;
+      }
+
+      // Asegurarse de que la URL sea válida antes de redirigir
+      try {
+        // Si la URL no es absoluta, hacerla absoluta
+        if (!redirectUrl.startsWith('http') && !redirectUrl.startsWith('/')) {
+          redirectUrl = '/' + redirectUrl;
+        }
+        
+        // Validar que la URL sea válida
+        if (redirectUrl.startsWith('/')) {
+          router.replace(redirectUrl);
+        } else {
+          console.error('URL inválida:', redirectUrl);
+          router.replace('/dashboard');
+        }
+      } catch (error) {
+        console.error('Error con URL:', redirectUrl, error);
+        router.replace('/dashboard');
+      }
     }
   }, [status, session, router, callbackUrl, isLoading]);
 
@@ -38,9 +63,8 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError('Credenciales inválidas');
-      } else if (result?.ok) {
-        router.replace(callbackUrl);
       }
+      // No redirigimos aquí, dejamos que el useEffect se encargue
     } catch (err) {
       console.error('Error durante el inicio de sesión:', err);
       setError('Error durante el inicio de sesión');

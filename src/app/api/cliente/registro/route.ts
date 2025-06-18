@@ -31,6 +31,8 @@ const clienteSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    console.log('Iniciando registro de cliente...');
+    
     const data = await request.json();
     console.log('Datos recibidos:', { ...data, password: '[REDACTED]' });
     
@@ -102,13 +104,37 @@ export async function POST(request: Request) {
         tipoRegistro: true
       }
     });
-    console.log('Cliente creado:', cliente.id);
+    console.log('Cliente creado exitosamente:', cliente.id);
 
-    return NextResponse.json(cliente);
+    return NextResponse.json({ 
+      success: true, 
+      cliente,
+      message: 'Cliente registrado exitosamente' 
+    });
   } catch (error) {
     console.error('Error detallado al registrar cliente:', error);
+    
+    // Si es un error de validación de Zod
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { 
+          error: 'Datos de entrada inválidos', 
+          details: error.errors 
+        },
+        { status: 400 }
+      );
+    }
+    
+    // Si es un error de Prisma
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'El email ya está registrado' },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Error al registrar el cliente' },
+      { error: 'Error interno del servidor al registrar el cliente' },
       { status: 500 }
     );
   }

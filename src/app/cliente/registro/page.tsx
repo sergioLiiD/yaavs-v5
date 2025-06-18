@@ -29,33 +29,33 @@ function ClienteRegistroForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    // Validar que las contraseñas coincidan
-    if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
-
     setLoading(true);
 
     try {
+      console.log('Enviando datos de registro:', { ...formData, password: '[REDACTED]' });
+      
       const response = await fetch('/api/cliente/registro', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          nombre: formData.nombre,
-          apellidoPaterno: formData.apellidoPaterno,
-          apellidoMaterno: formData.apellidoMaterno,
-          email: formData.email,
-          telefonoCelular: formData.telefonoCelular,
-          password: formData.password,
-        }),
+        body: JSON.stringify(formData),
         credentials: 'include'
       });
 
+      console.log('Respuesta del servidor:', response.status, response.statusText);
+      
+      // Verificar si la respuesta es JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('La respuesta no es JSON:', contentType);
+        const text = await response.text();
+        console.error('Contenido de la respuesta:', text);
+        throw new Error('Error del servidor: respuesta no válida');
+      }
+
       const data = await response.json();
+      console.log('Datos de respuesta:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Error al registrar');

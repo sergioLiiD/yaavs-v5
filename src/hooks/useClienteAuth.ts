@@ -28,6 +28,7 @@ interface Cliente {
 export function useClienteAuth() {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [loading, setLoading] = useState(true);
+  const [forceCheck, setForceCheck] = useState(0);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -39,6 +40,7 @@ export function useClienteAuth() {
         // No verificar en rutas públicas
         if (pathname === '/cliente/login' || pathname === '/cliente/registro') {
           if (isMounted) {
+            setCliente(null);
             setLoading(false);
           }
           return;
@@ -78,10 +80,15 @@ export function useClienteAuth() {
     return () => {
       isMounted = false;
     };
-  }, [pathname]);
+  }, [pathname, forceCheck]);
 
   const logout = async () => {
     try {
+      // Limpiar el estado inmediatamente
+      setCliente(null);
+      setLoading(true);
+      
+      // Llamar a la API de logout
       await fetch('/api/cliente/logout', { 
         method: 'POST',
         credentials: 'include',
@@ -89,10 +96,25 @@ export function useClienteAuth() {
           'Content-Type': 'application/json'
         }
       });
-      setCliente(null);
+      
+      // También eliminar la cookie del lado del cliente como respaldo
+      document.cookie = 'cliente_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'cliente_token=; path=/cliente; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      
+      // Forzar nueva verificación
+      setForceCheck(prev => prev + 1);
+      
+      // Redirigir al login
       router.push('/cliente/login');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
+      // Aún así, limpiar el estado y redirigir
+      setCliente(null);
+      setLoading(false);
+      document.cookie = 'cliente_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'cliente_token=; path=/cliente; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      setForceCheck(prev => prev + 1);
+      router.push('/cliente/login');
     }
   };
 

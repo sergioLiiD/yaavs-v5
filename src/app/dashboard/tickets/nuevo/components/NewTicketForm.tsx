@@ -158,6 +158,7 @@ export function NewTicketForm() {
   const [modelosFiltrados, setModelosFiltrados] = useState<Modelo[]>([]);
   const [tiposServicio, setTiposServicio] = useState<TipoServicio[]>([]);
   const [loading, setLoading] = useState(false);
+  const [tecnicos, setTecnicos] = useState<any[]>([]);
   const router = useRouter();
 
   const form = useForm<FormData>({
@@ -183,25 +184,31 @@ export function NewTicketForm() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Cargar clientes
-        const clientesResponse = await fetch('/api/clientes');
-        if (clientesResponse.ok) {
-          const clientesData = await clientesResponse.json();
-          setClientes(clientesData);
+        const [clientesRes, tecnicosRes, marcasRes] = await Promise.all([
+          fetch('/api/clientes'),
+          fetch('/api/usuarios/tecnicos'),
+          fetch('/api/catalogo/marcas'),
+        ]);
+
+        if (!clientesRes.ok || !tecnicosRes.ok || !marcasRes.ok) {
+          throw new Error('Error al cargar los datos');
         }
+
+        const [clientesData, tecnicosData, marcasData] = await Promise.all([
+          clientesRes.json(),
+          tecnicosRes.json(),
+          marcasRes.json(),
+        ]);
+
+        setClientes(clientesData.clientes);
+        setTecnicos(tecnicosData);
+        setMarcas(marcasData);
 
         // Cargar tipos de servicio
         const tiposServicioResponse = await fetch('/api/catalogo/tipos-servicio');
         if (tiposServicioResponse.ok) {
           const tiposServicioData = await tiposServicioResponse.json();
           setTiposServicio(tiposServicioData);
-        }
-
-        // Cargar marcas
-        const marcasResponse = await fetch('/api/marcas');
-        if (marcasResponse.ok) {
-          const marcasData = await marcasResponse.json();
-          setMarcas(marcasData);
         }
 
         // Cargar modelos

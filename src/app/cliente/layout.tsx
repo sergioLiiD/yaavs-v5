@@ -10,7 +10,7 @@ export default function ClienteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { cliente, loading } = useClienteAuth();
+  const { cliente, loading, logout } = useClienteAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
@@ -42,7 +42,7 @@ export default function ClienteLayout({
     );
   }
 
-  if (!cliente && (pathname === '/cliente/login' || pathname === '/cliente/registro')) {
+  if ((pathname === '/cliente/login' || pathname === '/cliente/registro') && !cliente) {
     return <>{children}</>;
   }
 
@@ -78,10 +78,7 @@ export default function ClienteLayout({
                     {cliente.nombre} {cliente.apellidoPaterno}
                   </span>
                   <button
-                    onClick={() => {
-                      document.cookie = 'cliente_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-                      router.push('/cliente/login');
-                    }}
+                    onClick={logout}
                     className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white"
                     style={{ backgroundColor: '#FEBF18' }}
                   >

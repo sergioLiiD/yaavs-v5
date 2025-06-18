@@ -124,8 +124,10 @@ export default function ClientePage() {
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">Dirección</p>
               <p className="text-lg">
-                {cliente.direcciones[0]?.calle} {cliente.direcciones[0]?.numeroExterior}
-                {cliente.direcciones[0]?.numeroInterior && ` Int. ${cliente.direcciones[0].numeroInterior}`}
+                {cliente.direcciones && cliente.direcciones.length > 0 
+                  ? `${cliente.direcciones[0]?.calle || ''} ${cliente.direcciones[0]?.numeroExterior || ''}${cliente.direcciones[0]?.numeroInterior ? ` Int. ${cliente.direcciones[0].numeroInterior}` : ''}`
+                  : 'No registrada'
+                }
               </p>
             </div>
           </div>

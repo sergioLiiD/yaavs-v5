@@ -27,6 +27,8 @@ export async function POST(
     const ticketId = parseInt(params.id);
     const { checklist } = await request.json() as { checklist: ChecklistItem[] };
 
+    console.log('Checklist recibido en el endpoint:', checklist);
+
     // Obtener el ticket con su reparación
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
@@ -75,7 +77,7 @@ export async function POST(
           data: {
             checklistDiagnosticoId: checklistDiagnostico.id,
             checklistItemId: item.itemId,
-            respuesta: String(item.respuesta).toLowerCase() === 'yes',
+            respuesta: item.respuesta,
             observaciones: item.observacion || null
           }
         });

@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
-import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { redirect } from 'next/navigation';
+import { prisma } from '@/lib/db/prisma';
 
 function formatTime(time: string) {
   const [hours, minutes] = time.split(':');
@@ -12,26 +12,23 @@ function formatTime(time: string) {
 }
 
 function formatHorario(horario: any) {
-  const dias = {
-    monday: 'Lunes',
-    tuesday: 'Martes',
-    wednesday: 'Miércoles',
-    thursday: 'Jueves',
-    friday: 'Viernes',
-    saturday: 'Sábado',
-    sunday: 'Domingo'
-  };
+  if (!horario) return [];
 
-  const ordenDias = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  const horarioFormateado = [];
 
-  return ordenDias.map(dia => {
-    const info = horario[dia];
-    return {
-      dia: dias[dia as keyof typeof dias],
-      abierto: info.open,
-      horario: info.open ? `${formatTime(info.start)} - ${formatTime(info.end)}` : 'Cerrado'
-    };
-  });
+  for (const dia of dias) {
+    const diaLower = dia.toLowerCase();
+    if (horario[diaLower]) {
+      const { abre, cierra } = horario[diaLower];
+      horarioFormateado.push({
+        dia,
+        horario: `${formatTime(abre)} - ${formatTime(cierra)}`
+      });
+    }
+  }
+
+  return horarioFormateado;
 }
 
 export default async function RepairPointPage() {
@@ -96,68 +93,67 @@ export default async function RepairPointPage() {
 
     return (
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">
-          Punto de Reparación: {puntoRecoleccion.nombre}
-        </h1>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Estadísticas */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas</h3>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-500">Total de tickets</p>
+                <p className="text-2xl font-bold text-gray-900">{totalTickets}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Tickets pendientes</p>
+                <p className="text-2xl font-bold text-yellow-600">{ticketsPendientes}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Tickets en proceso</p>
+                <p className="text-2xl font-bold text-blue-600">{ticketsEnProceso}</p>
+              </div>
+            </div>
+          </div>
 
-        <div className="mb-6">
-          <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium">
-            <span className={`w-3 h-3 rounded-full mr-2 ${puntoRecoleccion.isRepairPoint ? 'bg-green-500' : 'bg-red-500'}`}></span>
-            {puntoRecoleccion.isRepairPoint ? 'Punto de Reparación Activo' : 'Punto de Reparación Inactivo'}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-2">Total de Tickets</h3>
-            <p className="text-3xl font-bold">{totalTickets}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-2">Tickets Pendientes</h3>
-            <p className="text-3xl font-bold text-yellow-600">{ticketsPendientes}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-2">Tickets en Proceso</h3>
-            <p className="text-3xl font-bold text-blue-600">{ticketsEnProceso}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Información del Punto</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-gray-600">Dirección</p>
-              <p className="font-medium">
-                {puntoRecoleccion.ubicacion && typeof puntoRecoleccion.ubicacion === 'object' 
-                  ? (puntoRecoleccion.ubicacion as any).address || 'No disponible'
-                  : 'No disponible'}
+          {/* Información del punto */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Información del Punto</h3>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-500">
+                <span className="font-medium">Nombre:</span> {puntoRecoleccion.nombre}
+              </p>
+              <p className="text-sm text-gray-500">
+                <span className="font-medium">Dirección:</span> {puntoRecoleccion.ubicacion && typeof puntoRecoleccion.ubicacion === 'object' ? (puntoRecoleccion.ubicacion as any).address : 'No disponible'}
+              </p>
+              <p className="text-sm text-gray-500">
+                <span className="font-medium">Teléfono:</span> {puntoRecoleccion.telefono}
               </p>
             </div>
-            <div>
-              <p className="text-gray-600 mb-2">Horario</p>
-              <div className="space-y-1">
-                {horario.map(({ dia, abierto, horario }) => (
-                  <div key={dia} className={`flex justify-between ${!abierto ? 'text-gray-400' : ''}`}>
-                    <span className="font-medium">{dia}</span>
-                    <span>{horario}</span>
-                  </div>
-                ))}
-              </div>
+          </div>
+
+          {/* Horario */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Horario</h3>
+            <div className="space-y-2">
+              {horario.map(({ dia, horario }) => (
+                <div key={dia} className="flex justify-between">
+                  <span className="text-sm font-medium text-gray-500">{dia}</span>
+                  <span className="text-sm text-gray-900">{horario}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
     );
   } catch (error) {
-    console.error('Error al cargar la página:', error);
+    console.error('Error:', error);
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Error al cargar la página
+          <h2 className="text-2xl font-bold text-red-600 mb-4">
+            Error al cargar la información
           </h2>
           <p className="text-gray-600">
-            Ha ocurrido un error al cargar la información. Por favor, intenta nuevamente.
+            Por favor, intenta recargar la página.
           </p>
         </div>
       </div>

@@ -3,8 +3,9 @@ import { ClienteTicketsTable } from '@/components/cliente/ClienteTicketsTable';
 import { Toaster } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { cookies } from 'next/headers';
+import { verifyToken } from '@/lib/jwt';
+import { ClienteService } from '@/services/clienteService';
 import { redirect } from "next/navigation";
 import prisma from "@/lib/db/prisma";
 import { format } from "date-fns";
@@ -18,15 +19,26 @@ export const metadata: Metadata = {
 };
 
 export default async function ClienteTicketsPage() {
-  const session = await getServerSession(authOptions);
+  const cookieStore = cookies();
+  const token = cookieStore.get('cliente_token');
 
-  if (!session?.user) {
-    redirect("/login");
+  if (!token) {
+    redirect("/cliente/login");
+  }
+
+  const decoded = await verifyToken(token.value);
+  if (!decoded || !decoded.id) {
+    redirect("/cliente/login");
+  }
+
+  const cliente = await ClienteService.findById(decoded.id);
+  if (!cliente) {
+    redirect("/cliente/login");
   }
 
   const tickets = await prisma.ticket.findMany({
     where: {
-      clienteId: Number(session.user.id),
+      clienteId: cliente.id,
     },
     include: {
       modelo: {

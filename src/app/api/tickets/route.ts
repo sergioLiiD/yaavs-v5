@@ -96,8 +96,19 @@ export async function POST(request: Request) {
 
     console.log('Estatus inicial encontrado:', estatusInicial);
 
+    // Determinar el punto de recolección a usar
+    const userRole = session.user.role;
+    const userPointId = session.user.puntoRecoleccion?.id;
+    let puntoRecoleccionIdToUse = puntoRecoleccionId;
+    if (userRole === 'ADMINISTRADOR_PUNTO' || userRole === 'USUARIO_PUNTO') {
+      if (!userPointId) {
+        return NextResponse.json({ error: 'No tienes un punto de recolección asignado' }, { status: 403 });
+      }
+      puntoRecoleccionIdToUse = userPointId;
+    }
+
     // Crear el ticket primero
-    const ticketData = {
+    const ticketData: any = {
       numeroTicket: `TICK-${Date.now()}`,
       descripcionProblema,
       imei,
@@ -132,7 +143,14 @@ export async function POST(request: Request) {
           id: session.user.id
         }
       }
-    } as Prisma.TicketCreateInput;
+    };
+    if (puntoRecoleccionIdToUse) {
+      ticketData.puntoRecoleccion = {
+        connect: {
+          id: puntoRecoleccionIdToUse
+        }
+      };
+    }
 
     console.log('Datos del ticket a crear:', ticketData);
 
@@ -220,139 +238,115 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    console.log('=== INICIO DE CONSULTA DE TICKETS ===');
     const session = await getServerSession(authOptions);
-    console.log('Sesión:', session);
 
     if (!session?.user) {
-      console.log('No hay sesión de usuario');
       return new NextResponse('No autorizado', { status: 401 });
     }
 
-    console.log('Usuario autenticado:', session.user);
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const skip = (page - 1) * limit;
 
-    const tickets = await prisma.ticket.findMany({
-      where: {
-        // Quitamos el filtro de cancelado para mostrar todos los tickets
-      },
-      include: {
-        cliente: {
-          select: {
-            id: true,
-            nombre: true,
-            apellidoPaterno: true,
-            apellidoMaterno: true,
-            telefonoCelular: true,
-            email: true
-          }
+    // Construir el where según el rol y punto de recolección
+    let where: Prisma.TicketWhereInput = {};
+    const userRole = session.user.role;
+    const userPointId = session.user.puntoRecoleccion?.id;
+
+    // Si es usuario de punto de recolección, solo mostrar tickets de su punto
+    if ((userRole === 'ADMINISTRADOR_PUNTO' || userRole === 'USUARIO_PUNTO') && userPointId) {
+      where.puntoRecoleccionId = userPointId;
+    }
+
+    const [tickets, total] = await Promise.all([
+      prisma.ticket.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          fechaRecepcion: 'desc'
         },
-        modelo: {
-          include: {
-            marca: true
-          }
-        },
-        tipoServicio: true,
-        estatusReparacion: true,
-        tecnicoAsignado: {
-          select: {
-            id: true,
-            nombre: true,
-            apellidoPaterno: true,
-            apellidoMaterno: true
-          }
-        },
-        creador: {
-          select: {
-            id: true,
-            nombre: true
-          }
-        },
-        dispositivo: {
-          select: {
-            id: true,
-            ticketId: true,
-            tipo: true,
-            marca: true,
-            modelo: true,
-            serie: true,
-            createdAt: true,
-            updatedAt: true
-          }
-        },
-        presupuesto: {
-          include: {
-            conceptos: true
-          }
-        },
-        pagos: {
-          orderBy: {
-            createdAt: 'desc'
-          }
+        include: {
+          cliente: true,
+          tipoServicio: true,
+          modelo: {
+            include: {
+              marca: true
+            }
+          },
+          estatusReparacion: true,
+          tecnicoAsignado: true,
+          puntoRecoleccion: {
+            select: {
+              id: true,
+              nombre: true,
+              isRepairPoint: true
+            }
+          },
+          dispositivo: true,
+          creador: {
+            include: {
+              usuarioRoles: {
+                include: {
+                  rol: true
+                }
+              }
+            }
+          },
+          presupuesto: {
+            include: {
+              conceptos: true
+            }
+          },
+          pagos: true
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+      }),
+      prisma.ticket.count({ where })
+    ]);
 
     // Calcular el saldo para cada ticket
     const ticketsConSaldo = tickets.map(ticket => {
       if (ticket.presupuesto) {
-        const totalPagado = ticket.pagos?.reduce((sum, pago) => sum + pago.monto, 0) || 0;
-        const saldo = ticket.presupuesto.total - totalPagado;
+        const totalPagos = ticket.pagos?.reduce((sum, pago) => sum + pago.monto, 0) || 0;
+        const saldoCalculado = ticket.presupuesto.total - totalPagos;
+        
         return {
           ...ticket,
           presupuesto: {
             ...ticket.presupuesto,
-            saldo
+            saldo: Math.max(0, saldoCalculado) // El saldo no puede ser negativo
           }
         };
       }
       return ticket;
     });
 
-    console.log('Tickets encontrados:', ticketsConSaldo.length);
-    console.log('Primer ticket:', JSON.stringify(ticketsConSaldo[0], null, 2));
-    console.log('=== FIN DE CONSULTA DE TICKETS ===');
+    // Agregar información adicional para identificar el origen del ticket
+    const ticketsConOrigen = ticketsConSaldo.map(ticket => {
+      // Determinar si el ticket fue creado por un cliente
+      // Los tickets creados por clientes usan el formato TKT- mientras que los del dashboard usan TICK-
+      const origenCliente = ticket.numeroTicket.startsWith('TKT-');
 
-    return NextResponse.json(ticketsConSaldo);
+      return {
+        ...ticket,
+        origenCliente
+      };
+    });
+
+    return NextResponse.json({
+      tickets: ticketsConOrigen,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
+    });
   } catch (error) {
-    console.error('=== ERROR EN CONSULTA DE TICKETS ===');
-    console.error('Error completo:', error);
-    
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error('Error de Prisma:', {
-        code: error.code,
-        message: error.message,
-        meta: error.meta
-      });
-      return new NextResponse(
-        JSON.stringify({ 
-          error: 'Error de base de datos',
-          details: error.message
-        }), 
-        { 
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-    }
-    
-    return new NextResponse(
-      JSON.stringify({ 
-        error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Error desconocido'
-      }), 
-      { 
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+    console.error('Error al obtener tickets:', error);
+    return NextResponse.json(
+      { error: 'Error al obtener tickets' },
+      { status: 500 }
     );
   }
 } 

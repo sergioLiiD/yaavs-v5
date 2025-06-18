@@ -1,28 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { cookies } from 'next/headers';
+import { verifyToken } from '@/lib/jwt';
+import { ClienteService } from '@/services/clienteService';
 import prisma from '@/lib/db/prisma';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const cookieStore = cookies();
+    const token = cookieStore.get('cliente_token');
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    if (!token) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
     }
 
-    const cliente = await prisma.cliente.findUnique({
+    const decoded = await verifyToken(token.value);
+    if (!decoded || !decoded.id) {
+      return NextResponse.json(
+        { error: 'Token inválido' },
+        { status: 401 }
+      );
+    }
+
+    const cliente = await ClienteService.findById(decoded.id);
+    if (!cliente) {
+      return NextResponse.json(
+        { error: 'Cliente no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Obtener las direcciones del cliente
+    const direcciones = await prisma.direccion.findMany({
       where: {
-        id: Number(session.user.id),
-      },
-      include: {
-        direcciones: true,
-      },
+        clienteId: cliente.id
+      }
     });
 
     const tickets = await prisma.ticket.findMany({
       where: {
-        clienteId: Number(session.user.id),
+        clienteId: cliente.id,
       },
       include: {
         estatusReparacion: true,
@@ -35,7 +54,7 @@ export async function GET(req: NextRequest) {
 
     const reparaciones = await prisma.ticket.findMany({
       where: {
-        clienteId: Number(session.user.id),
+        clienteId: cliente.id,
         estatusReparacion: {
           nombre: 'En Reparación',
         },
@@ -54,7 +73,10 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({
-      cliente,
+      cliente: {
+        ...cliente,
+        direcciones
+      },
       tickets,
       reparaciones,
     });

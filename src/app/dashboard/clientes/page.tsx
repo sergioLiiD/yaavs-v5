@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { HiPlus, HiPencilAlt, HiTrash, HiSearch } from 'react-icons/hi';
 import axios from 'axios';
 import React from 'react';
@@ -29,10 +30,14 @@ interface Cliente {
   createdAt: string;
   updatedAt: string;
   pais?: string;
+  puntoRecoleccion?: {
+    id: number;
+    nombre: string;
+  };
 }
 
 export default function ClientesPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -60,14 +65,33 @@ export default function ClientesPage() {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [expandedClientes, setExpandedClientes] = useState<number[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
+    if (status === 'loading') return;
+    const user = session?.user;
+    if (user?.role === 'ADMINISTRADOR_PUNTO' || user?.role === 'USUARIO_PUNTO') {
+      router.replace('/repair-point/clientes');
+      return;
+    }
     const fetchClientes = async () => {
       try {
         setIsLoading(true);
         const response = await axios.get('/api/clientes');
         console.log('Respuesta de la API:', JSON.stringify(response.data, null, 2));
-        setClientes(response.data);
+        
+        // Verificar específicamente el cliente número 4
+        const cliente4 = response.data.clientes.find((c: any) => c.id === 4);
+        if (cliente4) {
+          console.log('Cliente 4 encontrado:', {
+            id: cliente4.id,
+            nombre: cliente4.nombre,
+            tipoRegistro: cliente4.tipoRegistro,
+            puntoRecoleccion: cliente4.puntoRecoleccion
+          });
+        }
+        
+        setClientes(response.data.clientes);
         setError('');
       } catch (err) {
         console.error('Error al cargar clientes:', err);
@@ -76,9 +100,8 @@ export default function ClientesPage() {
         setIsLoading(false);
       }
     };
-
     fetchClientes();
-  }, []);
+  }, [session, status]);
 
   const openModal = () => {
     setIsModalOpen(true);
@@ -262,11 +285,20 @@ export default function ClientesPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        cliente.tipoRegistro === 'Registro propio' 
-                          ? 'bg-purple-100 text-purple-800' 
+                        cliente.tipoRegistro === 'PUNTO_RECOLECCION' 
+                          ? 'bg-green-100 text-green-800' 
+                          : cliente.tipoRegistro === 'WEB'
+                          ? 'bg-purple-100 text-purple-800'
                           : 'bg-blue-100 text-blue-800'
                       }`}>
-                        {cliente.tipoRegistro}
+                        {cliente.tipoRegistro === 'PUNTO_RECOLECCION' && cliente.puntoRecoleccion
+                          ? `Punto de Recolección - ${cliente.puntoRecoleccion.nombre}`
+                          : cliente.tipoRegistro === 'WEB'
+                          ? 'Registro Web'
+                          : cliente.tipoRegistro === 'SISTEMA_CENTRAL'
+                          ? 'Sistema Central'
+                          : cliente.tipoRegistro || 'Sin especificar'
+                        }
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

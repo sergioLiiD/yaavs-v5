@@ -1,14 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { cookies } from 'next/headers';
+import { verifyToken } from '@/lib/jwt';
+import { ClienteService } from '@/services/clienteService';
 import prisma from '@/lib/db/prisma';
 
 export async function POST(req: NextRequest) {
   try {
-    // Verificar autenticación
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    // Verificar autenticación del cliente
+    const cookieStore = cookies();
+    const token = cookieStore.get('cliente_token');
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    const decoded = await verifyToken(token.value);
+    if (!decoded || !decoded.id) {
+      return NextResponse.json(
+        { error: 'Token inválido' },
+        { status: 401 }
+      );
+    }
+
+    const cliente = await ClienteService.findById(decoded.id);
+    if (!cliente) {
+      return NextResponse.json(
+        { error: 'Cliente no encontrado' },
+        { status: 404 }
+      );
     }
 
     const body = await req.json();
@@ -74,16 +96,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Buscar un usuario administrador para usar como creador
+    const usuarioCreador = await prisma.usuario.findFirst({
+      where: {
+        activo: true,
+        usuarioRoles: {
+          some: {
+            rol: {
+              nombre: 'ADMINISTRADOR'
+            }
+          }
+        }
+      }
+    });
+
+    if (!usuarioCreador) {
+      return NextResponse.json(
+        { error: 'No se encontró un usuario administrador para crear el ticket' },
+        { status: 500 }
+      );
+    }
+
     // Crear el ticket
     const ticket = await prisma.ticket.create({
       data: {
         numeroTicket: `TKT-${Date.now()}`,
-        clienteId: Number(session.user.id),
+        clienteId: cliente.id,
         tipoServicioId: 1, // Servicio de reparación
         modeloId: Number(body.modeloId),
         descripcionProblema: body.descripcionProblema,
         estatusReparacionId: estadoInicial.id, // Usar el ID del estado Recibido
-        creadorId: Number(session.user.id),
+        creadorId: usuarioCreador.id,
         capacidad: body.capacidad,
         color: body.color,
         fechaCompra: body.fechaCompra ? new Date(body.fechaCompra) : null,
@@ -119,7 +162,7 @@ export async function POST(req: NextRequest) {
           longitud: body.direccion.longitud,
           cliente: {
             connect: {
-              id: Number(session.user.id)
+              id: cliente.id
             }
           },
           tickets: { connect: { id: ticket.id } },
@@ -156,16 +199,37 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    // Verificar autenticación
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    // Verificar autenticación del cliente
+    const cookieStore = cookies();
+    const token = cookieStore.get('cliente_token');
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    const decoded = await verifyToken(token.value);
+    if (!decoded || !decoded.id) {
+      return NextResponse.json(
+        { error: 'Token inválido' },
+        { status: 401 }
+      );
+    }
+
+    const cliente = await ClienteService.findById(decoded.id);
+    if (!cliente) {
+      return NextResponse.json(
+        { error: 'Cliente no encontrado' },
+        { status: 404 }
+      );
     }
 
     // Obtener los tickets del cliente
     const tickets = await prisma.ticket.findMany({
       where: {
-        clienteId: Number(session.user.id)
+        clienteId: cliente.id
       },
       include: {
         tipoServicio: true,

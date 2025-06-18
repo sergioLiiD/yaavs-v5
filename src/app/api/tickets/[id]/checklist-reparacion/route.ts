@@ -110,41 +110,31 @@ export async function POST(
     }
 
     // Obtener o crear el checklist de reparación
-    const checklistReparacion = await prisma.$queryRaw`
-      INSERT INTO checklist_reparacion (reparacion_id, created_at, updated_at)
-      VALUES (${reparacion.id}, NOW(), NOW())
-      ON CONFLICT (reparacion_id) DO NOTHING
-      RETURNING *
-    `;
+    let checklistReparacion = await prisma.checklistReparacion.findUnique({
+      where: { reparacionId: reparacion.id }
+    });
+    if (!checklistReparacion) {
+      checklistReparacion = await prisma.checklistReparacion.create({
+        data: { reparacionId: reparacion.id }
+      });
+    }
 
     // Eliminar respuestas existentes
-    await prisma.$executeRaw`
-      DELETE FROM checklist_respuesta_reparacion
-      WHERE checklist_reparacion_id = ${reparacion.id}
-    `;
+    await prisma.checklistRespuestaReparacion.deleteMany({
+      where: { checklistReparacionId: checklistReparacion.id }
+    });
 
     // Crear las respuestas del checklist
     const respuestas = await Promise.all(
       checklist.map(async (item: ChecklistItem) => {
-        return prisma.$queryRaw`
-          INSERT INTO checklist_respuesta_reparacion (
-            checklist_reparacion_id,
-            checklist_item_id,
-            respuesta,
-            observaciones,
-            created_at,
-            updated_at
-          )
-          VALUES (
-            ${reparacion.id},
-            ${item.itemId},
-            ${Boolean(item.respuesta)},
-            ${item.observacion || null},
-            NOW(),
-            NOW()
-          )
-          RETURNING *
-        `;
+        return prisma.checklistRespuestaReparacion.create({
+          data: {
+            checklistReparacionId: checklistReparacion.id,
+            checklistItemId: item.itemId,
+            respuesta: !!item.respuesta,
+            observaciones: item.observacion || null
+          }
+        });
       })
     );
 

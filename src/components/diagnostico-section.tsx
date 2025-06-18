@@ -12,8 +12,15 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { HiSave, HiClock, HiCamera, HiX } from 'react-icons/hi';
 import { useSession } from 'next-auth/react';
-import { Separator } from '@/components/ui/separator';
-import { ChecklistItem } from '@/types/checklist';
+
+// Definición local de ChecklistItem (idéntica a la usada en los tipos de ticket)
+interface ChecklistItem {
+  id: number;
+  nombre: string;
+  descripcion?: string | null;
+  paraDiagnostico: boolean;
+  paraReparacion: boolean;
+}
 
 interface DiagnosticoSectionProps {
   ticket: Ticket;
@@ -132,61 +139,83 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
     }
   }, [ticket.id, ticket.canEdit]);
 
-  // Función para cargar el checklist
-  const loadChecklist = async () => {
-    try {
-      // Primero cargamos los items del catálogo
-      const response = await fetch('/api/catalogo/checklist');
-      if (!response.ok) throw new Error('Error al cargar items del checklist');
-      const items = await response.json();
-      
-      // Filtrar solo los items para diagnóstico
-      const diagnosticItems = items.filter((item: ChecklistItem) => item.paraDiagnostico);
-
-      // Luego cargamos las respuestas existentes
-      const apiUrl = ticket.canEdit 
-        ? `/api/repair-point/tickets/${ticket.id}/checklist-diagnostico`
-        : `/api/tickets/${ticket.id}/checklist-diagnostico`;
-
-      const checklistResponse = await fetch(apiUrl);
-      if (!checklistResponse.ok) throw new Error('Error al cargar respuestas del checklist');
-      const { checklist: respuestasExistentes } = await checklistResponse.json();
-
-      // Si hay respuestas existentes, las usamos
-      if (respuestasExistentes && respuestasExistentes.length > 0) {
-        const checklistConRespuestas = diagnosticItems.map((item: ChecklistItem) => {
-          const respuestaExistente = respuestasExistentes.find(
-            (r: any) => r.checklistItem.id === item.id
-          );
-          return {
-            itemId: item.id,
-            item: item.nombre,
-            respuesta: respuestaExistente ? Boolean(respuestaExistente.respuesta) : false,
-            observacion: respuestaExistente ? respuestaExistente.observaciones || '' : ''
-          };
-        });
-        setChecklist(checklistConRespuestas);
-      } else {
-        // Si no hay respuestas, inicializamos con valores por defecto
-        const initialChecklist = diagnosticItems.map((item: ChecklistItem) => ({
-          itemId: item.id,
-          item: item.nombre,
-          respuesta: false,
-          observacion: ''
-        }));
-        setChecklist(initialChecklist);
-      }
-    } catch (error) {
-      toast.error('Error al cargar items del checklist');
-    }
-  };
-
   // Cargar el checklist cuando se monta el componente o cambia el ticket
   useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        // Primero cargamos los items del catálogo
+        const response = await fetch('/api/catalogo/checklist');
+        if (!response.ok) throw new Error('Error al cargar items del checklist');
+        const items = await response.json();
+        // Filtrar solo los items para diagnóstico
+        const diagnosticItems = items.filter((item: ChecklistItem) => item.paraDiagnostico);
+
+        // Luego cargamos las respuestas existentes del backend
+        const apiUrl = ticket.canEdit 
+          ? `/api/repair-point/tickets/${ticket.id}/checklist-diagnostico`
+          : `/api/tickets/${ticket.id}/checklist-diagnostico`;
+        const checklistResponse = await fetch(apiUrl);
+        let respuestasExistentes: any[] = [];
+        if (checklistResponse.ok) {
+          const data = await checklistResponse.json();
+          respuestasExistentes = data.checklist || [];
+        }
+
+        // Si hay respuestas existentes, las usamos
+        if (!cancelled && respuestasExistentes && respuestasExistentes.length > 0) {
+          const checklistConRespuestas = diagnosticItems.map((item: ChecklistItem) => {
+            const respuestaExistente = respuestasExistentes.find(
+              (r: any) => r.checklistItem.id === item.id
+            );
+            return {
+              itemId: item.id,
+              item: item.nombre,
+              respuesta: respuestaExistente
+                ? (typeof respuestaExistente.respuesta === 'boolean'
+                    ? respuestaExistente.respuesta
+                    : respuestaExistente.respuesta === true || respuestaExistente.respuesta === 'true')
+                : false,
+              observacion: respuestaExistente ? respuestaExistente.observaciones || '' : ''
+            };
+          });
+          setChecklist(checklistConRespuestas);
+        } else if (!cancelled) {
+          // Si no hay respuestas del backend pero el ticket ya trae respuestas (SSR), úsalas
+          const ssrRespuestas = ticket?.reparacion?.checklistDiagnostico?.respuestas;
+          if (ssrRespuestas && ssrRespuestas.length > 0) {
+            const checklistConSSR = diagnosticItems.map((item: ChecklistItem) => {
+              const respuestaExistente = ssrRespuestas.find(
+                (r: any) => r.checklistItem.id === item.id
+              );
+              return {
+                itemId: item.id,
+                item: item.nombre,
+                respuesta: respuestaExistente ? Boolean(respuestaExistente.respuesta) : false,
+                observacion: respuestaExistente ? respuestaExistente.observaciones || '' : ''
+              };
+            });
+            setChecklist(checklistConSSR);
+          } else {
+            // Si no hay respuestas, inicializamos con valores por defecto
+            const initialChecklist = diagnosticItems.map((item: ChecklistItem) => ({
+              itemId: item.id,
+              item: item.nombre,
+              respuesta: false,
+              observacion: ''
+            }));
+            setChecklist(initialChecklist);
+          }
+        }
+      } catch (error) {
+        toast.error('Error al cargar items del checklist');
+      }
+    };
     if (ticket?.id) {
-      loadChecklist();
+      load();
     }
-  }, [ticket?.id]);
+    return () => { cancelled = true; };
+  }, [ticket?.id, ticket?.canEdit]);
 
   // Agregar un efecto para monitorear cambios en el checklist
   useEffect(() => {
@@ -216,7 +245,7 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
       const response = await axios.post(apiUrl, {
         checklist: checklist.map(item => ({
           itemId: item.itemId,
-          respuesta: item.respuesta ? 'yes' : 'no',
+          respuesta: item.respuesta,
           observacion: item.observacion
         }))
       });
@@ -378,6 +407,13 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
               </div>
             )}
           </div>
+          {isEditing && (
+            <div className="flex justify-end mt-4">
+              <Button onClick={handleSaveChecklist} disabled={isSaving}>
+                {isSaving ? 'Guardando...' : 'Guardar Checklist'}
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Formulario de Diagnóstico */}

@@ -44,31 +44,17 @@ function ClienteLoginForm() {
         throw new Error(data.error || 'Error al iniciar sesión');
       }
 
-      // Esperar un momento para asegurar que la cookie se establezca
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      console.log('Verificando sesión...');
-      const sessionResponse = await fetch('/api/cliente/me', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (!sessionResponse.ok) {
-        throw new Error('Error al verificar la sesión');
-      }
-
-      const sessionData = await sessionResponse.json();
-      console.log('Sesión verificada:', sessionData);
-
-      if (sessionData.cliente) {
-        console.log('Redirigiendo a:', callbackUrl);
-        router.push(callbackUrl);
-      } else {
-        throw new Error('No se pudo verificar la sesión');
-      }
+      // El login fue exitoso, redirigir inmediatamente
+      // El hook useClienteAuth se encargará de verificar la sesión automáticamente
+      console.log('Login exitoso, redirigiendo a:', callbackUrl);
+      
+      // Verificar que el callbackUrl sea válido
+      const validCallbackUrl = callbackUrl.startsWith('/cliente') && !callbackUrl.includes('/api/') 
+        ? callbackUrl 
+        : '/cliente';
+      
+      // Usar window.location para forzar un hard refresh
+      window.location.href = validCallbackUrl;
     } catch (err: any) {
       console.error('Error en login:', err);
       setError(err.message || 'Error al iniciar sesión');

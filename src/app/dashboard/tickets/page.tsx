@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import RouteGuard from '@/components/route-guard';
@@ -21,6 +22,7 @@ interface Ticket {
 }
 
 export default function TicketsPage() {
+  const { data: session, status } = useSession();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,9 +30,15 @@ export default function TicketsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    console.log('Iniciando useEffect...');
+    if (status === 'loading') return;
+    const user = session?.user;
+    // Solo redirigir si es usuario de punto de recolección (no administrador general)
+    if (user?.role === 'ADMINISTRADOR_PUNTO' || user?.role === 'USUARIO_PUNTO') {
+      router.replace('/repair-point/tickets');
+      return;
+    }
     fetchTickets();
-  }, []);
+  }, [session, status]);
 
   const fetchTickets = async () => {
     try {
@@ -46,15 +54,15 @@ export default function TicketsPage() {
 
       const data = await response.json();
       console.log('Datos recibidos:', data);
-      console.log('Número de tickets:', data.length);
-      console.log('Estados de los tickets:', data.map((t: Ticket) => ({
+      console.log('Número de tickets:', data.tickets.length);
+      console.log('Estados de los tickets:', data.tickets.map((t: Ticket) => ({
         id: t.id,
         numeroTicket: t.numeroTicket,
         estado: t.estatusReparacion?.nombre,
         cancelado: t.cancelado
       })));
       console.log('=== FIN DE FETCH TICKETS ===');
-      setTickets(data);
+      setTickets(data.tickets);
     } catch (error) {
       console.error('Error en fetchTickets:', error);
       setError(error instanceof Error ? error.message : 'Error al cargar los tickets');

@@ -47,16 +47,21 @@ export default function RepairPointTicketsPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    console.log('Iniciando useEffect...');
     const fetchTickets = async () => {
+      console.log('=== INICIO DE FETCH TICKETS ===');
+      console.log('Iniciando fetch de tickets...');
       try {
         const response = await fetch('/api/repair-point/tickets');
+        console.log('Respuesta recibida:', response.status);
         if (!response.ok) {
-          throw new Error('Error al cargar los tickets');
+          console.log('Error en la respuesta:', response.status);
+          throw new Error(`Error al obtener tickets: ${response.status}`);
         }
         const data = await response.json();
         setTickets(data);
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error en fetchTickets:', error);
         setError('Error al cargar los tickets');
       } finally {
         setLoading(false);

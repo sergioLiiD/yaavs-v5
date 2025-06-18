@@ -8,7 +8,7 @@ export function RepairPointAuthProvider({
   children: React.ReactNode;
 }) {
   return (
-    <SessionProvider basePath="/api/repair-point/auth">
+    <SessionProvider>
       {children}
     </SessionProvider>
   );

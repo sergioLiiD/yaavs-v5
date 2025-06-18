@@ -61,9 +61,9 @@ export const authOptionsRepairPoint: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 días
   },
   pages: {
-    signIn: '/repair-point/login',
-    signOut: '/repair-point/login',
-    error: '/repair-point/login',
+    signIn: '/auth/login',
+    signOut: '/auth/login',
+    error: '/auth/login',
   },
   cookies: {
     sessionToken: {
@@ -71,7 +71,7 @@ export const authOptionsRepairPoint: NextAuthOptions = {
       options: {
         httpOnly: true,
         sameSite: 'lax',
-        path: '/repair-point',
+        path: '/',
         secure: process.env.NODE_ENV === 'production'
       }
     },
@@ -79,7 +79,7 @@ export const authOptionsRepairPoint: NextAuthOptions = {
       name: 'repair-point-callback-url',
       options: {
         sameSite: 'lax',
-        path: '/repair-point',
+        path: '/',
         secure: process.env.NODE_ENV === 'production'
       }
     },
@@ -88,7 +88,7 @@ export const authOptionsRepairPoint: NextAuthOptions = {
       options: {
         httpOnly: true,
         sameSite: 'lax',
-        path: '/repair-point',
+        path: '/',
         secure: process.env.NODE_ENV === 'production'
       }
     }
@@ -210,7 +210,10 @@ export const authOptionsRepairPoint: NextAuthOptions = {
       if (user) {
         token = { ...token, ...user };
       }
-      return token;
+      return {
+        ...token,
+        id: Number(token.id)
+      };
     },
     async session({ session, token }) {
       session.user = token as any;

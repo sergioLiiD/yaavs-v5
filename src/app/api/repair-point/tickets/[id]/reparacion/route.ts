@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptionsRepairPoint } from '@/lib/auth-repair-point';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(
@@ -8,7 +8,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptionsRepairPoint);
 
     if (!session?.user) {
       return NextResponse.json(
@@ -159,7 +159,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptionsRepairPoint);
 
     if (!session?.user) {
       return NextResponse.json(

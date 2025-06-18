@@ -27,9 +27,24 @@ const RouteGuard = memo(function RouteGuard({ children, requiredPermissions, sec
     }
 
     // Verificar si el usuario tiene al menos uno de los permisos requeridos
-    return requiredPermissions.some(permission => 
+    const hasRequiredPermission = requiredPermissions.some(permission => 
       userPermissions.includes(permission)
     );
+
+    // Si no tiene el permiso requerido, verificar si tiene permisos específicos de punto
+    if (!hasRequiredPermission) {
+      const puntoPermissions = requiredPermissions.map(permission => 
+        `PUNTO_${permission}`
+      );
+      
+      const hasPuntoPermission = puntoPermissions.some(permission => 
+        userPermissions.includes(permission)
+      );
+
+      return hasPuntoPermission;
+    }
+
+    return hasRequiredPermission;
   }, [session, status, requiredPermissions]);
 
   useEffect(() => {

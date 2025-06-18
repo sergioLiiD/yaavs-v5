@@ -27,7 +27,7 @@ export async function GET(
       }
     });
 
-    if (!userPoint || !userPoint.puntoRecoleccion.esSedePrincipal) {
+    if (!userPoint || !userPoint.puntoRecoleccion.isRepairPoint) {
       return NextResponse.json(
         { error: 'Usuario no autorizado para punto de reparación' },
         { status: 403 }
@@ -108,7 +108,7 @@ export async function PATCH(
       }
     });
 
-    if (!userPoint || !userPoint.puntoRecoleccion.esSedePrincipal) {
+    if (!userPoint || !userPoint.puntoRecoleccion.isRepairPoint) {
       return NextResponse.json(
         { error: 'Usuario no autorizado para punto de reparación' },
         { status: 403 }

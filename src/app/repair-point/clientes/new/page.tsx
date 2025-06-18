@@ -2,197 +2,162 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { HiArrowLeft } from 'react-icons/hi';
 
-const clienteSchema = z.object({
-  nombre: z.string().min(1, 'El nombre es requerido'),
-  apellidoPaterno: z.string().min(1, 'El apellido paterno es requerido'),
-  apellidoMaterno: z.string().optional(),
-  telefonoCelular: z.string().min(1, 'El teléfono celular es requerido'),
-  telefonoContacto: z.string().optional(),
-  email: z.string().email('Email inválido'),
-  rfc: z.string().optional(),
-  calle: z.string().optional(),
-  numeroExterior: z.string().optional(),
-  numeroInterior: z.string().optional(),
-  colonia: z.string().optional(),
-  ciudad: z.string().optional(),
-  estado: z.string().optional(),
-  codigoPostal: z.string().optional(),
-  latitud: z.number().optional(),
-  longitud: z.number().optional(),
-  fuenteReferencia: z.string().optional(),
-});
-
-type ClienteFormData = z.infer<typeof clienteSchema>;
+interface FormData {
+  nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  email: string;
+  telefonoCelular: string;
+}
 
 export default function NewClientePage() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ClienteFormData>({
-    resolver: zodResolver(clienteSchema),
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState<FormData>({
+    nombre: '',
+    apellidoPaterno: '',
+    apellidoMaterno: '',
+    email: '',
+    telefonoCelular: '',
   });
 
-  const onSubmit = async (data: ClienteFormData) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
     try {
-      setIsSubmitting(true);
-      const response = await fetch('/api/clientes', {
+      const response = await fetch('/api/repair-point/clientes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...formData,
+          telefono: formData.telefonoCelular // Mapear telefonoCelular a telefono para la API
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Error al crear el cliente');
+        const data = await response.json();
+        throw new Error(data.error || 'Error al crear el cliente');
       }
 
-      toast.success('Cliente creado exitosamente');
       router.push('/repair-point/clientes');
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Error al crear el cliente');
+      setError(error instanceof Error ? error.message : 'Error al crear el cliente');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Nuevo Cliente</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+        >
+          <HiArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-2xl font-bold">Nuevo Cliente</h1>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+        {error && (
+          <div className="bg-red-50 text-red-500 p-4 rounded-lg">
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Nombre *
-            </label>
-            <input
-              type="text"
-              {...register('nombre')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
+          <div className="space-y-2">
+            <Label htmlFor="nombre">Nombre</Label>
+            <Input
+              id="nombre"
+              name="nombre"
+              value={formData.nombre}
+              onChange={handleChange}
+              required
             />
-            {errors.nombre && (
-              <p className="mt-1 text-sm text-red-600">{errors.nombre.message}</p>
-            )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Apellido Paterno *
-            </label>
-            <input
-              type="text"
-              {...register('apellidoPaterno')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
+          <div className="space-y-2">
+            <Label htmlFor="apellidoPaterno">Apellido Paterno</Label>
+            <Input
+              id="apellidoPaterno"
+              name="apellidoPaterno"
+              value={formData.apellidoPaterno}
+              onChange={handleChange}
+              required
             />
-            {errors.apellidoPaterno && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.apellidoPaterno.message}
-              </p>
-            )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Apellido Materno
-            </label>
-            <input
-              type="text"
-              {...register('apellidoMaterno')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
+          <div className="space-y-2">
+            <Label htmlFor="apellidoMaterno">Apellido Materno</Label>
+            <Input
+              id="apellidoMaterno"
+              name="apellidoMaterno"
+              value={formData.apellidoMaterno}
+              onChange={handleChange}
             />
-            {errors.apellidoMaterno && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.apellidoMaterno.message}
-              </p>
-            )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Teléfono Celular *
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="telefonoCelular">Teléfono</Label>
+            <Input
+              id="telefonoCelular"
+              name="telefonoCelular"
               type="tel"
-              {...register('telefonoCelular')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
+              value={formData.telefonoCelular}
+              onChange={handleChange}
+              required
             />
-            {errors.telefonoCelular && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.telefonoCelular.message}
-              </p>
-            )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Teléfono de Contacto
-            </label>
-            <input
-              type="tel"
-              {...register('telefonoContacto')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
-            />
-            {errors.telefonoContacto && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.telefonoContacto.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Correo Electrónico *
-            </label>
-            <input
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
               type="email"
-              {...register('email')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
+              value={formData.email}
+              onChange={handleChange}
+              required
             />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              RFC
-            </label>
-            <input
-              type="text"
-              {...register('rfc')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-4 py-3 h-12"
-            />
-            {errors.rfc && (
-              <p className="mt-1 text-sm text-red-600">{errors.rfc.message}</p>
-            )}
           </div>
         </div>
 
-        <div className="flex justify-end space-x-4">
-          <button
+        <div className="flex justify-end gap-4">
+          <Button
             type="button"
+            variant="outline"
             onClick={() => router.back()}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19]"
+            disabled={loading}
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            disabled={isSubmitting}
-            className="px-4 py-2 bg-[#FEBF19] text-gray-900 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FEBF19] disabled:opacity-50"
+            disabled={loading}
           >
-            {isSubmitting ? 'Guardando...' : 'Guardar'}
-          </button>
+            {loading ? 'Guardando...' : 'Guardar'}
+          </Button>
         </div>
       </form>
     </div>
