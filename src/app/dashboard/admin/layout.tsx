@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 
 export default function AdminSectionLayout({
   children,
@@ -29,6 +30,8 @@ export default function AdminSectionLayout({
   }
 
   return (
-    <AdminLayout>{children}</AdminLayout>
+    <AuthProvider>
+      <AdminLayout>{children}</AdminLayout>
+    </AuthProvider>
   );
 } 

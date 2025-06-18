@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptionsRepairPoint } from '@/lib/auth-repair-point';
+import prisma from '@/lib/db/prisma';
+
+type ChecklistItem = {
+  itemId: number;
+  respuesta: boolean;
+  observacion?: string;
+};
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptionsRepairPoint);
 
     if (!session?.user) {
       return NextResponse.json(
@@ -18,7 +24,7 @@ export async function POST(
     }
 
     const ticketId = parseInt(params.id);
-    const { checklist } = await request.json();
+    const { checklist } = await request.json() as { checklist: ChecklistItem[] };
 
     // Obtener el punto de reparación del usuario
     const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
@@ -30,7 +36,7 @@ export async function POST(
       }
     });
 
-    if (!userPoint || !userPoint.puntoRecoleccion.isRepairPoint) {
+    if (!userPoint) {
       return NextResponse.json(
         { error: 'Usuario no autorizado para punto de reparación' },
         { status: 403 }
@@ -42,6 +48,9 @@ export async function POST(
       where: {
         id: ticketId,
         puntoRecoleccionId: userPoint.puntoRecoleccionId
+      },
+      include: {
+        reparacion: true
       }
     });
 
@@ -52,33 +61,66 @@ export async function POST(
       );
     }
 
+    if (!ticket.reparacion) {
+      return NextResponse.json(
+        { error: 'El ticket no tiene una reparación asociada' },
+        { status: 400 }
+      );
+    }
+
+    // Buscar el checklist existente
+    const existingChecklist = await prisma.checklistReparacion.findUnique({
+      where: {
+        reparacionId: ticket.reparacion.id
+      }
+    });
+
+    // Si no existe el checklist, crearlo
+    const checklistReparacion = existingChecklist || await prisma.checklistReparacion.create({
+      data: {
+        reparacionId: ticket.reparacion.id
+      }
+    });
+
     // Crear o actualizar las respuestas del checklist
     const respuestas = await Promise.all(
-      checklist.map(async (item: any) => {
-        return prisma.respuestaChecklistReparacion.upsert({
+      checklist.map(async (item) => {
+        // Buscar si ya existe una respuesta para este item
+        const existingRespuesta = await prisma.checklistRespuestaReparacion.findFirst({
           where: {
-            ticketId_itemId: {
-              ticketId: ticketId,
-              itemId: item.itemId
-            }
-          },
-          create: {
-            ticketId: ticketId,
-            itemId: item.itemId,
-            respuesta: item.respuesta,
-            observaciones: item.observacion || ''
-          },
-          update: {
-            respuesta: item.respuesta,
-            observaciones: item.observacion || ''
+            checklistReparacionId: checklistReparacion.id,
+            checklistItemId: item.itemId
           }
         });
+
+        if (existingRespuesta) {
+          // Si existe, actualizarla
+          return prisma.checklistRespuestaReparacion.update({
+            where: {
+              id: existingRespuesta.id
+            },
+            data: {
+              respuesta: item.respuesta,
+              observaciones: item.observacion || null
+            }
+          });
+        } else {
+          // Si no existe, crearla
+          return prisma.checklistRespuestaReparacion.create({
+            data: {
+              checklistReparacionId: checklistReparacion.id,
+              checklistItemId: item.itemId,
+              respuesta: item.respuesta,
+              observaciones: item.observacion || null
+            }
+          });
+        }
       })
     );
 
     return NextResponse.json({
       success: true,
-      checklist: respuestas
+      respuestas
     });
 
   } catch (error) {
@@ -95,7 +137,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptionsRepairPoint);
 
     if (!session?.user) {
       return NextResponse.json(
@@ -116,7 +158,7 @@ export async function GET(
       }
     });
 
-    if (!userPoint || !userPoint.puntoRecoleccion.isRepairPoint) {
+    if (!userPoint) {
       return NextResponse.json(
         { error: 'Usuario no autorizado para punto de reparación' },
         { status: 403 }
@@ -128,6 +170,9 @@ export async function GET(
       where: {
         id: ticketId,
         puntoRecoleccionId: userPoint.puntoRecoleccionId
+      },
+      include: {
+        reparacion: true
       }
     });
 
@@ -138,15 +183,28 @@ export async function GET(
       );
     }
 
-    // Obtener el checklist de reparación
-    const checklist = await prisma.respuestaChecklistReparacion.findMany({
+    if (!ticket.reparacion) {
+      return NextResponse.json(
+        { error: 'El ticket no tiene una reparación asociada' },
+        { status: 400 }
+      );
+    }
+
+    // Obtener el checklist de reparación con sus respuestas
+    const checklistReparacion = await prisma.checklistReparacion.findUnique({
       where: {
-        ticketId: ticketId
+        reparacionId: ticket.reparacion.id
       },
       include: {
-        item: true
+        respuestas: {
+          include: {
+            checklistItem: true
+          }
+        }
       }
     });
+
+    const checklist = checklistReparacion?.respuestas || [];
 
     return NextResponse.json({
       success: true,

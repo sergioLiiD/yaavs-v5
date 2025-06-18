@@ -28,6 +28,10 @@ declare module 'next-auth' {
     }>;
     repairPointId?: string;
     canRepair?: boolean;
+    puntoRecoleccion?: {
+      id: number;
+      nombre: string;
+    };
   }
 
   interface Session {
@@ -56,6 +60,10 @@ declare module 'next-auth' {
       }>;
       repairPointId?: string;
       canRepair?: boolean;
+      puntoRecoleccion?: {
+        id: number;
+        nombre: string;
+      };
     };
   }
 }

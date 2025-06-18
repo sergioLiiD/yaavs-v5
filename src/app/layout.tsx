@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/components/auth/AuthProvider";
 import { QueryProvider } from "@/providers/query-provider";
 import 'leaflet/dist/leaflet.css';
 
@@ -25,9 +24,7 @@ export default function RootLayout({
     <html lang="es">
       <body className={montserrat.className}>
         <QueryProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          {children}
         </QueryProvider>
       </body>
     </html>

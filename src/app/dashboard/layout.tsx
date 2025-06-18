@@ -4,8 +4,17 @@ import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, memo } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 
-const DashboardLayout = memo(function DashboardLayout({
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </AuthProvider>
+  );
+}
+
+const DashboardLayoutContent = memo(function DashboardLayoutContent({
   children,
 }: {
   children: React.ReactNode;
@@ -32,13 +41,11 @@ const DashboardLayout = memo(function DashboardLayout({
     return null;
   }
 
-  if (pathname?.startsWith('/dashboard/admin')) {
-    return <>{children}</>;
-  }
-
-  return <AdminLayout>{children}</AdminLayout>;
+  return pathname?.startsWith('/dashboard/admin') ? (
+    <>{children}</>
+  ) : (
+    <AdminLayout>{children}</AdminLayout>
+  );
 });
 
-DashboardLayout.displayName = 'DashboardLayout';
-
-export default DashboardLayout; 
+DashboardLayoutContent.displayName = 'DashboardLayoutContent'; 
