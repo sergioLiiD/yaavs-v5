@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptionsRepairPoint } from '@/lib/auth-repair-point';
 import prisma from '@/lib/db/prisma';
 
+export const dynamic = 'force-dynamic';
+
 type ChecklistItem = {
   itemId: number;
   respuesta: boolean;

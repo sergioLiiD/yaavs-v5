@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     console.log('GET /api/usuarios/tecnicos - Consultando técnicos...');

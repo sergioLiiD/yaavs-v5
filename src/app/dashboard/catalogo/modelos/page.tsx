@@ -18,7 +18,7 @@ interface Modelo {
   descripcion?: string;
   imagen?: string;
   activo?: boolean;
-  marca?: {
+  marcas?: {
     id: number;
     nombre: string;
   };
@@ -82,7 +82,7 @@ export default function ModelosPage() {
         setModelos(response.data.map((modelo: any) => ({
           ...modelo,
           id: modelo.id.toString(),
-          marcaId: modelo.marcaId.toString()
+          marcaId: modelo.marca_id.toString()
         })));
         setError('');
       } catch (err) {
@@ -124,7 +124,7 @@ export default function ModelosPage() {
         const response = await axios.put(`/api/catalogo/modelos/${currentModelo.id}`, currentModelo);
         setModelos(modelos.map(modelo => 
           modelo.id === currentModelo.id 
-            ? { ...response.data, id: response.data.id.toString(), marcaId: response.data.marcaId.toString() }
+            ? { ...response.data, id: response.data.id.toString(), marcaId: response.data.marca_id.toString() }
             : modelo
         ));
       } else {
@@ -133,7 +133,7 @@ export default function ModelosPage() {
         const newModelo = { 
           ...response.data, 
           id: response.data.id.toString(),
-          marcaId: response.data.marcaId.toString()
+          marcaId: response.data.marca_id.toString()
         };
         setModelos([...modelos, newModelo]);
       }
@@ -269,7 +269,7 @@ export default function ModelosPage() {
                       <tr key={modelo.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
-                            {modelo.marca?.nombre || getNombreMarca(modelo.marcaId.toString())}
+                            {modelo.marcas?.nombre || getNombreMarca(modelo.marcaId.toString())}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

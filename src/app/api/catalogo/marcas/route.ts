@@ -3,6 +3,8 @@ import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/catalogo/marcas
 export async function GET(req: NextRequest) {
   try {
@@ -13,7 +15,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Obtener todas las marcas
-    const marcas = await prisma.marca.findMany({
+    const marcas = await prisma.marcas.findMany({
       orderBy: { nombre: 'asc' }
     });
     
@@ -63,10 +65,11 @@ export async function POST(req: NextRequest) {
     });
 
     try {
-      const nuevaMarca = await prisma.marca.create({
+      const nuevaMarca = await prisma.marcas.create({
         data: {
           nombre: body.nombre,
-          descripcion: body.descripcion || null
+          descripcion: body.descripcion || null,
+          updated_at: new Date()
         }
       });
       

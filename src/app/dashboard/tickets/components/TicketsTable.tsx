@@ -21,10 +21,20 @@ import { toast } from "sonner";
 
 interface Ticket {
   id: number;
-  numeroTicket: string;
-  fechaRecepcion: string;
-  descripcionProblema: string | null;
-  cliente?: {
+  numero_ticket: string;
+  numeroTicket?: string; // Para compatibilidad
+  fecha_recepcion: string;
+  fechaRecepcion?: string; // Para compatibilidad
+  descripcion_problema: string | null;
+  clientes?: {
+    id: number;
+    nombre: string;
+    apellido_paterno: string;
+    apellido_materno?: string;
+    telefono_celular: string;
+    email: string;
+  };
+  cliente?: { // Para compatibilidad
     id: number;
     nombre: string;
     apellidoPaterno: string;
@@ -32,7 +42,15 @@ interface Ticket {
     telefonoCelular: string;
     email: string;
   };
-  modelo?: {
+  modelos?: {
+    id: number;
+    nombre: string;
+    marcas: {
+      id: number;
+      nombre: string;
+    };
+  };
+  modelo?: { // Para compatibilidad
     id: number;
     nombre: string;
     marca: {
@@ -40,11 +58,15 @@ interface Ticket {
       nombre: string;
     };
   };
-  tipoServicio?: {
+  tipos_servicio?: {
     id: number;
     nombre: string;
   };
-  estatusReparacion?: {
+  estatus_reparacion?: {
+    id: number;
+    nombre: string;
+  };
+  estatusReparacion?: { // Para compatibilidad
     id: number;
     nombre: string;
   };
@@ -113,15 +135,15 @@ export function TicketsTable({ tickets, onAssignTechnician }: TicketsTableProps)
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const router = useRouter();
 
-  const filteredTickets = tickets.filter((ticket) => {
+  const filteredTickets = tickets.filter((ticket: any) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      ticket.numeroTicket.toLowerCase().includes(searchLower) ||
-      ticket.cliente?.nombre.toLowerCase().includes(searchLower) ||
-      ticket.cliente?.apellidoPaterno.toLowerCase().includes(searchLower) ||
-      ticket.modelo?.marca.nombre.toLowerCase().includes(searchLower) ||
-      ticket.modelo?.nombre.toLowerCase().includes(searchLower) ||
-      ticket.estatusReparacion?.nombre.toLowerCase().includes(searchLower)
+      (ticket.numero_ticket || ticket.numeroTicket || '')?.toLowerCase().includes(searchLower) ||
+      (ticket.clientes?.nombre || ticket.cliente?.nombre || '')?.toLowerCase().includes(searchLower) ||
+      (ticket.clientes?.apellido_paterno || ticket.cliente?.apellidoPaterno || '')?.toLowerCase().includes(searchLower) ||
+      (ticket.modelos?.marcas?.nombre || ticket.modelo?.marca?.nombre || '')?.toLowerCase().includes(searchLower) ||
+      (ticket.modelos?.nombre || ticket.modelo?.nombre || '')?.toLowerCase().includes(searchLower) ||
+      (ticket.estatus_reparacion?.nombre || ticket.estatusReparacion?.nombre || '')?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -210,25 +232,29 @@ export function TicketsTable({ tickets, onAssignTechnician }: TicketsTableProps)
                         onClick={() => handleViewDetails(ticket)}
                         className="text-blue-600 hover:text-blue-800 hover:underline"
                       >
-                        #{ticket.numeroTicket}
+                        #{ticket.numero_ticket || ticket.numeroTicket}
                       </button>
                     </TableCell>
                     <TableCell>
-                      {ticket.cliente
-                        ? `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno} ${
-                          ticket.cliente.apellidoMaterno || ''
+                      {(ticket.clientes || ticket.cliente)
+                        ? `${(ticket.clientes || ticket.cliente)!.nombre} ${(ticket.clientes || ticket.cliente)!.apellido_paterno || (ticket.clientes || ticket.cliente)!.apellidoPaterno} ${
+                          (ticket.clientes || ticket.cliente)!.apellido_materno || (ticket.clientes || ticket.cliente)!.apellidoMaterno || ''
                         }`
                         : "No disponible"}
                     </TableCell>
                     <TableCell>
-                      {ticket.modelo
-                        ? `${ticket.modelo.marca.nombre} ${ticket.modelo.nombre}`
+                      {(ticket.modelos || ticket.modelo)
+                        ? `${(ticket.modelos?.marcas || ticket.modelo?.marca)?.nombre} ${(ticket.modelos || ticket.modelo)?.nombre}`
                         : "No disponible"}
                     </TableCell>
                     <TableCell>
-                      <TicketStatusBadge status={ticket.estatusReparacion?.nombre || ""} />
+                      <TicketStatusBadge status={(ticket.estatus_reparacion || ticket.estatusReparacion)?.nombre || ""} />
                     </TableCell>
-                    <TableCell>{formatDate(ticket.fechaRecepcion)}</TableCell>
+                    <TableCell>
+                      {(ticket.fecha_recepcion || ticket.fechaRecepcion) 
+                        ? formatDate(ticket.fecha_recepcion || ticket.fechaRecepcion!) 
+                        : 'Fecha no disponible'}
+                    </TableCell>
                     <TableCell>
                       {ticket.tecnicoAsignado
                         ? `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno}`

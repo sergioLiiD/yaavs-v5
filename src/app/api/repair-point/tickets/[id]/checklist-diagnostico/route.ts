@@ -4,6 +4,8 @@ import { authOptionsRepairPoint } from '@/lib/auth-repair-point';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 interface ChecklistItem {
   itemId: number;
   respuesta: boolean;

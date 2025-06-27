@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { ChecklistService } from '@/services/checklistService';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/catalogo/checklist
 export async function GET() {
   try {

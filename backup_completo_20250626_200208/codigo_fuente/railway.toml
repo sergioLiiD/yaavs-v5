@@ -1,0 +1,24 @@
+[build]
+builder = "nixpacks"
+buildCommand = "rm -f package-lock.json && npm install --legacy-peer-deps && npm run build"
+
+[deploy]
+startCommand = "node .next/standalone/server.js"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+restartPolicy = "on-failure"
+restartPolicyMaxRetries = 10
+port = 8080
+
+[deploy.healthcheck]
+interval = "60s"
+timeout = "60s"
+retries = 5
+startPeriod = "120s"
+
+[deploy.start]
+command = "node .next/standalone/server.js"
+
+[deploy.proxy]
+port = 8080
+target = "http://localhost:8080" 

@@ -14,16 +14,24 @@ function formatTime(time: string) {
 function formatHorario(horario: any) {
   if (!horario) return [];
 
-  const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  const diasMap = {
+    'monday': 'Lunes',
+    'tuesday': 'Martes', 
+    'wednesday': 'Miércoles',
+    'thursday': 'Jueves',
+    'friday': 'Viernes',
+    'saturday': 'Sábado',
+    'sunday': 'Domingo'
+  };
+
   const horarioFormateado = [];
 
-  for (const dia of dias) {
-    const diaLower = dia.toLowerCase();
-    if (horario[diaLower]) {
-      const { abre, cierra } = horario[diaLower];
+  for (const [diaEn, diaEs] of Object.entries(diasMap)) {
+    if (horario[diaEn] && horario[diaEn].open) {
+      const { start, end } = horario[diaEn];
       horarioFormateado.push({
-        dia,
-        horario: `${formatTime(abre)} - ${formatTime(cierra)}`
+        dia: diaEs,
+        horario: `${formatTime(start)} - ${formatTime(end)}`
       });
     }
   }
@@ -40,18 +48,18 @@ export default async function RepairPointPage() {
 
   try {
     // Obtener el punto de reparación del usuario
-    const user = await prisma.usuario.findUnique({
+    const user = await prisma.usuarios.findUnique({
       where: { id: session.user.id },
       include: {
-        puntosRecoleccion: {
+        usuarios_puntos_recoleccion: {
           include: {
-            puntoRecoleccion: true
+            puntos_recoleccion: true
           }
         }
       }
     });
 
-    if (!user?.puntosRecoleccion?.[0]?.puntoRecoleccion) {
+    if (!user?.usuarios_puntos_recoleccion?.[0]?.puntos_recoleccion) {
       return (
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
@@ -66,29 +74,29 @@ export default async function RepairPointPage() {
       );
     }
 
-    const puntoRecoleccion = user.puntosRecoleccion[0].puntoRecoleccion;
+    const puntoRecoleccion = user.usuarios_puntos_recoleccion[0].puntos_recoleccion;
 
     // Obtener estadísticas básicas
     const [totalTickets, ticketsPendientes, ticketsEnProceso] = await Promise.all([
-      prisma.ticket.count({
-        where: { puntoRecoleccionId: puntoRecoleccion.id }
+      prisma.tickets.count({
+        where: { punto_recoleccion_id: puntoRecoleccion.id }
       }),
-      prisma.ticket.count({
+      prisma.tickets.count({
         where: { 
-          puntoRecoleccionId: puntoRecoleccion.id,
-          estatusReparacionId: 1 // PENDIENTE
+          punto_recoleccion_id: puntoRecoleccion.id,
+          estatus_reparacion_id: 1 // PENDIENTE
         }
       }),
-      prisma.ticket.count({
+      prisma.tickets.count({
         where: { 
-          puntoRecoleccionId: puntoRecoleccion.id,
-          estatusReparacionId: 2 // EN_PROCESO
+          punto_recoleccion_id: puntoRecoleccion.id,
+          estatus_reparacion_id: 2 // EN_PROCESO
         }
       })
     ]);
 
-    const horario = puntoRecoleccion.horario && typeof puntoRecoleccion.horario === 'object'
-      ? formatHorario(puntoRecoleccion.horario)
+    const horario = puntoRecoleccion.schedule && typeof puntoRecoleccion.schedule === 'object'
+      ? formatHorario(puntoRecoleccion.schedule)
       : [];
 
     return (
@@ -121,10 +129,10 @@ export default async function RepairPointPage() {
                 <span className="font-medium">Nombre:</span> {puntoRecoleccion.nombre}
               </p>
               <p className="text-sm text-gray-500">
-                <span className="font-medium">Dirección:</span> {puntoRecoleccion.ubicacion && typeof puntoRecoleccion.ubicacion === 'object' ? (puntoRecoleccion.ubicacion as any).address : 'No disponible'}
+                <span className="font-medium">Dirección:</span> {puntoRecoleccion.location && typeof puntoRecoleccion.location === 'object' ? (puntoRecoleccion.location as any).address : 'No disponible'}
               </p>
               <p className="text-sm text-gray-500">
-                <span className="font-medium">Teléfono:</span> {puntoRecoleccion.telefono}
+                <span className="font-medium">Teléfono:</span> {puntoRecoleccion.phone}
               </p>
             </div>
           </div>

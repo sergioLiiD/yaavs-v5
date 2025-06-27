@@ -51,7 +51,6 @@ declare module 'next-auth/jwt' {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
@@ -70,28 +69,28 @@ export const authOptions: NextAuthOptions = {
         }
 
         console.log('Buscando usuario en la base de datos...');
-        const user = await prisma.usuario.findUnique({
+        const user = await prisma.usuarios.findUnique({
           where: { 
             email: credentials.email,
             activo: true
           },
           include: {
-            usuarioRoles: {
+            usuarios_roles: {
               include: {
-                rol: {
+                roles: {
                   include: {
-                    permisos: {
+                    roles_permisos: {
                       include: {
-                        permiso: true
+                        permisos: true
                       }
                     }
                   }
                 }
               }
             },
-            puntosRecoleccion: {
+            usuarios_puntos_recoleccion: {
               include: {
-                puntoRecoleccion: true
+                puntos_recoleccion: true
               }
             }
           }
@@ -105,7 +104,7 @@ export const authOptions: NextAuthOptions = {
         console.log('Usuario encontrado:', user.email);
         console.log('Verificando contraseña...');
 
-        const isPasswordValid = await compare(credentials.password, user.passwordHash);
+        const isPasswordValid = await compare(credentials.password, user.password_hash);
 
         if (!isPasswordValid) {
           console.log('Contraseña inválida');
@@ -113,36 +112,36 @@ export const authOptions: NextAuthOptions = {
         }
 
         console.log('Contraseña válida');
-        console.log('Roles del usuario:', user.usuarioRoles.map(ur => ur.rol.nombre));
+        console.log('Roles del usuario:', user.usuarios_roles.map((ur: any) => ur.roles.nombre));
 
         // Preparar el objeto de usuario con roles y permisos anidados
         const userWithRoles: CustomUser = {
-          id: parseInt(user.id.toString(), 10),
+          id: Number(user.id),
           email: user.email,
           name: user.nombre,
-          role: user.usuarioRoles[0]?.rol?.nombre || 'USER',
-          permissions: user.usuarioRoles.flatMap(ur => 
-            ur.rol.permisos.map(p => p.permiso.codigo)
+          role: user.usuarios_roles[0]?.roles?.nombre || 'USER',
+          permissions: user.usuarios_roles.flatMap((ur: any) => 
+            ur.roles.roles_permisos.map((p: any) => p.permisos.codigo)
           ),
-          roles: user.usuarioRoles.map(ur => ({
+          roles: user.usuarios_roles.map((ur: any) => ({
             rol: {
-              id: ur.rol.id,
-              nombre: ur.rol.nombre,
-              descripcion: ur.rol.descripcion || '',
-              permisos: ur.rol.permisos.map(p => ({
+              id: ur.roles.id,
+              nombre: ur.roles.nombre,
+              descripcion: ur.roles.descripcion || '',
+              permisos: ur.roles.roles_permisos.map((p: any) => ({
                 permiso: {
-                  id: p.permiso.id,
-                  codigo: p.permiso.codigo,
-                  nombre: p.permiso.nombre,
-                  descripcion: p.permiso.descripcion || '',
-                  categoria: p.permiso.categoria
+                  id: p.permisos.id,
+                  codigo: p.permisos.codigo,
+                  nombre: p.permisos.nombre,
+                  descripcion: p.permisos.descripcion || '',
+                  categoria: p.permisos.categoria
                 }
               }))
             }
           })),
-          puntoRecoleccion: user.puntosRecoleccion[0]?.puntoRecoleccion ? {
-            id: user.puntosRecoleccion[0].puntoRecoleccion.id,
-            nombre: user.puntosRecoleccion[0].puntoRecoleccion.nombre
+          puntoRecoleccion: user.usuarios_puntos_recoleccion[0]?.puntos_recoleccion ? {
+            id: user.usuarios_puntos_recoleccion[0].puntos_recoleccion.id,
+            nombre: user.usuarios_puntos_recoleccion[0].puntos_recoleccion.nombre
           } : undefined
         };
 
@@ -174,7 +173,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token) {
         session.user = {
-          id: typeof token.id === 'string' ? parseInt(token.id, 10) : token.id,
+          id: Number(token.id),
           email: token.email as string,
           name: token.name as string,
           role: token.role as string,

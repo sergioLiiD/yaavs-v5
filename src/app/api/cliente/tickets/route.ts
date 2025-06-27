@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
 import { verifyToken } from '@/lib/jwt';
 import { ClienteService } from '@/services/clienteService';
 import prisma from '@/lib/db/prisma';
@@ -67,7 +69,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Obtener el estado inicial (RECIBIDO)
-    const estadoInicial = await prisma.estatusReparacion.findFirst({
+    const estadoInicial = await prisma.estatus_reparacion.findFirst({
       where: {
         nombre: 'Recibido'
       }
@@ -84,9 +86,9 @@ export async function POST(req: NextRequest) {
     console.log('Estado inicial encontrado:', estadoInicial);
 
     // Obtener el modelo para obtener la marca
-    const modelo = await prisma.modelo.findUnique({
+    const modelo = await prisma.modelos.findUnique({
       where: { id: Number(body.modeloId) },
-      include: { marca: true }
+      include: { marcas: true }
     });
 
     if (!modelo) {
@@ -97,12 +99,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Buscar un usuario administrador para usar como creador
-    const usuarioCreador = await prisma.usuario.findFirst({
+    const usuarioCreador = await prisma.usuarios.findFirst({
       where: {
-        activo: true,
-        usuarioRoles: {
+        usuarios_roles: {
           some: {
-            rol: {
+            roles: {
               nombre: 'ADMINISTRADOR'
             }
           }
@@ -118,28 +119,29 @@ export async function POST(req: NextRequest) {
     }
 
     // Crear el ticket
-    const ticket = await prisma.ticket.create({
+    const ticket = await prisma.tickets.create({
       data: {
-        numeroTicket: `TKT-${Date.now()}`,
-        clienteId: cliente.id,
-        tipoServicioId: 1, // Servicio de reparación
-        modeloId: Number(body.modeloId),
-        descripcionProblema: body.descripcionProblema,
-        estatusReparacionId: estadoInicial.id, // Usar el ID del estado Recibido
-        creadorId: usuarioCreador.id,
+        numero_ticket: `TKT-${Date.now()}`,
+        cliente_id: cliente.id,
+        tipo_servicio_id: 1, // Servicio de reparación
+        modelo_id: Number(body.modeloId),
+        descripcion_problema: body.descripcionProblema,
+        estatus_reparacion_id: estadoInicial.id, // Usar el ID del estado Recibido
+        creador_id: usuarioCreador.id,
         capacidad: body.capacidad,
         color: body.color,
-        fechaCompra: body.fechaCompra ? new Date(body.fechaCompra) : null,
-        tipoDesbloqueo: body.tipoDesbloqueo,
-        codigoDesbloqueo: body.tipoDesbloqueo === 'pin' ? body.codigoDesbloqueo : null,
-        patronDesbloqueo: body.tipoDesbloqueo === 'patron' ? body.patronDesbloqueo : [],
-        redCelular: body.redCelular,
-        dispositivo: {
+        fecha_compra: body.fechaCompra ? new Date(body.fechaCompra) : null,
+        tipo_desbloqueo: body.tipoDesbloqueo,
+        codigo_desbloqueo: body.tipoDesbloqueo === 'pin' ? body.codigoDesbloqueo : null,
+        patron_desbloqueo: body.tipoDesbloqueo === 'patron' ? body.patronDesbloqueo : [],
+        red_celular: body.redCelular,
+        updated_at: new Date(),
+        dispositivos: {
           create: {
             tipo: 'Smartphone',
-            marca: 'Apple',
-            modelo: 'iPhone 16 Pro',
-            updatedAt: new Date()
+            marca: modelo.marcas?.nombre || 'Apple',
+            modelo: modelo.nombre || 'iPhone 16 Pro',
+            updated_at: new Date()
           }
         }
       }
@@ -149,45 +151,69 @@ export async function POST(req: NextRequest) {
 
     // Crear la dirección solo si el tipo de recolección es domicilio
     if (body.tipoRecoleccion === 'domicilio' && body.direccion) {
-      await prisma.direccion.create({
+      await prisma.direcciones.create({
         data: {
           calle: body.direccion.calle,
-          numeroExterior: body.direccion.numeroExterior,
-          numeroInterior: body.direccion.numeroInterior,
+          numero_exterior: body.direccion.numeroExterior,
+          numero_interior: body.direccion.numeroInterior,
           colonia: body.direccion.colonia,
           ciudad: body.direccion.ciudad,
           estado: body.direccion.estado,
-          codigoPostal: body.direccion.codigoPostal,
+          codigo_postal: body.direccion.codigoPostal,
           latitud: body.direccion.latitud,
           longitud: body.direccion.longitud,
-          cliente: {
-            connect: {
-              id: cliente.id
-            }
-          },
-          tickets: { connect: { id: ticket.id } },
-          updatedAt: new Date()
+          cliente_id: cliente.id,
+          updated_at: new Date()
         }
       });
     }
 
     // Obtener el ticket completo con sus relaciones
-    const ticketCompleto = await prisma.ticket.findUnique({
+    const ticketCompleto = await prisma.tickets.findUnique({
       where: { id: ticket.id },
       include: {
-        dispositivo: true,
-        direccion: true,
-        cliente: true,
-        modelo: {
+        dispositivos: true,
+        clientes: true,
+        modelos: {
           include: {
-            marca: true
+            marcas: true
           }
         },
-        estatusReparacion: true
+        estatus_reparacion: true
       }
     });
 
-    return NextResponse.json(ticketCompleto);
+    // Mapear los datos a formato camelCase para el frontend
+    const ticketMapeado = {
+      ...ticketCompleto,
+      numeroTicket: ticketCompleto?.numero_ticket,
+      clienteId: ticketCompleto?.cliente_id,
+      tipoServicioId: ticketCompleto?.tipo_servicio_id,
+      modeloId: ticketCompleto?.modelo_id,
+      descripcionProblema: ticketCompleto?.descripcion_problema,
+      estatusReparacionId: ticketCompleto?.estatus_reparacion_id,
+      creadorId: ticketCompleto?.creador_id,
+      fechaCompra: ticketCompleto?.fecha_compra,
+      tipoDesbloqueo: ticketCompleto?.tipo_desbloqueo,
+      codigoDesbloqueo: ticketCompleto?.codigo_desbloqueo,
+      patronDesbloqueo: ticketCompleto?.patron_desbloqueo,
+      redCelular: ticketCompleto?.red_celular,
+      createdAt: ticketCompleto?.created_at,
+      updatedAt: ticketCompleto?.updated_at,
+      dispositivo: ticketCompleto?.dispositivos,
+      direccion: null,
+      cliente: ticketCompleto?.clientes,
+      modelo: ticketCompleto?.modelos ? {
+        ...ticketCompleto.modelos,
+        marcaId: ticketCompleto.modelos.marca_id,
+        createdAt: ticketCompleto.modelos.created_at,
+        updatedAt: ticketCompleto.modelos.updated_at,
+        marca: ticketCompleto.modelos.marcas
+      } : null,
+      estatusReparacion: ticketCompleto?.estatus_reparacion
+    };
+
+    return NextResponse.json(ticketMapeado);
   } catch (error) {
     console.error('Error al crear ticket:', error);
     return NextResponse.json(
@@ -227,30 +253,30 @@ export async function GET(req: NextRequest) {
     }
 
     // Obtener los tickets del cliente
-    const tickets = await prisma.ticket.findMany({
+    const tickets = await prisma.tickets.findMany({
       where: {
-        clienteId: cliente.id
+        cliente_id: cliente.id
       },
       include: {
-        tipoServicio: true,
-        modelo: {
+        tipos_servicio: true,
+        modelos: {
           include: {
-            marca: true,
+            marcas: true,
           },
         },
-        estatusReparacion: true,
-        tecnicoAsignado: true,
-        presupuesto: true,
-        reparacion: true,
-        dispositivo: true,
+        estatus_reparacion: true,
+        usuarios_tickets_tecnico_asignado_idTousuarios: true,
+        presupuestos: true,
+        reparaciones: true,
+        dispositivos: true,
         pagos: {
           orderBy: {
-            createdAt: 'desc'
+            created_at: 'desc'
           }
         }
       },
       orderBy: {
-        createdAt: 'desc',
+        created_at: 'desc',
       },
     });
 

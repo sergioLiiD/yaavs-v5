@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     console.log('Iniciando GET /api/roles');
@@ -23,14 +25,14 @@ export async function GET(request: Request) {
     }
 
     try {
-      const roles = await prisma.rol.findMany({
+      const roles = await prisma.roles.findMany({
         select: {
           id: true,
           nombre: true,
           descripcion: true,
-          permisos: {
+          roles_permisos: {
             select: {
-              permiso: {
+              permisos: {
                 select: {
                   id: true,
                   nombre: true,
@@ -53,10 +55,10 @@ export async function GET(request: Request) {
         id: rol.id,
         nombre: rol.nombre,
         descripcion: rol.descripcion,
-        permisos: rol.permisos.map(p => ({
-          id: p.permiso.id,
-          nombre: p.permiso.nombre,
-          descripcion: p.permiso.descripcion
+        permisos: rol.roles_permisos.map(p => ({
+          id: p.permisos.id,
+          nombre: p.permisos.nombre,
+          descripcion: p.permisos.descripcion
         }))
       }));
 
@@ -102,22 +104,23 @@ export async function POST(request: Request) {
       );
     }
 
-    const rol = await prisma.rol.create({
+    const rol = await prisma.roles.create({
       data: {
         nombre,
         descripcion,
-        permisos: {
+        updated_at: new Date(),
+        roles_permisos: {
           create: permisos.map((permisoId: number) => ({
-            permiso: {
+            permisos: {
               connect: { id: permisoId }
             }
           }))
         }
       },
       include: {
-        permisos: {
+        roles_permisos: {
           include: {
-            permiso: true
+            permisos: true
           }
         }
       }

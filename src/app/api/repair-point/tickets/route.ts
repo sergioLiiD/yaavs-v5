@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -12,28 +14,79 @@ export async function GET() {
 
     // Si es ADMINISTRADOR, mostrar todos los tickets
     if (session.user.role === 'ADMINISTRADOR') {
-      const tickets = await prisma.ticket.findMany({
+      const ticketsRaw = await prisma.tickets.findMany({
         where: {
           cancelado: false
         },
         include: {
-          cliente: true,
-          modelo: {
+          clientes: true,
+          modelos: {
             include: {
-              marca: true
+              marcas: true
             }
           },
-          estatusReparacion: true,
-          puntoRecoleccion: {
+          estatus_reparacion: true,
+          puntos_recoleccion: {
             select: {
-              isRepairPoint: true
+              is_repair_point: true
             }
           }
         },
         orderBy: {
-          createdAt: 'desc'
+          created_at: 'desc'
         }
       });
+
+      // Mapear los datos a formato camelCase para el frontend
+      const tickets = ticketsRaw.map((ticket: any) => ({
+        id: ticket.id,
+        numeroTicket: ticket.numero_ticket,
+        fechaRecepcion: ticket.fecha_recepcion,
+        descripcionProblema: ticket.descripcion_problema,
+        imei: ticket.imei,
+        capacidad: ticket.capacidad,
+        color: ticket.color,
+        fechaCompra: ticket.fecha_compra,
+        tipoDesbloqueo: ticket.tipo_desbloqueo,
+        codigoDesbloqueo: ticket.codigo_desbloqueo,
+        patronDesbloqueo: ticket.patron_desbloqueo,
+        redCelular: ticket.red_celular,
+        cancelado: ticket.cancelado,
+        createdAt: ticket.created_at,
+        updatedAt: ticket.updated_at,
+        clienteId: ticket.cliente_id,
+        modeloId: ticket.modelo_id,
+        creadorId: ticket.creador_id,
+        estatusReparacionId: ticket.estatus_reparacion_id,
+        puntoRecoleccionId: ticket.punto_recoleccion_id,
+        tipoServicioId: ticket.tipo_servicio_id,
+        cliente: ticket.clientes ? {
+          id: ticket.clientes.id,
+          nombre: ticket.clientes.nombre,
+          apellidoPaterno: ticket.clientes.apellido_paterno,
+          apellidoMaterno: ticket.clientes.apellido_materno,
+          email: ticket.clientes.email,
+          telefonoCelular: ticket.clientes.telefono_celular
+        } : null,
+        modelo: ticket.modelos ? {
+          id: ticket.modelos.id,
+          nombre: ticket.modelos.nombre,
+          marcaId: ticket.modelos.marca_id,
+          marca: ticket.modelos.marcas ? {
+            id: ticket.modelos.marcas.id,
+            nombre: ticket.modelos.marcas.nombre
+          } : null
+        } : null,
+        estatusReparacion: ticket.estatus_reparacion ? {
+          id: ticket.estatus_reparacion.id,
+          nombre: ticket.estatus_reparacion.nombre,
+          descripcion: ticket.estatus_reparacion.descripcion,
+          color: ticket.estatus_reparacion.color
+        } : null,
+        puntoRecoleccion: ticket.puntos_recoleccion ? {
+          isRepairPoint: ticket.puntos_recoleccion.is_repair_point
+        } : null
+      }));
 
       return NextResponse.json(tickets);
     }
@@ -49,29 +102,80 @@ export async function GET() {
     }
 
     // Obtener los tickets asociados al punto de recolección
-    const tickets = await prisma.ticket.findMany({
+    const ticketsRaw = await prisma.tickets.findMany({
       where: {
-        puntoRecoleccionId: userPointId,
+        punto_recoleccion_id: userPointId,
         cancelado: false
       },
       include: {
-        cliente: true,
-        modelo: {
+        clientes: true,
+        modelos: {
           include: {
-            marca: true
+            marcas: true
           }
         },
-        estatusReparacion: true,
-        puntoRecoleccion: {
+        estatus_reparacion: true,
+        puntos_recoleccion: {
           select: {
-            isRepairPoint: true
+            is_repair_point: true
           }
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        created_at: 'desc'
       }
     });
+
+    // Mapear los datos a formato camelCase para el frontend
+    const tickets = ticketsRaw.map((ticket: any) => ({
+      id: ticket.id,
+      numeroTicket: ticket.numero_ticket,
+      fechaRecepcion: ticket.fecha_recepcion,
+      descripcionProblema: ticket.descripcion_problema,
+      imei: ticket.imei,
+      capacidad: ticket.capacidad,
+      color: ticket.color,
+      fechaCompra: ticket.fecha_compra,
+      tipoDesbloqueo: ticket.tipo_desbloqueo,
+      codigoDesbloqueo: ticket.codigo_desbloqueo,
+      patronDesbloqueo: ticket.patron_desbloqueo,
+      redCelular: ticket.red_celular,
+      cancelado: ticket.cancelado,
+      createdAt: ticket.created_at,
+      updatedAt: ticket.updated_at,
+      clienteId: ticket.cliente_id,
+      modeloId: ticket.modelo_id,
+      creadorId: ticket.creador_id,
+      estatusReparacionId: ticket.estatus_reparacion_id,
+      puntoRecoleccionId: ticket.punto_recoleccion_id,
+      tipoServicioId: ticket.tipo_servicio_id,
+      cliente: ticket.clientes ? {
+        id: ticket.clientes.id,
+        nombre: ticket.clientes.nombre,
+        apellidoPaterno: ticket.clientes.apellido_paterno,
+        apellidoMaterno: ticket.clientes.apellido_materno,
+        email: ticket.clientes.email,
+        telefonoCelular: ticket.clientes.telefono_celular
+      } : null,
+      modelo: ticket.modelos ? {
+        id: ticket.modelos.id,
+        nombre: ticket.modelos.nombre,
+        marcaId: ticket.modelos.marca_id,
+        marca: ticket.modelos.marcas ? {
+          id: ticket.modelos.marcas.id,
+          nombre: ticket.modelos.marcas.nombre
+        } : null
+      } : null,
+      estatusReparacion: ticket.estatus_reparacion ? {
+        id: ticket.estatus_reparacion.id,
+        nombre: ticket.estatus_reparacion.nombre,
+        descripcion: ticket.estatus_reparacion.descripcion,
+        color: ticket.estatus_reparacion.color
+      } : null,
+      puntoRecoleccion: ticket.puntos_recoleccion ? {
+        isRepairPoint: ticket.puntos_recoleccion.is_repair_point
+      } : null
+    }));
 
     return NextResponse.json(tickets);
   } catch (error) {
@@ -107,7 +211,7 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     // Obtener el estatus inicial "Recibido"
-    const estatusInicial = await prisma.estatusReparacion.findFirst({
+    const estatusInicial = await prisma.estatus_reparacion.findFirst({
       where: { 
         nombre: 'Recibido',
         activo: true
@@ -125,51 +229,55 @@ export async function POST(request: Request) {
     console.log('Estatus inicial encontrado:', estatusInicial);
 
     // Crear el ticket
-    const ticket = await prisma.ticket.create({
+    const ticketRaw = await prisma.tickets.create({
       data: {
-        numeroTicket: `TICK-${Date.now()}`,
-        descripcionProblema: body.descripcionProblema,
+        numero_ticket: `TICK-${Date.now()}`,
+        fecha_recepcion: new Date(),
+        descripcion_problema: body.descripcionProblema,
         imei: body.imei,
         capacidad: body.capacidad,
         color: body.color,
-        fechaCompra: body.fechaCompra ? new Date(body.fechaCompra) : null,
-        tipoDesbloqueo: body.tipoDesbloqueo,
-        codigoDesbloqueo: body.tipoDesbloqueo === 'pin' ? body.codigoDesbloqueo : null,
-        patronDesbloqueo: body.tipoDesbloqueo === 'patron' ? body.patronDesbloqueo : [],
-        redCelular: body.redCelular,
+        fecha_compra: body.fechaCompra ? new Date(body.fechaCompra) : null,
+        tipo_desbloqueo: body.tipoDesbloqueo,
+        codigo_desbloqueo: body.tipoDesbloqueo === 'pin' ? body.codigoDesbloqueo : null,
+        patron_desbloqueo: body.tipoDesbloqueo === 'patron' ? body.patronDesbloqueo.map(Number) : [],
+        red_celular: body.redCelular,
         cancelado: false,
-        cliente: {
-          connect: {
-            id: parseInt(body.clienteId)
-          }
-        },
-        modelo: {
-          connect: {
-            id: parseInt(body.modeloId)
-          }
-        },
-        creador: {
-          connect: {
-            id: session.user.id
-          }
-        },
-        estatusReparacion: {
-          connect: {
-            id: estatusInicial.id
-          }
-        },
-        puntoRecoleccion: {
-          connect: {
-            id: userPointId
-          }
-        },
-        tipoServicio: {
-          connect: {
-            id: parseInt(body.tipoServicioId) || 1 // Usar 1 como valor por defecto si no hay tipoServicioId
-          }
-        }
+        cliente_id: parseInt(body.clienteId),
+        modelo_id: parseInt(body.modeloId),
+        creador_id: session.user.id,
+        estatus_reparacion_id: estatusInicial.id,
+        punto_recoleccion_id: userPointId,
+        tipo_servicio_id: parseInt(body.tipoServicioId) || 1,
+        created_at: new Date(),
+        updated_at: new Date()
       }
     });
+
+    // Mapear a formato camelCase para el frontend
+    const ticket = {
+      id: ticketRaw.id,
+      numeroTicket: ticketRaw.numero_ticket,
+      fechaRecepcion: ticketRaw.fecha_recepcion,
+      descripcionProblema: ticketRaw.descripcion_problema,
+      imei: ticketRaw.imei,
+      capacidad: ticketRaw.capacidad,
+      color: ticketRaw.color,
+      fechaCompra: ticketRaw.fecha_compra,
+      tipoDesbloqueo: ticketRaw.tipo_desbloqueo,
+      codigoDesbloqueo: ticketRaw.codigo_desbloqueo,
+      patronDesbloqueo: ticketRaw.patron_desbloqueo,
+      redCelular: ticketRaw.red_celular,
+      cancelado: ticketRaw.cancelado,
+      createdAt: ticketRaw.created_at,
+      updatedAt: ticketRaw.updated_at,
+      clienteId: ticketRaw.cliente_id,
+      modeloId: ticketRaw.modelo_id,
+      creadorId: ticketRaw.creador_id,
+      estatusReparacionId: ticketRaw.estatus_reparacion_id,
+      puntoRecoleccionId: ticketRaw.punto_recoleccion_id,
+      tipoServicioId: ticketRaw.tipo_servicio_id
+    };
 
     console.log('Ticket creado:', ticket);
 

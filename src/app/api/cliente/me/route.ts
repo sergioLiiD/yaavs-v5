@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
 import { verifyToken } from '@/lib/jwt';
 import { ClienteService } from '@/services/clienteService';
 

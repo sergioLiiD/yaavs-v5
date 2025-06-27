@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { ClienteService } from '@/services/clienteService';
 import { generateToken } from '@/lib/jwt';
 
+export const dynamic = 'force-dynamic';
+
 // Configurar para usar Node.js runtime
 export const runtime = 'nodejs';
 
@@ -49,25 +51,25 @@ export async function POST(request: Request) {
       cliente: {
         id: cliente.id,
         nombre: cliente.nombre,
-        apellidoPaterno: cliente.apellidoPaterno,
-        apellidoMaterno: cliente.apellidoMaterno,
+        apellidoPaterno: cliente.apellido_paterno,
+        apellidoMaterno: cliente.apellido_materno,
         email: cliente.email,
-        telefonoCelular: cliente.telefonoCelular,
-        telefonoContacto: cliente.telefonoContacto,
+        telefonoCelular: cliente.telefono_celular,
+        telefonoContacto: cliente.telefono_contacto,
         calle: cliente.calle,
-        numeroExterior: cliente.numeroExterior,
-        numeroInterior: cliente.numeroInterior,
+        numeroExterior: cliente.numero_exterior,
+        numeroInterior: cliente.numero_interior,
         colonia: cliente.colonia,
         ciudad: cliente.ciudad,
         estado: cliente.estado,
-        codigoPostal: cliente.codigoPostal,
+        codigoPostal: cliente.codigo_postal,
         latitud: cliente.latitud,
         longitud: cliente.longitud,
-        fuenteReferencia: cliente.fuenteReferencia,
+        fuenteReferencia: cliente.fuente_referencia,
         rfc: cliente.rfc,
-        tipoRegistro: cliente.tipoRegistro,
-        createdAt: cliente.createdAt,
-        updatedAt: cliente.updatedAt,
+        tipoRegistro: cliente.tipo_registro,
+        createdAt: cliente.created_at,
+        updatedAt: cliente.updated_at,
       },
       token,
     });

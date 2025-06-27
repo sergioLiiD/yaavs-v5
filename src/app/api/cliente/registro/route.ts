@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 // Esquema de validación para el registro de clientes
 const clienteSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),

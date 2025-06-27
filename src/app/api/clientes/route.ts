@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { Prisma, Cliente, Usuario } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+
+export const dynamic = 'force-dynamic';
 
 // Esquema de validación para el registro de clientes
 const clienteSchema = z.object({
@@ -90,14 +92,14 @@ export async function GET(request: Request) {
     const skip = (page - 1) * limit;
 
     // Construir el where base con búsqueda
-    let where: Prisma.ClienteWhereInput = {};
+    let where: Prisma.clientesWhereInput = {};
     if (search) {
       where.OR = [
         { nombre: { contains: search, mode: 'insensitive' } },
-        { apellidoPaterno: { contains: search, mode: 'insensitive' } },
-        { apellidoMaterno: { contains: search, mode: 'insensitive' } },
+        { apellido_paterno: { contains: search, mode: 'insensitive' } },
+        { apellido_materno: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
-        { telefonoCelular: { contains: search } }
+        { telefono_celular: { contains: search } }
       ];
     }
 
@@ -106,7 +108,7 @@ export async function GET(request: Request) {
 
     // Si es usuario de punto de recolección, solo mostrar clientes de su punto
     if ((userRole === 'ADMINISTRADOR_PUNTO' || userRole === 'USUARIO_PUNTO') && userPointId) {
-      where.puntoRecoleccionId = userPointId;
+      where.punto_recoleccion_id = userPointId;
     }
 
     // Si no es admin ni tiene permisos específicos, no mostrar nada
@@ -116,25 +118,25 @@ export async function GET(request: Request) {
       }
     }
 
-    const [clientes, total] = await Promise.all([
-      prisma.cliente.findMany({
+    const [clientesRaw, total] = await Promise.all([
+      prisma.clientes.findMany({
         where,
         skip,
         take: limit,
         orderBy: {
-          createdAt: 'desc'
+          created_at: 'desc'
         },
         include: {
-          creadoPor: {
+          usuarios: {
             select: {
               id: true,
               nombre: true,
-              apellidoPaterno: true,
-              apellidoMaterno: true,
+              apellido_paterno: true,
+              apellido_materno: true,
               email: true
             }
           },
-          puntoRecoleccion: {
+          puntos_recoleccion: {
             select: {
               id: true,
               nombre: true
@@ -142,8 +144,45 @@ export async function GET(request: Request) {
           }
         }
       }),
-      prisma.cliente.count({ where })
+      prisma.clientes.count({ where })
     ]);
+
+    // Mapear los datos a formato camelCase para el frontend
+    const clientes = clientesRaw.map((cliente: any) => ({
+      id: cliente.id,
+      nombre: cliente.nombre,
+      apellidoPaterno: cliente.apellido_paterno,
+      apellidoMaterno: cliente.apellido_materno,
+      telefonoCelular: cliente.telefono_celular,
+      telefonoContacto: cliente.telefono_contacto,
+      email: cliente.email,
+      calle: cliente.calle,
+      numeroExterior: cliente.numero_exterior,
+      numeroInterior: cliente.numero_interior,
+      colonia: cliente.colonia,
+      ciudad: cliente.ciudad,
+      estado: cliente.estado,
+      codigoPostal: cliente.codigo_postal,
+      latitud: cliente.latitud,
+      longitud: cliente.longitud,
+      fuenteReferencia: cliente.fuente_referencia,
+      rfc: cliente.rfc,
+      tipoRegistro: cliente.tipo_registro,
+      createdAt: cliente.created_at,
+      updatedAt: cliente.updated_at,
+      puntoRecoleccionId: cliente.punto_recoleccion_id,
+      creadoPor: cliente.usuarios ? {
+        id: cliente.usuarios.id,
+        nombre: cliente.usuarios.nombre,
+        apellidoPaterno: cliente.usuarios.apellido_paterno,
+        apellidoMaterno: cliente.usuarios.apellido_materno,
+        email: cliente.usuarios.email
+      } : null,
+      puntoRecoleccion: cliente.puntos_recoleccion ? {
+        id: cliente.puntos_recoleccion.id,
+        nombre: cliente.puntos_recoleccion.nombre
+      } : null
+    }));
 
     return NextResponse.json({
       clientes,
@@ -190,7 +229,7 @@ export async function POST(request: Request) {
     }
 
     // Verificar si el email ya existe
-    const existingClient = await prisma.cliente.findUnique({
+    const existingClient = await prisma.clientes.findUnique({
       where: { email: validatedData.email }
     });
 
@@ -216,25 +255,8 @@ export async function POST(request: Request) {
     }
 
     // Crear el cliente
-    const cliente = await prisma.cliente.create({
-      data: dataToSave,
-      include: {
-        creadoPor: {
-          select: {
-            id: true,
-            nombre: true,
-            apellidoPaterno: true,
-            apellidoMaterno: true,
-            email: true
-          }
-        },
-        puntoRecoleccion: {
-          select: {
-            id: true,
-            nombre: true
-          }
-        }
-      }
+    const cliente = await prisma.clientes.create({
+      data: dataToSave
     });
 
     return NextResponse.json(cliente);

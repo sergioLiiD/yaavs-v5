@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,23 +16,23 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const productoId = searchParams.get('productoId');
 
-    const where = productoId ? { productoId: Number(productoId) } : {};
+    const where = productoId ? { producto_id: Number(productoId) } : {};
 
     // Obtener salidas
-    const salidas = await prisma.salidaAlmacen.findMany({
+    const salidas = await prisma.salidas_almacen.findMany({
       where,
       select: {
         id: true,
-        productoId: true,
+        producto_id: true,
         cantidad: true,
         razon: true,
         tipo: true,
         referencia: true,
         fecha: true,
-        usuario: {
+        usuarios: {
           select: {
             nombre: true,
-            apellidoPaterno: true,
+            apellido_paterno: true,
           },
         },
       },
@@ -40,20 +42,20 @@ export async function GET(request: Request) {
     });
 
     // Obtener entradas
-    const entradas = await prisma.entradaAlmacen.findMany({
+    const entradas = await prisma.entradas_almacen.findMany({
       where,
       select: {
         id: true,
-        productoId: true,
+        producto_id: true,
         cantidad: true,
-        precioCompra: true,
+        precio_compra: true,
         notas: true,
         fecha: true,
-        proveedorId: true,
-        usuario: {
+        proveedor_id: true,
+        usuarios: {
           select: {
             nombre: true,
-            apellidoPaterno: true,
+            apellido_paterno: true,
           },
         },
       },
@@ -64,10 +66,10 @@ export async function GET(request: Request) {
 
     // Obtener los proveedores para las entradas
     const proveedoresIds = entradas
-      .filter(e => e.proveedorId)
-      .map(e => e.proveedorId as number);
+      .filter(e => e.proveedor_id)
+      .map(e => e.proveedor_id as number);
 
-    const proveedores = await prisma.proveedor.findMany({
+    const proveedores = await prisma.proveedores.findMany({
       where: {
         id: {
           in: proveedoresIds
@@ -82,7 +84,7 @@ export async function GET(request: Request) {
     // Combinar entradas con proveedores
     const entradasConProveedores = entradas.map(entrada => ({
       ...entrada,
-      proveedores: entrada.proveedorId ? proveedores.find(p => p.id === entrada.proveedorId) : null
+      proveedores: entrada.proveedor_id ? proveedores.find(p => p.id === entrada.proveedor_id) : null
     }));
 
     // Combinar y ordenar por fecha
@@ -109,7 +111,7 @@ export async function POST(request: Request) {
     const { productoId, cantidad, tipo, razon, referencia } = body;
 
     // Validar que el producto existe y tiene suficiente stock
-    const producto = await prisma.producto.findUnique({
+    const producto = await prisma.productos.findUnique({
       where: { id: Number(productoId) },
       select: {
         id: true,
@@ -127,24 +129,25 @@ export async function POST(request: Request) {
 
     // Crear la salida y actualizar el producto en una transacción
     const salida = await prisma.$transaction(async (tx) => {
-      const salida = await tx.salidaAlmacen.create({
+      const salida = await tx.salidas_almacen.create({
         data: {
-          productoId: Number(productoId),
+          producto_id: Number(productoId),
           cantidad: Number(cantidad),
           tipo,
           razon,
           referencia,
-          usuarioId: Number(session.user.id),
+          usuario_id: Number(session.user.id),
+          updated_at: new Date(),
         },
       });
 
-      const updateData: Prisma.ProductoUpdateInput = {
+      const updateData: Prisma.productosUpdateInput = {
         stock: {
           decrement: Number(cantidad),
         },
       };
 
-      await tx.producto.update({
+      await tx.productos.update({
         where: { id: Number(productoId) },
         data: updateData,
       });

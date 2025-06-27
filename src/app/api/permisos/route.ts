@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     console.log('Iniciando GET /api/permisos');
@@ -23,7 +25,7 @@ export async function GET(request: Request) {
     }
 
     try {
-      const permisos = await prisma.permiso.findMany({
+      const permisos = await prisma.permisos.findMany({
         orderBy: {
           nombre: 'asc'
         }
@@ -74,7 +76,7 @@ export async function POST(request: Request) {
       return new NextResponse('Faltan campos requeridos', { status: 400 });
     }
 
-    const permisoExistente = await prisma.permiso.findFirst({
+    const permisoExistente = await prisma.permisos.findFirst({
       where: {
         OR: [
           { nombre },
@@ -87,12 +89,13 @@ export async function POST(request: Request) {
       return new NextResponse('Ya existe un permiso con ese nombre o código', { status: 400 });
     }
 
-    const permiso = await prisma.permiso.create({
+    const permiso = await prisma.permisos.create({
       data: {
         nombre,
         descripcion,
         codigo,
-        categoria
+        categoria,
+        updated_at: new Date()
       }
     });
 

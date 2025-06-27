@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/catalogo/proveedores
 export async function GET(req: NextRequest) {
   try {
@@ -16,7 +18,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const proveedores = await prisma.proveedor.findMany({
+    const proveedores = await prisma.proveedores.findMany({
       orderBy: { nombre: 'asc' },
       distinct: ['rfc'] // Asegurar que no haya duplicados por RFC
     });
@@ -88,7 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validar que el RFC no esté duplicado
-    const proveedorExistente = await prisma.proveedor.findFirst({
+    const proveedorExistente = await prisma.proveedores.findFirst({
       where: {
         rfc: data.rfc
       }
@@ -103,7 +105,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Crear el proveedor
-    const proveedor = await prisma.proveedor.create({
+    const proveedor = await prisma.proveedores.create({
       data: {
         nombre: data.nombre,
         contacto: data.contacto,
@@ -114,8 +116,9 @@ export async function POST(req: NextRequest) {
         tipo: data.tipo || 'FISICA',
         rfc: data.rfc,
         banco: data.banco,
-        cuentaBancaria: data.cuentaBancaria,
-        clabeInterbancaria: data.clabeInterbancaria
+        cuenta_bancaria: data.cuentaBancaria,
+        clabe_interbancaria: data.clabeInterbancaria,
+        updated_at: new Date()
       }
     });
 
@@ -123,7 +126,7 @@ export async function POST(req: NextRequest) {
     
     // Verificar que no haya duplicados
     try {
-      const proveedoresDespues = await prisma.proveedor.findMany({
+      const proveedoresDespues = await prisma.proveedores.findMany({
         where: {
           rfc: data.rfc
         }
@@ -136,7 +139,7 @@ export async function POST(req: NextRequest) {
         // Intentar limpiar los duplicados
         const [primerProveedor, ...duplicados] = proveedoresDespues;
         for (const duplicado of duplicados) {
-          await prisma.proveedor.delete({
+          await prisma.proveedores.delete({
             where: { id: duplicado.id }
           });
         }
@@ -202,7 +205,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     // Actualizar el proveedor
-    const proveedores = await prisma.proveedor.update({
+    const proveedores = await prisma.proveedores.update({
       where: { id: parseInt(params.id) },
       data: {
         nombre: data.nombre,
@@ -214,8 +217,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         tipo: data.tipo,
         rfc: data.rfc,
         banco: data.banco,
-        cuentaBancaria: data.cuentaBancaria,
-        clabeInterbancaria: data.clabeInterbancaria
+        cuenta_bancaria: data.cuentaBancaria,
+        clabe_interbancaria: data.clabeInterbancaria
       }
     });
 
@@ -253,7 +256,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
     // Eliminar el proveedor
-    await prisma.proveedor.delete({
+    await prisma.proveedores.delete({
       where: { id: parseInt(params.id) }
     });
 

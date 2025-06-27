@@ -244,12 +244,18 @@ export default function UsuariosPage() {
 
   const handleEdit = (usuario: Usuario) => {
     console.log('Usuario a editar:', usuario);
-    const rolesIds = usuario.usuarioRoles?.map(ur => ur.rol.id).filter(id => id !== undefined) || [];
+    // Intentar primero con usuarioRoles (formato mapeado), luego con usuarios_roles (formato directo de DB)
+    const rolesIds = (usuario.usuarioRoles?.map(ur => ur.rol.id) || 
+                     usuario.usuarios_roles?.map(ur => ur.roles?.id))?.filter(id => id !== undefined) || [];
     console.log('Roles IDs:', rolesIds);
     
     setUsuarioAEditar({
       ...usuario,
-      apellidoMaterno: usuario.apellidoMaterno || ''
+      // Asegurar valores por defecto para evitar inputs undefined
+      apellidoPaterno: usuario.apellidoPaterno || '',
+      apellidoMaterno: usuario.apellidoMaterno || '',
+      email: usuario.email || '',
+      nombre: usuario.nombre || ''
     });
     setSelectedRoles(rolesIds);
     setIsEditDialogOpen(true);
@@ -544,15 +550,16 @@ export default function UsuariosPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {usuario.usuarioRoles?.map((usuarioRol) => (
+                        {(usuario.usuarioRoles || usuario.usuarios_roles)?.map((usuarioRol) => (
                           <span
-                            key={`${usuario.id}-${usuarioRol.rolId}`}
+                            key={`${usuario.id}-${(usuarioRol as any).rol?.id || (usuarioRol as any).roles?.id}`}
                             className="px-2 py-0.5 text-[10px] rounded-full bg-blue-100 text-blue-800 font-medium"
                           >
-                            {usuarioRol.rol.nombre}
+                            {(usuarioRol as any).rol?.nombre || (usuarioRol as any).roles?.nombre}
                           </span>
                         ))}
-                        {(!usuario.usuarioRoles || usuario.usuarioRoles.length === 0) && (
+                        {(!usuario.usuarioRoles && !usuario.usuarios_roles) || 
+                         ((usuario.usuarioRoles?.length === 0) && (usuario.usuarios_roles?.length === 0)) && (
                           <span className="text-gray-500 text-sm">Sin roles asignados</span>
                         )}
                       </div>
@@ -675,7 +682,7 @@ export default function UsuariosPage() {
                       <Label htmlFor="nombre">Nombre</Label>
                       <Input
                         id="nombre"
-                        value={usuarioAEditar.nombre}
+                        value={usuarioAEditar.nombre || ''}
                         onChange={(e) => setUsuarioAEditar({...usuarioAEditar, nombre: e.target.value})}
                       />
                     </div>
@@ -683,7 +690,7 @@ export default function UsuariosPage() {
                       <Label htmlFor="apellidoPaterno">Apellido Paterno</Label>
                       <Input
                         id="apellidoPaterno"
-                        value={usuarioAEditar.apellidoPaterno}
+                        value={usuarioAEditar.apellidoPaterno || ''}
                         onChange={(e) => setUsuarioAEditar({...usuarioAEditar, apellidoPaterno: e.target.value})}
                       />
                     </div>
@@ -700,7 +707,7 @@ export default function UsuariosPage() {
                       <Input
                         id="email"
                         type="email"
-                        value={usuarioAEditar.email}
+                        value={usuarioAEditar.email || ''}
                         onChange={(e) => setUsuarioAEditar({...usuarioAEditar, email: e.target.value})}
                       />
                     </div>

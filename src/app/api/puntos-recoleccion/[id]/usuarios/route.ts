@@ -4,6 +4,8 @@ import { hash } from 'bcrypt';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 const createUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -24,7 +26,7 @@ export async function GET(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const puntoRecoleccion = await prisma.puntoRecoleccion.findUnique({
+    const puntoRecoleccion = await prisma.puntos_recoleccion.findUnique({
       where: { id }
     });
 
@@ -32,21 +34,21 @@ export async function GET(
       return NextResponse.json({ error: 'Punto de recolección no encontrado' }, { status: 404 });
     }
 
-    const users = await prisma.usuarioPuntoRecoleccion.findMany({
+    const users = await prisma.usuarios_puntos_recoleccion.findMany({
       where: {
-        puntoRecoleccionId: id
+        punto_recoleccion_id: id
       },
       include: {
-        usuario: {
+        usuarios: {
           select: {
             id: true,
             email: true,
             nombre: true,
-            apellidoPaterno: true,
-            apellidoMaterno: true,
-            usuarioRoles: {
+            apellido_paterno: true,
+            apellido_materno: true,
+            usuarios_roles: {
               include: {
-                rol: {
+                roles: {
                   select: {
                     id: true,
                     nombre: true
@@ -63,8 +65,8 @@ export async function GET(
     const formattedUsers = users.map(user => ({
       ...user,
       usuario: {
-        ...user.usuario,
-        rol: user.usuario.usuarioRoles[0]?.rol
+        ...user.usuarios,
+        rol: user.usuarios.usuarios_roles[0]?.roles
       }
     }));
 
@@ -86,7 +88,7 @@ export async function POST(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const puntoRecoleccion = await prisma.puntoRecoleccion.findUnique({
+    const puntoRecoleccion = await prisma.puntos_recoleccion.findUnique({
       where: { id }
     });
 
@@ -100,7 +102,7 @@ export async function POST(
       rolId: parseInt(body.rolId)
     });
 
-    const existingUser = await prisma.usuario.findUnique({
+    const existingUser = await prisma.usuarios.findUnique({
       where: { email: validatedData.email }
     });
 
@@ -108,7 +110,7 @@ export async function POST(
       return NextResponse.json({ error: 'El email ya está registrado' }, { status: 400 });
     }
 
-    const rol = await prisma.rol.findUnique({
+    const rol = await prisma.roles.findUnique({
       where: { id: validatedData.rolId }
     });
 
@@ -119,28 +121,31 @@ export async function POST(
     const hashedPassword = await hash(validatedData.password, 10);
 
     const usuario = await prisma.$transaction(async (tx) => {
-      const newUser = await tx.usuario.create({
+      const newUser = await tx.usuarios.create({
         data: {
           email: validatedData.email,
-          passwordHash: hashedPassword,
+          password_hash: hashedPassword,
           nombre: validatedData.nombre,
-          apellidoPaterno: validatedData.apellidoPaterno,
-          apellidoMaterno: validatedData.apellidoMaterno
+          apellido_paterno: validatedData.apellidoPaterno,
+          apellido_materno: validatedData.apellidoMaterno,
+          updated_at: new Date()
         }
       });
 
-      await tx.usuarioRol.create({
+      await tx.usuarios_roles.create({
         data: {
-          usuarioId: newUser.id,
-          rolId: validatedData.rolId
+          usuario_id: newUser.id,
+          rol_id: validatedData.rolId,
+          updated_at: new Date()
         }
       });
 
-      await tx.usuarioPuntoRecoleccion.create({
+      await tx.usuarios_puntos_recoleccion.create({
         data: {
-          usuarioId: newUser.id,
-          puntoRecoleccionId: id,
-          nivel: validatedData.rolId === 4 ? 'ADMIN' : 'OPERADOR' // 4 es el ID del rol ADMINISTRADOR_PUNTO
+          usuario_id: newUser.id,
+          punto_recoleccion_id: id,
+          nivel: validatedData.rolId === 4 ? 'ADMIN' : 'OPERADOR', // 4 es el ID del rol ADMINISTRADOR_PUNTO
+          updated_at: new Date()
         }
       });
 

@@ -3,6 +3,8 @@ import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/catalogo/tipos-servicio
 export async function GET(req: NextRequest) {
   try {
@@ -13,7 +15,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Obtener todos los tipos de servicio
-    const tiposServicio = await prisma.tipoServicio.findMany({
+    const tiposServicio = await prisma.tipos_servicio.findMany({
       orderBy: { nombre: 'asc' }
     });
     
@@ -55,10 +57,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Crear nuevo tipo de servicio
-    const nuevoTipoServicio = await prisma.tipoServicio.create({
+    const nuevoTipoServicio = await prisma.tipos_servicio.create({
       data: {
         nombre: body.nombre,
-        descripcion: body.descripcion || null
+        descripcion: body.descripcion || null,
+        updated_at: new Date()
       }
     });
     

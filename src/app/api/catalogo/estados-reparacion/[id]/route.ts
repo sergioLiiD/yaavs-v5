@@ -3,43 +3,37 @@ import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/catalogo/estados-reparacion/[id]
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(req: NextRequest) {
   try {
-    // Verificar autenticación
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    if (!session?.user) {
+      return new NextResponse('No autorizado', { status: 401 });
     }
 
-    const id = Number(params.id);
-    if (isNaN(id)) {
-      return NextResponse.json(
-        { error: 'ID inválido' },
-        { status: 400 }
-      );
+    const { pathname } = new URL(req.url);
+    const id = parseInt(pathname.split('/').pop() || '0');
+    
+    if (!id) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const estado = await prisma.estatusReparacion.findUnique({
+    const estado = await prisma.estatus_reparacion.findUnique({
       where: { id }
     });
 
     if (!estado) {
-      return NextResponse.json(
-        { error: 'Estado de reparación no encontrado' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Estado no encontrado' }, { status: 404 });
     }
 
     return NextResponse.json(estado);
   } catch (error) {
     console.error('Error al obtener estado de reparación:', error);
-    return NextResponse.json(
-      { error: 'Error al procesar la solicitud' },
-      { status: 500 }
+    return new NextResponse(
+      JSON.stringify({ error: 'Error al obtener estado de reparación' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
@@ -82,15 +76,16 @@ export async function PUT(
       );
     }
 
-    // Actualizar el estado de reparación
-    const estadoActualizado = await prisma.estatusReparacion.update({
+    // Actualizar estado de reparación
+    const estadoActualizado = await prisma.estatus_reparacion.update({
       where: { id },
       data: {
         nombre: body.nombre,
         descripcion: body.descripcion || null,
         orden: body.orden || 1,
         color: body.color || null,
-        activo: body.activo !== undefined ? body.activo : true
+        activo: body.activo !== undefined ? body.activo : true,
+        updated_at: new Date()
       }
     });
 
@@ -132,10 +127,13 @@ export async function DELETE(
       );
     }
 
-    // En lugar de eliminar físicamente, marcar como inactivo
-    await prisma.estatusReparacion.update({
+    // Soft delete: marcar como inactivo
+    await prisma.estatus_reparacion.update({
       where: { id },
-      data: { activo: false }
+      data: { 
+        activo: false,
+        updated_at: new Date()
+      }
     });
 
     return NextResponse.json({ success: true });

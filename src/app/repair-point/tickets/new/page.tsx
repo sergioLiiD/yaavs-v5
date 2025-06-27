@@ -75,7 +75,7 @@ export default function NewTicketPage() {
   useEffect(() => {
     if (marcaSeleccionada !== 'none' && data?.modelos) {
       const filtrados = data.modelos.filter((modelo: any) => 
-        modelo.marca.id.toString() === marcaSeleccionada
+        modelo?.marca?.id?.toString() === marcaSeleccionada
       );
       console.log('Modelos filtrados:', filtrados); // Para depuración
       setModelosFiltrados(filtrados);
@@ -174,11 +174,11 @@ export default function NewTicketPage() {
                 <SelectValue placeholder="Seleccione un cliente" />
               </SelectTrigger>
               <SelectContent>
-                {data.clientes.map((cliente: any) => (
+                {data?.clientes?.map((cliente: any) => (
                   <SelectItem key={cliente.id} value={cliente.id.toString()}>
                     {cliente.nombre} {cliente.apellidoPaterno} {cliente.apellidoMaterno}
                   </SelectItem>
-                ))}
+                )) || []}
               </SelectContent>
             </Select>
           </div>
@@ -194,7 +194,7 @@ export default function NewTicketPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Seleccione una marca</SelectItem>
-                {data?.modelos?.reduce((marcas: any[], modelo: any) => {
+                {(data?.modelos || []).reduce((marcas: any[], modelo: any) => {
                   if (modelo?.marca?.id && !marcas.find(m => m.id === modelo.marca.id)) {
                     marcas.push({
                       id: modelo.marca.id,
@@ -202,11 +202,11 @@ export default function NewTicketPage() {
                     });
                   }
                   return marcas;
-                }, []).sort((a, b) => a.nombre.localeCompare(b.nombre)).map((marca: any) => (
+                }, []).sort((a: any, b: any) => a.nombre.localeCompare(b.nombre)).map((marca: any) => (
                   <SelectItem key={marca.id} value={marca.id.toString()}>
                     {marca.nombre}
                   </SelectItem>
-                )) || []}
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -223,7 +223,7 @@ export default function NewTicketPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Seleccione un modelo</SelectItem>
-                {modelosFiltrados?.sort((a, b) => a.nombre.localeCompare(b.nombre)).map((modelo: any) => (
+                {modelosFiltrados?.sort((a: any, b: any) => a.nombre.localeCompare(b.nombre)).map((modelo: any) => (
                   <SelectItem key={modelo.id} value={modelo.id.toString()}>
                     {modelo.nombre}
                   </SelectItem>

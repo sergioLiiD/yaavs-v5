@@ -7,26 +7,24 @@ export class ClienteService {
   // Obtener todos los clientes
   static async getAll(puntoRecoleccionId?: number): Promise<Cliente[]> {
     try {
-      const where: Prisma.ClienteWhereInput = {
-        activo: true
-      };
+      const where: Prisma.clientesWhereInput = {};
 
       // Si se proporciona un puntoRecoleccionId, filtrar por ese punto
       if (puntoRecoleccionId) {
-        where.puntoRecoleccionId = puntoRecoleccionId;
+        where.punto_recoleccion_id = puntoRecoleccionId;
       }
 
-      const clientes = await prisma.cliente.findMany({
+      const clientes = await prisma.clientes.findMany({
         where,
         orderBy: {
           nombre: 'asc'
         },
         include: {
-          puntoRecoleccion: {
+          puntos_recoleccion: {
             select: {
               id: true,
-              name: true,
-              isRepairPoint: true
+              nombre: true,
+              is_repair_point: true
             }
           }
         }
@@ -41,30 +39,30 @@ export class ClienteService {
   // Obtener un cliente por ID
   static async getById(id: number): Promise<Cliente | null> {
     try {
-      const cliente = await prisma.cliente.findUnique({
+      const cliente = await prisma.clientes.findUnique({
         where: { id },
         select: {
           id: true,
           nombre: true,
-          apellidoPaterno: true,
-          apellidoMaterno: true,
-          telefonoCelular: true,
-          telefonoContacto: true,
+          apellido_paterno: true,
+          apellido_materno: true,
+          telefono_celular: true,
+          telefono_contacto: true,
           email: true,
           calle: true,
-          numeroExterior: true,
-          numeroInterior: true,
+          numero_exterior: true,
+          numero_interior: true,
           colonia: true,
           ciudad: true,
           estado: true,
-          codigoPostal: true,
+          codigo_postal: true,
           latitud: true,
           longitud: true,
-          fuenteReferencia: true,
+          fuente_referencia: true,
           rfc: true,
-          createdAt: true,
-          updatedAt: true,
-          tipoRegistro: true
+          created_at: true,
+          updated_at: true,
+          tipo_registro: true
         }
       });
       return cliente;
@@ -77,7 +75,7 @@ export class ClienteService {
   // Obtener un cliente por email
   static async getByEmail(email: string): Promise<Cliente | null> {
     try {
-      const cliente = await prisma.cliente.findFirst({
+      const cliente = await prisma.clientes.findFirst({
         where: { email }
       });
       return cliente;
@@ -110,10 +108,28 @@ export class ClienteService {
     tipoRegistro?: string;
   }): Promise<Cliente> {
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    return prisma.cliente.create({
+    return prisma.clientes.create({
       data: {
-        ...data,
-        passwordHash: hashedPassword
+        nombre: data.nombre,
+        apellido_paterno: data.apellidoPaterno,
+        apellido_materno: data.apellidoMaterno,
+        telefono_celular: data.telefonoCelular,
+        telefono_contacto: data.telefonoContacto,
+        email: data.email,
+        calle: data.calle,
+        numero_exterior: data.numeroExterior,
+        numero_interior: data.numeroInterior,
+        colonia: data.colonia,
+        ciudad: data.ciudad,
+        estado: data.estado,
+        codigo_postal: data.codigoPostal,
+        latitud: data.latitud,
+        longitud: data.longitud,
+        fuente_referencia: data.fuenteReferencia,
+        rfc: data.rfc,
+        tipo_registro: data.tipoRegistro,
+        password_hash: hashedPassword,
+        updated_at: new Date()
       }
     });
   }
@@ -121,28 +137,30 @@ export class ClienteService {
   // Actualizar un cliente
   static async update(id: number, data: UpdateClienteDTO): Promise<Cliente> {
     const updateData: any = {
-      ...data
+      nombre: data.nombre,
+      apellido_paterno: data.apellidoPaterno,
+      apellido_materno: data.apellidoMaterno,
+      telefono_celular: data.telefonoCelular,
+      email: data.email,
+      updated_at: new Date()
     };
 
     if (data.password) {
       const salt = await bcrypt.genSalt(10);
-      updateData.passwordHash = await bcrypt.hash(data.password, salt);
-      delete updateData.password;
-      delete updateData.confirmPassword;
+      updateData.password_hash = await bcrypt.hash(data.password, salt);
     }
 
-    const cliente = await prisma.cliente.update({
+    const cliente = await prisma.clientes.update({
       where: { id },
       data: updateData
     });
     return cliente as Cliente;
   }
 
-  // Eliminar un cliente (soft delete)
+  // Eliminar un cliente (hard delete ya que no hay campo activo)
   static async delete(id: number): Promise<boolean> {
-    const result = await prisma.cliente.update({
-      where: { id },
-      data: { activo: false }
+    const result = await prisma.clientes.delete({
+      where: { id }
     });
     return !!result;
   }
@@ -150,7 +168,7 @@ export class ClienteService {
   // Verificar si un email ya existe
   static async emailExists(email: string, excludeId?: number): Promise<boolean> {
     try {
-      const count = await prisma.cliente.count({
+      const count = await prisma.clientes.count({
         where: {
           email,
           ...(excludeId ? { id: { not: excludeId } } : {})
@@ -165,15 +183,15 @@ export class ClienteService {
 
   // Verificar credenciales de cliente
   static async verifyCredentials(email: string, password: string): Promise<Cliente | null> {
-    const cliente = await prisma.cliente.findUnique({
+    const cliente = await prisma.clientes.findUnique({
       where: { email }
     });
 
-    if (!cliente) {
+    if (!cliente || !cliente.password_hash) {
       return null;
     }
 
-    const isValid = await bcrypt.compare(password, cliente.passwordHash);
+    const isValid = await bcrypt.compare(password, cliente.password_hash);
     if (!isValid) {
       return null;
     }
@@ -182,47 +200,63 @@ export class ClienteService {
   }
 
   static async findById(id: number) {
-    return prisma.cliente.findUnique({
+    const cliente = await prisma.clientes.findUnique({
       where: { id },
       select: {
         id: true,
         nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true,
-        telefonoCelular: true,
-        telefonoContacto: true,
+        apellido_paterno: true,
+        apellido_materno: true,
+        telefono_celular: true,
+        telefono_contacto: true,
         email: true,
         calle: true,
-        numeroExterior: true,
-        numeroInterior: true,
+        numero_exterior: true,
+        numero_interior: true,
         colonia: true,
         ciudad: true,
         estado: true,
-        codigoPostal: true,
+        codigo_postal: true,
         latitud: true,
         longitud: true,
-        fuenteReferencia: true,
+        fuente_referencia: true,
         rfc: true,
-        createdAt: true,
-        updatedAt: true,
-        tipoRegistro: true,
-        passwordHash: true
+        created_at: true,
+        updated_at: true,
+        tipo_registro: true
       }
     });
+
+    if (!cliente) {
+      return null;
+    }
+
+    // Mapear a formato camelCase para el frontend
+    return {
+      ...cliente,
+      apellidoPaterno: cliente.apellido_paterno,
+      apellidoMaterno: cliente.apellido_materno,
+      telefonoCelular: cliente.telefono_celular,
+      telefonoContacto: cliente.telefono_contacto,
+      numeroExterior: cliente.numero_exterior,
+      numeroInterior: cliente.numero_interior,
+      codigoPostal: cliente.codigo_postal,
+      fuenteReferencia: cliente.fuente_referencia,
+      tipoRegistro: cliente.tipo_registro,
+      createdAt: cliente.created_at,
+      updatedAt: cliente.updated_at
+    };
   }
 
   static async findByEmail(email: string) {
-    return prisma.cliente.findUnique({
+    return prisma.clientes.findUnique({
       where: { email }
     });
   }
 
-  static async findAll(where?: Prisma.ClienteWhereInput) {
-    return prisma.cliente.findMany({
-      where,
-      orderBy: {
-        createdAt: 'desc'
-      }
+  static async findAll(where?: Prisma.clientesWhereInput) {
+    return prisma.clientes.findMany({
+      where
     });
   }
 } 

@@ -18,33 +18,33 @@ export async function GET() {
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
     // Obtener tickets abiertos (Recibido, En Diagnóstico, Diagnóstico Completado, Presupuesto Aprobado)
-    const ticketsAbiertos = await prisma.ticket.count({
+    const ticketsAbiertos = await prisma.tickets.count({
       where: {
-        estatusReparacion: {
+        estatus_reparacion: {
           nombre: {
             in: ['Recibido', 'En Diagnóstico', 'Diagnóstico Completado', 'Presupuesto Aprobado']
           }
         }
       }
-    }).catch(error => {
+    }).catch((error: any) => {
       console.error('Error al contar tickets abiertos:', error);
       return 0;
     });
 
     // Obtener tickets del mes anterior para comparación
-    const lastMonthTickets = await prisma.ticket.count({
+    const lastMonthTickets = await prisma.tickets.count({
       where: {
-        createdAt: {
+        created_at: {
           gte: lastMonth,
           lt: currentMonth
         },
-        estatusReparacion: {
+        estatus_reparacion: {
           nombre: {
             in: ['Recibido', 'En Diagnóstico', 'Diagnóstico Completado', 'Presupuesto Aprobado']
           }
         }
       }
-    }).catch(error => {
+    }).catch((error: any) => {
       console.error('Error al contar tickets del mes anterior:', error);
       return 0;
     });
@@ -53,64 +53,64 @@ export async function GET() {
     const ticketChange = lastMonthTickets === 0 ? 100 : ((ticketsAbiertos - lastMonthTickets) / lastMonthTickets) * 100;
 
     // Obtener tickets en reparación
-    const ticketsEnReparacion = await prisma.ticket.count({
+    const ticketsEnReparacion = await prisma.tickets.count({
       where: {
-        estatusReparacion: {
+        estatus_reparacion: {
           nombre: 'En Reparación'
         }
       }
-    }).catch(error => {
+    }).catch((error: any) => {
       console.error('Error al contar tickets en reparación:', error);
       return 0;
     });
 
     // Obtener tickets reparados
-    const ticketsReparados = await prisma.ticket.count({
+    const ticketsReparados = await prisma.tickets.count({
       where: {
-        estatusReparacion: {
+        estatus_reparacion: {
           nombre: 'Reparado'
         }
       }
-    }).catch(error => {
+    }).catch((error: any) => {
       console.error('Error al contar tickets reparados:', error);
       return 0;
     });
 
     // Obtener tickets por entregar
-    const ticketsPorEntregar = await prisma.ticket.count({
+    const ticketsPorEntregar = await prisma.tickets.count({
       where: {
-        estatusReparacion: {
+        estatus_reparacion: {
           nombre: 'Listo para Entrega'
         }
       }
-    }).catch(error => {
+    }).catch((error: any) => {
       console.error('Error al contar tickets por entregar:', error);
       return 0;
     });
 
     // Obtener tickets recientes
-    const ticketsRecientes = await prisma.ticket.findMany({
+    const ticketsRecientes = await prisma.tickets.findMany({
       take: 5,
       orderBy: {
-        createdAt: 'desc'
+        created_at: 'desc'
       },
       include: {
-        direccion: true,
-        dispositivo: true,
-        estatusReparacion: true,
-        cliente: {
+        direcciones: true,
+        dispositivos: true,
+        estatus_reparacion: true,
+        clientes: {
           select: {
             nombre: true,
-            apellidoPaterno: true
+            apellido_paterno: true
           }
         },
-        modelo: {
+        modelos: {
           include: {
-            marca: true
+            marcas: true
           }
         }
       }
-    }).catch(error => {
+    }).catch((error: any) => {
       console.error('Error al obtener tickets recientes:', error);
       return [];
     });
@@ -146,13 +146,13 @@ export async function GET() {
           description: 'Tickets pendientes de entrega'
         }
       ],
-      recentTickets: ticketsRecientes.map(ticket => ({
+      recentTickets: ticketsRecientes.map((ticket: any) => ({
         id: ticket.id,
-        numeroTicket: ticket.numeroTicket,
-        cliente: ticket.cliente ? `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno}` : '',
-        modelo: ticket.modelo ? `${ticket.modelo.marca?.nombre || ''} ${ticket.modelo.nombre}` : '',
-        problema: ticket.descripcionProblema,
-        estado: ticket.estatusReparacion?.nombre || ''
+        numeroTicket: ticket.numero_ticket,
+        cliente: ticket.clientes ? `${ticket.clientes.nombre} ${ticket.clientes.apellido_paterno}` : '',
+        modelo: ticket.modelos ? `${ticket.modelos.marcas?.nombre || ''} ${ticket.modelos.nombre}` : '',
+        problema: ticket.descripcion_problema,
+        estado: ticket.estatus_reparacion?.nombre || ''
       }))
     });
   } catch (error) {

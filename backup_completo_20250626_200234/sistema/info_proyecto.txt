@@ -1,0 +1,31 @@
+# Información del Proyecto YAAVS v5
+Fecha del backup: Thu Jun 26 20:02:35 CEST 2025
+Usuario: sergio
+Directorio: /Users/sergio/Projects/yaavs-v5
+Sistema: Darwin Sergios-MacBook-Air.fritz.box 24.4.0 Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112 arm64
+
+## Versiones de Herramientas:
+v20.19.0
+10.8.2
+Git: git version 2.48.0
+
+## Estado de Git:
+On branch main
+Your branch is ahead of 'origin/main' by 1 commit.
+  (use "git push" to publish your local commits)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   prisma/schema.prisma
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	backup-completo.sh
+	backup_completo_20250626_200208/
+	backup_completo_20250626_200234/
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+## Último commit:
+5b77077 initial commit - Arregla.mx deployment ready

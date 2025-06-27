@@ -6,6 +6,8 @@ import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
+export const dynamic = 'force-dynamic';
+
 // Función para guardar la foto en el sistema de archivos
 async function saveFoto(foto: File, productoId: number): Promise<string> {
   const bytes = await foto.arrayBuffer();

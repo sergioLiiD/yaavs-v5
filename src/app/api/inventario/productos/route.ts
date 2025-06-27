@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 // Definir el tipo de usuario extendido
 interface User {
   id: string;
@@ -27,11 +29,11 @@ export async function GET() {
       );
     }
 
-    const productos = await prisma.producto.findMany({
+    const productos = await prisma.productos.findMany({
       include: {
-        marca: true,
-        modelo: true,
-        categoria: true,
+        marcas: true,
+        modelos: true,
+        categorias: true,
         fotos_producto: true,
       },
       orderBy: {
@@ -114,7 +116,7 @@ export async function POST(request: Request) {
       // Verificar que existan todas las relaciones necesarias
       console.log('tipoServicioId antes de la consulta:', tipoServicioId, typeof tipoServicioId);
       
-      const tipoServicio = await tx.tipoServicio.findUnique({ 
+      const tipoServicio = await tx.tipos_servicio.findUnique({ 
         where: { 
           id: tipoServicioId 
         } 
@@ -128,17 +130,17 @@ export async function POST(request: Request) {
 
       if (data.tipo === 'PRODUCTO' && marcaId && modeloId) {
         [marca, modelo] = await Promise.all([
-          tx.marca.findUnique({ where: { id: marcaId } }),
-          tx.modelo.findUnique({ where: { id: modeloId } })
+          tx.marcas.findUnique({ where: { id: marcaId } }),
+          tx.modelos.findUnique({ where: { id: modeloId } })
         ]);
       }
 
       // Verificar si existe la categoría
       if (data.categoriaId) {
-        categoria = await tx.categoria.findUnique({ where: { id: data.categoriaId } });
+        categoria = await tx.categorias.findUnique({ where: { id: data.categoriaId } });
       } else {
         // Si no se proporciona categoría, usar la categoría por defecto (id: 1)
-        categoria = await tx.categoria.findUnique({ where: { id: 1 } });
+        categoria = await tx.categorias.findUnique({ where: { id: 1 } });
       }
 
       if (!tipoServicio) {
@@ -159,24 +161,24 @@ export async function POST(request: Request) {
         nombre: data.nombre,
         sku: data.sku || `${data.nombre}-${Date.now()}`,
         stock: data.stock || 0,
-        precioPromedio: data.precioPromedio || 0,
-        stockMaximo: data.stockMaximo || 0,
-        stockMinimo: data.stockMinimo || 0,
+        precio_promedio: data.precioPromedio || 0,
+        stock_maximo: data.stockMaximo || 0,
+        stock_minimo: data.stockMinimo || 0,
         tipo: data.tipo || 'PRODUCTO',
-        tipoServicioId: tipoServicioId,
-        marcaId: data.marcaId,
-        modeloId: data.modeloId,
-        categoriaId: categoria.id
+        tipo_servicio_id: tipoServicioId,
+        marca_id: data.marcaId,
+        modelo_id: data.modeloId,
+        categoria_id: categoria.id
       };
 
       // Crear el producto
-      const producto = await tx.producto.create({
+      const producto = await tx.productos.create({
         data: createData,
         include: {
-          marca: true,
-          modelo: true,
-          categoria: true,
-          tipoServicio: true
+          marcas: true,
+          modelos: true,
+          categorias: true,
+          tipos_servicio: true
         },
       });
 
@@ -199,33 +201,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (error.code === 'P2003') {
-      return NextResponse.json(
-        { 
-          error: 'Error de relaciones',
-          mensaje: 'Una o más relaciones no existen. Por favor, verifica que todos los IDs proporcionados sean válidos.'
-        },
-        { status: 400 }
-      );
-    }
-
-    // Para errores personalizados de validación
-    if (error.message && !error.code) {
-      return NextResponse.json(
-        { 
-          error: 'Error de validación',
-          mensaje: error.message
-        },
-        { status: 400 }
-      );
-    }
-
-    // Para otros errores no manejados específicamente
     return NextResponse.json(
       { 
-        error: 'Error interno del servidor',
-        mensaje: 'Ha ocurrido un error al crear el producto. Por favor, inténtalo de nuevo.',
-        detalles: error.message
+        error: 'Error al crear producto',
+        mensaje: error.message || 'Error desconocido'
       },
       { status: 500 }
     );

@@ -1,29 +1,31 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
-    const productos = await prisma.producto.findMany({
+    const productos = await prisma.productos.findMany({
       select: {
         id: true,
         nombre: true,
-        precioPromedio: true,
+        precio_promedio: true,
         stock: true,
         tipo: true,
-        marca: {
+        marcas: {
           select: {
             id: true,
             nombre: true,
           },
         },
-        modelo: {
+        modelos: {
           select: {
             id: true,
             nombre: true,
           },
         },
-        stockMinimo: true,
-        stockMaximo: true,
+        stock_minimo: true,
+        stock_maximo: true,
         proveedores: {
           select: {
             id: true,

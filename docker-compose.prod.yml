@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL para producción
+  postgres:
+    image: postgres:14-alpine
+    container_name: yaavs_postgres_prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-yaavs_db}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/docker-entrypoint-initdb.d:ro
+    # Exponer solo en localhost en producción
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - yaavs_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-yaavs_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Configuraciones de seguridad para producción
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+
+  # Aplicación Next.js para producción
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: yaavs_app_prod
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-yaavs_db}?schema=public
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    # Exponer solo en localhost
+    ports:
+      - "127.0.0.1:3100:3000"
+    volumes:
+      # Volúmenes de solo lectura para seguridad
+      - uploads_data:/app/public/uploads
+      - ./logs:/app/logs
+    networks:
+      - yaavs_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Configuraciones de seguridad
+    security_opt:
+      - no-new-privileges:true
+    # Limitar recursos
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Nginx reverse proxy para producción
+  nginx:
+    image: nginx:alpine
+    container_name: yaavs_nginx_prod
+    restart: always
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    networks:
+      - yaavs_network
+    security_opt:
+      - no-new-privileges:true
+
+  # Servicio de backup automático
+  backup:
+    image: postgres:14-alpine
+    container_name: yaavs_backup_prod
+    depends_on:
+      - postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-yaavs_db}
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup-cron.sh:/usr/local/bin/backup-cron.sh:ro
+    networks:
+      - yaavs_network
+    # Ejecutar backup cada día a las 2 AM
+    command: sh -c "chmod +x /usr/local/bin/backup-cron.sh && crond -f"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/yaavs/postgres
+  uploads_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/yaavs/uploads
+
+networks:
+  yaavs_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { ChecklistItem } from '@prisma/client';
+import { checklist_items } from '@prisma/client';
 
 interface CreateChecklistItemData {
   nombre: string;
@@ -16,9 +16,9 @@ interface UpdateChecklistItemData {
 }
 
 export class ChecklistService {
-  static async getAll(): Promise<ChecklistItem[]> {
+  static async getAll(): Promise<checklist_items[]> {
     try {
-      return await prisma.checklistItem.findMany({
+      return await prisma.checklist_items.findMany({
         orderBy: {
           id: 'asc',
         },
@@ -29,9 +29,9 @@ export class ChecklistService {
     }
   }
 
-  static async getById(id: number): Promise<ChecklistItem> {
+  static async getById(id: number): Promise<checklist_items> {
     try {
-      const item = await prisma.checklistItem.findUnique({
+      const item = await prisma.checklist_items.findUnique({
         where: { id }
       });
 
@@ -46,19 +46,19 @@ export class ChecklistService {
     }
   }
 
-  static async create(data: CreateChecklistItemData): Promise<ChecklistItem> {
+  static async create(data: CreateChecklistItemData): Promise<checklist_items> {
     try {
       if (!data.nombre.trim()) {
         throw new Error('El nombre no puede estar vacío');
       }
 
-      // @ts-expect-error - Prisma types issue
-      return await prisma.checklistItem.create({
+      return await prisma.checklist_items.create({
         data: {
           nombre: data.nombre.trim(),
           descripcion: data.descripcion?.trim() || '',
-          paraDiagnostico: data.paraDiagnostico,
-          paraReparacion: data.paraReparacion,
+          para_diagnostico: data.paraDiagnostico,
+          para_reparacion: data.paraReparacion,
+          updated_at: new Date(),
         }
       });
     } catch (error) {
@@ -72,11 +72,11 @@ export class ChecklistService {
       const item = await this.getById(id);
 
       // Verificar si el item está en uso
-      const respuestas = await prisma.checklistDiagnostico.findFirst({
+      const respuestas = await prisma.checklist_diagnostico.findFirst({
         where: {
-          respuestas: {
+          checklist_respuesta_diagnostico: {
             some: {
-              checklistItemId: id
+              checklist_item_id: id
             }
           }
         }
@@ -90,14 +90,14 @@ export class ChecklistService {
         throw new Error('El nombre no puede estar vacío');
       }
 
-      // @ts-expect-error - Prisma types issue
-      return await prisma.checklistItem.update({
+      return await prisma.checklist_items.update({
         where: { id },
         data: {
           nombre: data.nombre?.trim(),
           descripcion: data.descripcion?.trim() || '',
-          paraDiagnostico: data.paraDiagnostico,
-          paraReparacion: data.paraReparacion,
+          para_diagnostico: data.paraDiagnostico,
+          para_reparacion: data.paraReparacion,
+          updated_at: new Date(),
         }
       });
     } catch (error) {
@@ -109,7 +109,7 @@ export class ChecklistService {
   static async delete(id: number): Promise<void> {
     try {
       // Verificar si el item existe
-      const item = await prisma.checklistItem.findUnique({
+      const item = await prisma.checklist_items.findUnique({
         where: { id }
       });
 
@@ -118,11 +118,11 @@ export class ChecklistService {
       }
 
       // Verificar si el item está en uso
-      const respuestas = await prisma.checklistDiagnostico.findFirst({
+      const respuestas = await prisma.checklist_diagnostico.findFirst({
         where: {
-          respuestas: {
+          checklist_respuesta_diagnostico: {
             some: {
-              checklistItemId: id
+              checklist_item_id: id
             }
           }
         }
@@ -133,7 +133,7 @@ export class ChecklistService {
       }
 
       // Eliminar el item directamente
-      await prisma.checklistItem.delete({
+      await prisma.checklist_items.delete({
         where: { id }
       });
     } catch (error) {
@@ -144,13 +144,12 @@ export class ChecklistService {
 
   static async getByChecklistDiagnostico(checklistDiagnosticoId: number): Promise<ChecklistItem[]> {
     try {
-      // @ts-expect-error - Prisma types issue
-      const diagnostico = await prisma.checklistDiagnostico.findUnique({
+      const diagnostico = await prisma.checklist_diagnostico.findUnique({
         where: { id: checklistDiagnosticoId },
         include: {
-          respuestas: {
+          checklist_respuesta_diagnostico: {
             include: {
-              checklistItem: true
+              checklist_items: true
             }
           }
         }
@@ -160,7 +159,7 @@ export class ChecklistService {
         throw new Error('Checklist de diagnóstico no encontrado');
       }
 
-      return diagnostico.respuestas.map(r => r.checklistItem);
+      return diagnostico.checklist_respuesta_diagnostico.map(r => r.checklist_items);
     } catch (error) {
       console.error('Error en getByChecklistDiagnostico:', error);
       throw new Error('Error al obtener los items del checklist de diagnóstico');

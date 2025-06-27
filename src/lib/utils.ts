@@ -8,5 +8,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: Date | string) {
-  return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: es })
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return 'Fecha inválida';
+    }
+    return format(dateObj, 'dd/MM/yyyy HH:mm', { locale: es });
+  } catch (error) {
+    return 'Fecha no disponible';
+  }
 } 

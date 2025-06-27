@@ -1,0 +1,41 @@
+[build]
+  command = "rm -rf node_modules && npm install && npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NEXT_TELEMETRY_DISABLED = "1"
+  NODE_ENV = "production"
+  PRISMA_CLIENT_ENGINE_TYPE = "binary"
+  PRISMA_CLI_QUERY_ENGINE_TYPE = "binary"
+  SECRETS_SCAN_ENABLED = "false"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.html]
+  pretty_urls = true
+
+[build.processing.images]
+  compress = true
+
+[build.processing.ignore]
+  NODE_ENV = true
+  NEXT_TELEMETRY_DISABLED = true
+  PRISMA_CLIENT_ENGINE_TYPE = true
+  PRISMA_CLI_QUERY_ENGINE_TYPE = true
+  NODE_VERSION = true
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = true
+
+# Eliminamos los redirects ya que el plugin de Next.js los maneja automáticamente 

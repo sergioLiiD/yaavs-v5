@@ -521,7 +521,7 @@ export default function StockPage() {
                   <tr>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{producto.nombre}</div>
-                      <div className="text-sm text-gray-500">{producto.marca.nombre} - {producto.modelo.nombre}</div>
+                      <div className="text-sm text-gray-500">{producto.marca?.nombre || 'Sin marca'} - {producto.modelo?.nombre || 'Sin modelo'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`text-sm ${
@@ -534,7 +534,7 @@ export default function StockPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        ${producto.precioPromedio.toFixed(2)}
+                        ${(producto.precioPromedio || 0).toFixed(2)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -589,7 +589,7 @@ export default function StockPage() {
                   Stock actual: {productoSeleccionado.stock}
                 </p>
                 <p className="text-sm text-gray-600 mb-4">
-                  Precio promedio: ${productoSeleccionado.precioPromedio.toFixed(2)}
+                  Precio promedio: ${(productoSeleccionado.precioPromedio || 0).toFixed(2)}
                 </p>
                 {productoSeleccionado.entradas && productoSeleccionado.entradas.length > 0 && (
                   <div className="mb-4 p-3 bg-gray-50 rounded-md">
@@ -662,11 +662,11 @@ export default function StockPage() {
                     required
                   >
                     <option value="">Selecciona un proveedor</option>
-                    {proveedores.map((proveedor) => (
+                    {proveedores?.map((proveedor) => (
                       <option key={proveedor.id} value={proveedor.id}>
                         {proveedor.nombre}
                       </option>
-                    ))}
+                    )) || []}
                   </select>
                 </div>
                 <div>

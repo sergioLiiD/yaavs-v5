@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -17,23 +19,23 @@ export async function GET() {
 
     // Si es ADMINISTRADOR, permitir acceso a todos los datos
     if (session.user.role === 'ADMINISTRADOR') {
-      const clientes = await prisma.cliente.findMany({
+      const clientesRaw = await prisma.clientes.findMany({
         select: {
           id: true,
           nombre: true,
-          apellidoPaterno: true,
-          apellidoMaterno: true
+          apellido_paterno: true,
+          apellido_materno: true
         },
         orderBy: {
           nombre: 'asc'
         }
       });
 
-      const modelos = await prisma.modelo.findMany({
+      const modelosRaw = await prisma.modelos.findMany({
         select: {
           id: true,
           nombre: true,
-          marca: {
+          marcas: {
             select: {
               id: true,
               nombre: true
@@ -45,7 +47,7 @@ export async function GET() {
         }
       });
 
-      const estatusReparacion = await prisma.estatusReparacion.findMany({
+      const estatusReparacionRaw = await prisma.estatus_reparacion.findMany({
         where: {
           activo: true
         },
@@ -57,6 +59,28 @@ export async function GET() {
           nombre: 'asc'
         }
       });
+
+      // Mapear a formato camelCase para el frontend
+      const clientes = clientesRaw.map(cliente => ({
+        id: cliente.id,
+        nombre: cliente.nombre,
+        apellidoPaterno: cliente.apellido_paterno,
+        apellidoMaterno: cliente.apellido_materno
+      }));
+
+      const modelos = modelosRaw.map(modelo => ({
+        id: modelo.id,
+        nombre: modelo.nombre,
+        marca: modelo.marcas ? {
+          id: modelo.marcas.id,
+          nombre: modelo.marcas.nombre
+        } : null
+      }));
+
+      const estatusReparacion = estatusReparacionRaw.map(estatus => ({
+        id: estatus.id,
+        nombre: estatus.nombre
+      }));
 
       return NextResponse.json({
         puntoRecoleccion: null, // No hay punto específico para administradores
@@ -77,7 +101,7 @@ export async function GET() {
     }
 
     // Obtener el punto de recolección
-    const puntoRecoleccion = await prisma.puntoRecoleccion.findUnique({
+    const puntoRecoleccion = await prisma.puntos_recoleccion.findUnique({
       where: { id: userPointId }
     });
 
@@ -89,15 +113,15 @@ export async function GET() {
     }
 
     // Obtener clientes del punto de recolección
-    const clientes = await prisma.cliente.findMany({
+    const clientesRaw = await prisma.clientes.findMany({
       where: {
-        puntoRecoleccionId: userPointId
+        punto_recoleccion_id: userPointId
       },
       select: {
         id: true,
         nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true
+        apellido_paterno: true,
+        apellido_materno: true
       },
       orderBy: {
         nombre: 'asc'
@@ -105,11 +129,11 @@ export async function GET() {
     });
 
     // Obtener modelos
-    const modelos = await prisma.modelo.findMany({
+    const modelosRaw = await prisma.modelos.findMany({
       select: {
         id: true,
         nombre: true,
-        marca: {
+        marcas: {
           select: {
             id: true,
             nombre: true
@@ -122,7 +146,7 @@ export async function GET() {
     });
 
     // Obtener estatus de reparación
-    const estatusReparacion = await prisma.estatusReparacion.findMany({
+    const estatusReparacionRaw = await prisma.estatus_reparacion.findMany({
       where: {
         activo: true
       },
@@ -134,6 +158,28 @@ export async function GET() {
         nombre: 'asc'
       }
     });
+
+    // Mapear a formato camelCase para el frontend
+    const clientes = clientesRaw.map(cliente => ({
+      id: cliente.id,
+      nombre: cliente.nombre,
+      apellidoPaterno: cliente.apellido_paterno,
+      apellidoMaterno: cliente.apellido_materno
+    }));
+
+    const modelos = modelosRaw.map(modelo => ({
+      id: modelo.id,
+      nombre: modelo.nombre,
+      marca: modelo.marcas ? {
+        id: modelo.marcas.id,
+        nombre: modelo.marcas.nombre
+      } : null
+    }));
+
+    const estatusReparacion = estatusReparacionRaw.map(estatus => ({
+      id: estatus.id,
+      nombre: estatus.nombre
+    }));
 
     return NextResponse.json({
       puntoRecoleccion,

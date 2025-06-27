@@ -6,6 +6,8 @@ import { UpdateUsuarioDTO, NivelUsuario } from '@/types/usuario';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
+export const dynamic = 'force-dynamic';
+
 interface RouteParams {
   params: {
     id: string;
@@ -67,29 +69,31 @@ export async function PUT(
     console.log('Datos recibidos para actualización:', data);
 
     // Actualizar usuario y roles
-    const updatedUser = await prisma.usuario.update({
+    const updatedUser = await prisma.usuarios.update({
       where: { id },
       data: {
         nombre: data.nombre,
-        apellidoPaterno: data.apellidoPaterno,
-        apellidoMaterno: data.apellidoMaterno,
+        apellido_paterno: data.apellidoPaterno,
+        apellido_materno: data.apellidoMaterno,
         email: data.email,
         activo: data.activo,
-        usuarioRoles: data.roles ? {
+        updated_at: new Date(),
+        usuarios_roles: data.roles ? {
           deleteMany: {},
           create: data.roles.map((rolId: number) => ({
-            rolId: rolId
+            rol_id: rolId,
+            updated_at: new Date()
           }))
         } : undefined
       },
       include: {
-        usuarioRoles: {
+        usuarios_roles: {
           include: {
-            rol: {
+            roles: {
               include: {
-                permisos: {
+                roles_permisos: {
                   include: {
-                    permiso: true
+                    permisos: true
                   }
                 }
               }

@@ -7,6 +7,8 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 // Esquema de validación para el registro de usuarios
 const usuarioSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -50,11 +52,11 @@ export async function GET(request: Request) {
     console.log('Rol filtrado:', rol);
 
     try {
-      const usuarios = await prisma.usuario.findMany({
+      const usuarios = await prisma.usuarios.findMany({
         where: rol ? {
-          usuarioRoles: {
+          usuarios_roles: {
             some: {
-              rol: {
+              roles: {
                 nombre: rol
               }
             }
@@ -62,13 +64,13 @@ export async function GET(request: Request) {
         } : undefined,
         orderBy: { nombre: 'asc' },
         include: {
-          usuarioRoles: {
+          usuarios_roles: {
             include: {
-              rol: {
+              roles: {
                 include: {
-                  permisos: {
+                  roles_permisos: {
                     include: {
-                      permiso: true
+                      permisos: true
                     }
                   }
                 }
@@ -79,7 +81,26 @@ export async function GET(request: Request) {
       });
 
       console.log('Usuarios encontrados:', usuarios);
-      return NextResponse.json(usuarios);
+      
+      // Mapear los datos de snake_case (DB) a camelCase (frontend)
+      const usuariosMapeados = usuarios.map(usuario => ({
+        ...usuario,
+        apellidoPaterno: usuario.apellido_paterno,
+        apellidoMaterno: usuario.apellido_materno,
+        createdAt: usuario.created_at,
+        updatedAt: usuario.updated_at,
+        // Mantener las relaciones con sus nombres correctos
+        usuarioRoles: usuario.usuarios_roles?.map(ur => ({
+          ...ur,
+          usuarioId: ur.usuario_id,
+          rolId: ur.rol_id,
+          createdAt: ur.created_at,
+          updatedAt: ur.updated_at,
+          rol: ur.roles
+        }))
+      }));
+      
+      return NextResponse.json(usuariosMapeados);
     } catch (dbError) {
       console.error('Error en consulta a la base de datos:', dbError);
       if (dbError instanceof Prisma.PrismaClientKnownRequestError) {
@@ -125,7 +146,7 @@ export async function POST(request: Request) {
     console.log('Datos validados correctamente');
 
     // Verificar si el usuario ya existe
-    const usuarioExistente = await prisma.usuario.findUnique({
+    const usuarioExistente = await prisma.usuarios.findUnique({
       where: { email: validatedData.email }
     });
 
@@ -143,30 +164,30 @@ export async function POST(request: Request) {
 
     // Crear el usuario
     console.log('Creando usuario...');
-    const usuario = await prisma.usuario.create({
+    const usuario = await prisma.usuarios.create({
       data: {
         email: validatedData.email,
         nombre: validatedData.nombre,
-        apellidoPaterno: validatedData.apellidoPaterno,
-        apellidoMaterno: validatedData.apellidoMaterno || '',
-        passwordHash,
+        apellido_paterno: validatedData.apellidoPaterno,
+        apellido_materno: validatedData.apellidoMaterno || '',
+        password_hash: passwordHash,
         activo: validatedData.activo,
-        updatedAt: new Date(),
-        createdAt: new Date(),
-        usuarioRoles: {
+        updated_at: new Date(),
+        created_at: new Date(),
+        usuarios_roles: {
           create: body.roles?.map((rolId: number) => ({
-            rolId
+            rol_id: rolId
           })) || []
         }
       },
       include: {
-        usuarioRoles: {
+        usuarios_roles: {
           include: {
-            rol: {
+            roles: {
               include: {
-                permisos: {
+                roles_permisos: {
                   include: {
-                    permiso: true
+                    permisos: true
                   }
                 }
               }

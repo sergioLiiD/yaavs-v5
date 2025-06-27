@@ -1,34 +1,35 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+// GET - Obtener todos los estatus de reparación
+export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-
-    if (!session) {
-      return new NextResponse(JSON.stringify({ error: 'No autorizado' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const estatusReparacion = await prisma.estatusReparacion.findMany({
+    const estatusReparacion = await prisma.estatus_reparacion.findMany({
       orderBy: {
-        nombre: 'asc',
-      },
+        orden: 'asc'
+      }
     });
 
     return new NextResponse(JSON.stringify(estatusReparacion), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
   } catch (error) {
-    console.error('Error al obtener estados de reparación:', error);
-    return new NextResponse(JSON.stringify({ error: 'Error interno del servidor' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    console.error('Error al obtener estatus de reparación:', error);
+    return NextResponse.json(
+      { error: 'Error al obtener estatus de reparación' },
+      { status: 500 }
+    );
   }
 } 

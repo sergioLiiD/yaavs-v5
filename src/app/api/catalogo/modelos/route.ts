@@ -3,6 +3,8 @@ import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/catalogo/modelos
 export async function GET(req: NextRequest) {
   try {
@@ -27,7 +29,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Verificar que la marca existe
-    const marca = await prisma.marca.findUnique({
+    const marca = await prisma.marcas.findUnique({
       where: { id: parseInt(marcaId) }
     });
 
@@ -36,12 +38,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Marca no encontrada' }, { status: 404 });
     }
 
-    const modelos = await prisma.modelo.findMany({
+    const modelos = await prisma.modelos.findMany({
       where: {
-        marcaId: parseInt(marcaId)
+        marca_id: parseInt(marcaId)
       },
       include: {
-        marca: true
+        marcas: true
       },
       orderBy: {
         nombre: 'asc'
@@ -86,7 +88,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verificar que la marca existe
-    const marca = await prisma.marca.findUnique({
+    const marca = await prisma.marcas.findUnique({
       where: { id: parseInt(data.marcaId) }
     });
 
@@ -96,19 +98,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Crear el modelo
-    const modelo = await prisma.modelo.create({
+    const modelo = await prisma.modelos.create({
       data: {
         nombre: data.nombre,
         descripcion: data.descripcion || null,
-        marcaId: parseInt(data.marcaId)
+        marca_id: parseInt(data.marcaId),
+        updated_at: new Date()
       }
     });
 
     // Obtener el modelo con la relación a marca
-    const modeloConMarca = await prisma.modelo.findUnique({
+    const modeloConMarca = await prisma.modelos.findUnique({
       where: { id: modelo.id },
       include: {
-        marca: true
+        marcas: true
       }
     });
 

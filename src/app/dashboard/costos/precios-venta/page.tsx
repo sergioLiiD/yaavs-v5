@@ -15,14 +15,14 @@ interface PrecioVenta {
   nombre: string;
   marca: string;
   modelo: string;
-  precioCompraPromedio: number;
-  precioVenta: number;
-  productoId?: number;
-  servicioId?: number;
-  createdAt: Date;
-  updatedAt: Date;
-  createdBy: string;
-  updatedBy: string;
+  precio_compra_promedio: number;
+  precio_venta: number;
+  producto_id?: number;
+  servicio_id?: number;
+  created_at: Date;
+  updated_at: Date;
+  created_by: string;
+  updated_by: string;
 }
 
 interface PrecioVentaItem {
@@ -147,17 +147,17 @@ export default function PreciosVentaPage() {
     setCurrentPrecio({
       id: item.precio_id.toString(),
       nombre: item.nombre,
-      precioVenta: item.precio,
+      precio_venta: item.precio,
       tipo: item.tipo,
-      productoId: item.tipo === 'PRODUCTO' ? item.id : undefined,
-      servicioId: item.tipo === 'SERVICIO' ? item.id : undefined,
-      precioCompraPromedio: item.precio_compra,
+      producto_id: item.tipo === 'PRODUCTO' ? item.id : undefined,
+      servicio_id: item.tipo === 'SERVICIO' ? item.id : undefined,
+      precio_compra_promedio: item.precio_compra,
       marca: item.marca,
       modelo: item.modelo,
-      createdAt: new Date(item.updated_at),
-      updatedAt: new Date(item.updated_at),
-      createdBy: session?.user?.email || '',
-      updatedBy: session?.user?.email || ''
+      created_at: new Date(item.updated_at),
+      updated_at: new Date(item.updated_at),
+      created_by: session?.user?.email || '',
+      updated_by: session?.user?.email || ''
     });
     setIsModalOpen(true);
   };
@@ -175,14 +175,14 @@ export default function PreciosVentaPage() {
       nombre: item.nombre,
       marca: item.marca || '-',
       modelo: item.modelo || '-',
-      precioCompraPromedio: item.precio_compra || 0,
-      precioVenta: item.precio || 0,
-      productoId: item.tipo === 'PRODUCTO' ? item.id : undefined,
-      servicioId: item.tipo === 'SERVICIO' ? item.id : undefined,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: session?.user?.email || '',
-      updatedBy: session?.user?.email || ''
+      precio_compra_promedio: item.precio_compra || 0,
+      precio_venta: item.precio || 0,
+      producto_id: item.tipo === 'PRODUCTO' ? item.id : undefined,
+      servicio_id: item.tipo === 'SERVICIO' ? item.id : undefined,
+      created_at: new Date(),
+      updated_at: new Date(),
+      created_by: session?.user?.email || '',
+      updated_by: session?.user?.email || ''
     });
     setIsModalOpen(true);
   };
@@ -202,9 +202,9 @@ export default function PreciosVentaPage() {
         nombre: currentPrecio.nombre,
         marca: currentPrecio.marca || '-',
         modelo: currentPrecio.modelo || '-',
-        precioCompraPromedio: Number(currentPrecio.precioCompraPromedio) || 0,
-        precioVenta: Number(currentPrecio.precioVenta) || 0,
-        productoId: currentPrecio.tipo === 'PRODUCTO' ? Number(currentPrecio.productoId) : null,
+        precioCompraPromedio: Number(currentPrecio.precio_compra_promedio) || 0,
+        precioVenta: Number(currentPrecio.precio_venta) || 0,
+        productoId: currentPrecio.tipo === 'PRODUCTO' ? Number(currentPrecio.producto_id) : null,
         servicioId: currentPrecio.tipo === 'SERVICIO' ? 1 : null,
         updatedBy: 'system'
       };
@@ -240,28 +240,34 @@ export default function PreciosVentaPage() {
 
   // Crear lista completa de productos y servicios con sus precios
   const allItems = useMemo(() => {
+    // Agregar verificaciones null-safety
+    if (!productos || !Array.isArray(productos)) {
+      return [];
+    }
+
     return productos.map(item => {
-      // Buscar el precio de venta existente
-      const precio = precios.find(p => {
+      // Buscar el precio de venta existente con null-safety
+      const precio = (precios && Array.isArray(precios)) ? precios.find(p => {
         if (item.tipo === 'SERVICIO') {
           return p.tipo === 'SERVICIO' && p.nombre === item.nombre;
         }
         return p.nombre === item.nombre;
-      });
+      }) : null;
       
-      // Obtener el precio promedio directamente de la tabla de stock
-      const precioPromedio = preciosPromedio.find(p => p.producto_id === item.id)?.precio_promedio || 0;
+      // Obtener el precio promedio directamente de la tabla de stock con null-safety
+      const precioPromedio = (preciosPromedio && Array.isArray(preciosPromedio)) ? 
+        preciosPromedio.find(p => p.producto_id === item.id)?.precio_promedio || 0 : 0;
       
       return {
         id: item.id,
         nombre: String(item.nombre || ''),
         tipo: item.tipo,
-        precio: precio ? Number(precio.precioVenta) : 0,
+        precio: precio ? Number(precio.precio_venta) : 0, // Actualizado: precio_venta -> precio_venta
         precio_id: precio ? String(precio.id) : '',
         marca: item.tipo === 'PRODUCTO' ? String(item.marcas?.nombre || '-') : '-',
         modelo: item.tipo === 'PRODUCTO' ? String(item.Modelo?.nombre || '-') : '-',
         precio_compra: item.tipo === 'PRODUCTO' ? Number(precioPromedio) : 0,
-        updated_at: precio?.updatedAt ? new Date(precio.updatedAt).toISOString() : ''
+        updated_at: precio?.updated_at ? new Date(precio.updated_at).toISOString() : '' // Actualizado: updated_at -> updated_at
       };
     });
   }, [productos, precios, preciosPromedio]);
@@ -421,7 +427,7 @@ export default function PreciosVentaPage() {
                       </label>
                       <input
                         type="number"
-                        value={currentPrecio?.precioCompraPromedio || 0}
+                        value={currentPrecio?.precio_compra_promedio || 0}
                         disabled
                         className="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-500 sm:text-sm"
                       />
@@ -432,13 +438,13 @@ export default function PreciosVentaPage() {
                       </label>
                       <input
                         type="number"
-                        value={currentPrecio?.precioVenta || ''}
+                        value={currentPrecio?.precio_venta || ''}
                         onChange={(e) => {
                           const value = e.target.value === '' ? 0 : Number(e.target.value);
                           console.log('Nuevo precio de venta:', value);
                           setCurrentPrecio(prev => prev ? {
                             ...prev,
-                            precioVenta: value
+                            precio_venta: value
                           } : null);
                         }}
                         className="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"

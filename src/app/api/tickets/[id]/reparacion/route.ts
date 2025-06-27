@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
@@ -67,7 +69,7 @@ export async function POST(
     // Guardar las respuestas del checklist
     if (checklist && Array.isArray(checklist)) {
       // Usar el endpoint de checklist para guardar las respuestas
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3100';
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
       const checklistResponse = await fetch(`${baseUrl}/api/tickets/${ticketId}/checklist-reparacion`, {
         method: 'POST',
         headers: {

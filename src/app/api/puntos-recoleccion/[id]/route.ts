@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { CollectionPoint } from '@/types/collection-point';
 import { PuntoRecoleccion, Prisma } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 type PuntoRecoleccionWithRelations = PuntoRecoleccion & {
   sucursales: PuntoRecoleccion[];
   usuarios: {

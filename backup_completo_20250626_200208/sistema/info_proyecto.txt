@@ -1,0 +1,7 @@
+# Información del Proyecto YAAVS v5
+Fecha del backup: Thu Jun 26 20:02:10 CEST 2025
+Usuario: sergio
+Directorio: /Users/sergio/Projects/yaavs-v5
+Sistema: Darwin Sergios-MacBook-Air.fritz.box 24.4.0 Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112 arm64
+
+## Versiones de Herramientas:

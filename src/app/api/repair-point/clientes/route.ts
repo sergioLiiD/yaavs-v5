@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,22 +20,33 @@ export async function POST(request: Request) {
     if (session.user.role === 'ADMINISTRADOR') {
       const body = await request.json();
       
-      const cliente = await prisma.cliente.create({
+      const cliente = await prisma.clientes.create({
         data: {
           nombre: body.nombre,
-          apellidoPaterno: body.apellidoPaterno,
-          apellidoMaterno: body.apellidoMaterno || null,
+          apellido_paterno: body.apellidoPaterno,
+          apellido_materno: body.apellidoMaterno || null,
           email: body.email,
-          telefonoCelular: body.telefono,
-          puntoRecoleccion: body.puntoRecoleccionId ? {
-            connect: {
-              id: body.puntoRecoleccionId
-            }
-          } : undefined
+          telefono_celular: body.telefono,
+          punto_recoleccion_id: body.puntoRecoleccionId || null,
+          created_at: new Date(),
+          updated_at: new Date()
         }
       });
 
-      return NextResponse.json(cliente);
+      // Mapear a formato camelCase para el frontend
+      const clienteMapeado = {
+        id: cliente.id,
+        nombre: cliente.nombre,
+        apellidoPaterno: cliente.apellido_paterno,
+        apellidoMaterno: cliente.apellido_materno,
+        email: cliente.email,
+        telefonoCelular: cliente.telefono_celular,
+        puntoRecoleccionId: cliente.punto_recoleccion_id,
+        createdAt: cliente.created_at,
+        updatedAt: cliente.updated_at
+      };
+
+      return NextResponse.json(clienteMapeado);
     }
 
     // Para otros roles, usar el punto de recolección del usuario
@@ -49,22 +62,33 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     // Crear el cliente
-    const cliente = await prisma.cliente.create({
+    const cliente = await prisma.clientes.create({
       data: {
         nombre: body.nombre,
-        apellidoPaterno: body.apellidoPaterno,
-        apellidoMaterno: body.apellidoMaterno || null,
+        apellido_paterno: body.apellidoPaterno,
+        apellido_materno: body.apellidoMaterno || null,
         email: body.email,
-        telefonoCelular: body.telefono,
-        puntoRecoleccion: {
-          connect: {
-            id: userPointId
-          }
-        }
+        telefono_celular: body.telefono,
+        punto_recoleccion_id: userPointId,
+        created_at: new Date(),
+        updated_at: new Date()
       }
     });
 
-    return NextResponse.json(cliente);
+    // Mapear a formato camelCase para el frontend
+    const clienteMapeado = {
+      id: cliente.id,
+      nombre: cliente.nombre,
+      apellidoPaterno: cliente.apellido_paterno,
+      apellidoMaterno: cliente.apellido_materno,
+      email: cliente.email,
+      telefonoCelular: cliente.telefono_celular,
+      puntoRecoleccionId: cliente.punto_recoleccion_id,
+      createdAt: cliente.created_at,
+      updatedAt: cliente.updated_at
+    };
+
+    return NextResponse.json(clienteMapeado);
   } catch (error) {
     console.error('Error al crear cliente:', error);
     return NextResponse.json(
@@ -87,11 +111,37 @@ export async function GET() {
 
     // Si es ADMINISTRADOR, mostrar todos los clientes
     if (session.user.role === 'ADMINISTRADOR') {
-      const clientes = await prisma.cliente.findMany({
+      const clientesRaw = await prisma.clientes.findMany({
         orderBy: {
           nombre: 'asc'
         }
       });
+
+      // Mapear los datos a formato camelCase para el frontend
+      const clientes = clientesRaw.map((cliente: any) => ({
+        id: cliente.id,
+        nombre: cliente.nombre,
+        apellidoPaterno: cliente.apellido_paterno,
+        apellidoMaterno: cliente.apellido_materno,
+        telefonoCelular: cliente.telefono_celular,
+        telefonoContacto: cliente.telefono_contacto,
+        email: cliente.email,
+        calle: cliente.calle,
+        numeroExterior: cliente.numero_exterior,
+        numeroInterior: cliente.numero_interior,
+        colonia: cliente.colonia,
+        ciudad: cliente.ciudad,
+        estado: cliente.estado,
+        codigoPostal: cliente.codigo_postal,
+        latitud: cliente.latitud,
+        longitud: cliente.longitud,
+        fuenteReferencia: cliente.fuente_referencia,
+        rfc: cliente.rfc,
+        tipoRegistro: cliente.tipo_registro,
+        createdAt: cliente.created_at,
+        updatedAt: cliente.updated_at,
+        puntoRecoleccionId: cliente.punto_recoleccion_id
+      }));
 
       return NextResponse.json(clientes);
     }
@@ -107,14 +157,40 @@ export async function GET() {
     }
 
     // Obtener los clientes del punto de recolección
-    const clientes = await prisma.cliente.findMany({
+    const clientesRaw = await prisma.clientes.findMany({
       where: {
-        puntoRecoleccionId: userPointId
+        punto_recoleccion_id: userPointId
       },
       orderBy: {
         nombre: 'asc'
       }
     });
+
+    // Mapear los datos a formato camelCase para el frontend
+    const clientes = clientesRaw.map((cliente: any) => ({
+      id: cliente.id,
+      nombre: cliente.nombre,
+      apellidoPaterno: cliente.apellido_paterno,
+      apellidoMaterno: cliente.apellido_materno,
+      telefonoCelular: cliente.telefono_celular,
+      telefonoContacto: cliente.telefono_contacto,
+      email: cliente.email,
+      calle: cliente.calle,
+      numeroExterior: cliente.numero_exterior,
+      numeroInterior: cliente.numero_interior,
+      colonia: cliente.colonia,
+      ciudad: cliente.ciudad,
+      estado: cliente.estado,
+      codigoPostal: cliente.codigo_postal,
+      latitud: cliente.latitud,
+      longitud: cliente.longitud,
+      fuenteReferencia: cliente.fuente_referencia,
+      rfc: cliente.rfc,
+      tipoRegistro: cliente.tipo_registro,
+      createdAt: cliente.created_at,
+      updatedAt: cliente.updated_at,
+      puntoRecoleccionId: cliente.punto_recoleccion_id
+    }));
 
     return NextResponse.json(clientes);
   } catch (error) {

@@ -3,6 +3,8 @@ import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/catalogo/estados-reparacion
 export async function GET(req: NextRequest) {
   try {
@@ -11,7 +13,7 @@ export async function GET(req: NextRequest) {
       return new NextResponse('No autorizado', { status: 401 });
     }
 
-    const estados = await prisma.estatusReparacion.findMany({
+    const estados = await prisma.estatus_reparacion.findMany({
       orderBy: {
         orden: 'asc'
       }
@@ -55,13 +57,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Crear nuevo estado de reparación
-    const nuevoEstado = await prisma.estatusReparacion.create({
+    const nuevoEstado = await prisma.estatus_reparacion.create({
       data: {
         nombre: body.nombre,
         descripcion: body.descripcion || null,
         orden: body.orden || 1,
         color: body.color || null,
-        activo: true
+        activo: true,
+        created_at: new Date(),
+        updated_at: new Date()
       }
     });
     
