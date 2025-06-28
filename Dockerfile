@@ -1,8 +1,15 @@
-# Usar imagen oficial de Node.js
-FROM node:18-alpine AS base
+# Usar imagen oficial de Node.js con Debian
+FROM node:18.20.2-bullseye-slim AS base
 
 # Instalar dependencias necesarias para Prisma y compilación
-RUN apk add --no-cache libc6-compat openssl python3 make g++
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    postgresql-client \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Configurar directorio de trabajo
 WORKDIR /app
@@ -36,10 +43,14 @@ RUN npx prisma generate
 RUN npm run build
 
 # Etapa de producción
-FROM node:18-alpine AS runner
+FROM node:18.20.2-bullseye-slim AS runner
 
 # Instalar dependencias del sistema
-RUN apk add --no-cache postgresql-client
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -70,11 +81,11 @@ RUN chown -R nextjs:nodejs /app
 USER nextjs
 
 # Exponer puerto
-EXPOSE 3000
+EXPOSE 3100
 
 # Variables de entorno por defecto
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=3100
 
 # Script de inicio
 CMD ["node", "server.js"] 

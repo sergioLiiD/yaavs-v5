@@ -35,15 +35,17 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/yaavs_db?schema=public
       - NEXTAUTH_URL=http://localhost:3100
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - JWT_SECRET=${JWT_SECRET}
       - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3100/api}
+      - PORT=3100
+      - NEXTAUTH_DEBUG=true
     ports:
-      - "3100:3000"
+      - "3100:3100"
     volumes:
       # Volumen para archivos de uploads si existen
       - uploads_data:/app/public/uploads
@@ -52,7 +54,7 @@ services:
     networks:
       - yaavs_network
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

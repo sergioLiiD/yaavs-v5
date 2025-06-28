@@ -3,9 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { PrismaClient } from '@prisma/client';
 import { compare } from 'bcrypt';
-import { db } from '@/lib/db';
-
-const prisma = new PrismaClient();
+import { db } from '@/lib/prisma-docker';
 
 export interface CustomUser {
   id: number;
@@ -69,7 +67,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         console.log('Buscando usuario en la base de datos...');
-        const user = await prisma.usuarios.findUnique({
+        const user = await db.usuarios.findUnique({
           where: { 
             email: credentials.email,
             activo: true
@@ -201,7 +199,7 @@ export const authOptions: NextAuthOptions = {
     signIn: '/auth/login',
     error: '/auth/error'
   },
-  debug: process.env.NODE_ENV === 'development',
+  debug: true,
   events: {
     async signOut() {
       // Limpiar cualquier estado de sesión al cerrar sesión
