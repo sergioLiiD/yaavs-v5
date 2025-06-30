@@ -11,22 +11,6 @@ export interface CustomUser {
   name: string;
   role: string;
   permissions: string[];
-  roles: Array<{
-    rol: {
-      id: number;
-      nombre: string;
-      descripcion: string;
-      permisos: Array<{
-        permiso: {
-          id: number;
-          codigo: string;
-          nombre: string;
-          descripcion: string;
-          categoria: string;
-        };
-      }>;
-    };
-  }>;
   puntoRecoleccion?: {
     id: number;
     nombre: string;
@@ -112,7 +96,7 @@ export const authOptions: NextAuthOptions = {
         console.log('Contraseña válida');
         console.log('Roles del usuario:', user.usuarios_roles.map((ur: any) => ur.roles.nombre));
 
-        // Preparar el objeto de usuario con roles y permisos anidados
+        // Preparar el objeto de usuario OPTIMIZADO (sin roles anidados)
         const userWithRoles: CustomUser = {
           id: Number(user.id),
           email: user.email,
@@ -121,22 +105,6 @@ export const authOptions: NextAuthOptions = {
           permissions: user.usuarios_roles.flatMap((ur: any) => 
             ur.roles.roles_permisos.map((p: any) => p.permisos.codigo)
           ),
-          roles: user.usuarios_roles.map((ur: any) => ({
-            rol: {
-              id: ur.roles.id,
-              nombre: ur.roles.nombre,
-              descripcion: ur.roles.descripcion || '',
-              permisos: ur.roles.roles_permisos.map((p: any) => ({
-                permiso: {
-                  id: p.permisos.id,
-                  codigo: p.permisos.codigo,
-                  nombre: p.permisos.nombre,
-                  descripcion: p.permisos.descripcion || '',
-                  categoria: p.permisos.categoria
-                }
-              }))
-            }
-          })),
           puntoRecoleccion: user.usuarios_puntos_recoleccion[0]?.puntos_recoleccion ? {
             id: user.usuarios_puntos_recoleccion[0].puntos_recoleccion.id,
             nombre: user.usuarios_puntos_recoleccion[0].puntos_recoleccion.nombre
@@ -163,7 +131,6 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name;
         token.role = user.role;
         token.permissions = user.permissions;
-        token.roles = user.roles;
         token.puntoRecoleccion = user.puntoRecoleccion;
       }
       return token;
@@ -171,12 +138,11 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token) {
         session.user = {
-          id: Number(token.id),
+          id: typeof token.id === 'string' ? parseInt(token.id, 10) : Number(token.id),
           email: token.email as string,
           name: token.name as string,
           role: token.role as string,
           permissions: token.permissions as string[],
-          roles: token.roles,
           puntoRecoleccion: token.puntoRecoleccion as { id: number; nombre: string; } | undefined,
         };
       }

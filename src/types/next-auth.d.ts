@@ -10,22 +10,6 @@ declare module 'next-auth' {
     name?: string | null;
     role: string;
     permissions: string[];
-    roles: Array<{
-      rol: {
-        id: number;
-        nombre: string;
-        descripcion: string;
-        permisos: Array<{
-          permiso: {
-            id: number;
-            codigo: string;
-            nombre: string;
-            descripcion: string;
-            categoria: string;
-          };
-        }>;
-      };
-    }>;
     repairPointId?: string;
     canRepair?: boolean;
     puntoRecoleccion?: {
@@ -42,22 +26,6 @@ declare module 'next-auth' {
       image?: string | null;
       role: string;
       permissions: string[];
-      roles: Array<{
-        rol: {
-          id: number;
-          nombre: string;
-          descripcion: string;
-          permisos: Array<{
-            permiso: {
-              id: number;
-              codigo: string;
-              nombre: string;
-              descripcion: string;
-              categoria: string;
-            };
-          }>;
-        };
-      }>;
       repairPointId?: string;
       canRepair?: boolean;
       puntoRecoleccion?: {
@@ -70,26 +38,14 @@ declare module 'next-auth' {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id: number;
+    id: number | string;
     role: string;
     permissions: string[];
-    roles: Array<{
-      rol: {
-        id: number;
-        nombre: string;
-        descripcion: string;
-        permisos: Array<{
-          permiso: {
-            id: number;
-            codigo: string;
-            nombre: string;
-            descripcion: string;
-            categoria: string;
-          };
-        }>;
-      };
-    }>;
     repairPointId?: string;
     canRepair?: boolean;
+    puntoRecoleccion?: {
+      id: number;
+      nombre: string;
+    };
   }
 } 
