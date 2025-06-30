@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { signIn, useSession, getSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 function LoginForm() {
   const router = useRouter();
-  const { data: session, status, update } = useSession();
+  const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   
@@ -20,7 +20,18 @@ function LoginForm() {
 
   useEffect(() => {
     if (status === 'authenticated' && session) {
-      // Agregar un pequeño delay para asegurar que la sesión esté completamente establecida
+      console.log('🔐 Usuario autenticado, iniciando redirección...');
+      
+      // Verificar si ya estamos en una ruta válida del dashboard
+      const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+      
+      // Si ya estamos en una ruta del dashboard, no redirigir
+      if (currentPath.startsWith('/dashboard')) {
+        console.log('📍 Ya estamos en dashboard, no redirigiendo desde login');
+        return;
+      }
+      
+      // Agregar un delay para asegurar que la sesión esté completamente establecida
       const redirectTimeout = setTimeout(() => {
         let redirectUrl = '/dashboard';
         
@@ -29,26 +40,26 @@ function LoginForm() {
           redirectUrl = callbackUrl;
         }
 
-        // Asegurarse de que la URL sea válida antes de redirigir
+        console.log('🚀 Intentando redirección a:', redirectUrl);
+        
+        // Intentar primero con router.replace
         try {
-          // Si la URL no es absoluta, hacerla absoluta
-          if (!redirectUrl.startsWith('http') && !redirectUrl.startsWith('/')) {
-            redirectUrl = '/' + redirectUrl;
-          }
+          router.replace(redirectUrl);
           
-          // Validar que la URL sea válida
-          if (redirectUrl.startsWith('/')) {
-            console.log('Redirigiendo a:', redirectUrl);
-            router.replace(redirectUrl);
-          } else {
-            console.error('URL inválida:', redirectUrl);
-            router.replace('/dashboard');
-          }
+          // Si después de 2 segundos no se ha redirigido, usar window.location
+          setTimeout(() => {
+            if (window.location.pathname !== redirectUrl) {
+              console.log('⚠️ Router no funcionó, usando window.location.href');
+              window.location.href = redirectUrl;
+            }
+          }, 2000);
+          
         } catch (error) {
-          console.error('Error con URL:', redirectUrl, error);
-          router.replace('/dashboard');
+          console.error('Error con router.replace:', error);
+          console.log('🔄 Usando window.location.href como fallback');
+          window.location.href = redirectUrl;
         }
-      }, 100); // Pequeño delay de 100ms
+      }, 500); // Aumentar el delay a 500ms
 
       return () => clearTimeout(redirectTimeout);
     }
@@ -62,7 +73,7 @@ function LoginForm() {
     try {
       console.log('Iniciando proceso de login...');
       const result = await signIn('credentials', {
-        redirect: false,
+        redirect: true,
         email,
         password,
         callbackUrl
@@ -75,21 +86,8 @@ function LoginForm() {
         setError('Credenciales inválidas');
         setIsLoading(false);
       } else if (result?.ok) {
-        console.log('Login exitoso, actualizando sesión...');
+        console.log('Login exitoso, esperando actualización de sesión...');
         setShouldRedirect(true);
-        
-        // Forzar la actualización de la sesión
-        try {
-          await update();
-          console.log('Sesión actualizada manualmente');
-          
-          // También intentar obtener la sesión directamente
-          const newSession = await getSession();
-          console.log('Nueva sesión obtenida:', newSession ? 'Sí' : 'No');
-        } catch (updateError) {
-          console.error('Error actualizando sesión:', updateError);
-        }
-        
         // No llamamos setIsLoading(false) aquí para mantener el estado de loading
         // hasta que la redirección ocurra
       }
@@ -201,4 +199,4 @@ export default function LoginPage() {
       <LoginForm />
     </Suspense>
   );
-}
+} 

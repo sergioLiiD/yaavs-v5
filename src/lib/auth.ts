@@ -41,7 +41,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         console.log('=== INICIANDO AUTENTICACIÓN ===');
         console.log('Email recibido:', credentials?.email);
         
@@ -115,13 +115,42 @@ export const authOptions: NextAuthOptions = {
         console.log('Rol asignado:', userWithRoles.role);
         console.log('=== FIN AUTENTICACIÓN ===\n');
 
-        return userWithRoles;
+        return userWithRoles as any;
       }
     })
   ],
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 días
+  },
+  // Configuración específica de cookies para Docker
+  cookies: {
+    sessionToken: {
+      name: 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    },
+    callbackUrl: {
+      name: 'next-auth.callback-url',
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    },
+    csrfToken: {
+      name: 'next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    }
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -138,7 +167,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token) {
         session.user = {
-          id: typeof token.id === 'string' ? parseInt(token.id, 10) : Number(token.id),
+          id: Number(token.id) as number,
           email: token.email as string,
           name: token.name as string,
           role: token.role as string,
@@ -149,15 +178,29 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      console.log('🔀 Callback de redirección:', { url, baseUrl });
+      
       // Si la URL es relativa, hacerla absoluta
       if (url.startsWith('/')) {
-        return `${baseUrl}${url}`;
+        const redirectUrl = `${baseUrl}${url}`;
+        console.log('📍 Redirigiendo a URL relativa:', redirectUrl);
+        return redirectUrl;
       }
+      
       // Si la URL es absoluta y del mismo dominio, permitirla
       if (url.startsWith(baseUrl)) {
+        console.log('📍 Redirigiendo a URL del mismo dominio:', url);
         return url;
       }
+      
+      // Si es una URL externa, verificar que sea segura
+      if (url.startsWith('http')) {
+        console.log('⚠️ URL externa detectada, redirigiendo al dashboard:', url);
+        return `${baseUrl}/dashboard`;
+      }
+      
       // Por defecto, redirigir al dashboard
+      console.log('📍 Redirigiendo por defecto al dashboard');
       return `${baseUrl}/dashboard`;
     }
   },
