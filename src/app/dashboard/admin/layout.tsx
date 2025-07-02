@@ -71,6 +71,6 @@ export default function AdminSectionLayout({
   }
 
   return (
-    <AdminLayout>{children}</AdminLayout>
+      <AdminLayout>{children}</AdminLayout>
   );
 } 

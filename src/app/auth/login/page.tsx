@@ -51,7 +51,7 @@ function LoginForm() {
             if (window.location.pathname !== redirectUrl) {
               console.log('⚠️ Router no funcionó, usando window.location.href');
               window.location.href = redirectUrl;
-            }
+          }
           }, 2000);
           
         } catch (error) {

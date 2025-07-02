@@ -29,7 +29,13 @@ yarn-error.log*
 .env
 .env.example
 .env.migration
-.env.production 
+.env.production
+
+# Server configuration files (should not be in git)
+docker-compose.yml
+docker-compose.override.yml
+nginx.conf
+server-config/ 
 
 # vercel
 .vercel
