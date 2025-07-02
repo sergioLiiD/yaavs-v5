@@ -131,7 +131,8 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: false // Cambiado para permitir HTTP
+        secure: false,
+        domain: 'arregla.mx'
       }
     },
     callbackUrl: {
@@ -139,7 +140,8 @@ export const authOptions: NextAuthOptions = {
       options: {
         sameSite: 'lax',
         path: '/',
-        secure: false // Cambiado para permitir HTTP
+        secure: false,
+        domain: 'arregla.mx'
       }
     },
     csrfToken: {
@@ -148,7 +150,8 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: false // Cambiado para permitir HTTP
+        secure: false,
+        domain: 'arregla.mx'
       }
     }
   },
