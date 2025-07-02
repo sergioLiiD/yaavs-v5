@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { CreateUsuarioDTO } from '@/types/usuario';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/prisma-docker';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     console.log('Rol filtrado:', rol);
 
     try {
-      const usuarios = await prisma.usuarios.findMany({
+      const usuarios = await db.usuarios.findMany({
         where: rol ? {
           usuarios_roles: {
             some: {
@@ -142,64 +142,156 @@ export async function POST(request: Request) {
     console.log('Datos recibidos:', { ...body, password: '[REDACTED]' });
 
     // Validar datos con el esquema
-    const validatedData = usuarioSchema.parse(body);
-    console.log('Datos validados correctamente');
-
-    // Verificar si el usuario ya existe
-    const usuarioExistente = await prisma.usuarios.findUnique({
-      where: { email: validatedData.email }
-    });
-
-    if (usuarioExistente) {
-      console.log('Email ya registrado:', validatedData.email);
+    try {
+      const validatedData = usuarioSchema.parse(body);
+      console.log('Datos validados correctamente');
+    } catch (validationError) {
+      console.error('Error de validación:', validationError);
       return NextResponse.json(
-        { error: 'El email ya está registrado' },
+        { error: 'Datos inválidos', details: validationError instanceof Error ? validationError.message : 'Error de validación' },
         { status: 400 }
       );
     }
 
-    // Encriptar la contraseña
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(validatedData.password, salt);
+    const validatedData = usuarioSchema.parse(body);
 
-    // Crear el usuario
-    console.log('Creando usuario...');
-    const usuario = await prisma.usuarios.create({
-      data: {
+    // Verificar si el usuario ya existe
+    try {
+      const usuarioExistente = await db.usuarios.findUnique({
+        where: { email: validatedData.email }
+      });
+
+      if (usuarioExistente) {
+        console.log('Email ya registrado:', validatedData.email);
+        return NextResponse.json(
+          { error: 'El email ya está registrado' },
+          { status: 400 }
+        );
+      }
+    } catch (dbError) {
+      console.error('Error al verificar usuario existente:', dbError);
+      return NextResponse.json(
+        { error: 'Error al verificar usuario existente', details: dbError instanceof Error ? dbError.message : 'Error de base de datos' },
+        { status: 500 }
+      );
+    }
+
+    // Encriptar la contraseña
+    try {
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(validatedData.password, salt);
+      console.log('Contraseña encriptada correctamente');
+
+      // Crear el usuario
+      console.log('Creando usuario...');
+      console.log('Datos a crear:', {
         email: validatedData.email,
         nombre: validatedData.nombre,
         apellido_paterno: validatedData.apellidoPaterno,
         apellido_materno: validatedData.apellidoMaterno || '',
-        password_hash: passwordHash,
         activo: validatedData.activo,
-        updated_at: new Date(),
-        created_at: new Date(),
-        usuarios_roles: {
-          create: body.roles?.map((rolId: number) => ({
-            rol_id: rolId
-          })) || []
+        roles: body.roles
+      });
+
+      // Crear el usuario primero sin roles
+      const usuario = await db.usuarios.create({
+        data: {
+          email: validatedData.email,
+          nombre: validatedData.nombre,
+          apellido_paterno: validatedData.apellidoPaterno,
+          apellido_materno: validatedData.apellidoMaterno || '',
+          password_hash: passwordHash,
+          activo: validatedData.activo,
+          updated_at: new Date(),
+          created_at: new Date()
         }
-      },
-      include: {
-        usuarios_roles: {
-          include: {
-            roles: {
-              include: {
-                roles_permisos: {
-                  include: {
-                    permisos: true
+      });
+      
+      console.log('Usuario creado exitosamente:', usuario.id);
+      
+      // Si hay roles para asignar, crearlos en una transacción separada
+      if (body.roles && body.roles.length > 0) {
+        console.log('Asignando roles:', body.roles);
+        
+        await db.usuarios_roles.createMany({
+          data: body.roles.map((rolId: number) => ({
+            usuario_id: usuario.id,
+            rol_id: rolId,
+            created_at: new Date(),
+            updated_at: new Date()
+          }))
+        });
+        
+        console.log('Roles asignados correctamente');
+      }
+      
+      // Obtener el usuario completo con roles
+      const usuarioCompleto = await db.usuarios.findUnique({
+        where: { id: usuario.id },
+        include: {
+          usuarios_roles: {
+            include: {
+              roles: {
+                include: {
+                  roles_permisos: {
+                    include: {
+                      permisos: true
+                    }
                   }
                 }
               }
             }
           }
         }
+      });
+      
+      if (!usuarioCompleto) {
+        throw new Error('No se pudo recuperar el usuario creado');
       }
-    });
-    console.log('Usuario creado:', usuario.id);
-    return NextResponse.json(usuario);
+      
+      console.log('Usuario creado exitosamente:', usuario.id);
+      
+      // Mapear la respuesta para el frontend
+      const usuarioMapeado = {
+        ...usuarioCompleto,
+        apellidoPaterno: usuarioCompleto.apellido_paterno,
+        apellidoMaterno: usuarioCompleto.apellido_materno,
+        createdAt: usuarioCompleto.created_at,
+        updatedAt: usuarioCompleto.updated_at,
+        usuarioRoles: usuarioCompleto.usuarios_roles?.map((ur: any) => ({
+          ...ur,
+          usuarioId: ur.usuario_id,
+          rolId: ur.rol_id,
+          createdAt: ur.created_at,
+          updatedAt: ur.updated_at,
+          rol: ur.roles
+        }))
+      };
+      
+      return NextResponse.json(usuarioMapeado);
+    } catch (dbError) {
+      console.error('Error al crear usuario en la base de datos:', dbError);
+      if (dbError instanceof Prisma.PrismaClientKnownRequestError) {
+        console.error('Código de error Prisma:', dbError.code);
+        console.error('Mensaje de error Prisma:', dbError.message);
+        console.error('Meta datos del error:', dbError.meta);
+        return NextResponse.json(
+          { 
+            error: 'Error en la base de datos', 
+            code: dbError.code,
+            message: dbError.message,
+            meta: dbError.meta
+          },
+          { status: 500 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'Error al crear usuario', details: dbError instanceof Error ? dbError.message : 'Error desconocido' },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error('Error al crear usuario:', error);
+    console.error('Error general al crear usuario:', error);
     return NextResponse.json(
       { error: 'Error al crear usuario', details: error instanceof Error ? error.message : 'Error desconocido' },
       { status: 500 }

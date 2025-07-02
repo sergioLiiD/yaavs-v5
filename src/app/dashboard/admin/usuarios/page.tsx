@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { HiPlus, HiPencilAlt, HiTrash } from 'react-icons/hi';
-import axios from 'axios';
+import axios from '@/lib/axios';
 import { Usuario, NivelUsuario, CreateUsuarioDTO, UpdateUsuarioDTO, Rol } from '@/types/usuario';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
