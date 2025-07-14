@@ -143,42 +143,49 @@ export async function GET(request: Request) {
       prisma.clientes.count({ where })
     ]);
 
+    console.log('Clientes raw de la base de datos:', clientesRaw);
+
     // Mapear los datos a formato camelCase para el frontend
-    const clientes = clientesRaw.map((cliente: any) => ({
-      id: cliente.id,
-      nombre: cliente.nombre,
-      apellidoPaterno: cliente.apellido_paterno,
-      apellidoMaterno: cliente.apellido_materno,
-      telefonoCelular: cliente.telefono_celular,
-      telefonoContacto: cliente.telefono_contacto,
-      email: cliente.email,
-      calle: cliente.calle,
-      numeroExterior: cliente.numero_exterior,
-      numeroInterior: cliente.numero_interior,
-      colonia: cliente.colonia,
-      ciudad: cliente.ciudad,
-      estado: cliente.estado,
-      codigoPostal: cliente.codigo_postal,
-      latitud: cliente.latitud,
-      longitud: cliente.longitud,
-      fuenteReferencia: cliente.fuente_referencia,
-      rfc: cliente.rfc,
-      tipoRegistro: cliente.tipo_registro,
-      createdAt: cliente.created_at,
-      updatedAt: cliente.updated_at,
-      puntoRecoleccionId: cliente.punto_recoleccion_id,
-      creadoPor: cliente.usuarios ? {
-        id: cliente.usuarios.id,
-        nombre: cliente.usuarios.nombre,
-        apellidoPaterno: cliente.usuarios.apellido_paterno,
-        apellidoMaterno: cliente.usuarios.apellido_materno,
-        email: cliente.usuarios.email
-      } : null,
-      puntoRecoleccion: cliente.puntos_recoleccion ? {
-        id: cliente.puntos_recoleccion.id,
-        nombre: cliente.puntos_recoleccion.nombre
-      } : null
-    }));
+    const clientes = clientesRaw.map((cliente: any) => {
+      const clienteMapeado = {
+        id: cliente.id,
+        nombre: cliente.nombre,
+        apellidoPaterno: cliente.apellido_paterno,
+        apellidoMaterno: cliente.apellido_materno,
+        telefonoCelular: cliente.telefono_celular,
+        telefonoContacto: cliente.telefono_contacto,
+        email: cliente.email,
+        calle: cliente.calle,
+        numeroExterior: cliente.numero_exterior,
+        numeroInterior: cliente.numero_interior,
+        colonia: cliente.colonia,
+        ciudad: cliente.ciudad,
+        estado: cliente.estado,
+        codigoPostal: cliente.codigo_postal,
+        latitud: cliente.latitud,
+        longitud: cliente.longitud,
+        fuenteReferencia: cliente.fuente_referencia,
+        rfc: cliente.rfc,
+        tipoRegistro: cliente.tipo_registro,
+        createdAt: cliente.created_at ? new Date(cliente.created_at).toISOString() : null,
+        updatedAt: cliente.updated_at ? new Date(cliente.updated_at).toISOString() : null,
+        puntoRecoleccionId: cliente.punto_recoleccion_id,
+        creadoPor: cliente.usuarios ? {
+          id: cliente.usuarios.id,
+          nombre: cliente.usuarios.nombre,
+          apellidoPaterno: cliente.usuarios.apellido_paterno,
+          apellidoMaterno: cliente.usuarios.apellido_materno,
+          email: cliente.usuarios.email
+        } : null,
+        puntoRecoleccion: cliente.puntos_recoleccion ? {
+          id: cliente.puntos_recoleccion.id,
+          nombre: cliente.puntos_recoleccion.nombre
+        } : null
+      };
+      
+      console.log('Cliente mapeado:', clienteMapeado);
+      return clienteMapeado;
+    });
 
     return NextResponse.json({
       clientes,
