@@ -11,7 +11,7 @@ export async function GET() {
     console.log('GET /api/usuarios/tecnicos - Consultando técnicos...');
     
     // Primero, veamos qué roles existen
-    const roles = await prisma.rol.findMany({
+    const roles = await prisma.roles.findMany({
       select: {
         id: true,
         nombre: true
@@ -20,11 +20,11 @@ export async function GET() {
     console.log('Roles existentes:', roles);
     
     // Obtener técnicos usando Prisma
-    const tecnicos = await prisma.usuario.findMany({
+    const tecnicos = await prisma.usuarios.findMany({
       where: {
-        usuarioRoles: {
+        usuarios_roles: {
           some: {
-            rol: {
+            roles: {
               nombre: {
                 contains: 'tecnico',
                 mode: 'insensitive'
@@ -37,12 +37,12 @@ export async function GET() {
       select: {
         id: true,
         nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true,
+        apellido_paterno: true,
+        apellido_materno: true,
         email: true,
-        usuarioRoles: {
+        usuarios_roles: {
           select: {
-            rol: {
+            roles: {
               select: {
                 nombre: true
               }
