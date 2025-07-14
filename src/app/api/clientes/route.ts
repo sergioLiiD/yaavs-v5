@@ -203,7 +203,10 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
+    console.log('Datos recibidos en POST /api/clientes:', data);
+    
     const validatedData = clienteSchema.parse(data);
+    console.log('Datos validados:', validatedData);
 
     const userRole = session.user.role;
     const userPointId = session.user.puntoRecoleccion?.id;
@@ -245,6 +248,8 @@ export async function POST(request: Request) {
       puntoRecoleccionId: puntoRecoleccionIdToUse
     });
 
+    console.log('Datos a guardar:', dataToSave);
+
     // Si se proporciona contraseña, hashearla
     if (password) {
       dataToSave.passwordHash = await bcrypt.hash(password, 10);
@@ -254,6 +259,8 @@ export async function POST(request: Request) {
     const cliente = await prisma.clientes.create({
       data: dataToSave
     });
+
+    console.log('Cliente creado:', cliente);
 
     return NextResponse.json(cliente);
   } catch (error) {

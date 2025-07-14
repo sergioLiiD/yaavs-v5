@@ -11,50 +11,50 @@ export async function PUT(
     const id = parseInt(params.id);
     const data = await request.json();
     
-    const cliente = await prisma.cliente.update({
+    const cliente = await prisma.clientes.update({
       where: { id },
       data: {
         nombre: data.nombre,
-        apellidoPaterno: data.apellidoPaterno,
-        apellidoMaterno: data.apellidoMaterno,
-        telefonoCelular: data.telefonoCelular,
-        telefonoContacto: data.telefonoContacto,
+        apellido_paterno: data.apellidoPaterno,
+        apellido_materno: data.apellidoMaterno,
+        telefono_celular: data.telefonoCelular,
+        telefono_contacto: data.telefonoContacto,
         email: data.email,
         rfc: data.rfc,
         calle: data.calle,
-        numeroExterior: data.numeroExterior,
-        numeroInterior: data.numeroInterior,
+        numero_exterior: data.numeroExterior,
+        numero_interior: data.numeroInterior,
         colonia: data.colonia,
         ciudad: data.ciudad,
         estado: data.estado,
-        codigoPostal: data.codigoPostal,
+        codigo_postal: data.codigoPostal,
         latitud: data.latitud,
         longitud: data.longitud,
-        fuenteReferencia: data.fuenteReferencia,
+        fuente_referencia: data.fuenteReferencia,
+        updated_at: new Date()
       },
       select: {
         id: true,
         nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true,
-        telefonoCelular: true,
-        telefonoContacto: true,
+        apellido_paterno: true,
+        apellido_materno: true,
+        telefono_celular: true,
+        telefono_contacto: true,
         email: true,
         calle: true,
-        numeroExterior: true,
-        numeroInterior: true,
+        numero_exterior: true,
+        numero_interior: true,
         colonia: true,
         ciudad: true,
         estado: true,
-        codigoPostal: true,
+        codigo_postal: true,
         latitud: true,
         longitud: true,
-        fuenteReferencia: true,
+        fuente_referencia: true,
         rfc: true,
-        activo: true,
-        tipoRegistro: true,
-        createdAt: true,
-        updatedAt: true
+        tipo_registro: true,
+        created_at: true,
+        updated_at: true
       }
     });
     return NextResponse.json(cliente);
@@ -73,7 +73,7 @@ export async function DELETE(
 ) {
   try {
     const id = parseInt(params.id);
-    await prisma.cliente.delete({
+    await prisma.clientes.delete({
       where: { id },
     });
     return NextResponse.json({ message: 'Cliente eliminado correctamente' });
