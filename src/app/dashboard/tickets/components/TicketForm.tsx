@@ -170,9 +170,9 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {clientes.map((cliente) => (
+                    {clientes.filter(cliente => cliente).map((cliente) => (
                       <SelectItem key={cliente.id} value={cliente.id.toString()}>
-                        {`${cliente.nombre} ${cliente.apellidoPaterno} ${cliente.apellidoMaterno || ""}`}
+                        {`${cliente.nombre || ''} ${cliente.apellidoPaterno || ''} ${cliente.apellidoMaterno || ""}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -199,9 +199,9 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {tiposServicio.map((tipo) => (
+                    {tiposServicio.filter(tipo => tipo).map((tipo) => (
                       <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                        {tipo.nombre}
+                        {tipo.nombre || 'Sin nombre'}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -228,9 +228,9 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {modelos.map((modelo) => (
+                    {modelos.filter(modelo => modelo && modelo.marca).map((modelo) => (
                       <SelectItem key={modelo.id} value={modelo.id.toString()}>
-                        {`${modelo.marca.nombre} ${modelo.nombre}`}
+                        {`${modelo.marca?.nombre || 'Sin marca'} ${modelo.nombre || 'Sin nombre'}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
