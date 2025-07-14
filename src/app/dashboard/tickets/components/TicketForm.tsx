@@ -170,7 +170,7 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
                 <FormLabel>Cliente</FormLabel>
                 <Select
                   onValueChange={(value) => field.onChange(Number(value))}
-                  defaultValue={field.value?.toString()}
+                  value={field.value?.toString()}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -199,7 +199,7 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
                 <FormLabel>Tipo de Servicio</FormLabel>
                 <Select
                   onValueChange={(value) => field.onChange(Number(value))}
-                  defaultValue={field.value?.toString()}
+                  value={field.value?.toString()}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -228,7 +228,7 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
                 <FormLabel>Modelo</FormLabel>
                 <Select
                   onValueChange={(value) => field.onChange(Number(value))}
-                  defaultValue={field.value?.toString()}
+                  value={field.value?.toString()}
                 >
                   <FormControl>
                     <SelectTrigger>
