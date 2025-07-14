@@ -159,7 +159,8 @@ export async function POST(request: Request) {
         updated_at: new Date(),
         roles_permisos: {
           create: permisos.map((permisoId: number) => ({
-            permiso_id: permisoId
+            permiso_id: permisoId,
+            updated_at: new Date()
           }))
         }
       },
