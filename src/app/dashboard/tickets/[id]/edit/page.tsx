@@ -27,7 +27,30 @@ export default function EditTicketPage({ params }: { params: { id: string } }) {
           throw new Error('Error al cargar el ticket');
         }
         const ticketData = await ticketResponse.json();
-        setTicket(ticketData);
+        
+        // Mapear los datos del ticket de snake_case a camelCase
+        const ticketMapeado = {
+          id: ticketData.id,
+          numeroTicket: ticketData.numero_ticket,
+          clienteId: ticketData.cliente_id,
+          modeloId: ticketData.modelo_id,
+          tipoServicioId: ticketData.tipo_servicio_id,
+          descripcionProblema: ticketData.descripcion_problema,
+          codigoDesbloqueo: ticketData.codigo_desbloqueo,
+          patronDesbloqueo: ticketData.patron_desbloqueo,
+          imei: ticketData.imei,
+          capacidad: ticketData.capacidad,
+          color: ticketData.color,
+          fechaCompra: ticketData.fecha_compra,
+          redCelular: ticketData.red_celular,
+          tipoDesbloqueo: ticketData.tipo_desbloqueo,
+          // Relaciones
+          clientes: ticketData.clientes,
+          modelos: ticketData.modelos,
+          tiposServicio: ticketData.tipos_servicio
+        };
+        
+        setTicket(ticketMapeado);
 
         // Obtener clientes
         const clientesResponse = await fetch('/api/clientes');
@@ -46,8 +69,8 @@ export default function EditTicketPage({ params }: { params: { id: string } }) {
         setMarcas(marcasData);
 
         // Obtener modelos de la marca del ticket
-        if (ticketData.modelo?.marcaId) {
-          const modelosResponse = await fetch(`/api/catalogo/modelos?marcaId=${ticketData.modelo.marcaId}`);
+        if (ticketData.modelos?.marca_id) {
+          const modelosResponse = await fetch(`/api/catalogo/modelos?marcaId=${ticketData.modelos.marca_id}`);
           if (!modelosResponse.ok) {
             throw new Error('Error al cargar los modelos');
           }
