@@ -23,35 +23,46 @@ export async function GET(req: NextRequest) {
     const marcaId = searchParams.get('marcaId');
     console.log('GET /api/catalogo/modelos - marcaId:', marcaId);
 
-    if (!marcaId) {
-      console.log('GET /api/catalogo/modelos - marcaId no proporcionado');
-      return NextResponse.json({ error: 'ID de marca no proporcionado' }, { status: 400 });
-    }
+    if (marcaId) {
+      // Verificar que la marca existe
+      const marca = await prisma.marcas.findUnique({
+        where: { id: parseInt(marcaId) }
+      });
 
-    // Verificar que la marca existe
-    const marca = await prisma.marcas.findUnique({
-      where: { id: parseInt(marcaId) }
-    });
-
-    if (!marca) {
-      console.log('GET /api/catalogo/modelos - Marca no encontrada');
-      return NextResponse.json({ error: 'Marca no encontrada' }, { status: 404 });
-    }
-
-    const modelos = await prisma.modelos.findMany({
-      where: {
-        marca_id: parseInt(marcaId)
-      },
-      include: {
-        marcas: true
-      },
-      orderBy: {
-        nombre: 'asc'
+      if (!marca) {
+        console.log('GET /api/catalogo/modelos - Marca no encontrada');
+        return NextResponse.json({ error: 'Marca no encontrada' }, { status: 404 });
       }
-    });
 
-    console.log('GET /api/catalogo/modelos - Modelos encontrados:', modelos.length);
-    return NextResponse.json(modelos);
+      const modelos = await prisma.modelos.findMany({
+        where: {
+          marca_id: parseInt(marcaId)
+        },
+        include: {
+          marcas: true
+        },
+        orderBy: {
+          nombre: 'asc'
+        }
+      });
+
+      console.log('GET /api/catalogo/modelos - Modelos encontrados para marca:', modelos.length);
+      return NextResponse.json(modelos);
+    } else {
+      // Si no se proporciona marcaId, devolver todos los modelos
+      console.log('GET /api/catalogo/modelos - Obteniendo todos los modelos');
+      const modelos = await prisma.modelos.findMany({
+        include: {
+          marcas: true
+        },
+        orderBy: {
+          nombre: 'asc'
+        }
+      });
+
+      console.log('GET /api/catalogo/modelos - Todos los modelos encontrados:', modelos.length);
+      return NextResponse.json(modelos);
+    }
   } catch (error) {
     console.error('GET /api/catalogo/modelos - Error:', error);
     return NextResponse.json(

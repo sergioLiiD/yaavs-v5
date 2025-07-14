@@ -69,13 +69,28 @@ export default function EditTicketPage({ params }: { params: { id: string } }) {
         setMarcas(marcasData);
 
         // Obtener modelos de la marca del ticket
+        console.log('Ticket data para modelos:', ticketData);
+        console.log('Modelo del ticket:', ticketData.modelos);
+        console.log('Marca ID del modelo:', ticketData.modelos?.marca_id);
+        
         if (ticketData.modelos?.marca_id) {
+          console.log('Cargando modelos para marca ID:', ticketData.modelos.marca_id);
           const modelosResponse = await fetch(`/api/catalogo/modelos?marcaId=${ticketData.modelos.marca_id}`);
           if (!modelosResponse.ok) {
             throw new Error('Error al cargar los modelos');
           }
           const modelosData = await modelosResponse.json();
+          console.log('Modelos cargados:', modelosData);
           setModelos(modelosData);
+        } else {
+          console.log('No se encontró marca_id en el modelo del ticket');
+          // Cargar todos los modelos si no hay marca específica
+          const modelosResponse = await fetch('/api/catalogo/modelos');
+          if (modelosResponse.ok) {
+            const modelosData = await modelosResponse.json();
+            console.log('Todos los modelos cargados:', modelosData);
+            setModelos(modelosData);
+          }
         }
 
         // Obtener tipos de servicio
