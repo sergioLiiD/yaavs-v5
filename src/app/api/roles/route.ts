@@ -97,11 +97,59 @@ export async function POST(request: Request) {
 
     const { nombre, descripcion, permisos } = await request.json();
 
+    console.log('Datos recibidos:', { nombre, descripcion, permisos });
+
     if (!nombre) {
       return NextResponse.json(
         { error: 'El nombre es requerido' },
         { status: 400 }
       );
+    }
+
+    // Verificar si el rol ya existe
+    const rolExistente = await prisma.roles.findUnique({
+      where: {
+        nombre: nombre
+      }
+    });
+
+    if (rolExistente) {
+      return NextResponse.json(
+        { error: 'Ya existe un rol con ese nombre' },
+        { status: 400 }
+      );
+    }
+
+    // Validar que los permisos existan
+    if (permisos && Array.isArray(permisos) && permisos.length > 0) {
+      const permisosExistentes = await prisma.permisos.findMany({
+        where: {
+          id: {
+            in: permisos
+          }
+        },
+        select: {
+          id: true,
+          codigo: true,
+          nombre: true
+        }
+      });
+
+      console.log('Permisos encontrados:', permisosExistentes);
+
+      if (permisosExistentes.length !== permisos.length) {
+        const permisosEncontrados = permisosExistentes.map(p => p.id);
+        const permisosNoEncontrados = permisos.filter(id => !permisosEncontrados.includes(id));
+        
+        return NextResponse.json(
+          { 
+            error: 'Algunos permisos no existen',
+            permisosNoEncontrados,
+            permisosEncontrados
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const rol = await prisma.roles.create({
