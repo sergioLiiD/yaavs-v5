@@ -63,7 +63,22 @@ export async function GET() {
       return NextResponse.json([]);
     }
     
-    return NextResponse.json(tecnicos);
+    // Mapear los datos de snake_case a camelCase para el frontend
+    const tecnicosMapeados = tecnicos.map(tecnico => ({
+      id: tecnico.id,
+      nombre: tecnico.nombre,
+      apellidoPaterno: tecnico.apellido_paterno,
+      apellidoMaterno: tecnico.apellido_materno,
+      email: tecnico.email,
+      usuariosRoles: tecnico.usuarios_roles?.map(ur => ({
+        ...ur,
+        rol: ur.roles
+      }))
+    }));
+    
+    console.log('GET /api/usuarios/tecnicos - Técnicos mapeados:', JSON.stringify(tecnicosMapeados, null, 2));
+    
+    return NextResponse.json(tecnicosMapeados);
   } catch (error) {
     console.error('Error al obtener técnicos:', error);
     return NextResponse.json(
