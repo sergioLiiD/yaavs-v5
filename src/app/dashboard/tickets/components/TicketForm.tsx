@@ -89,6 +89,14 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  console.log('TicketForm - Ticket recibido:', ticket);
+  console.log('TicketForm - ClienteId:', ticket?.clienteId);
+  console.log('TicketForm - ModeloId:', ticket?.modeloId);
+  console.log('TicketForm - TipoServicioId:', ticket?.tipoServicioId);
+  console.log('TicketForm - Clientes disponibles:', clientes.length);
+  console.log('TicketForm - Modelos disponibles:', modelos.length);
+  console.log('TicketForm - Tipos de servicio disponibles:', tiposServicio.length);
+
   const form = useForm<z.infer<typeof ticketSchema>>({
     resolver: zodResolver(ticketSchema),
     defaultValues: ticket ? {
