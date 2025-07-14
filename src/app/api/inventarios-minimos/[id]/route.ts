@@ -31,7 +31,7 @@ export async function PUT(
     console.log('Datos recibidos:', { productoId, cantidadMinima });
 
     // Verificar si el producto existe
-    const producto = await prisma.producto.findUnique({
+    const producto = await prisma.productos.findUnique({
       where: { id: productoId },
     });
 
@@ -44,12 +44,12 @@ export async function PUT(
     }
 
     // Actualizar el stock mínimo directamente en el producto
-    const productoActualizado = await prisma.producto.update({
+    const productoActualizado = await prisma.productos.update({
       where: { id: productoId },
-      data: { stockMinimo: cantidadMinima },
+      data: { stock_minimo: cantidadMinima },
       include: {
-        marca: true,
-        modelo: true
+        marcas: true,
+        modelos: true
       },
     });
 
@@ -83,7 +83,7 @@ export async function DELETE(
     }
 
     // Verificar si existe el producto
-    const producto = await prisma.producto.findUnique({
+    const producto = await prisma.productos.findUnique({
       where: { id: productoId },
     });
 
@@ -96,9 +96,9 @@ export async function DELETE(
     }
 
     // Actualizar el stock mínimo a 0
-    await prisma.producto.update({
+    await prisma.productos.update({
       where: { id: productoId },
-      data: { stockMinimo: 0 },
+      data: { stock_minimo: 0 },
     });
 
     return NextResponse.json({ message: 'Inventario mínimo eliminado correctamente' });

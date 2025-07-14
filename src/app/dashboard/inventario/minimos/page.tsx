@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Producto } from '@prisma/client';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,10 +17,15 @@ import { HiPencilAlt, HiTrash } from 'react-icons/hi';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
-type ProductoConInventarioMinimo = Producto & {
-  marca: { nombre: string };
-  modelo: { nombre: string };
-  proveedor: { nombre: string };
+type ProductoConInventarioMinimo = {
+  id: number;
+  nombre: string;
+  stock: number;
+  tipo: string;
+  stock_minimo: number | null;
+  marcas: { nombre: string } | null;
+  modelos: { nombre: string } | null;
+  proveedores: { nombre: string } | null;
 };
 
 export default function InventariosMinimosPage() {
@@ -32,7 +37,7 @@ export default function InventariosMinimosPage() {
     queryKey: ['productos'],
     queryFn: async () => {
       console.log('Cargando productos...');
-      const response = await fetch('/api/productos');
+      const response = await fetch('/api/inventario/productos');
       if (!response.ok) {
         throw new Error('Error al cargar productos');
       }
@@ -121,8 +126,8 @@ export default function InventariosMinimosPage() {
     const searchLower = searchTerm.toLowerCase();
     return (
       producto.tipo === 'PRODUCTO' && (
-        (producto.marca?.nombre?.toLowerCase() || '').includes(searchLower) ||
-        (producto.modelo?.nombre?.toLowerCase() || '').includes(searchLower) ||
+        (producto.marcas?.nombre?.toLowerCase() || '').includes(searchLower) ||
+        (producto.modelos?.nombre?.toLowerCase() || '').includes(searchLower) ||
         (producto.nombre?.toLowerCase() || '').includes(searchLower)
       )
     );
@@ -175,10 +180,10 @@ export default function InventariosMinimosPage() {
                   {filteredProductos?.map((producto) => (
                     <tr key={producto.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {producto.marca?.nombre || '-'}
+                        {producto.marcas?.nombre || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {producto.modelo?.nombre || '-'}
+                        {producto.modelos?.nombre || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {producto.nombre}
@@ -187,15 +192,15 @@ export default function InventariosMinimosPage() {
                         {producto.stock}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {producto.stockMinimo || 0}
+                        {producto.stock_minimo || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          producto.stock <= (producto.stockMinimo || 0)
+                          producto.stock <= (producto.stock_minimo || 0)
                             ? 'bg-red-100 text-red-800'
                             : 'bg-green-100 text-green-800'
                         }`}>
-                          {producto.stock <= (producto.stockMinimo || 0)
+                          {producto.stock <= (producto.stock_minimo || 0)
                             ? 'Stock Bajo'
                             : 'Stock Normal'}
                         </span>
@@ -206,7 +211,7 @@ export default function InventariosMinimosPage() {
                             if (!open) setEditingProductId(null);
                             else {
                               setEditingProductId(producto.id);
-                              setNewMinimo(producto.stockMinimo?.toString() || '0');
+                              setNewMinimo(producto.stock_minimo?.toString() || '0');
                             }
                           }}>
                             <DialogTrigger asChild>
