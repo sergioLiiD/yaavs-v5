@@ -66,6 +66,8 @@ export async function GET(
       ...user,
       usuario: {
         ...user.usuarios,
+        apellidoPaterno: user.usuarios.apellido_paterno,
+        apellidoMaterno: user.usuarios.apellido_materno,
         rol: user.usuarios.usuarios_roles[0]?.roles
       }
     }));

@@ -21,9 +21,9 @@ interface RepairPointUsersProps {
 
 interface UserPoint {
   id: number;
-  puntoRecoleccionId: number;
-  usuarioId: number;
-  rolId: number;
+  punto_recoleccion_id: number;
+  usuario_id: number;
+  nivel: string;
   activo: boolean;
   usuario: {
     id: number;
@@ -31,10 +31,10 @@ interface UserPoint {
     email: string;
     apellidoPaterno: string;
     apellidoMaterno: string;
-  };
-  rol: {
-    id: number;
-    nombre: string;
+    rol: {
+      id: number;
+      nombre: string;
+    };
   };
 }
 
@@ -248,7 +248,7 @@ export default function RepairPointUsers({
       nombre: user.usuario.nombre.split(' ')[0],
       apellidoPaterno: user.usuario.apellidoPaterno,
       apellidoMaterno: user.usuario.apellidoMaterno || '',
-      rolId: user.rolId ? user.rolId.toString() : '',
+      rolId: user.usuario.rol?.id ? user.usuario.rol.id.toString() : '',
     });
     onEditStart();
   };
@@ -419,7 +419,7 @@ export default function RepairPointUsers({
                       {user.usuario.nombre} {user.usuario.apellidoPaterno} {user.usuario.apellidoMaterno}
                     </p>
                     <span className="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                      {roles.find(r => r.id === user.rolId)?.nombre || 'Sin rol'}
+                      {user.usuario.rol?.nombre || 'Sin rol'}
                     </span>
                   </div>
                   <div className="flex space-x-2">
