@@ -47,17 +47,17 @@ export async function PUT(
     }
 
     // Verificar si el usuario existe y pertenece al punto de recolección
-    const existingUserPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
+    const existingUserPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
         id: parseInt(params.userId),
-        puntoRecoleccionId: parseInt(params.id),
+        punto_recoleccion_id: parseInt(params.id),
       },
       include: {
-        usuario: {
+        usuarios: {
           include: {
-            usuarioRoles: {
+            usuarios_roles: {
               include: {
-                rol: true
+                roles: true
               }
             }
           }
@@ -73,8 +73,8 @@ export async function PUT(
     }
 
     // Verificar si el email ya está en uso por otro usuario
-    if (email !== existingUserPoint.usuario.email) {
-      const emailInUse = await prisma.usuario.findUnique({
+    if (email !== existingUserPoint.usuarios.email) {
+      const emailInUse = await prisma.usuarios.findUnique({
         where: { email },
       });
 
@@ -95,7 +95,7 @@ export async function PUT(
       );
     }
 
-    const rol = await prisma.rol.findUnique({
+    const rol = await prisma.roles.findUnique({
       where: { id: rolIdNum },
     });
 
@@ -108,33 +108,35 @@ export async function PUT(
 
     try {
       // Actualizar el usuario
-      const updatedUsuario = await prisma.usuario.update({
-        where: { id: existingUserPoint.usuario.id },
+      const updatedUsuario = await prisma.usuarios.update({
+        where: { id: existingUserPoint.usuarios.id },
         data: {
           email,
           nombre,
-          apellidoPaterno,
-          apellidoMaterno
+          apellido_paterno: apellidoPaterno,
+          apellido_materno: apellidoMaterno,
+          updated_at: new Date()
         },
       });
 
       // Actualizar la relación con el punto de recolección
-      const updatedUserPoint = await prisma.usuarioPuntoRecoleccion.update({
+      const updatedUserPoint = await prisma.usuarios_puntos_recoleccion.update({
         where: { id: parseInt(params.userId) },
         data: {
-          nivel: rolIdNum === 4 ? 'ADMIN' : 'OPERADOR'
+          nivel: rolIdNum === 4 ? 'ADMIN' : 'OPERADOR',
+          updated_at: new Date()
         },
         include: {
-          usuario: {
+          usuarios: {
             include: {
-              usuarioRoles: {
+              usuarios_roles: {
                 include: {
-                  rol: true
+                  roles: true
                 }
               }
             }
           },
-          puntoRecoleccion: {
+          puntos_recoleccion: {
             select: {
               id: true,
               nombre: true,
@@ -147,8 +149,8 @@ export async function PUT(
       const formattedResponse = {
         ...updatedUserPoint,
         usuario: {
-          ...updatedUserPoint.usuario,
-          rol: updatedUserPoint.usuario.usuarioRoles[0]?.rol
+          ...updatedUserPoint.usuarios,
+          rol: updatedUserPoint.usuarios.usuarios_roles[0]?.roles
         }
       };
 
@@ -186,10 +188,10 @@ export async function DELETE(
 ) {
   try {
     // Verificar si el usuario existe y pertenece al punto de recolección
-    const existingUserPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
+    const existingUserPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
         id: parseInt(params.userId),
-        puntoRecoleccionId: parseInt(params.id),
+        punto_recoleccion_id: parseInt(params.id),
       },
     });
 
@@ -201,7 +203,7 @@ export async function DELETE(
     }
 
     // Eliminar la relación con el punto de recolección
-    await prisma.usuarioPuntoRecoleccion.delete({
+    await prisma.usuarios_puntos_recoleccion.delete({
       where: { id: parseInt(params.userId) },
     });
 
