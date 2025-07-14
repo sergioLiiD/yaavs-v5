@@ -111,9 +111,7 @@ export async function POST(request: Request) {
         updated_at: new Date(),
         roles_permisos: {
           create: permisos.map((permisoId: number) => ({
-            permisos: {
-              connect: { id: permisoId }
-            }
+            permiso_id: permisoId
           }))
         }
       },
@@ -129,8 +127,29 @@ export async function POST(request: Request) {
     return NextResponse.json(rol);
   } catch (error) {
     console.error('Error al crear rol:', error);
+    
+    // Log detallado del error
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error('Error de Prisma:', {
+        code: error.code,
+        message: error.message,
+        meta: error.meta
+      });
+      return NextResponse.json(
+        { 
+          error: 'Error de base de datos al crear rol',
+          details: error.message,
+          code: error.code
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Error al crear rol' },
+      { 
+        error: 'Error al crear rol',
+        details: error instanceof Error ? error.message : 'Error desconocido'
+      },
       { status: 500 }
     );
   }
