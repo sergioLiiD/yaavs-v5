@@ -25,12 +25,12 @@ import {
 interface Producto {
   id: number;
   nombre: string;
-  precioPromedio: number;
+  precio_promedio: number;
   tipo: string;
   sku: string;
   stock: number;
-  marca?: { nombre: string };
-  modelo?: { nombre: string };
+  marcas?: { nombre: string };
+  modelos?: { nombre: string };
 }
 
 interface PrecioVenta {
@@ -98,8 +98,8 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
     return (
       p.nombre.toLowerCase().includes(busquedaLower) ||
       p.sku.toLowerCase().includes(busquedaLower) ||
-      (p.marca?.nombre?.toLowerCase() || '').includes(busquedaLower) ||
-      (p.modelo?.nombre?.toLowerCase() || '').includes(busquedaLower)
+      (p.marcas?.nombre?.toLowerCase() || '').includes(busquedaLower) ||
+      (p.modelos?.nombre?.toLowerCase() || '').includes(busquedaLower)
     );
   }) || [];
 
@@ -128,7 +128,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
       p.id === id ? { ...p, [field]: value || (field === 'cantidad' ? 1 : field === 'precioVenta' ? 0 : '') } : p
     );
 
-    // Si se cambia el producto, obtener el precio de venta más reciente
+    // Si se cambia el producto, obtener el precio automáticamente
     if (field === 'productoId' && value) {
       try {
         const productoSeleccionado = catalogoProductos?.find((p: Producto) => p.id === value);
@@ -137,41 +137,25 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
           return;
         }
 
-        // Buscar el precio de venta en el array de precios
-        const precioVenta = preciosVenta?.find((p: PrecioVenta) => {
-          if (productoSeleccionado.tipo === 'SERVICIO') {
-            return p.tipo === 'SERVICIO' && p.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase();
-          }
-          return p.tipo === 'PRODUCTO' && p.productoId === value;
-        });
-
         const producto = productoActualizado.find(p => p.id === id);
         if (producto) {
-          if (precioVenta) {
-            producto.precioVenta = Number(precioVenta.precioVenta) || 0;
-            console.log('Precio de venta encontrado:', precioVenta.precioVenta);
-          } else {
-            // Si no hay precio de venta, intentar obtenerlo de la API
-            const response = await fetch(`/api/precios-venta?tipo=${productoSeleccionado.tipo}`);
+          // Intentar obtener el precio de venta específico para este producto
+          try {
+            const response = await fetch(`/api/precios-venta/producto/${value}`);
             if (response.ok) {
-              const precios = await response.json();
-              const precio = precios.find((p: PrecioVenta) => {
-                if (productoSeleccionado.tipo === 'SERVICIO') {
-                  return p.tipo === 'SERVICIO' && p.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase();
-                }
-                return p.tipo === 'PRODUCTO' && p.productoId === value;
-              });
-              if (precio) {
-                producto.precioVenta = Number(precio.precioVenta) || 0;
-                console.log('Precio de venta encontrado en API:', precio.precioVenta);
-              } else {
-                producto.precioVenta = Number(productoSeleccionado.precioPromedio) || 0;
-                console.log('Usando precio promedio:', productoSeleccionado.precioPromedio);
-              }
+              const precioData = await response.json();
+              producto.precioVenta = Number(precioData.precioVenta) || 0;
+              console.log('Precio de venta encontrado:', precioData.precioVenta);
             } else {
-              producto.precioVenta = Number(productoSeleccionado.precioPromedio) || 0;
-              console.log('Usando precio promedio:', productoSeleccionado.precioPromedio);
+              // Si no hay precio específico, usar el precio promedio del producto
+              producto.precioVenta = Number(productoSeleccionado.precio_promedio) || 0;
+              console.log('Usando precio promedio:', productoSeleccionado.precio_promedio);
             }
+          } catch (error) {
+            console.error('Error al obtener precio específico:', error);
+            // En caso de error, usar el precio promedio
+            producto.precioVenta = Number(productoSeleccionado.precio_promedio) || 0;
+            console.log('Usando precio promedio por error:', productoSeleccionado.precio_promedio);
           }
         }
       } catch (error) {
@@ -181,7 +165,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
         if (productoSeleccionado) {
           const producto = productoActualizado.find(p => p.id === id);
           if (producto) {
-            producto.precioVenta = Number(productoSeleccionado.precioPromedio) || 0;
+            producto.precioVenta = Number(productoSeleccionado.precio_promedio) || 0;
           }
         }
       }
@@ -281,7 +265,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
                             value={p.id.toString()}
                             className="bg-white text-black hover:bg-gray-100 cursor-pointer data-[highlighted:bg-gray-100]"
                           >
-                            {p.nombre} {p.marca?.nombre ? `- ${p.marca.nombre}` : ''} {p.modelo?.nombre ? ` ${p.modelo.nombre}` : ''}
+                            {p.nombre} {p.marcas?.nombre ? `- ${p.marcas.nombre}` : ''} {p.modelos?.nombre ? ` ${p.modelos.nombre}` : ''}
                           </SelectItem>
                         ))
                       )}
