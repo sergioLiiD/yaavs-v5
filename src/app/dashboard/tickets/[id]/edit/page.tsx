@@ -35,7 +35,7 @@ export default function EditTicketPage({ params }: { params: { id: string } }) {
           throw new Error('Error al cargar los clientes');
         }
         const clientesData = await clientesResponse.json();
-        setClientes(clientesData);
+        setClientes(clientesData.clientes || []);
 
         // Obtener marcas
         const marcasResponse = await fetch('/api/catalogo/marcas');
