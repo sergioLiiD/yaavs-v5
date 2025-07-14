@@ -11,10 +11,10 @@ interface Producto {
   id: number;
   nombre: string;
   stock: number;
-  precioPromedio: number;
+  precio_promedio: number;
   entradas: EntradaAlmacen[];
-  marca: { nombre: string };
-  modelo: { nombre: string };
+  marcas: { nombre: string };
+  modelos: { nombre: string };
   sku?: string;
   descripcion?: string;
   tipo: string;
@@ -40,7 +40,7 @@ interface EntradaAlmacen {
 }
 
 type Ordenamiento = {
-  campo: 'nombre' | 'stock' | 'precioPromedio' | 'stockMinimo' | 'stockMaximo';
+  campo: 'nombre' | 'stock' | 'precio_promedio' | 'stockMinimo' | 'stockMaximo';
   direccion: 'asc' | 'desc';
 };
 
@@ -208,8 +208,8 @@ export default function StockPage() {
           return factor * a.nombre.localeCompare(b.nombre);
         case 'stock':
           return factor * (a.stock - b.stock);
-        case 'precioPromedio':
-          return factor * (a.precioPromedio - b.precioPromedio);
+              case 'precio_promedio':
+        return factor * (a.precio_promedio - b.precio_promedio);
         case 'stockMinimo':
           const minA = a.inventarioMinimo?.cantidadMinima || 0;
           const minB = b.inventarioMinimo?.cantidadMinima || 0;
@@ -499,10 +499,10 @@ export default function StockPage() {
                   </div>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => toggleOrdenamiento('precioPromedio')}>
+                    onClick={() => toggleOrdenamiento('precio_promedio')}>
                   <div className="flex items-center">
                     Precio Promedio
-                    {ordenamiento.campo === 'precioPromedio' && (
+                    {ordenamiento.campo === 'precio_promedio' && (
                       ordenamiento.direccion === 'asc' ? <HiSortAscending className="ml-1" /> : <HiSortDescending className="ml-1" />
                     )}
                   </div>
@@ -521,7 +521,7 @@ export default function StockPage() {
                   <tr>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{producto.nombre}</div>
-                      <div className="text-sm text-gray-500">{producto.marca?.nombre || 'Sin marca'} - {producto.modelo?.nombre || 'Sin modelo'}</div>
+                      <div className="text-sm text-gray-500">{producto.marcas?.nombre || 'Sin marca'} - {producto.modelos?.nombre || 'Sin modelo'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`text-sm ${
@@ -534,7 +534,7 @@ export default function StockPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        ${(producto.precioPromedio || 0).toFixed(2)}
+                        ${(producto.precio_promedio || 0).toFixed(2)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -589,7 +589,7 @@ export default function StockPage() {
                   Stock actual: {productoSeleccionado.stock}
                 </p>
                 <p className="text-sm text-gray-600 mb-4">
-                  Precio promedio: ${(productoSeleccionado.precioPromedio || 0).toFixed(2)}
+                  Precio promedio: ${(productoSeleccionado.precio_promedio || 0).toFixed(2)}
                 </p>
                 {productoSeleccionado.entradas && productoSeleccionado.entradas.length > 0 && (
                   <div className="mb-4 p-3 bg-gray-50 rounded-md">
