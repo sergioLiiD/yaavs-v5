@@ -14,7 +14,7 @@ export async function GET() {
       return new NextResponse('No autorizado', { status: 401 });
     }
 
-    const marcas = await prisma.marca.findMany({
+    const marcas = await prisma.marcas.findMany({
       orderBy: {
         nombre: 'asc'
       }

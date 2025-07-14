@@ -15,9 +15,9 @@ export async function GET(request: NextRequest) {
       return new NextResponse('No autorizado', { status: 401 });
     }
 
-    const modelos = await prisma.modelo.findMany({
+    const modelos = await prisma.modelos.findMany({
       include: {
-        marca: true,
+        marcas: true,
         piezas: true,
         productos: true,
         tickets: true
