@@ -23,12 +23,12 @@ export async function GET(
 
     // 1. Verificar el ticket básico
     console.log('1. Verificando ticket básico...');
-    const ticketBasico = await prisma.ticket.findUnique({
+    const ticketBasico = await prisma.tickets.findUnique({
       where: { id: parseInt(params.id) },
       select: {
         id: true,
-        tecnicoAsignadoId: true,
-        codigoDesbloqueo: true
+        tecnico_asignado_id: true,
+        codigo_desbloqueo: true
       }
     });
     console.log('Ticket básico:', ticketBasico);
@@ -40,63 +40,63 @@ export async function GET(
 
     // 2. Verificar la reparación
     console.log('2. Verificando reparación...');
-    const reparacion = await prisma.reparacion.findUnique({
-      where: { ticketId: parseInt(params.id) },
+    const reparacion = await prisma.reparaciones.findUnique({
+      where: { ticket_id: parseInt(params.id) },
       include: {
-        checklistDiagnostico: true
+        checklist_diagnostico: true
       }
     });
     console.log('Reparación:', reparacion);
 
     // 3. Obtener el ticket completo
     console.log('3. Obteniendo ticket completo...');
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: parseInt(params.id) },
       include: {
-        cliente: true,
-        tipoServicio: true,
-        modelo: {
+        clientes: true,
+        tipos_servicio: true,
+        modelos: {
           include: {
-            marca: true
+            marcas: true
           }
         },
-        estatusReparacion: true,
-        creador: true,
-        tecnicoAsignado: true,
-        presupuesto: {
+        estatus_reparacion: true,
+        usuarios_tickets_creador_idTousuarios: true,
+        usuarios_tickets_tecnico_asignado_idTousuarios: true,
+        presupuestos: {
           include: {
-            conceptos: true
+            conceptos_presupuesto: true
           }
         },
-        reparacion: {
+        reparaciones: {
           include: {
-            checklistDiagnostico: {
+            checklist_diagnostico: {
               include: {
-                respuestas: {
+                checklist_respuesta_diagnostico: {
                   include: {
-                    checklistItem: true
+                    checklist_items: true
                   }
                 }
               }
             },
-            checklistReparacion: {
+            checklist_reparacion: {
               include: {
-                respuestas: {
+                checklist_respuesta_reparacion: {
                   include: {
-                    checklistItem: true
+                    checklist_items: true
                   }
                 }
               }
             },
-            piezas: {
+            piezas_reparacion: {
               include: {
-                pieza: true
+                piezas: true
               }
             }
           }
         },
-        dispositivo: true,
-        entrega: true,
+        dispositivos: true,
+        entregas: true,
         pagos: true
       }
     });
@@ -149,7 +149,7 @@ export async function PUT(
     // Si hay presupuesto, actualizar el estado a "Presupuesto Generado"
     if (data.presupuesto) {
       console.log('Presupuesto detectado, buscando estado...');
-      const estatusPresupuesto = await prisma.estatusReparacion.findFirst({
+      const estatusPresupuesto = await prisma.estatus_reparacion.findFirst({
         where: {
           nombre: 'Presupuesto Generado'
         }
@@ -170,64 +170,64 @@ export async function PUT(
     }
 
     // Actualizar el ticket
-    const updatedTicket = await prisma.ticket.update({
+    const updatedTicket = await prisma.tickets.update({
       where: { id: parseInt(params.id) },
       data: {
-        tipoDesbloqueo: data.tipoDesbloqueo,
-        codigoDesbloqueo: data.codigoDesbloqueo,
-        patronDesbloqueo: data.patronDesbloqueo,
+        tipo_desbloqueo: data.tipoDesbloqueo,
+        codigo_desbloqueo: data.codigoDesbloqueo,
+        patron_desbloqueo: data.patronDesbloqueo,
         capacidad: data.capacidad,
-        redCelular: data.redCelular,
+        red_celular: data.redCelular,
         color: data.color,
         imei: data.imei,
-        fechaCompra: data.fechaCompra ? new Date(data.fechaCompra) : undefined,
-        updatedAt: new Date()
+        fecha_compra: data.fechaCompra ? new Date(data.fechaCompra) : undefined,
+        updated_at: new Date()
       },
       include: {
-        cliente: true,
-        tipoServicio: true,
-        modelo: {
+        clientes: true,
+        tipos_servicio: true,
+        modelos: {
           include: {
-            marca: true
+            marcas: true
           }
         },
-        estatusReparacion: true,
-        creador: true,
-        tecnicoAsignado: true,
-        presupuesto: {
+        estatus_reparacion: true,
+        usuarios_tickets_creador_idTousuarios: true,
+        usuarios_tickets_tecnico_asignado_idTousuarios: true,
+        presupuestos: {
           include: {
-            conceptos: true
+            conceptos_presupuesto: true
           }
         },
-        reparacion: {
+        reparaciones: {
           include: {
-            checklistDiagnostico: {
+            checklist_diagnostico: {
               include: {
-                respuestas: {
+                checklist_respuesta_diagnostico: {
                   include: {
-                    checklistItem: true
+                    checklist_items: true
                   }
                 }
               }
             },
-            checklistReparacion: {
+            checklist_reparacion: {
               include: {
-                respuestas: {
+                checklist_respuesta_reparacion: {
                   include: {
-                    checklistItem: true
+                    checklist_items: true
                   }
                 }
               }
             },
-            piezas: {
+            piezas_reparacion: {
               include: {
-                pieza: true
+                piezas: true
               }
             }
           }
         },
-        dispositivo: true,
-        entrega: true,
+        dispositivos: true,
+        entregas: true,
         pagos: true
       }
     });
@@ -269,11 +269,11 @@ export async function DELETE(
     }
 
     // Verificar si el ticket existe
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: parseInt(params.id) },
       include: {
-        dispositivo: true,
-        reparacion: true
+        dispositivos: true,
+        reparaciones: true
       }
     });
 
@@ -283,7 +283,7 @@ export async function DELETE(
     }
 
     // Obtener el estado de cancelado
-    const estadoCancelado = await prisma.estatusReparacion.findFirst({
+    const estadoCancelado = await prisma.estatus_reparacion.findFirst({
       where: { nombre: 'Cancelado' }
     });
 
@@ -295,24 +295,24 @@ export async function DELETE(
     console.log('Estado de cancelado encontrado:', estadoCancelado);
 
     // Actualizar el ticket como cancelado
-    const ticketActualizado = await prisma.ticket.update({
+    const ticketActualizado = await prisma.tickets.update({
       where: { id: parseInt(params.id) },
       data: {
         cancelado: true,
-        motivoCancelacion,
-        estatusReparacionId: estadoCancelado.id,
-        updatedAt: new Date()
+        motivo_cancelacion: motivoCancelacion,
+        estatus_reparacion_id: estadoCancelado.id,
+        updated_at: new Date()
       },
       include: {
-        cliente: true,
-        tipoServicio: true,
-        modelo: {
+        clientes: true,
+        tipos_servicio: true,
+        modelos: {
           include: {
-            marca: true
+            marcas: true
           }
         },
-        estatusReparacion: true,
-        tecnicoAsignado: true
+        estatus_reparacion: true,
+        usuarios_tickets_tecnico_asignado_idTousuarios: true
       }
     });
 
