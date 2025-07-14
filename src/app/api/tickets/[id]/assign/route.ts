@@ -27,7 +27,7 @@ export async function POST(
     }
 
     // Verificar que el ticket existe
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: parseInt(params.id) }
     });
 
@@ -37,25 +37,25 @@ export async function POST(
     }
 
     // Actualizar el ticket con el técnico asignado
-    const updatedTicket = await prisma.ticket.update({
+    const updatedTicket = await prisma.tickets.update({
       where: {
         id: parseInt(params.id),
       },
       data: {
-        tecnicoAsignadoId: tecnicoId,
+        tecnico_asignado_id: tecnicoId,
       },
       include: {
-        cliente: true,
-        modelo: {
+        clientes: true,
+        modelos: {
           include: {
-            marca: true
+            marcas: true
           }
         },
-        tipoServicio: true,
-        estatusReparacion: true,
-        tecnicoAsignado: true,
-        creador: true,
-        dispositivo: true,
+        tipos_servicio: true,
+        estatus_reparacion: true,
+        usuarios_tickets_tecnico_asignado_idTousuarios: true,
+        usuarios_tickets_creador_idTousuarios: true,
+        dispositivos: true,
       },
     });
 
