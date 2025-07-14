@@ -25,11 +25,11 @@ interface Producto {
     id: number;
     nombre: string;
   };
-  marca?: {
+  marcas?: {
     id: number;
     nombre: string;
   };
-  modelo?: {
+  modelos?: {
     id: number;
     nombre: string;
   };
@@ -500,10 +500,10 @@ export default function CatalogoPage() {
                       {producto.nombre}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {producto.marca?.nombre || '-'}
+                      {producto.marcas?.nombre || '-'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {producto.modelo?.nombre || '-'}
+                      {producto.modelos?.nombre || '-'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <button
