@@ -36,43 +36,39 @@ const clienteSchema = z.object({
 function cleanClienteData(data: any) {
   const cleanedData: any = {
     nombre: data.nombre,
-    apellidoPaterno: data.apellidoPaterno,
-    apellidoMaterno: data.apellidoMaterno,
-    telefonoCelular: data.telefonoCelular,
-    telefonoContacto: data.telefonoContacto,
+    apellido_paterno: data.apellidoPaterno,
+    apellido_materno: data.apellidoMaterno,
+    telefono_celular: data.telefonoCelular,
+    telefono_contacto: data.telefonoContacto,
     email: data.email,
     rfc: data.rfc,
     calle: data.calle,
-    numeroExterior: data.numeroExterior,
-    numeroInterior: data.numeroInterior,
+    numero_exterior: data.numeroExterior,
+    numero_interior: data.numeroInterior,
     colonia: data.colonia,
     ciudad: data.ciudad,
     estado: data.estado,
-    codigoPostal: data.codigoPostal,
+    codigo_postal: data.codigoPostal,
     latitud: data.latitud,
     longitud: data.longitud,
-    fuenteReferencia: data.fuenteReferencia,
-    passwordHash: data.passwordHash,
-    updatedAt: new Date()
+    fuente_referencia: data.fuenteReferencia,
+    password_hash: data.passwordHash,
+    updated_at: new Date()
   };
 
-  // Agregar tipoRegistro si está presente
+  // Agregar tipo_registro si está presente
   if (data.tipoRegistro) {
-    cleanedData.tipoRegistro = data.tipoRegistro;
+    cleanedData.tipo_registro = data.tipoRegistro;
   }
 
-  // Agregar la relación creadoPor si hay un creadoPorId
+  // Agregar la relación creado_por si hay un creadoPorId
   if (data.creadoPorId) {
-    cleanedData.creadoPor = {
-      connect: {
-        id: data.creadoPorId
-      }
-    };
+    cleanedData.creado_por_id = data.creadoPorId;
   }
 
-  // Agregar el puntoRecoleccionId directamente
+  // Agregar el punto_recoleccion_id directamente
   if (data.puntoRecoleccionId) {
-    cleanedData.puntoRecoleccionId = data.puntoRecoleccionId;
+    cleanedData.punto_recoleccion_id = data.puntoRecoleccionId;
   }
 
   return cleanedData;
