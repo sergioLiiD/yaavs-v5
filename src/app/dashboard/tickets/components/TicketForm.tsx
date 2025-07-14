@@ -53,7 +53,11 @@ interface Cliente {
 interface Modelo {
   id: number;
   nombre: string;
-  marca: {
+  marcas?: {
+    id: number;
+    nombre: string;
+  };
+  marca?: {
     id: number;
     nombre: string;
   };
@@ -259,7 +263,10 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
                     <Input
                       value={(() => {
                         const modelo = modelos.find(m => m.id === field.value);
-                        return modelo ? `${modelo.marca?.nombre || 'Sin marca'} ${modelo.nombre || 'Sin nombre'}` : 'Modelo no encontrado';
+                        console.log('🔍 Buscando modelo con ID:', field.value);
+                        console.log('🔍 Modelos disponibles:', modelos.map(m => ({ id: m.id, nombre: m.nombre, marca: m.marcas?.nombre })));
+                        console.log('🔍 Modelo encontrado:', modelo);
+                        return modelo ? `${modelo.marcas?.nombre || 'Sin marca'} ${modelo.nombre || 'Sin nombre'}` : 'Modelo no encontrado';
                       })()}
                       readOnly
                       className="bg-gray-50"
@@ -277,9 +284,9 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {modelos.filter(modelo => modelo && modelo.marca).map((modelo) => (
+                      {modelos.filter(modelo => modelo && (modelo.marca || modelo.marcas)).map((modelo) => (
                         <SelectItem key={modelo.id} value={modelo.id.toString()}>
-                          {`${modelo.marca?.nombre || 'Sin marca'} ${modelo.nombre || 'Sin nombre'}`}
+                          {`${modelo.marcas?.nombre || modelo.marca?.nombre || 'Sin marca'} ${modelo.nombre || 'Sin nombre'}`}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -50,6 +50,9 @@ export default function EditTicketPage({ params }: { params: { id: string } }) {
           tiposServicio: ticketData.tipos_servicio
         };
         
+        console.log('Ticket mapeado completo:', ticketMapeado);
+        console.log('IMEI del ticket:', ticketMapeado.imei);
+        
         setTicket(ticketMapeado);
 
         // Obtener clientes
@@ -73,25 +76,25 @@ export default function EditTicketPage({ params }: { params: { id: string } }) {
         console.log('Modelo del ticket:', ticketData.modelos);
         console.log('Marca ID del modelo:', ticketData.modelos?.marca_id);
         
-        if (ticketData.modelos?.marca_id) {
-          console.log('Cargando modelos para marca ID:', ticketData.modelos.marca_id);
-          const modelosResponse = await fetch(`/api/catalogo/modelos?marcaId=${ticketData.modelos.marca_id}`);
-          if (!modelosResponse.ok) {
-            throw new Error('Error al cargar los modelos');
-          }
-          const modelosData = await modelosResponse.json();
-          console.log('Modelos cargados:', modelosData);
-          setModelos(modelosData);
-        } else {
-          console.log('No se encontró marca_id en el modelo del ticket');
-          // Cargar todos los modelos si no hay marca específica
-          const modelosResponse = await fetch('/api/catalogo/modelos');
-          if (modelosResponse.ok) {
-            const modelosData = await modelosResponse.json();
-            console.log('Todos los modelos cargados:', modelosData);
-            setModelos(modelosData);
-          }
+        // Cargar todos los modelos para asegurar que el modelo del ticket esté incluido
+        const modelosResponse = await fetch('/api/catalogo/modelos');
+        if (!modelosResponse.ok) {
+          throw new Error('Error al cargar los modelos');
         }
+        const modelosData = await modelosResponse.json();
+        console.log('Todos los modelos cargados:', modelosData);
+        
+        // Verificar que el modelo del ticket esté en la lista
+        const modeloDelTicket = modelosData.find((m: any) => m.id === ticketData.modelo_id);
+        if (!modeloDelTicket) {
+          console.log('⚠️ El modelo del ticket no está en la lista de modelos cargados');
+          console.log('Modelo ID del ticket:', ticketData.modelo_id);
+          console.log('Modelos disponibles:', modelosData.map((m: any) => ({ id: m.id, nombre: m.nombre, marca: m.marcas?.nombre })));
+        } else {
+          console.log('✅ Modelo del ticket encontrado en la lista:', modeloDelTicket);
+        }
+        
+        setModelos(modelosData);
 
         // Obtener tipos de servicio
         const tiposServicioResponse = await fetch('/api/catalogo/tipos-servicio');
