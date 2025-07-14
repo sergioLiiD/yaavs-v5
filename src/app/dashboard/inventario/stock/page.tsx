@@ -70,7 +70,7 @@ export default function StockPage() {
     tipo: 'VENTA' as const,
     referencia: ''
   });
-  const [salidas, setSalidas] = useState<any[]>([]);
+  const [historial, setHistorial] = useState<any[]>([]);
   const [proveedores, setProveedores] = useState<{ id: number; nombre: string; }[]>([]);
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function StockPage() {
       try {
         await Promise.all([
           loadProductos(),
-          loadSalidas(),
+          loadHistorial(),
           loadProveedores()
         ]);
       } catch (error) {
@@ -115,18 +115,18 @@ export default function StockPage() {
     }
   };
 
-  const loadSalidas = async (productoId?: string) => {
+  const loadHistorial = async (productoId?: string) => {
     try {
       const url = productoId 
         ? `/api/inventario/stock/salidas?productoId=${productoId}`
         : '/api/inventario/stock/salidas';
       const response = await fetch(url);
-      if (!response.ok) throw new Error('Error al cargar las salidas');
+      if (!response.ok) throw new Error('Error al cargar el historial');
       const data = await response.json();
-      setSalidas(data);
+      setHistorial(data);
     } catch (error) {
-      console.error('Error al cargar salidas:', error);
-      toast.error('Error al cargar el historial de salidas');
+      console.error('Error al cargar historial:', error);
+      toast.error('Error al cargar el historial de movimientos');
     }
   };
 
@@ -176,7 +176,7 @@ export default function StockPage() {
 
       // Recargar los datos
       await loadProductos();
-      await loadSalidas(productoSeleccionado.id.toString());
+      await loadHistorial(productoSeleccionado.id.toString());
 
       // Cerrar el modal
       setIsModalOpen(false);
@@ -194,8 +194,8 @@ export default function StockPage() {
       nuevosExpandidos.delete(productoId);
     } else {
       nuevosExpandidos.add(productoId);
-      // Cargar las salidas cuando se expanden los detalles
-      loadSalidas(productoId.toString());
+      // Cargar el historial cuando se expanden los detalles
+      loadHistorial(productoId.toString());
     }
     setProductosExpandidos(nuevosExpandidos);
   };
@@ -310,7 +310,7 @@ export default function StockPage() {
 
       // Recargar los datos
       loadProductos();
-      loadSalidas(productoSeleccionado.id.toString());
+      loadHistorial(productoSeleccionado.id.toString());
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al registrar salida');
@@ -364,8 +364,8 @@ export default function StockPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {salidas
-                            .filter(movimiento => movimiento.productoId === producto.id)
+                          {historial
+                            .filter(movimiento => movimiento.producto_id === producto.id)
                             .map((movimiento) => (
                               <tr key={movimiento.id}>
                                 <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-900 sm:pl-0">
@@ -374,9 +374,9 @@ export default function StockPage() {
                                 <td className="whitespace-nowrap px-3 py-4 text-sm">
                                   <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
                                     movimiento.tipo === 'ENTRADA' ? 'bg-green-100 text-green-700' :
-                                    movimiento.tipo === 'SALIDA' && movimiento.tipo === 'VENTA' ? 'bg-blue-100 text-blue-700' :
-                                    movimiento.tipo === 'SALIDA' && movimiento.tipo === 'DANO' ? 'bg-red-100 text-red-700' :
-                                    movimiento.tipo === 'SALIDA' && movimiento.tipo === 'MERMA' ? 'bg-yellow-100 text-yellow-700' :
+                                    movimiento.tipo === 'VENTA' ? 'bg-blue-100 text-blue-700' :
+                                    movimiento.tipo === 'DANO' ? 'bg-red-100 text-red-700' :
+                                    movimiento.tipo === 'MERMA' ? 'bg-yellow-100 text-yellow-700' :
                                     'bg-gray-100 text-gray-700'
                                   }`}>
                                     {movimiento.tipo === 'ENTRADA' ? 'ENTRADA' : movimiento.tipo}
@@ -386,15 +386,15 @@ export default function StockPage() {
                                   {movimiento.cantidad}
                                 </td>
                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                  {`${movimiento.usuario.nombre} ${movimiento.usuario.apellidoPaterno}`}
+                                  {`${movimiento.usuarios.nombre} ${movimiento.usuarios.apellido_paterno}`}
                                 </td>
                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                  {movimiento.tipo === 'ENTRADA' ? movimiento.proveedor?.nombre || '-' : '-'}
+                                  {movimiento.tipo === 'ENTRADA' ? movimiento.proveedores?.nombre || '-' : '-'}
                                 </td>
                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
                                   {movimiento.tipo === 'ENTRADA' ? (
                                     <>
-                                      Precio: ${movimiento.precioCompra}
+                                      Precio: ${movimiento.precio_compra}
                                       {movimiento.notas && (
                                         <span className="ml-2 text-gray-500">
                                           ({movimiento.notas})
