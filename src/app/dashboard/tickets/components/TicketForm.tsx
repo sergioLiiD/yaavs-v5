@@ -168,23 +168,37 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Cliente</FormLabel>
-                <Select
-                  onValueChange={(value) => field.onChange(Number(value))}
-                  value={field.value?.toString()}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un cliente" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {clientes.filter(cliente => cliente).map((cliente) => (
-                      <SelectItem key={cliente.id} value={cliente.id.toString()}>
-                        {`${cliente.nombre || ''} ${cliente.apellidoPaterno || ''} ${cliente.apellidoMaterno || ""}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {ticket ? (
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      value={(() => {
+                        const cliente = clientes.find(c => c.id === field.value);
+                        return cliente ? `${cliente.nombre || ''} ${cliente.apellidoPaterno || ''} ${cliente.apellidoMaterno || ""}` : 'Cliente no encontrado';
+                      })()}
+                      readOnly
+                      className="bg-gray-50"
+                    />
+                    <span className="text-sm text-gray-500">(No editable)</span>
+                  </div>
+                ) : (
+                  <Select
+                    onValueChange={(value) => field.onChange(Number(value))}
+                    value={field.value?.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un cliente" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {clientes.filter(cliente => cliente).map((cliente) => (
+                        <SelectItem key={cliente.id} value={cliente.id.toString()}>
+                          {`${cliente.nombre || ''} ${cliente.apellidoPaterno || ''} ${cliente.apellidoMaterno || ""}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -197,23 +211,37 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tipo de Servicio</FormLabel>
-                <Select
-                  onValueChange={(value) => field.onChange(Number(value))}
-                  value={field.value?.toString()}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un tipo de servicio" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {tiposServicio.filter(tipo => tipo).map((tipo) => (
-                      <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                        {tipo.nombre || 'Sin nombre'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {ticket ? (
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      value={(() => {
+                        const tipo = tiposServicio.find(t => t.id === field.value);
+                        return tipo ? tipo.nombre : 'Tipo no encontrado';
+                      })()}
+                      readOnly
+                      className="bg-gray-50"
+                    />
+                    <span className="text-sm text-gray-500">(No editable)</span>
+                  </div>
+                ) : (
+                  <Select
+                    onValueChange={(value) => field.onChange(Number(value))}
+                    value={field.value?.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un tipo de servicio" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {tiposServicio.filter(tipo => tipo).map((tipo) => (
+                        <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                          {tipo.nombre || 'Sin nombre'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -226,23 +254,37 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Modelo</FormLabel>
-                <Select
-                  onValueChange={(value) => field.onChange(Number(value))}
-                  value={field.value?.toString()}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un modelo" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {modelos.filter(modelo => modelo && modelo.marca).map((modelo) => (
-                      <SelectItem key={modelo.id} value={modelo.id.toString()}>
-                        {`${modelo.marca?.nombre || 'Sin marca'} ${modelo.nombre || 'Sin nombre'}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {ticket ? (
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      value={(() => {
+                        const modelo = modelos.find(m => m.id === field.value);
+                        return modelo ? `${modelo.marca?.nombre || 'Sin marca'} ${modelo.nombre || 'Sin nombre'}` : 'Modelo no encontrado';
+                      })()}
+                      readOnly
+                      className="bg-gray-50"
+                    />
+                    <span className="text-sm text-gray-500">(No editable)</span>
+                  </div>
+                ) : (
+                  <Select
+                    onValueChange={(value) => field.onChange(Number(value))}
+                    value={field.value?.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un modelo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {modelos.filter(modelo => modelo && modelo.marca).map((modelo) => (
+                        <SelectItem key={modelo.id} value={modelo.id.toString()}>
+                          {`${modelo.marca?.nombre || 'Sin marca'} ${modelo.nombre || 'Sin nombre'}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <FormMessage />
               </FormItem>
             )}
