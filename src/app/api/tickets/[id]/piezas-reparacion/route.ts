@@ -24,7 +24,7 @@ export async function GET(
     console.log('Buscando ticket:', ticketId);
 
     // Verificar que el ticket existe
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: ticketId },
     });
 
@@ -33,8 +33,8 @@ export async function GET(
       return new NextResponse('Ticket no encontrado', { status: 404 });
     }
 
-    const reparacion = await prisma.reparacion.findFirst({
-      where: { ticketId: ticketId },
+    const reparacion = await prisma.reparaciones.findFirst({
+      where: { ticket_id: ticketId },
     });
 
     if (!reparacion) {
@@ -45,15 +45,15 @@ export async function GET(
     console.log('Reparación encontrada:', reparacion);
 
     // Obtener las piezas de reparación
-    const piezasReparacion = await prisma.piezaReparacion.findMany({
+    const piezasReparacion = await prisma.piezas_reparacion.findMany({
       where: {
-        reparacionId: reparacion.id
+        reparacion_id: reparacion.id
       },
       include: {
-        pieza: {
+        piezas: {
           include: {
-            marca: true,
-            modelo: true
+            marcas: true,
+            modelos: true
           }
         }
       }

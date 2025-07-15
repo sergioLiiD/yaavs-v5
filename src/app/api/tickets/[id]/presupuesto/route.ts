@@ -5,14 +5,6 @@ import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-interface ConceptoPresupuesto {
-  id: string;
-  descripcion: string;
-  cantidad: number;
-  precioUnitario: number;
-  total: number;
-}
-
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -26,12 +18,12 @@ export async function GET(
     const ticketId = parseInt(params.id);
 
     // Verificar que el ticket existe
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: ticketId },
       include: {
-        presupuesto: {
+        presupuestos: {
           include: {
-            conceptos: true
+            conceptos_presupuesto: true
           }
         },
       },
@@ -41,11 +33,11 @@ export async function GET(
       return new NextResponse('Ticket no encontrado', { status: 404 });
     }
 
-    if (!ticket.presupuesto) {
+    if (!ticket.presupuestos) {
       return NextResponse.json(null);
     }
 
-    return NextResponse.json(ticket.presupuesto);
+    return NextResponse.json(ticket.presupuestos);
   } catch (error) {
     console.error('Error al obtener presupuesto:', error);
     return new NextResponse('Error interno del servidor', { status: 500 });
@@ -74,11 +66,11 @@ export async function POST(
     }
 
     // Verificar que el ticket existe
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: ticketId },
       include: {
-        presupuesto: true,
-        reparacion: true,
+        presupuestos: true,
+        reparaciones: true,
       },
     });
 
@@ -112,41 +104,41 @@ export async function POST(
     });
 
     // Crear o actualizar el presupuesto
-    const presupuesto = await prisma.presupuesto.upsert({
+    const presupuesto = await prisma.presupuestos.upsert({
       where: {
-        ticketId: ticketId,
+        ticket_id: ticketId,
       },
       create: {
-        ticket: {
-          connect: {
-            id: ticketId
-          }
-        },
+        ticket_id: ticketId,
         total: totalFinal,
         descuento,
-        totalFinal,
+        total_final: totalFinal,
         aprobado: false,
-        conceptos: {
+        updated_at: new Date(),
+        conceptos_presupuesto: {
           create: conceptos.map((c: any) => ({
             descripcion: c.descripcion,
             cantidad: c.cantidad,
-            precioUnitario: c.precioUnitario,
-            total: c.cantidad * c.precioUnitario
+            precio_unitario: c.precioUnitario,
+            total: c.cantidad * c.precioUnitario,
+            updated_at: new Date()
           }))
         }
       },
       update: {
         total: totalFinal,
         descuento,
-        totalFinal,
+        total_final: totalFinal,
         aprobado: false,
-        conceptos: {
+        updated_at: new Date(),
+        conceptos_presupuesto: {
           deleteMany: {},
           create: conceptos.map((c: any) => ({
             descripcion: c.descripcion,
             cantidad: c.cantidad,
-            precioUnitario: c.precioUnitario,
-            total: c.cantidad * c.precioUnitario
+            precio_unitario: c.precioUnitario,
+            total: c.cantidad * c.precioUnitario,
+            updated_at: new Date()
           }))
         }
       },
@@ -155,7 +147,7 @@ export async function POST(
     console.log('Presupuesto creado/actualizado:', presupuesto);
 
     // Buscar el estado "Presupuesto Generado"
-    const estatusPresupuesto = await prisma.estatusReparacion.findFirst({
+    const estatusPresupuesto = await prisma.estatus_reparacion.findFirst({
       where: {
         nombre: 'Presupuesto Generado'
       }
@@ -167,18 +159,18 @@ export async function POST(
     }
 
     // Actualizar el estado del ticket
-    const ticketActualizado = await prisma.ticket.update({
+    const ticketActualizado = await prisma.tickets.update({
       where: {
         id: ticketId
       },
       data: {
-        estatusReparacionId: estatusPresupuesto.id
+        estatus_reparacion_id: estatusPresupuesto.id
       },
       include: {
-        estatusReparacion: true,
-        presupuesto: {
+        estatus_reparacion: true,
+        presupuestos: {
           include: {
-            conceptos: true
+            conceptos_presupuesto: true
           }
         }
       }
@@ -187,8 +179,8 @@ export async function POST(
     console.log('Ticket actualizado:', ticketActualizado);
 
     return NextResponse.json(ticketActualizado);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al guardar presupuesto:', error);
-    return new NextResponse(`Error interno del servidor: ${error.message}`, { status: 500 });
+    return new NextResponse(`Error interno del servidor: ${error instanceof Error ? error.message : 'Error desconocido'}`, { status: 500 });
   }
 } 

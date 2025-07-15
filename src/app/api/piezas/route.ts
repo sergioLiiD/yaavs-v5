@@ -18,11 +18,11 @@ export async function GET() {
     console.log('Usuario autenticado:', session.user);
     console.log('Buscando productos...');
 
-    const productos = await prisma.producto.findMany({
+    const productos = await prisma.productos.findMany({
       include: {
-        marca: true,
-        modelo: true,
-        categoria: true
+        marcas: true,
+        modelos: true,
+        categorias: true
       }
     });
 
@@ -47,23 +47,24 @@ export async function POST(request: Request) {
 
     console.log('Creando producto:', body);
 
-    const producto = await prisma.producto.create({
+    const producto = await prisma.productos.create({
       data: {
         nombre,
-        marcaId,
-        modeloId,
+        marca_id: marcaId,
+        modelo_id: modeloId,
         stock: stock || 0,
-        precioPromedio: precioPromedio || 0,
+        precio_promedio: precioPromedio || 0,
         sku,
         tipo: (tipo as TipoProducto) || 'PIEZA',
-        garantiaUnidad: 'MESES',
-        garantiaValor: 0,
-        tipoServicioId: tipoServicioId || null
+        garantia_unidad: 'MESES',
+        garantia_valor: 0,
+        tipo_servicio_id: tipoServicioId || null,
+        updated_at: new Date()
       },
       include: {
-        marca: true,
-        modelo: true,
-        categoria: true
+        marcas: true,
+        modelos: true,
+        categorias: true
       }
     });
 
