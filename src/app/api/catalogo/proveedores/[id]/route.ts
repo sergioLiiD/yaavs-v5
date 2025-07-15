@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/db/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +16,7 @@ export async function PUT(
     }
 
     const data = await request.json();
-    const proveedor = await prisma.proveedor.update({
+    const proveedor = await prisma.proveedores.update({
       where: {
         id: parseInt(params.id)
       },
@@ -29,9 +29,10 @@ export async function PUT(
         direccion: data.direccion,
         rfc: data.rfc,
         banco: data.banco,
-        cuentaBancaria: data.cuentaBancaria,
-        clabeInterbancaria: data.clabeInterbancaria,
-        notas: data.notas
+        cuenta_bancaria: data.cuentaBancaria,
+        clabe_interbancaria: data.clabeInterbancaria,
+        notas: data.notas,
+        updated_at: new Date()
       }
     });
 
@@ -56,7 +57,7 @@ export async function DELETE(
     }
 
     // Primero verificamos si el proveedor existe
-    const proveedores = await prisma.proveedor.findUnique({
+    const proveedores = await prisma.proveedores.findUnique({
       where: {
         id: parseInt(params.id)
       }
@@ -70,7 +71,7 @@ export async function DELETE(
     }
 
     // Verificamos si el proveedor tiene productos asociados
-    const productos = await prisma.producto.findMany({
+    const productos = await prisma.productos.findMany({
       where: {
         proveedor_id: parseInt(params.id)
       }
@@ -83,7 +84,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.proveedor.delete({
+    await prisma.proveedores.delete({
       where: {
         id: parseInt(params.id)
       }

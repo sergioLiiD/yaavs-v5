@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
@@ -18,7 +18,7 @@ export async function GET() {
       );
     }
 
-    const categorias = await prisma.categoria.findMany({
+    const categorias = await prisma.categorias.findMany({
       orderBy: {
         nombre: 'asc'
       }
@@ -62,10 +62,11 @@ export async function POST(request: Request) {
     }
 
     // Crear la categoría
-    const categoria = await prisma.categoria.create({
+    const categoria = await prisma.categorias.create({
       data: {
         nombre: data.nombre,
-        descripcion: data.descripcion || null
+        descripcion: data.descripcion || null,
+        updated_at: new Date()
       }
     });
 
