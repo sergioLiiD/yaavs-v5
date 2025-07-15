@@ -162,6 +162,24 @@ export async function GET(
       );
     }
 
+    // Validar que el usuario sea el técnico asignado o tenga permisos adecuados
+    if (ticket.tecnico_asignado_id !== session.user.id) {
+      // En el punto de reparación, permitimos que cualquier usuario del punto pueda editar
+      const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
+        where: {
+          usuario_id: session.user.id,
+          punto_recoleccion_id: ticket.punto_recoleccion_id || undefined
+        }
+      });
+
+      if (!userPoint) {
+        return NextResponse.json(
+          { error: 'No tienes permiso para realizar esta acción' },
+          { status: 403 }
+        );
+      }
+    }
+
     return NextResponse.json({
       success: true,
       checklist: ticket.reparaciones?.checklist_diagnostico?.checklist_respuesta_diagnostico || []
