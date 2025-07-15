@@ -25,7 +25,7 @@ export async function GET(
       );
     }
 
-    const tipoServicio = await prisma.tipoServicio.findUnique({
+    const tipoServicio = await prisma.tipos_servicio.findUnique({
       where: { id }
     });
 
@@ -85,7 +85,7 @@ export async function PUT(
     }
 
     // Actualizar el tipo de servicio
-    const tipoServicioActualizado = await prisma.tipoServicio.update({
+    const tipoServicioActualizado = await prisma.tipos_servicio.update({
       where: { id },
       data: {
         nombre: body.nombre,
@@ -133,7 +133,7 @@ export async function DELETE(
     }
 
     // Verificar si el tipo de servicio existe
-    const tipoServicio = await prisma.tipoServicio.findUnique({
+    const tipoServicio = await prisma.tipos_servicio.findUnique({
       where: { id },
       include: {
         tickets: true,
@@ -157,7 +157,7 @@ export async function DELETE(
     }
 
     // Eliminar el tipo de servicio
-    await prisma.tipoServicio.delete({
+    await prisma.tipos_servicio.delete({
       where: { id }
     });
     
