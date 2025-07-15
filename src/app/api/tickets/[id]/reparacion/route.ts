@@ -71,24 +71,39 @@ export async function POST(
     // Guardar las respuestas del checklist
     if (checklist && Array.isArray(checklist)) {
       try {
-        // Usar el endpoint de checklist para guardar las respuestas
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4001';
-        const checklistResponse = await fetch(`${baseUrl}/api/tickets/${ticketId}/checklist-reparacion`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Cookie': request.headers.get('cookie') || ''
-          },
-          body: JSON.stringify({ checklist })
+        // Obtener o crear el checklist de reparación
+        let checklistReparacion = await prisma.checklist_reparacion.findUnique({
+          where: { reparacion_id: reparacion.id }
+        });
+        
+        if (!checklistReparacion) {
+          checklistReparacion = await prisma.checklist_reparacion.create({
+            data: { 
+              reparacion_id: reparacion.id,
+              updated_at: new Date()
+            }
+          });
+        }
+
+        // Eliminar respuestas existentes
+        await prisma.checklist_respuesta_reparacion.deleteMany({
+          where: { checklist_reparacion_id: checklistReparacion.id }
         });
 
-        if (!checklistResponse.ok) {
-          const errorData = await checklistResponse.json();
-          console.error('Error al guardar el checklist:', errorData);
-          // No lanzar error, solo logear para no fallar todo el proceso
-        } else {
-          console.log('Checklist guardado:', checklist);
+        // Crear nuevas respuestas
+        for (const item of checklist) {
+          await prisma.checklist_respuesta_reparacion.create({
+            data: {
+              checklist_reparacion_id: checklistReparacion.id,
+              checklist_item_id: item.itemId,
+              respuesta: item.respuesta,
+              observaciones: item.observacion || null,
+              updated_at: new Date()
+            }
+          });
         }
+
+        console.log('Checklist guardado directamente:', checklist);
       } catch (error) {
         console.error('Error al guardar el checklist (no crítico):', error);
         // No lanzar error, solo logear para no fallar todo el proceso
