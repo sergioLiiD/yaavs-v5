@@ -81,7 +81,7 @@ export async function POST(
         id: ticketId
       },
       data: {
-        estatus_reparacion_id: 2, // En diagnóstico
+        estatus_reparacion_id: 1, // Cambiado de 2 a 1 - probablemente "Pendiente" o "En diagnóstico"
         fecha_inicio_diagnostico: new Date(),
         updated_at: new Date()
       }
