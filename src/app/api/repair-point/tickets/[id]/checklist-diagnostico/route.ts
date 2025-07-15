@@ -17,9 +17,14 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('🔍 POST checklist-diagnostico - Iniciando...');
     const session = await getServerSession(authOptionsRepairPoint);
+    
+    console.log('🔍 Session:', session);
+    console.log('🔍 Session user:', session?.user);
 
     if (!session?.user) {
+      console.log('❌ No hay sesión de usuario');
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
@@ -29,6 +34,9 @@ export async function POST(
     const ticketId = parseInt(params.id);
     const { checklist } = await request.json() as { checklist: ChecklistItem[] };
 
+    console.log('🔍 Ticket ID:', ticketId);
+    console.log('🔍 Checklist recibido:', checklist);
+
     // Validar que el ticket exista y obtener la reparación
     const ticket = await prisma.tickets.findUnique({
       where: { id: ticketId },
@@ -37,7 +45,10 @@ export async function POST(
       }
     });
 
+    console.log('🔍 Ticket encontrado:', ticket);
+
     if (!ticket) {
+      console.log('❌ Ticket no encontrado');
       return NextResponse.json(
         { error: 'Ticket no encontrado' },
         { status: 404 }
@@ -45,6 +56,7 @@ export async function POST(
     }
 
     if (!ticket.reparaciones) {
+      console.log('❌ No existe reparación para este ticket');
       return NextResponse.json(
         { error: 'No existe una reparación para este ticket' },
         { status: 400 }
@@ -52,7 +64,12 @@ export async function POST(
     }
 
     // Validar que el usuario sea el técnico asignado o tenga permisos adecuados
+    console.log('🔍 Validando permisos...');
+    console.log('🔍 Ticket tecnico_asignado_id:', ticket.tecnico_asignado_id);
+    console.log('🔍 Session user id:', session.user.id);
+    
     if (ticket.tecnico_asignado_id !== session.user.id) {
+      console.log('🔍 Usuario no es técnico asignado, verificando permisos del punto...');
       // En el punto de reparación, permitimos que cualquier usuario del punto pueda editar
       const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
         where: {
@@ -61,7 +78,10 @@ export async function POST(
         }
       });
 
+      console.log('🔍 UserPoint encontrado:', userPoint);
+
       if (!userPoint) {
+        console.log('❌ Usuario no tiene permisos en el punto');
         return NextResponse.json(
           { error: 'No tienes permiso para realizar esta acción' },
           { status: 403 }
