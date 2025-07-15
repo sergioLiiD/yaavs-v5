@@ -21,7 +21,7 @@ interface Usuario {
 }
 
 interface TicketDetailsSectionProps {
-  ticket: Ticket;
+  ticket: any; // Temporalmente usando any para manejar la diferencia entre snake_case y camelCase
   onUpdate?: () => void;
 }
 
@@ -31,17 +31,17 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
   const [isEditing, setIsEditing] = useState(false);
   const [tecnicos, setTecnicos] = useState<Usuario[]>([]);
   const [formData, setFormData] = useState({
-    descripcionProblema: ticket.descripcionProblema || '',
-    tecnicoAsignadoId: ticket.tecnicoAsignadoId?.toString() || '',
-    estatusReparacionId: ticket.estatusReparacionId?.toString() || '',
-    diagnostico: ticket.reparacion?.diagnostico || '',
+    descripcionProblema: ticket.descripcion_problema || '',
+    tecnicoAsignadoId: ticket.tecnico_asignado_id?.toString() || '',
+    estatusReparacionId: ticket.estatus_reparacion_id?.toString() || '',
+    diagnostico: ticket.reparaciones?.diagnostico || '',
     capacidad: ticket.capacidad || '',
     color: ticket.color || '',
-    fechaCompra: ticket.fechaCompra instanceof Date ? ticket.fechaCompra.toISOString().split('T')[0] : '',
-    tipoDesbloqueo: ticket.patronDesbloqueo?.length ? 'patron' : 'pin',
-    codigoDesbloqueo: ticket.codigoDesbloqueo || '',
-    patronDesbloqueo: ticket.patronDesbloqueo || [],
-    redCelular: ticket.redCelular || '',
+    fechaCompra: ticket.fecha_compra instanceof Date ? ticket.fecha_compra.toISOString().split('T')[0] : (ticket.fecha_compra ? new Date(ticket.fecha_compra).toISOString().split('T')[0] : ''),
+    tipoDesbloqueo: ticket.tipo_desbloqueo || 'pin',
+    codigoDesbloqueo: ticket.codigo_desbloqueo || '',
+    patronDesbloqueo: ticket.patron_desbloqueo || [],
+    redCelular: ticket.red_celular || '',
   });
 
   useEffect(() => {
@@ -175,8 +175,8 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue>
-                        {ticket.tecnicoAsignado ? 
-                          `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno} ${ticket.tecnicoAsignado.apellidoMaterno}` : 
+                        {ticket.usuarios_tickets_tecnico_asignado_idTousuarios ? 
+                          `${ticket.usuarios_tickets_tecnico_asignado_idTousuarios.nombre} ${ticket.usuarios_tickets_tecnico_asignado_idTousuarios.apellido_paterno} ${ticket.usuarios_tickets_tecnico_asignado_idTousuarios.apellido_materno}` : 
                           'Seleccionar técnico'}
                       </SelectValue>
                     </SelectTrigger>
