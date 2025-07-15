@@ -23,12 +23,12 @@ export async function POST(
     const { diagnostico, saludBateria, versionSO } = await request.json();
 
     // Obtener el punto de reparación del usuario
-    const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
+    const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
-        usuarioId: session.user.id
+        usuario_id: session.user.id
       },
       include: {
-        puntoRecoleccion: true
+        puntos_recoleccion: true
       }
     });
 
@@ -40,10 +40,10 @@ export async function POST(
     }
 
     // Verificar que el ticket exista y pertenezca al punto de reparación
-    const ticket = await prisma.ticket.findFirst({
+    const ticket = await prisma.tickets.findFirst({
       where: {
         id: ticketId,
-        puntoRecoleccionId: userPoint.puntoRecoleccionId
+        punto_recoleccion_id: userPoint.punto_recoleccion_id
       }
     });
 
@@ -55,32 +55,35 @@ export async function POST(
     }
 
     // Crear o actualizar la reparación
-    const reparacion = await prisma.reparacion.upsert({
+    const reparacion = await prisma.reparaciones.upsert({
       where: {
-        ticketId: ticketId
+        ticket_id: ticketId
       },
       create: {
-        ticketId: ticketId,
+        ticket_id: ticketId,
         diagnostico: diagnostico,
-        saludBateria: saludBateria,
-        versionSO: versionSO,
-        fechaInicio: new Date()
+        salud_bateria: saludBateria,
+        version_so: versionSO,
+        fecha_inicio: new Date(),
+        updated_at: new Date()
       },
       update: {
         diagnostico: diagnostico,
-        saludBateria: saludBateria,
-        versionSO: versionSO
+        salud_bateria: saludBateria,
+        version_so: versionSO,
+        updated_at: new Date()
       }
     });
 
     // Actualizar el estado del ticket
-    await prisma.ticket.update({
+    await prisma.tickets.update({
       where: {
         id: ticketId
       },
       data: {
-        estatusReparacionId: 2, // En diagnóstico
-        fechaInicioDiagnostico: new Date()
+        estatus_reparacion_id: 2, // En diagnóstico
+        fecha_inicio_diagnostico: new Date(),
+        updated_at: new Date()
       }
     });
 
@@ -115,12 +118,12 @@ export async function GET(
     const ticketId = parseInt(params.id);
 
     // Obtener el punto de reparación del usuario
-    const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
+    const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
-        usuarioId: session.user.id
+        usuario_id: session.user.id
       },
       include: {
-        puntoRecoleccion: true
+        puntos_recoleccion: true
       }
     });
 
@@ -132,13 +135,13 @@ export async function GET(
     }
 
     // Obtener el ticket con su reparación
-    const ticket = await prisma.ticket.findFirst({
+    const ticket = await prisma.tickets.findFirst({
       where: {
         id: ticketId,
-        puntoRecoleccionId: userPoint.puntoRecoleccionId
+        punto_recoleccion_id: userPoint.punto_recoleccion_id
       },
       include: {
-        reparacion: true
+        reparaciones: true
       }
     });
 
@@ -151,7 +154,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      reparacion: ticket.reparacion
+      reparacion: ticket.reparaciones
     });
 
   } catch (error) {
