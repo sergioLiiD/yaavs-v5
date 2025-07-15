@@ -27,9 +27,9 @@ export async function POST(
     }
 
     // Verificar que el ticket existe
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: ticketId },
-      include: { tecnicoAsignado: true }
+      include: { usuarios_tickets_tecnico_asignado_idTousuarios: true }
     });
 
     if (!ticket) {
@@ -44,23 +44,23 @@ export async function POST(
     const { observaciones, checklist, fotos, videos, completar } = body;
 
     // Actualizar o crear la reparación
-    const reparacion = await prisma.reparacion.upsert({
-      where: { ticketId },
+    const reparacion = await prisma.reparaciones.upsert({
+      where: { ticket_id: ticketId },
       update: {
         observaciones,
-        fechaFin: completar ? new Date() : undefined,
+        fecha_fin: completar ? new Date() : undefined,
         diagnostico: body.diagnostico,
-        saludBateria: body.saludBateria,
-        versionSO: body.versionSO
+        salud_bateria: body.saludBateria,
+        version_so: body.versionSO
       },
       create: {
-        ticketId,
+        ticket_id: ticketId,
         observaciones,
-        fechaInicio: new Date(),
-        fechaFin: completar ? new Date() : undefined,
+        fecha_inicio: new Date(),
+        fecha_fin: completar ? new Date() : undefined,
         diagnostico: body.diagnostico,
-        saludBateria: body.saludBateria,
-        versionSO: body.versionSO
+        salud_bateria: body.saludBateria,
+        version_so: body.versionSO
       }
     });
 
@@ -90,7 +90,7 @@ export async function POST(
 
     // Actualizar el estado del ticket si es necesario
     if (completar) {
-      const estatusReparado = await prisma.estatusReparacion.findFirst({
+      const estatusReparado = await prisma.estatus_reparacion.findFirst({
         where: { nombre: 'Reparado' }
       });
 
@@ -98,11 +98,11 @@ export async function POST(
         throw new Error('No se encontró el estatus "Reparado"');
       }
 
-      await prisma.ticket.update({
+      await prisma.tickets.update({
         where: { id: ticketId },
         data: {
-          estatusReparacionId: estatusReparado.id,
-          fechaFinReparacion: new Date()
+          estatus_reparacion_id: estatusReparado.id,
+          fecha_fin_reparacion: new Date()
         }
       });
 
