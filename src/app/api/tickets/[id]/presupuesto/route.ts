@@ -142,6 +142,9 @@ export async function POST(
           }))
         }
       },
+      include: {
+        conceptos_presupuesto: true
+      }
     });
 
     console.log('Presupuesto creado/actualizado:', presupuesto);
