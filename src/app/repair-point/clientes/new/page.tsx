@@ -13,6 +13,7 @@ interface FormData {
   apellidoMaterno: string;
   email: string;
   telefonoCelular: string;
+  telefonoContacto: string;
 }
 
 export default function NewClientePage() {
@@ -25,6 +26,7 @@ export default function NewClientePage() {
     apellidoMaterno: '',
     email: '',
     telefonoCelular: '',
+    telefonoContacto: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,6 +129,18 @@ export default function NewClientePage() {
               value={formData.telefonoCelular}
               onChange={handleChange}
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="telefonoContacto">Teléfono de Contacto</Label>
+            <Input
+              id="telefonoContacto"
+              name="telefonoContacto"
+              type="tel"
+              value={formData.telefonoContacto}
+              onChange={handleChange}
+              placeholder="Teléfono para comunicarnos cuando tengamos su dispositivo"
             />
           </div>
 

@@ -27,6 +27,7 @@ export async function POST(request: Request) {
           apellido_materno: body.apellidoMaterno || null,
           email: body.email,
           telefono_celular: body.telefono,
+          telefono_contacto: body.telefonoContacto || null,
           punto_recoleccion_id: body.puntoRecoleccionId || null,
           created_at: new Date(),
           updated_at: new Date()
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
         apellidoMaterno: cliente.apellido_materno,
         email: cliente.email,
         telefonoCelular: cliente.telefono_celular,
+        telefonoContacto: cliente.telefono_contacto,
         puntoRecoleccionId: cliente.punto_recoleccion_id,
         createdAt: cliente.created_at,
         updatedAt: cliente.updated_at
@@ -69,6 +71,7 @@ export async function POST(request: Request) {
         apellido_materno: body.apellidoMaterno || null,
         email: body.email,
         telefono_celular: body.telefono,
+        telefono_contacto: body.telefonoContacto || null,
         punto_recoleccion_id: userPointId,
         created_at: new Date(),
         updated_at: new Date()
@@ -83,6 +86,7 @@ export async function POST(request: Request) {
       apellidoMaterno: cliente.apellido_materno,
       email: cliente.email,
       telefonoCelular: cliente.telefono_celular,
+      telefonoContacto: cliente.telefono_contacto,
       puntoRecoleccionId: cliente.punto_recoleccion_id,
       createdAt: cliente.created_at,
       updatedAt: cliente.updated_at
