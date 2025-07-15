@@ -32,14 +32,23 @@ export async function GET(req: NextRequest) {
 // POST /api/catalogo/marcas
 export async function POST(req: NextRequest) {
   try {
+    console.log('=== INICIANDO POST /api/catalogo/marcas ===');
+    
     // Verificar autenticación
     const session = await getServerSession(authOptions);
+    console.log('Session obtenida:', !!session);
+    
     if (!session) {
+      console.log('No hay sesión, retornando 401');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
+    console.log('Usuario:', session.user?.email);
+    console.log('Rol:', session.user?.role);
+
     // Verificar rol de administrador/gerente
     if (session.user.role !== 'ADMINISTRADOR' && session.user.role !== 'GERENTE') {
+      console.log('Usuario sin permisos, retornando 403');
       return NextResponse.json(
         { error: 'No tiene permisos para realizar esta acción' },
         { status: 403 }
@@ -64,7 +73,12 @@ export async function POST(req: NextRequest) {
       descripcion: body.descripcion || null
     });
 
+    console.log('Verificando conexión a Prisma...');
+    console.log('Prisma disponible:', !!prisma);
+    console.log('Prisma.marcas disponible:', !!prisma.marcas);
+
     try {
+      console.log('Ejecutando prisma.marcas.create...');
       const nuevaMarca = await prisma.marcas.create({
         data: {
           nombre: body.nombre,
@@ -79,17 +93,22 @@ export async function POST(req: NextRequest) {
       console.error('Error de base de datos:', {
         message: dbError.message,
         code: dbError.code,
-        meta: dbError.meta
+        meta: dbError.meta,
+        stack: dbError.stack
       });
       throw dbError;
     }
   } catch (error: any) {
+    console.error('=== ERROR FINAL AL CREAR MARCA ===');
     console.error('Error al crear marca:', {
       message: error.message,
       code: error.code,
       meta: error.meta,
       stack: error.stack
     });
+    console.error('Tipo de error:', typeof error);
+    console.error('Error es instancia de Error:', error instanceof Error);
+    
     return NextResponse.json(
       { 
         error: 'Error al procesar la solicitud',

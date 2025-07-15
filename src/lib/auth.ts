@@ -3,7 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { PrismaClient } from '@prisma/client';
 import { compare } from 'bcrypt';
-import { db } from '@/lib/prisma-docker';
+import prisma from '@/lib/db/prisma';
 
 export interface CustomUser {
   id: number;
@@ -51,7 +51,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         console.log('Buscando usuario en la base de datos...');
-        const user = await db.usuarios.findUnique({
+        const user = await prisma.usuarios.findUnique({
           where: { 
             email: credentials.email,
             activo: true
@@ -167,15 +167,21 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       if (token) {
+        // @ts-ignore
         session.user = {
-          id: Number(token.id) as number,
-          email: token.email as string,
-          name: token.name as string,
-          role: token.role as string,
-          permissions: token.permissions as string[],
-          puntoRecoleccion: token.puntoRecoleccion as { id: number; nombre: string; } | undefined,
+          // @ts-ignore
+          id: typeof token.id === 'string' ? parseInt(token.id) : token.id,
+          // @ts-ignore
+          email: String(token.email || ''),
+          // @ts-ignore
+          name: String(token.name || ''),
+          // @ts-ignore
+          role: String(token.role || 'USER'),
+          // @ts-ignore
+          permissions: Array.isArray(token.permissions) ? token.permissions : [],
+          puntoRecoleccion: token.puntoRecoleccion,
         };
       }
       return session;
