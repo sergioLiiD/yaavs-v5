@@ -392,6 +392,79 @@ async function main() {
         nombre: 'Eliminar Tickets del Punto',
         descripcion: 'Permite eliminar tickets del punto de reparación',
         categoria: 'Punto de Reparación'
+      },
+      // Nuevos permisos para el módulo de repair-point
+      {
+        codigo: 'PUNTO_DIAGNOSTICO_CREATE',
+        nombre: 'Crear Diagnóstico',
+        descripcion: 'Permite crear diagnósticos en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_DIAGNOSTICO_EDIT',
+        nombre: 'Editar Diagnóstico',
+        descripcion: 'Permite editar diagnósticos en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_DIAGNOSTICO_VIEW',
+        nombre: 'Ver Diagnóstico',
+        descripcion: 'Permite ver diagnósticos en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_CHECKLIST_DIAGNOSTICO_CREATE',
+        nombre: 'Crear Checklist de Diagnóstico',
+        descripcion: 'Permite crear checklist de diagnóstico en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_CHECKLIST_DIAGNOSTICO_EDIT',
+        nombre: 'Editar Checklist de Diagnóstico',
+        descripcion: 'Permite editar checklist de diagnóstico en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_CHECKLIST_DIAGNOSTICO_VIEW',
+        nombre: 'Ver Checklist de Diagnóstico',
+        descripcion: 'Permite ver checklist de diagnóstico en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_CHECKLIST_REPARACION_CREATE',
+        nombre: 'Crear Checklist de Reparación',
+        descripcion: 'Permite crear checklist de reparación en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_CHECKLIST_REPARACION_EDIT',
+        nombre: 'Editar Checklist de Reparación',
+        descripcion: 'Permite editar checklist de reparación en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_CHECKLIST_REPARACION_VIEW',
+        nombre: 'Ver Checklist de Reparación',
+        descripcion: 'Permite ver checklist de reparación en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_REPARACION_CREATE',
+        nombre: 'Crear Reparación',
+        descripcion: 'Permite crear reparaciones en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_REPARACION_EDIT',
+        nombre: 'Editar Reparación',
+        descripcion: 'Permite editar reparaciones en el punto de reparación',
+        categoria: 'Punto de Reparación'
+      },
+      {
+        codigo: 'PUNTO_REPARACION_VIEW',
+        nombre: 'Ver Reparación',
+        descripcion: 'Permite ver reparaciones en el punto de reparación',
+        categoria: 'Punto de Reparación'
       }
     ];
 
@@ -408,7 +481,19 @@ async function main() {
           'PUNTO_TICKETS_VIEW',
           'PUNTO_TICKETS_CREATE',
           'PUNTO_TICKETS_EDIT',
-          'PUNTO_TICKETS_DELETE'
+          'PUNTO_TICKETS_DELETE',
+          'PUNTO_DIAGNOSTICO_CREATE',
+          'PUNTO_DIAGNOSTICO_EDIT',
+          'PUNTO_DIAGNOSTICO_VIEW',
+          'PUNTO_CHECKLIST_DIAGNOSTICO_CREATE',
+          'PUNTO_CHECKLIST_DIAGNOSTICO_EDIT',
+          'PUNTO_CHECKLIST_DIAGNOSTICO_VIEW',
+          'PUNTO_CHECKLIST_REPARACION_CREATE',
+          'PUNTO_CHECKLIST_REPARACION_EDIT',
+          'PUNTO_CHECKLIST_REPARACION_VIEW',
+          'PUNTO_REPARACION_CREATE',
+          'PUNTO_REPARACION_EDIT',
+          'PUNTO_REPARACION_VIEW'
         ]
       },
       {
@@ -417,7 +502,19 @@ async function main() {
         permisos: [
           'PUNTO_TICKETS_VIEW',
           'PUNTO_TICKETS_CREATE',
-          'PUNTO_TICKETS_EDIT'
+          'PUNTO_TICKETS_EDIT',
+          'PUNTO_DIAGNOSTICO_CREATE',
+          'PUNTO_DIAGNOSTICO_EDIT',
+          'PUNTO_DIAGNOSTICO_VIEW',
+          'PUNTO_CHECKLIST_DIAGNOSTICO_CREATE',
+          'PUNTO_CHECKLIST_DIAGNOSTICO_EDIT',
+          'PUNTO_CHECKLIST_DIAGNOSTICO_VIEW',
+          'PUNTO_CHECKLIST_REPARACION_CREATE',
+          'PUNTO_CHECKLIST_REPARACION_EDIT',
+          'PUNTO_CHECKLIST_REPARACION_VIEW',
+          'PUNTO_REPARACION_CREATE',
+          'PUNTO_REPARACION_EDIT',
+          'PUNTO_REPARACION_VIEW'
         ]
       }
     ];
