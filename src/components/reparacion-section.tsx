@@ -96,15 +96,18 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     const fetchChecklistRespuestas = async () => {
       try {
         const response = await axios.get(`/api/tickets/${ticket.id}/checklist-reparacion`);
+        console.log('Respuesta del checklist:', response.data);
+        
         if (response.data.success && response.data.checklist.length > 0) {
           const respuestasExistentes = response.data.checklist.map((respuesta: any) => ({
-            itemId: respuesta.checklistItemId,
-            item: respuesta.checklistItem.nombre,
+            itemId: respuesta.checklist_item_id,
+            item: respuesta.checklist_items?.nombre || 'Item sin nombre',
             respuesta: respuesta.respuesta,
             observacion: respuesta.observaciones || ''
           }));
           setChecklist(respuestasExistentes);
         } else if (checklistItems) {
+          console.log('No hay respuestas existentes, usando items del catálogo:', checklistItems);
           setChecklist(checklistItems.map((item: ChecklistItem) => ({
             itemId: item.id,
             item: item.nombre,
@@ -114,6 +117,15 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
         }
       } catch (error) {
         console.error('Error al cargar respuestas del checklist:', error);
+        // Si hay error, usar los items del catálogo como fallback
+        if (checklistItems) {
+          setChecklist(checklistItems.map((item: ChecklistItem) => ({
+            itemId: item.id,
+            item: item.nombre,
+            respuesta: false,
+            observacion: ''
+          })));
+        }
       }
     };
 
