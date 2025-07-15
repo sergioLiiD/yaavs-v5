@@ -51,7 +51,8 @@ export async function POST(
         fecha_fin: completar ? new Date() : undefined,
         diagnostico: body.diagnostico,
         salud_bateria: body.saludBateria,
-        version_so: body.versionSO
+        version_so: body.versionSO,
+        updated_at: new Date()
       },
       create: {
         ticket_id: ticketId,
@@ -60,7 +61,8 @@ export async function POST(
         fecha_fin: completar ? new Date() : undefined,
         diagnostico: body.diagnostico,
         salud_bateria: body.saludBateria,
-        version_so: body.versionSO
+        version_so: body.versionSO,
+        updated_at: new Date()
       }
     });
 
