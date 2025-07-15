@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptionsRepairPoint } from '@/lib/auth-repair-point';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
@@ -18,7 +18,7 @@ export async function POST(
 ) {
   try {
     console.log('🔍 POST checklist-diagnostico - Iniciando...');
-    const session = await getServerSession(authOptionsRepairPoint);
+    const session = await getServerSession(authOptions);
     
     console.log('🔍 Session:', session);
     console.log('🔍 Session user:', session?.user);
@@ -145,10 +145,14 @@ export async function GET(
 ) {
   try {
     console.log('🔍 GET checklist-diagnostico - Iniciando...');
-    const session = await getServerSession(authOptionsRepairPoint);
+    console.log('🔍 URL:', request.url);
+    console.log('🔍 Headers:', Object.fromEntries(request.headers.entries()));
+    
+    const session = await getServerSession(authOptions);
     
     console.log('🔍 Session:', session);
     console.log('🔍 Session user:', session?.user);
+    console.log('🔍 Session user permissions:', session?.user?.permissions);
 
     if (!session?.user) {
       console.log('❌ No hay sesión de usuario');
