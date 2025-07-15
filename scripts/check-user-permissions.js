@@ -7,7 +7,7 @@ async function main() {
     console.log('🔍 Verificando permisos del usuario...');
     
     // Email del usuario a verificar (cambiar por el email correcto)
-    const userEmail = 'sergio@arregla.mx'; // Cambiar por el email correcto
+    const userEmail = 'admin@puntouno.com'; // Cambiar por el email correcto
     
     // Buscar el usuario
     const user = await prisma.usuarios.findUnique({
