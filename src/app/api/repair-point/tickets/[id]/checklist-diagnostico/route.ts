@@ -30,10 +30,10 @@ export async function POST(
     const { checklist } = await request.json() as { checklist: ChecklistItem[] };
 
     // Validar que el ticket exista y obtener la reparación
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: ticketId },
       include: {
-        reparacion: true
+        reparaciones: true
       }
     });
 
@@ -44,7 +44,7 @@ export async function POST(
       );
     }
 
-    if (!ticket.reparacion) {
+    if (!ticket.reparaciones) {
       return NextResponse.json(
         { error: 'No existe una reparación para este ticket' },
         { status: 400 }
@@ -52,12 +52,12 @@ export async function POST(
     }
 
     // Validar que el usuario sea el técnico asignado o tenga permisos adecuados
-    if (ticket.tecnicoAsignadoId !== session.user.id) {
+    if (ticket.tecnico_asignado_id !== session.user.id) {
       // En el punto de reparación, permitimos que cualquier usuario del punto pueda editar
-      const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
+      const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
         where: {
-          usuarioId: session.user.id,
-          puntoRecoleccionId: ticket.puntoRecoleccionId || undefined
+          usuario_id: session.user.id,
+          punto_recoleccion_id: ticket.punto_recoleccion_id || undefined
         }
       });
 
@@ -70,32 +70,36 @@ export async function POST(
     }
 
     // Crear o actualizar el checklist de diagnóstico
-    const checklistDiagnostico = await prisma.checklistDiagnostico.upsert({
+    const checklistDiagnostico = await prisma.checklist_diagnostico.upsert({
       where: {
-        reparacionId: ticket.reparacion.id
+        reparacion_id: ticket.reparaciones.id
       },
       create: {
-        reparacionId: ticket.reparacion.id
+        reparacion_id: ticket.reparaciones.id,
+        updated_at: new Date()
       },
-      update: {}
+      update: {
+        updated_at: new Date()
+      }
     });
 
     // Eliminar respuestas existentes
-    await prisma.checklistRespuestaDiagnostico.deleteMany({
+    await prisma.checklist_respuesta_diagnostico.deleteMany({
       where: {
-        checklistDiagnosticoId: checklistDiagnostico.id
+        checklist_diagnostico_id: checklistDiagnostico.id
       }
     });
 
     // Crear las nuevas respuestas
     const respuestas = await Promise.all(
       checklist.map(item =>
-        prisma.checklistRespuestaDiagnostico.create({
+        prisma.checklist_respuesta_diagnostico.create({
           data: {
-            checklistDiagnosticoId: checklistDiagnostico.id,
-            checklistItemId: item.itemId,
+            checklist_diagnostico_id: checklistDiagnostico.id,
+            checklist_item_id: item.itemId,
             respuesta: item.respuesta,
-            observaciones: item.observacion || null
+            observaciones: item.observacion || null,
+            updated_at: new Date()
           }
         })
       )
@@ -132,16 +136,16 @@ export async function GET(
     const ticketId = parseInt(params.id);
 
     // Obtener el ticket con su reparación y checklist
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: ticketId },
       include: {
-        reparacion: {
+        reparaciones: {
           include: {
-            checklistDiagnostico: {
+            checklist_diagnostico: {
               include: {
-                respuestas: {
+                checklist_respuesta_diagnostico: {
                   include: {
-                    checklistItem: true
+                    checklist_items: true
                   }
                 }
               }
@@ -160,7 +164,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      checklist: ticket.reparacion?.checklistDiagnostico?.respuestas || []
+      checklist: ticket.reparaciones?.checklist_diagnostico?.checklist_respuesta_diagnostico || []
     });
 
   } catch (error) {
