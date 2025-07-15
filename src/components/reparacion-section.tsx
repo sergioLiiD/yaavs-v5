@@ -16,8 +16,8 @@ interface ChecklistItem {
   id: number;
   nombre: string;
   descripcion?: string;
-  paraDiagnostico: boolean;
-  paraReparacion: boolean;
+  para_diagnostico: boolean;
+  para_reparacion: boolean;
 }
 
 interface ChecklistRespuesta {
@@ -87,7 +87,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     queryKey: ['checklistReparacion'],
     queryFn: async () => {
       const response = await axios.get('/api/catalogo/checklist');
-      return response.data.filter((item: ChecklistItem) => item.paraReparacion);
+      return response.data.filter((item: ChecklistItem) => item.para_reparacion);
     },
   });
 
