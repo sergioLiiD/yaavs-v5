@@ -1,21 +1,21 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import { PrismaClient, Prisma, Usuario, UsuarioRol, Rol, Permiso, PuntoRecoleccion, UsuarioPuntoRecoleccion } from '@prisma/client';
+import { PrismaClient, Prisma, usuarios, usuarios_roles, roles, permisos, puntos_recoleccion, usuarios_puntos_recoleccion } from '@prisma/client';
 import { compare } from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-type UsuarioWithRelations = Usuario & {
-  usuarioRoles: (UsuarioRol & {
-    rol: Rol & {
-      permisos: {
-        permiso: Permiso;
+type UsuarioWithRelations = usuarios & {
+  usuarios_roles: (usuarios_roles & {
+    roles: roles & {
+      roles_permisos: {
+        permisos: permisos;
       }[];
     }
   })[];
-  puntosRecoleccion: (UsuarioPuntoRecoleccion & {
-    puntoRecoleccion: PuntoRecoleccion
+  usuarios_puntos_recoleccion: (usuarios_puntos_recoleccion & {
+    puntos_recoleccion: puntos_recoleccion
   })[];
 };
 
@@ -50,7 +50,28 @@ declare module 'next-auth' {
 }
 
 declare module 'next-auth/jwt' {
-  interface JWT extends CustomUser {}
+  interface JWT {
+    id: number;
+    email: string;
+    name: string;
+    role: string;
+    permissions: string[];
+    roles: Array<{
+      rol: {
+        id: number;
+        nombre: string;
+        descripcion: string;
+        permisos: Array<{
+          id: number;
+          nombre: string;
+        }>;
+      };
+    }>;
+    puntoRecoleccion?: {
+      id: number;
+      nombre: string;
+    };
+  }
 }
 
 export const authOptionsRepairPoint: NextAuthOptions = {
@@ -109,24 +130,24 @@ export const authOptionsRepairPoint: NextAuthOptions = {
 
         console.log('Buscando usuario:', credentials.email);
         try {
-          const user = await prisma.usuario.findUnique({
+          const user = await prisma.usuarios.findUnique({
             where: { 
               email: credentials.email,
               activo: true
             },
             include: {
-              puntosRecoleccion: {
+              usuarios_puntos_recoleccion: {
                 include: {
-                  puntoRecoleccion: true
+                  puntos_recoleccion: true
                 }
               },
-              usuarioRoles: {
+              usuarios_roles: {
                 include: {
-                  rol: {
+                  roles: {
                     include: {
-                      permisos: {
+                      roles_permisos: {
                         include: {
-                          permiso: true
+                          permisos: true
                         }
                       }
                     }
@@ -142,7 +163,7 @@ export const authOptionsRepairPoint: NextAuthOptions = {
           }
 
           console.log('Usuario encontrado, verificando contraseña');
-          const isPasswordValid = await compare(credentials.password, user.passwordHash);
+          const isPasswordValid = await compare(credentials.password, user.password_hash);
 
           if (!isPasswordValid) {
             console.log('Contraseña inválida');
@@ -151,7 +172,7 @@ export const authOptionsRepairPoint: NextAuthOptions = {
 
           // Verificar si el usuario tiene un rol permitido
           const allowedRoles = ['ADMINISTRADOR_PUNTO', 'USUARIO_PUNTO', 'ADMINISTRADOR'];
-          const userRole = user.usuarioRoles[0]?.rol?.nombre;
+          const userRole = user.usuarios_roles[0]?.roles?.nombre;
           console.log('Rol del usuario:', userRole);
           
           if (!allowedRoles.includes(userRole)) {
@@ -160,16 +181,16 @@ export const authOptionsRepairPoint: NextAuthOptions = {
           }
 
           // Si no es administrador general, verificar si tiene punto de recolección asignado
-          if (userRole !== 'ADMINISTRADOR' && user.puntosRecoleccion.length === 0) {
+          if (userRole !== 'ADMINISTRADOR' && user.usuarios_puntos_recoleccion.length === 0) {
             console.log('Usuario sin punto de recolección asignado');
             return null;
           }
 
-          const puntoRecoleccion = user.puntosRecoleccion[0]?.puntoRecoleccion;
+          const puntoRecoleccion = user.usuarios_puntos_recoleccion[0]?.puntos_recoleccion;
           console.log('Punto de recolección:', puntoRecoleccion?.nombre);
           
-          const permissions = user.usuarioRoles.flatMap(r => 
-            r.rol.permisos.map(p => p.permiso.nombre)
+          const permissions = user.usuarios_roles.flatMap(r => 
+            r.roles.roles_permisos.map(p => p.permisos.nombre)
           );
           console.log('Permisos:', permissions);
 
@@ -179,14 +200,14 @@ export const authOptionsRepairPoint: NextAuthOptions = {
             name: user.nombre,
             role: userRole || '',
             permissions,
-            roles: user.usuarioRoles.map(ur => ({
+            roles: user.usuarios_roles.map(ur => ({
               rol: {
-                id: ur.rol.id,
-                nombre: ur.rol.nombre,
-                descripcion: ur.rol.descripcion || '',
-                permisos: ur.rol.permisos.map(p => ({
-                  id: p.permiso.id,
-                  nombre: p.permiso.nombre
+                id: ur.roles.id,
+                nombre: ur.roles.nombre,
+                descripcion: ur.roles.descripcion || '',
+                permisos: ur.roles.roles_permisos.map(p => ({
+                  id: p.permisos.id,
+                  nombre: p.permisos.nombre
                 }))
               }
             })),
@@ -212,7 +233,7 @@ export const authOptionsRepairPoint: NextAuthOptions = {
       }
       return {
         ...token,
-        id: Number(token.id)
+        id: typeof token.id === 'string' ? Number(token.id) : token.id
       };
     },
     async session({ session, token }) {
