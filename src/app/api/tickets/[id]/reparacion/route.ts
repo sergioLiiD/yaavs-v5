@@ -70,24 +70,29 @@ export async function POST(
 
     // Guardar las respuestas del checklist
     if (checklist && Array.isArray(checklist)) {
-      // Usar el endpoint de checklist para guardar las respuestas
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const checklistResponse = await fetch(`${baseUrl}/api/tickets/${ticketId}/checklist-reparacion`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': request.headers.get('cookie') || ''
-        },
-        body: JSON.stringify({ checklist })
-      });
+      try {
+        // Usar el endpoint de checklist para guardar las respuestas
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4001';
+        const checklistResponse = await fetch(`${baseUrl}/api/tickets/${ticketId}/checklist-reparacion`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cookie': request.headers.get('cookie') || ''
+          },
+          body: JSON.stringify({ checklist })
+        });
 
-      if (!checklistResponse.ok) {
-        const errorData = await checklistResponse.json();
-        console.error('Error al guardar el checklist:', errorData);
-        throw new Error('Error al guardar el checklist');
+        if (!checklistResponse.ok) {
+          const errorData = await checklistResponse.json();
+          console.error('Error al guardar el checklist:', errorData);
+          // No lanzar error, solo logear para no fallar todo el proceso
+        } else {
+          console.log('Checklist guardado:', checklist);
+        }
+      } catch (error) {
+        console.error('Error al guardar el checklist (no crítico):', error);
+        // No lanzar error, solo logear para no fallar todo el proceso
       }
-
-      console.log('Checklist guardado:', checklist);
     }
 
     // Actualizar el estado del ticket si es necesario
