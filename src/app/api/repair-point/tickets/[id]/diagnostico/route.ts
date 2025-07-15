@@ -89,7 +89,9 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      reparacion
+      diagnostico: reparacion.diagnostico || '',
+      saludBateria: reparacion.salud_bateria || 0,
+      versionSO: reparacion.version_so || ''
     });
 
   } catch (error) {
@@ -154,7 +156,9 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      reparacion: ticket.reparaciones
+      diagnostico: ticket.reparaciones?.diagnostico || '',
+      saludBateria: ticket.reparaciones?.salud_bateria || 0,
+      versionSO: ticket.reparaciones?.version_so || ''
     });
 
   } catch (error) {
