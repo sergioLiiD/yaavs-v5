@@ -92,7 +92,7 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
   const [productos, setProductos] = useState<ProductoSeleccionado[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   const [searchValue, setSearchValue] = useState('');
 
   const { data: catalogoProductos } = useQuery({
@@ -242,6 +242,21 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
         return productoActualizado;
       }
       return p;
+    }));
+  };
+
+  const toggleDropdown = (productoId: string) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [productoId]: !prev[productoId]
+    }));
+  };
+
+  const handleProductoSelect = (productoId: string, selectedProducto: Producto) => {
+    handleProductoChange(productoId, 'productoId', selectedProducto.id);
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [productoId]: false
     }));
   };
 
@@ -438,12 +453,12 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
                   {productos.map((producto) => (
                     <TableRow key={producto.id}>
                       <TableCell>
-                        <Popover open={open} onOpenChange={setOpen}>
+                        <Popover open={openDropdowns[producto.id]} onOpenChange={() => toggleDropdown(producto.id)}>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
                               role="combobox"
-                              aria-expanded={open}
+                              aria-expanded={openDropdowns[producto.id]}
                               className="w-full justify-between"
                             >
                               {producto.nombre || "Seleccionar producto..."}
@@ -459,22 +474,19 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
                               />
                               <CommandEmpty>No se encontraron productos.</CommandEmpty>
                               <CommandGroup>
-                                {catalogoProductos?.map((producto: Producto) => (
+                                {catalogoProductos?.map((prod: Producto) => (
                                   <CommandItem
-                                    key={producto.id}
-                                    value={producto.nombre}
-                                    onSelect={() => {
-                                      handleProductoChange(producto.id.toString(), 'productoId', producto.id);
-                                      setOpen(false);
-                                    }}
+                                    key={prod.id}
+                                    value={prod.nombre}
+                                    onSelect={() => handleProductoSelect(producto.id, prod)}
                                   >
                                     <Check
                                       className={cn(
                                         "mr-2 h-4 w-4",
-                                        producto.id === producto.id ? "opacity-100" : "opacity-0"
+                                        prod.id === producto.productoId ? "opacity-100" : "opacity-0"
                                       )}
                                     />
-                                    {producto.nombre}
+                                    {prod.nombre}
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
