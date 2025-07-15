@@ -169,8 +169,8 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
 
   // Cargar productos del presupuesto existente
   useEffect(() => {
-    if (presupuesto?.conceptos) {
-      const productosPresupuesto = presupuesto.conceptos.map((concepto: any) => {
+    if (presupuesto?.conceptos_presupuesto) {
+      const productosPresupuesto = presupuesto.conceptos_presupuesto.map((concepto: any) => {
         // Buscar el producto en el catálogo por nombre
         const productoCatalogo = catalogoProductos?.find((p: Producto) => 
           p.nombre.toLowerCase() === concepto.descripcion.toLowerCase()
@@ -180,7 +180,7 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
           id: Math.random().toString(36).substr(2, 9),
           productoId: productoCatalogo?.id || 0,
           cantidad: concepto.cantidad,
-          precioVenta: concepto.precioUnitario,
+          precioVenta: concepto.precio_unitario,
           nombre: concepto.descripcion,
         };
       });
