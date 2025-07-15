@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 interface ChecklistItem {
   itemId: number;
   respuesta: boolean;
-  observacion: string;
+  observacion?: string;
 }
 
 export async function GET(
@@ -27,16 +27,16 @@ export async function GET(
 
     const ticketId = parseInt(params.id);
 
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: ticketId },
       include: {
-        reparacion: {
+        reparaciones: {
           include: {
-            checklistReparacion: {
+            checklist_reparacion: {
               include: {
-                respuestas: {
+                checklist_respuesta_reparacion: {
                   include: {
-                    checklistItem: true
+                    checklist_items: true
                   }
                 }
               }
@@ -55,7 +55,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      checklist: ticket.reparacion?.checklistReparacion?.respuestas || []
+      checklist: ticket.reparaciones?.checklist_reparacion?.checklist_respuesta_reparacion || []
     });
 
   } catch (error) {
@@ -85,10 +85,10 @@ export async function POST(
     const { checklist } = await request.json() as { checklist: ChecklistItem[] };
 
     // Obtener el ticket con su reparación
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: ticketId },
       include: {
-        reparacion: true
+        reparaciones: true
       }
     });
 
@@ -99,42 +99,47 @@ export async function POST(
       );
     }
 
-    let reparacion = ticket.reparacion;
+    let reparacion = ticket.reparaciones;
 
     // Si no existe la reparación, crearla
     if (!reparacion) {
-      reparacion = await prisma.reparacion.create({
+      reparacion = await prisma.reparaciones.create({
         data: {
-          ticketId,
-          fechaInicio: new Date()
+          ticket_id: ticketId,
+          fecha_inicio: new Date(),
+          updated_at: new Date()
         }
       });
     }
 
     // Obtener o crear el checklist de reparación
-    let checklistReparacion = await prisma.checklistReparacion.findUnique({
-      where: { reparacionId: reparacion.id }
+    let checklistReparacion = await prisma.checklist_reparacion.findUnique({
+      where: { reparacion_id: reparacion.id }
     });
     if (!checklistReparacion) {
-      checklistReparacion = await prisma.checklistReparacion.create({
-        data: { reparacionId: reparacion.id }
+      checklistReparacion = await prisma.checklist_reparacion.create({
+        data: { 
+          reparacion_id: reparacion.id,
+          updated_at: new Date()
+        }
       });
     }
 
     // Eliminar respuestas existentes
-    await prisma.checklistRespuestaReparacion.deleteMany({
-      where: { checklistReparacionId: checklistReparacion.id }
+    await prisma.checklist_respuesta_reparacion.deleteMany({
+      where: { checklist_reparacion_id: checklistReparacion.id }
     });
 
     // Crear las respuestas del checklist
     const respuestas = await Promise.all(
       checklist.map(async (item: ChecklistItem) => {
-        return prisma.checklistRespuestaReparacion.create({
+        return prisma.checklist_respuesta_reparacion.create({
           data: {
-            checklistReparacionId: checklistReparacion.id,
-            checklistItemId: item.itemId,
+            checklist_reparacion_id: checklistReparacion.id,
+            checklist_item_id: item.itemId,
             respuesta: !!item.respuesta,
-            observaciones: item.observacion || null
+            observaciones: item.observacion || null,
+            updated_at: new Date()
           }
         });
       })
