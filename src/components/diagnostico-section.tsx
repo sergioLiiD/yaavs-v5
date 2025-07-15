@@ -144,12 +144,19 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
     let cancelled = false;
     const load = async () => {
       try {
+        console.log('🔍 Iniciando carga de checklist para ticket:', ticket?.id);
+        
         // Primero cargamos los items del catálogo
         const response = await fetch('/api/catalogo/checklist');
+        console.log('🔍 Respuesta del endpoint checklist:', response.status, response.ok);
+        
         if (!response.ok) throw new Error('Error al cargar items del checklist');
         const items = await response.json();
+        console.log('🔍 Items del catálogo cargados:', items);
+        
         // Filtrar solo los items para diagnóstico
-        const diagnosticItems = items.filter((item: ChecklistItem) => item.paraDiagnostico);
+        const diagnosticItems = items.filter((item: any) => item.para_diagnostico);
+        console.log('🔍 Items para diagnóstico filtrados:', diagnosticItems);
 
         // Luego cargamos las respuestas existentes del backend
         const apiUrl = ticket.canEdit 
