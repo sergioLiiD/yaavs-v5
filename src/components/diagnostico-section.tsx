@@ -167,13 +167,14 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
         if (checklistResponse.ok) {
           const data = await checklistResponse.json();
           respuestasExistentes = data.checklist || [];
+          console.log('🔍 Respuestas existentes del backend:', respuestasExistentes);
         }
 
         // Si hay respuestas existentes, las usamos
         if (!cancelled && respuestasExistentes && respuestasExistentes.length > 0) {
           const checklistConRespuestas = diagnosticItems.map((item: ChecklistItem) => {
             const respuestaExistente = respuestasExistentes.find(
-              (r: any) => r.checklistItem.id === item.id
+              (r: any) => r.checklist_items?.id === item.id
             );
             return {
               itemId: item.id,
