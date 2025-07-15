@@ -69,6 +69,7 @@ COPY --from=builder /app/.next/static ./.next/static
 # Copiar directorio public del proyecto
 COPY public ./public
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/package*.json ./
 
 # Copiar node_modules optimizado
