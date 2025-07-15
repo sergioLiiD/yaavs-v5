@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptionsRepairPoint } from '@/lib/auth-repair-point';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptionsRepairPoint);
+    const session = await getServerSession(authOptions);
 
     if (!session?.user) {
       return NextResponse.json(
@@ -23,12 +23,12 @@ export async function POST(
     const { observaciones, checklist, fotos, videos, completar } = await request.json();
 
     // Obtener el punto de reparación del usuario
-    const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
+    const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
-        usuarioId: session.user.id
+        usuario_id: session.user.id
       },
       include: {
-        puntoRecoleccion: true
+        puntos_recoleccion: true
       }
     });
 
@@ -40,10 +40,10 @@ export async function POST(
     }
 
     // Verificar que el ticket exista y pertenezca al punto de reparación
-    const ticket = await prisma.ticket.findFirst({
+    const ticket = await prisma.tickets.findFirst({
       where: {
         id: ticketId,
-        puntoRecoleccionId: userPoint.puntoRecoleccionId
+        punto_recoleccion_id: userPoint.punto_recoleccion_id
       }
     });
 
@@ -55,25 +55,27 @@ export async function POST(
     }
 
     // Actualizar la reparación
-    const reparacion = await prisma.reparacion.update({
+    const reparacion = await prisma.reparaciones.update({
       where: {
-        ticketId: ticketId
+        ticket_id: ticketId
       },
       data: {
         observaciones,
-        fechaFin: completar ? new Date() : undefined
+        fecha_fin: completar ? new Date() : undefined,
+        updated_at: new Date()
       }
     });
 
     // Si se está completando la reparación, actualizar el estado del ticket
     if (completar) {
-      await prisma.ticket.update({
+      await prisma.tickets.update({
         where: {
           id: ticketId
         },
         data: {
-          estatusReparacionId: 4, // Completado
-          fechaFinReparacion: new Date()
+          estatus_reparacion_id: 30, // Completado - ID correcto según la base de datos
+          fecha_fin_reparacion: new Date(),
+          updated_at: new Date()
         }
       });
     }
@@ -81,61 +83,36 @@ export async function POST(
     // Guardar el checklist si se proporcionó
     if (checklist && checklist.length > 0) {
       // Crear o actualizar el checklist de reparación
-      const checklistReparacion = await prisma.checklistReparacion.upsert({
+      const checklistReparacion = await prisma.checklist_reparacion.upsert({
         where: {
-          reparacionId: reparacion.id
+          reparacion_id: reparacion.id
         },
         create: {
-          reparacionId: reparacion.id
+          reparacion_id: reparacion.id,
+          updated_at: new Date()
         },
-        update: {}
+        update: {
+          updated_at: new Date()
+        }
       });
 
       // Eliminar respuestas existentes
-      await prisma.checklistRespuestaReparacion.deleteMany({
+      await prisma.checklist_respuesta_reparacion.deleteMany({
         where: {
-          checklistReparacionId: checklistReparacion.id
+          checklist_reparacion_id: checklistReparacion.id
         }
       });
 
       // Crear nuevas respuestas
       await Promise.all(
         checklist.map((item: any) =>
-          prisma.checklistRespuestaReparacion.create({
+          prisma.checklist_respuesta_reparacion.create({
             data: {
-              checklistReparacionId: checklistReparacion.id,
-              checklistItemId: item.itemId,
+              checklist_reparacion_id: checklistReparacion.id,
+              checklist_item_id: item.itemId,
               respuesta: item.respuesta,
-              observaciones: item.observacion || null
-            }
-          })
-        )
-      );
-    }
-
-    // Guardar las fotos y videos si se proporcionaron
-    if (fotos && fotos.length > 0) {
-      await Promise.all(
-        fotos.map((foto: string) =>
-          prisma.archivoReparacion.create({
-            data: {
-              ticketId: ticketId,
-              tipo: 'FOTO',
-              url: foto
-            }
-          })
-        )
-      );
-    }
-
-    if (videos && videos.length > 0) {
-      await Promise.all(
-        videos.map((video: string) =>
-          prisma.archivoReparacion.create({
-            data: {
-              ticketId: ticketId,
-              tipo: 'VIDEO',
-              url: video
+              observaciones: item.observacion || null,
+              updated_at: new Date()
             }
           })
         )
@@ -161,7 +138,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptionsRepairPoint);
+    const session = await getServerSession(authOptions);
 
     if (!session?.user) {
       return NextResponse.json(
@@ -173,12 +150,12 @@ export async function GET(
     const ticketId = parseInt(params.id);
 
     // Obtener el punto de reparación del usuario
-    const userPoint = await prisma.usuarioPuntoRecoleccion.findFirst({
+    const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
-        usuarioId: session.user.id
+        usuario_id: session.user.id
       },
       include: {
-        puntoRecoleccion: true
+        puntos_recoleccion: true
       }
     });
 
@@ -190,15 +167,23 @@ export async function GET(
     }
 
     // Verificar que el ticket exista y pertenezca al punto de reparación
-    const ticket = await prisma.ticket.findFirst({
+    const ticket = await prisma.tickets.findFirst({
       where: {
         id: ticketId,
-        puntoRecoleccionId: userPoint.puntoRecoleccionId
+        punto_recoleccion_id: userPoint.punto_recoleccion_id
       },
       include: {
-        reparacion: {
+        reparaciones: {
           include: {
-            archivos: true
+            checklist_reparacion: {
+              include: {
+                checklist_respuesta_reparacion: {
+                  include: {
+                    checklist_items: true
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -213,7 +198,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      reparacion: ticket.reparacion
+      reparacion: ticket.reparaciones
     });
 
   } catch (error) {
