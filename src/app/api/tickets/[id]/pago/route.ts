@@ -22,12 +22,12 @@ export async function POST(
     console.log('Datos recibidos:', data);
 
     // Verificar que el ticket existe
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: ticketId },
       include: { 
-        presupuesto: true,
+        presupuestos: true,
         pagos: true,
-        estatusReparacion: true
+        estatus_reparacion: true
       },
     });
 
@@ -35,15 +35,15 @@ export async function POST(
       return new NextResponse('Ticket no encontrado', { status: 404 });
     }
 
-    if (!ticket.presupuesto) {
+    if (!ticket.presupuestos) {
       return new NextResponse('El ticket no tiene un presupuesto', { status: 400 });
     }
 
-    const presupuestoId = ticket.presupuesto.id;
-    console.log('Presupuesto actual:', ticket.presupuesto);
+    const presupuestoId = ticket.presupuestos.id;
+    console.log('Presupuesto actual:', ticket.presupuestos);
 
     // Calcular el total y el saldo
-    const total = ticket.presupuesto.total;
+    const total = ticket.presupuestos.total;
     const saldoActual = total - data.anticipo;
     console.log('Total calculado:', total);
     console.log('Saldo calculado:', saldoActual);
@@ -51,20 +51,26 @@ export async function POST(
     // Iniciar transacción
     const resultado = await prisma.$transaction(async (tx) => {
       // Registrar el pago
-      const pago = await tx.pago.create({
+      const pago = await tx.pagos.create({
         data: {
           monto: data.anticipo,
           metodo: data.metodoPago as MetodoPago,
-          ticketId: ticketId,
+          ticket_id: ticketId,
+          referencia: data.referencia || null,
+          created_at: new Date(),
+          updated_at: new Date()
         },
       });
 
       // Actualizar el presupuesto
-      const presupuestoActualizado = await tx.presupuesto.update({
+      const presupuestoActualizado = await tx.presupuestos.update({
         where: { id: presupuestoId },
         data: {
-          totalFinal: saldoActual,
+          total_final: saldoActual,
           aprobado: saldoActual <= 0,
+          saldo: Math.max(0, saldoActual),
+          pagado: saldoActual <= 0,
+          updated_at: new Date()
         },
       });
 
@@ -72,22 +78,23 @@ export async function POST(
       let nuevoEstado;
       if (saldoActual <= 0) {
         // Si el saldo es 0, buscar el estado "Reparación Completada"
-        nuevoEstado = await tx.estatusReparacion.findFirst({
+        nuevoEstado = await tx.estatus_reparacion.findFirst({
           where: { nombre: 'Reparación Completada' }
         });
-      } else if (ticket.estatusReparacion.nombre === 'Presupuesto Generado') {
+      } else if (ticket.estatus_reparacion.nombre === 'Presupuesto Generado') {
         // Si hay saldo pendiente y estaba en "Presupuesto Generado", mover a "En Reparación"
-        nuevoEstado = await tx.estatusReparacion.findFirst({
+        nuevoEstado = await tx.estatus_reparacion.findFirst({
           where: { nombre: 'En Reparación' }
         });
       }
 
       // Actualizar el estado del ticket si es necesario
       if (nuevoEstado) {
-        await tx.ticket.update({
+        await tx.tickets.update({
           where: { id: ticketId },
           data: {
-            estatusReparacionId: nuevoEstado.id
+            estatus_reparacion_id: nuevoEstado.id,
+            updated_at: new Date()
           }
         });
       }

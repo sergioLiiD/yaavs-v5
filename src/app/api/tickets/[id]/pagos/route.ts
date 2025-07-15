@@ -18,7 +18,7 @@ export async function GET(
     const ticketId = parseInt(params.id);
 
     // Verificar que el ticket existe
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await prisma.tickets.findUnique({
       where: { id: ticketId },
     });
 
@@ -27,9 +27,9 @@ export async function GET(
     }
 
     // Obtener el historial de pagos
-    const pagos = await prisma.pago.findMany({
-      where: { ticketId },
-      orderBy: { createdAt: 'desc' },
+    const pagos = await prisma.pagos.findMany({
+      where: { ticket_id: ticketId },
+      orderBy: { created_at: 'desc' },
     });
 
     return NextResponse.json(pagos);
