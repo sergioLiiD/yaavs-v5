@@ -125,7 +125,8 @@ export async function POST(request: Request) {
       tipo_servicio_id: tipoServicioId,
       modelo_id: modeloId,
       estatus_reparacion_id: estatusInicial.id,
-      creador_id: session.user.id
+      creador_id: session.user.id,
+      updated_at: new Date()
     };
     if (puntoRecoleccionIdToUse) {
       ticketData.punto_recoleccion_id = puntoRecoleccionIdToUse;
