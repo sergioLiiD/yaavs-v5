@@ -111,47 +111,24 @@ export async function POST(request: Request) {
 
     // Crear el ticket primero
     const ticketData: any = {
-      numeroTicket: `TICK-${Date.now()}`,
-      descripcionProblema,
+      numero_ticket: `TICK-${Date.now()}`,
+      descripcion_problema: descripcionProblema,
       imei,
       capacidad,
       color,
-      fechaCompra: fechaCompra ? new Date(fechaCompra) : null,
-      codigoDesbloqueo: tipoDesbloqueo === 'pin' ? codigoDesbloqueo : null,
-      patronDesbloqueo: tipoDesbloqueo === 'patron' ? (Array.isArray(patronDesbloqueo) ? patronDesbloqueo : []) : [],
-      redCelular,
-      cliente: {
-        connect: {
-          id: clienteId
-        }
-      },
-      tipoServicio: {
-        connect: {
-          id: tipoServicioId
-        }
-      },
-      modelo: {
-        connect: {
-          id: modeloId
-        }
-      },
-      estatusReparacion: {
-        connect: {
-          id: estatusInicial.id
-        }
-      },
-      creador: {
-        connect: {
-          id: session.user.id
-        }
-      }
+      fecha_compra: fechaCompra ? new Date(fechaCompra) : null,
+      codigo_desbloqueo: tipoDesbloqueo === 'pin' ? codigoDesbloqueo : null,
+      patron_desbloqueo: tipoDesbloqueo === 'patron' ? (Array.isArray(patronDesbloqueo) ? patronDesbloqueo : []) : [],
+      red_celular: redCelular,
+      tipo_desbloqueo: tipoDesbloqueo,
+      cliente_id: clienteId,
+      tipo_servicio_id: tipoServicioId,
+      modelo_id: modeloId,
+      estatus_reparacion_id: estatusInicial.id,
+      creador_id: session.user.id
     };
     if (puntoRecoleccionIdToUse) {
-      ticketData.puntoRecoleccion = {
-        connect: {
-          id: puntoRecoleccionIdToUse
-        }
-      };
+      ticketData.punto_recoleccion_id = puntoRecoleccionIdToUse;
     }
 
     console.log('Datos del ticket a crear:', ticketData);
