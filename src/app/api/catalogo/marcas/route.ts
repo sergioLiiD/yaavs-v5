@@ -67,6 +67,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Verificar si la marca ya existe
+    const marcaExistente = await prisma.marcas.findFirst({
+      where: {
+        nombre: body.nombre
+      }
+    });
+
+    if (marcaExistente) {
+      return NextResponse.json(
+        { error: 'Ya existe una marca con ese nombre' },
+        { status: 400 }
+      );
+    }
+
     // Crear nueva marca
     console.log('Intentando crear marca con datos:', {
       nombre: body.nombre,
@@ -108,6 +122,18 @@ export async function POST(req: NextRequest) {
     });
     console.error('Tipo de error:', typeof error);
     console.error('Error es instancia de Error:', error instanceof Error);
+    
+    // Manejar errores específicos de Prisma
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { 
+          error: 'Ya existe una marca con ese nombre',
+          code: error.code,
+          meta: error.meta
+        },
+        { status: 400 }
+      );
+    }
     
     return NextResponse.json(
       { 
