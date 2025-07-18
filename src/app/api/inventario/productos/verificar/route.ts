@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const producto = await prisma.producto.findFirst({
+    const producto = await prisma.productos.findFirst({
       where: {
         nombre: {
           equals: nombre,

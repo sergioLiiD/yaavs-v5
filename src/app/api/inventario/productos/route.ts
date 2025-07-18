@@ -168,7 +168,8 @@ export async function POST(request: Request) {
         tipo_servicio_id: tipoServicioId,
         marca_id: data.marcaId,
         modelo_id: data.modeloId,
-        categoria_id: categoria.id
+        categoria_id: categoria.id,
+        updated_at: new Date()
       };
 
       // Crear el producto
