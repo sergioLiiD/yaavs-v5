@@ -39,7 +39,11 @@ interface Marca {
 interface Modelo {
   id: number;
   nombre: string;
-  marcaId: number;
+  marca_id: number;
+  marcas?: {
+    id: number;
+    nombre: string;
+  };
 }
 
 const formSchema = z.object({
@@ -52,9 +56,7 @@ const formSchema = z.object({
   marcaId: z.number({
     required_error: "Por favor seleccione una marca",
   }),
-  modeloId: z.number({
-    required_error: "Por favor seleccione un modelo",
-  }),
+  modeloId: z.number().min(1, "Por favor seleccione un modelo"),
   descripcionProblema: z.string().min(1, "La descripción del problema es requerida"),
   capacidad: z.string().optional(),
   color: z.string().optional(),
@@ -167,7 +169,7 @@ export function NewTicketForm() {
       clienteId: undefined,
       tipoServicioId: undefined,
       marcaId: undefined,
-      modeloId: undefined,
+      modeloId: 0,
       descripcionProblema: '',
       capacidad: '',
       color: '',
@@ -212,7 +214,7 @@ export function NewTicketForm() {
         }
 
         // Cargar modelos
-        const modelosResponse = await fetch('/api/modelos');
+        const modelosResponse = await fetch('/api/catalogo/modelos');
         if (modelosResponse.ok) {
           const modelosData = await modelosResponse.json();
           setModelos(modelosData);
@@ -230,7 +232,7 @@ export function NewTicketForm() {
   useEffect(() => {
     const marcaId = form.watch('marcaId');
     if (marcaId) {
-      const filtrados = modelos.filter(modelo => modelo.marcaId === marcaId);
+      const filtrados = modelos.filter(modelo => modelo.marca_id === marcaId);
       setModelosFiltrados(filtrados);
     } else {
       setModelosFiltrados([]);
@@ -376,7 +378,7 @@ export function NewTicketForm() {
                       onSelect={(currentValue) => {
                         setValueMarca(currentValue === valueMarca ? "" : currentValue);
                         form.setValue('marcaId', parseInt(currentValue));
-                        form.setValue('modeloId', undefined);
+                        form.setValue('modeloId', 0);
                         setValueModelo("");
                         setOpenMarca(false);
                       }}
