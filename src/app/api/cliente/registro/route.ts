@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     console.log('Datos validados correctamente');
 
     // Verificar si el email ya existe
-    const existingCliente = await prisma.cliente.findUnique({
+    const existingCliente = await prisma.clientes.findUnique({
       where: { email: validatedData.email },
     });
 
@@ -58,52 +58,51 @@ export async function POST(request: Request) {
     // Crear el cliente
     const hashedPassword = await bcrypt.hash(validatedData.password, 10);
     console.log('Creando cliente...');
-    const cliente = await prisma.cliente.create({
+    const cliente = await prisma.clientes.create({
       data: {
         nombre: validatedData.nombre,
-        apellidoPaterno: validatedData.apellidoPaterno,
-        apellidoMaterno: validatedData.apellidoMaterno || null,
-        telefonoCelular: validatedData.telefonoCelular,
-        telefonoContacto: validatedData.telefonoContacto || null,
+        apellido_paterno: validatedData.apellidoPaterno,
+        apellido_materno: validatedData.apellidoMaterno || null,
+        telefono_celular: validatedData.telefonoCelular,
+        telefono_contacto: validatedData.telefonoContacto || null,
         email: validatedData.email,
         rfc: validatedData.rfc || null,
         calle: validatedData.calle || null,
-        numeroExterior: validatedData.numeroExterior || null,
-        numeroInterior: validatedData.numeroInterior || null,
+        numero_exterior: validatedData.numeroExterior || null,
+        numero_interior: validatedData.numeroInterior || null,
         colonia: validatedData.colonia || null,
         ciudad: validatedData.ciudad || null,
         estado: validatedData.estado || null,
-        codigoPostal: validatedData.codigoPostal || null,
+        codigo_postal: validatedData.codigoPostal || null,
         latitud: validatedData.latitud || null,
         longitud: validatedData.longitud || null,
-        fuenteReferencia: validatedData.fuenteReferencia || null,
-        passwordHash: hashedPassword,
-        tipoRegistro: 'WEB',
-        updatedAt: new Date(),
-        createdAt: new Date()
+        fuente_referencia: validatedData.fuenteReferencia || null,
+        password_hash: hashedPassword,
+        tipo_registro: 'WEB',
+        updated_at: new Date()
       },
       select: {
         id: true,
         nombre: true,
-        apellidoPaterno: true,
-        apellidoMaterno: true,
-        telefonoCelular: true,
-        telefonoContacto: true,
+        apellido_paterno: true,
+        apellido_materno: true,
+        telefono_celular: true,
+        telefono_contacto: true,
         email: true,
         calle: true,
-        numeroExterior: true,
-        numeroInterior: true,
+        numero_exterior: true,
+        numero_interior: true,
         colonia: true,
         ciudad: true,
         estado: true,
-        codigoPostal: true,
+        codigo_postal: true,
         latitud: true,
         longitud: true,
-        fuenteReferencia: true,
+        fuente_referencia: true,
         rfc: true,
-        createdAt: true,
-        updatedAt: true,
-        tipoRegistro: true
+        created_at: true,
+        updated_at: true,
+        tipo_registro: true
       }
     });
     console.log('Cliente creado exitosamente:', cliente.id);
