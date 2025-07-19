@@ -33,12 +33,6 @@ interface Producto {
   modelos?: { nombre: string };
 }
 
-interface Servicio {
-  id: number;
-  nombre: string;
-  descripcion?: string;
-}
-
 interface PrecioVenta {
   id: string;
   tipo: string;
@@ -56,9 +50,7 @@ interface PrecioVenta {
 
 interface ProductoSeleccionado {
   id: string;
-  productoId?: number;
-  servicioId?: number;
-  tipo: 'PRODUCTO' | 'SERVICIO';
+  productoId: number;
   cantidad: number;
   precioVenta: number;
   conceptoExtra?: string;
@@ -99,19 +91,6 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
     },
   });
 
-  const { data: servicios } = useQuery({
-    queryKey: ['servicios'],
-    queryFn: async () => {
-      const response = await fetch('/api/catalogo/tipos-servicio');
-      if (!response.ok) {
-        throw new Error('Error al cargar servicios');
-      }
-      const data = await response.json();
-      console.log('Servicios cargados:', data);
-      return data;
-    },
-  });
-
   // Filtrar productos por búsqueda
   const productosFiltrados = catalogoProductos?.filter((p: Producto) => {
     if (!busqueda) return true;
@@ -132,22 +111,6 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
       {
         id: Math.random().toString(36).substr(2, 9),
         productoId: 0,
-        tipo: 'PRODUCTO' as const,
-        cantidad: 1,
-        precioVenta: 0,
-        conceptoExtra: '',
-        precioConceptoExtra: 0
-      },
-    ]);
-  };
-
-  const handleAddServicio = () => {
-    onProductosChange([
-      ...productos,
-      {
-        id: Math.random().toString(36).substr(2, 9),
-        servicioId: 0,
-        tipo: 'SERVICIO' as const,
         cantidad: 1,
         precioVenta: 0,
         conceptoExtra: '',
@@ -176,11 +139,13 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
 
         const producto = productoActualizado.find(p => p.id === id);
         if (producto) {
-          producto.tipo = 'PRODUCTO';
-          producto.servicioId = undefined;
-          // Intentar obtener el precio de venta específico para este producto
+          // Determinar si es un producto o servicio basado en el tipo
+          const esServicio = productoSeleccionado.tipo === 'SERVICIO';
+          
+          // Intentar obtener el precio de venta específico
           try {
-            const response = await fetch(`/api/precios-venta/producto/${value}`);
+            const endpoint = esServicio ? `/api/precios-venta/servicio/${value}` : `/api/precios-venta/producto/${value}`;
+            const response = await fetch(endpoint);
             if (response.ok) {
               const precioData = await response.json();
               producto.precioVenta = Number(precioData.precioVenta) || 0;
@@ -205,46 +170,6 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
           if (producto) {
             producto.precioVenta = Number(productoSeleccionado.precio_promedio) || 0;
           }
-        }
-      }
-    }
-
-    // Si se cambia el servicio, obtener el precio automáticamente
-    if (field === 'servicioId' && value) {
-      try {
-        const servicioSeleccionado = servicios?.find((s: Servicio) => s.id === value);
-        if (!servicioSeleccionado) {
-          console.error('Servicio no encontrado:', value);
-          return;
-        }
-
-        const producto = productoActualizado.find(p => p.id === id);
-        if (producto) {
-          producto.tipo = 'SERVICIO';
-          producto.productoId = undefined;
-          // Intentar obtener el precio de venta específico para este servicio
-          try {
-            const response = await fetch(`/api/precios-venta/servicio/${value}`);
-            if (response.ok) {
-              const precioData = await response.json();
-              producto.precioVenta = Number(precioData.precioVenta) || 0;
-              console.log('Precio de servicio encontrado:', precioData.precioVenta);
-            } else {
-              // Los servicios no tienen precio promedio, se debe establecer manualmente
-              producto.precioVenta = 0;
-              console.log('Servicio sin precio específico, establecer manualmente');
-            }
-          } catch (error) {
-            // En caso de error, el precio se debe establecer manualmente
-            producto.precioVenta = 0;
-            console.log('Error al obtener precio de servicio, establecer manualmente');
-          }
-        }
-      } catch (error) {
-        console.error('Error al obtener precio de servicio:', error);
-        const producto = productoActualizado.find(p => p.id === id);
-        if (producto) {
-          producto.precioVenta = 0;
         }
       }
     }
@@ -280,7 +205,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
 
   return (
     <div className="space-y-4 bg-white text-black">
-      <div className="flex justify-end mb-4 space-x-2">
+      <div className="flex justify-end mb-4">
         <Button
           type="button"
           variant="outline"
@@ -290,21 +215,12 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
           <PlusIcon className="h-4 w-4 mr-2" />
           Agregar Producto
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleAddServicio}
-          className="bg-white text-black border-gray-200 hover:bg-gray-100"
-        >
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Agregar Servicio
-        </Button>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[60%]">Producto/Servicio</TableHead>
+            <TableHead className="w-[60%]">Producto</TableHead>
             <TableHead className="w-[20%]">Subtotal</TableHead>
             <TableHead className="w-[20%] text-right">Acciones</TableHead>
           </TableRow>
@@ -314,79 +230,50 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
             <TableRow key={producto.id}>
               <TableCell>
                 <div className="space-y-4">
-                  {producto.tipo === 'SERVICIO' ? (
-                    <Select
-                      value={producto.servicioId?.toString() || ''}
-                      onValueChange={(value) =>
-                        handleProductoChange(producto.id, 'servicioId', parseInt(value))
-                      }
+                  <Select
+                    value={producto.productoId?.toString() || ''}
+                    onValueChange={(value) =>
+                      handleProductoChange(producto.id, 'productoId', parseInt(value))
+                    }
+                  >
+                    <SelectTrigger className="bg-white text-black border-gray-200">
+                      <SelectValue placeholder="Buscar y seleccionar producto..." />
+                    </SelectTrigger>
+                    <SelectContent 
+                      className="bg-white text-black border-gray-200 max-h-[300px] overflow-y-auto z-50"
+                      position="popper"
+                      sideOffset={5}
+                      align="start"
                     >
-                      <SelectTrigger className="bg-white text-black border-gray-200">
-                        <SelectValue placeholder="Buscar y seleccionar servicio..." />
-                      </SelectTrigger>
-                      <SelectContent 
-                        className="bg-white text-black border-gray-200 max-h-[300px] overflow-y-auto z-50"
-                        position="popper"
-                        sideOffset={5}
-                        align="start"
-                      >
-                        {servicios?.map((s: Servicio) => (
+                      <div className="p-2 border-b border-gray-200">
+                        <div className="relative">
+                          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+                          <Input
+                            type="text"
+                            placeholder="Buscar por nombre, SKU, marca o modelo..."
+                            value={busqueda}
+                            onChange={(e) => setBusqueda(e.target.value)}
+                            className="pl-10 bg-white text-black border-gray-200"
+                          />
+                        </div>
+                      </div>
+                      {productosFiltrados.length === 0 ? (
+                        <div className="p-2 text-sm text-gray-500">
+                          No se encontraron productos
+                        </div>
+                      ) : (
+                        productosFiltrados.map((p: Producto) => (
                           <SelectItem 
-                            key={s.id} 
-                            value={s.id.toString()}
+                            key={p.id} 
+                            value={p.id.toString()}
                             className="bg-white text-black hover:bg-gray-100 cursor-pointer data-[highlighted:bg-gray-100]"
                           >
-                            {s.nombre}
+                            {p.nombre} {p.marcas?.nombre ? `- ${p.marcas.nombre}` : ''} {p.modelos?.nombre ? ` ${p.modelos.nombre}` : ''}
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Select
-                      value={producto.productoId?.toString() || ''}
-                      onValueChange={(value) =>
-                        handleProductoChange(producto.id, 'productoId', parseInt(value))
-                      }
-                    >
-                      <SelectTrigger className="bg-white text-black border-gray-200">
-                        <SelectValue placeholder="Buscar y seleccionar producto..." />
-                      </SelectTrigger>
-                      <SelectContent 
-                        className="bg-white text-black border-gray-200 max-h-[300px] overflow-y-auto z-50"
-                        position="popper"
-                        sideOffset={5}
-                        align="start"
-                      >
-                        <div className="p-2 border-b border-gray-200">
-                          <div className="relative">
-                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                            <Input
-                              type="text"
-                              placeholder="Buscar por nombre, SKU, marca o modelo..."
-                              value={busqueda}
-                              onChange={(e) => setBusqueda(e.target.value)}
-                              className="pl-10 bg-white text-black border-gray-200"
-                            />
-                          </div>
-                        </div>
-                        {productosFiltrados.length === 0 ? (
-                          <div className="p-2 text-sm text-gray-500">
-                            No se encontraron productos
-                          </div>
-                        ) : (
-                          productosFiltrados.map((p: Producto) => (
-                            <SelectItem 
-                              key={p.id} 
-                              value={p.id.toString()}
-                              className="bg-white text-black hover:bg-gray-100 cursor-pointer data-[highlighted:bg-gray-100]"
-                            >
-                              {p.nombre} {p.marcas?.nombre ? `- ${p.marcas.nombre}` : ''} {p.modelos?.nombre ? ` ${p.modelos.nombre}` : ''}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  )}
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Cantidad</Label>
