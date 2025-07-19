@@ -43,7 +43,31 @@ export async function GET(
     `;
 
     if (!precio || (Array.isArray(precio) && precio.length === 0)) {
-      return NextResponse.json({ error: 'Precio no encontrado' }, { status: 404 });
+      // Si no hay precio específico, obtener el servicio y usar un precio por defecto
+      const servicio = await prisma.tipos_servicio.findUnique({
+        where: { id: id },
+        select: { nombre: true }
+      });
+      
+      if (servicio) {
+        return NextResponse.json({
+          id: null,
+          tipo: 'SERVICIO',
+          nombre: servicio.nombre,
+          marca: '',
+          modelo: '',
+          precioCompraPromedio: 0,
+          precioVenta: 0, // Los servicios no tienen precio promedio, se debe establecer manualmente
+          productoId: null,
+          servicioId: id,
+          createdBy: 'system',
+          updatedBy: 'system',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      
+      return NextResponse.json({ error: 'Servicio no encontrado' }, { status: 404 });
     }
 
     return NextResponse.json(Array.isArray(precio) ? precio[0] : precio);
