@@ -152,8 +152,7 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
               console.log('Usando precio promedio:', productoSeleccionado.precio_promedio);
             }
           } catch (error) {
-            console.error('Error al obtener precio específico:', error);
-            // En caso de error, usar el precio promedio
+            // En caso de error, usar el precio promedio sin mostrar error en consola
             producto.precioVenta = Number(productoSeleccionado.precio_promedio) || 0;
             console.log('Usando precio promedio por error:', productoSeleccionado.precio_promedio);
           }
