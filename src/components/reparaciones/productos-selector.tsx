@@ -144,7 +144,23 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
           
           // Intentar obtener el precio de venta específico
           try {
-            const endpoint = esServicio ? `/api/precios-venta/servicio/${value}` : `/api/precios-venta/producto/${value}`;
+            let endpoint;
+            if (esServicio) {
+              // Para servicios, usar el tipo_servicio_id del producto
+              const tipoServicioId = productoSeleccionado.tipo_servicio_id;
+              if (tipoServicioId) {
+                endpoint = `/api/precios-venta/servicio/${tipoServicioId}`;
+              } else {
+                // Si no hay tipo_servicio_id, usar el precio promedio
+                producto.precioVenta = Number(productoSeleccionado.precio_promedio) || 0;
+                console.log('Servicio sin tipo_servicio_id, usando precio promedio:', productoSeleccionado.precio_promedio);
+                onProductosChange(productoActualizado);
+                return;
+              }
+            } else {
+              endpoint = `/api/precios-venta/producto/${value}`;
+            }
+            
             const response = await fetch(endpoint);
             if (response.ok) {
               const precioData = await response.json();
