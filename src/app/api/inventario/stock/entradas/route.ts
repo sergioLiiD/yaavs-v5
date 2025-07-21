@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     // Verificar si el usuario existe
-    const usuario = await prisma.usuario.findUnique({
+    const usuario = await prisma.usuarios.findUnique({
       where: { id: parseInt(session.user.id) }
     });
 
@@ -39,12 +39,12 @@ export async function POST(request: Request) {
     }
 
     // Validar que el producto existe
-    const producto = await prisma.producto.findUnique({
+    const producto = await prisma.productos.findUnique({
       where: { id: Number(productoId) },
       select: {
         id: true,
         stock: true,
-        precioPromedio: true,
+        precio_promedio: true,
       },
     });
 
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     }
 
     // Validar que el proveedor existe
-    const proveedores = await prisma.proveedor.findUnique({
+    const proveedores = await prisma.proveedores.findUnique({
       where: { id: Number(proveedorId) },
     });
 
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
     // Calcular el nuevo precio promedio
     const nuevoStock = (producto.stock || 0) + Number(cantidad);
-    const nuevoPrecioPromedio = ((producto.precioPromedio || 0) * (producto.stock || 0) + (Number(precioCompra) * Number(cantidad))) / nuevoStock;
+    const nuevoPrecioPromedio = ((producto.precio_promedio || 0) * (producto.stock || 0) + (Number(precioCompra) * Number(cantidad))) / nuevoStock;
 
     console.log('Nuevo stock:', nuevoStock);
     console.log('Nuevo precio promedio:', nuevoPrecioPromedio);
@@ -75,21 +75,21 @@ export async function POST(request: Request) {
     try {
       // Crear la entrada y actualizar el producto en una transacción
       const [entrada] = await prisma.$transaction([
-        prisma.entradaAlmacen.create({
+        prisma.entradas_almacen.create({
           data: {
-            productoId: Number(productoId),
+            producto_id: Number(productoId),
             cantidad: Number(cantidad),
-            precioCompra: Number(precioCompra),
+            precio_compra: Number(precioCompra),
             notas,
-            usuarioId: parseInt(session.user.id),
-            proveedorId: Number(proveedorId)
+            usuario_id: parseInt(session.user.id),
+            proveedor_id: Number(proveedorId)
           }
         }),
-        prisma.producto.update({
+        prisma.productos.update({
           where: { id: Number(productoId) },
           data: {
             stock: nuevoStock,
-            precioPromedio: nuevoPrecioPromedio
+            precio_promedio: nuevoPrecioPromedio
           }
         })
       ]);
