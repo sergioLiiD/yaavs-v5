@@ -8,17 +8,10 @@ export const dynamic = 'force-dynamic';
 // GET /api/catalogo/marcas
 export async function GET(req: NextRequest) {
   try {
-    // Verificar autenticación (opcional)
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    // Obtener todas las marcas
+    // Obtener todas las marcas (sin requerir sesión)
     const marcas = await prisma.marcas.findMany({
       orderBy: { nombre: 'asc' }
     });
-    
     return NextResponse.json(marcas);
   } catch (error) {
     console.error('Error al obtener marcas:', error);
