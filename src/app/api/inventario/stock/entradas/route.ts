@@ -82,14 +82,16 @@ export async function POST(request: Request) {
             precio_compra: Number(precioCompra),
             notas,
             usuario_id: parseInt(session.user.id),
-            proveedor_id: Number(proveedorId)
+            proveedor_id: Number(proveedorId),
+            updated_at: new Date() // <-- requerido por el modelo
           }
         }),
         prisma.productos.update({
           where: { id: Number(productoId) },
           data: {
             stock: nuevoStock,
-            precio_promedio: nuevoPrecioPromedio
+            precio_promedio: nuevoPrecioPromedio,
+            updated_at: new Date() // <-- requerido por el modelo
           }
         })
       ]);
