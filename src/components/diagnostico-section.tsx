@@ -44,6 +44,7 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
     observacion: string;
   }>>([]);
   const [isEditingChecklist, setIsEditingChecklist] = useState(false);
+  const [checklistLoaded, setChecklistLoaded] = useState(false);
 
   // Actualizar los estados cuando cambia el ticket
   useEffect(() => {
@@ -85,7 +86,7 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
         ? `/api/repair-point/tickets/${ticket.id}/diagnostico`
         : `/api/tickets/${ticket.id}/diagnostico`;
 
-      console.log('Enviando datos al servidor:', {
+      console.log('🔍 Enviando datos al servidor:', {
         diagnostico,
         saludBateria: Number(saludBateria),
         versionSO
@@ -104,8 +105,9 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
         setVersionSO(response.data.versionSO || '');
         toast.success('Diagnóstico guardado correctamente');
         setIsEditing(false);
-        if (onUpdate) onUpdate();
-        router.refresh(); // Forzar actualización de la página
+        // No llamar onUpdate() inmediatamente para evitar que se pierda el estado del checklist
+        // if (onUpdate) onUpdate();
+        // router.refresh(); // Comentado para evitar refresh
       }
     } catch (error) {
       toast.error('Error al guardar el diagnóstico');
@@ -145,6 +147,12 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
     const load = async () => {
       try {
         console.log('🔍 Iniciando carga de checklist para ticket:', ticket?.id);
+        
+        // Si ya se cargó el checklist, no volver a cargar
+        if (checklistLoaded) {
+          console.log('🔍 Checklist ya cargado, saltando carga...');
+          return;
+        }
         
         // Primero cargamos los items del catálogo
         const response = await fetch('/api/catalogo/checklist');
@@ -192,6 +200,7 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
           });
           console.log('🔍 Checklist final generado:', checklistConRespuestas);
           setChecklist(checklistConRespuestas);
+          setChecklistLoaded(true);
         } else if (!cancelled) {
           // Si no hay respuestas del backend pero el ticket ya trae respuestas (SSR), úsalas
           const ssrRespuestas = ticket?.reparacion?.checklistDiagnostico?.respuestas;
@@ -208,6 +217,7 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
               };
             });
             setChecklist(checklistConSSR);
+            setChecklistLoaded(true);
           } else {
             // Si no hay respuestas, inicializamos con valores por defecto
             const initialChecklist = diagnosticItems.map((item: ChecklistItem) => ({
@@ -217,17 +227,18 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
               observacion: ''
             }));
             setChecklist(initialChecklist);
+            setChecklistLoaded(true);
           }
         }
       } catch (error) {
         toast.error('Error al cargar items del checklist');
       }
     };
-    if (ticket?.id) {
+    if (ticket?.id && !checklistLoaded) {
       load();
     }
     return () => { cancelled = true; };
-  }, [ticket?.id, ticket?.canEdit]);
+  }, [ticket?.id, ticket?.canEdit, checklistLoaded]);
 
   // Agregar un efecto para monitorear cambios en el checklist
   useEffect(() => {
