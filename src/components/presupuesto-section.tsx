@@ -215,59 +215,98 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
   };
 
   const handleProductoChange = async (id: string, field: keyof ProductoSeleccionado, value: any) => {
+    // Si se cambia el producto, obtener el precio de venta primero
+    if (field === 'productoId' && catalogoProductos) {
+      const productoSeleccionado = catalogoProductos.find((prod: Producto) => prod.id === value);
+      if (productoSeleccionado) {
+        try {
+          let endpoint;
+          if (productoSeleccionado.tipo === 'SERVICIO') {
+            // Para servicios, usar el tipo_servicio_id del producto
+            const tipoServicioId = productoSeleccionado.tipo_servicio_id;
+            if (tipoServicioId) {
+              endpoint = `/api/precios-venta/servicio/${tipoServicioId}`;
+            } else {
+              // Si no hay tipo_servicio_id, usar el precio promedio
+              setProductos(productos.map((p) => {
+                if (p.id === id) {
+                  return {
+                    ...p,
+                    productoId: value,
+                    nombre: productoSeleccionado.nombre,
+                    precioVenta: Number(productoSeleccionado.precioPromedio) || 0
+                  };
+                }
+                return p;
+              }));
+              console.log('Servicio sin tipo_servicio_id, usando precio promedio:', productoSeleccionado.precioPromedio);
+              return;
+            }
+          } else {
+            endpoint = `/api/precios-venta/producto/${value}`;
+          }
+          
+          console.log('🔍 Consultando precio de venta en:', endpoint);
+          const response = await fetch(endpoint);
+          if (response.ok) {
+            const precioData = await response.json();
+            const precioVenta = Number(precioData.precioVenta) || 0;
+            console.log('✅ Precio de venta encontrado:', precioVenta);
+            
+            // Actualizar el estado con el precio encontrado
+            setProductos(productos.map((p) => {
+              if (p.id === id) {
+                return {
+                  ...p,
+                  productoId: value,
+                  nombre: productoSeleccionado.nombre,
+                  precioVenta: precioVenta
+                };
+              }
+              return p;
+            }));
+          } else {
+            // Si no hay precio específico, usar el precio promedio del producto
+            const precioPromedio = Number(productoSeleccionado.precioPromedio) || 0;
+            console.log('⚠️ Usando precio promedio:', precioPromedio);
+            
+            setProductos(productos.map((p) => {
+              if (p.id === id) {
+                return {
+                  ...p,
+                  productoId: value,
+                  nombre: productoSeleccionado.nombre,
+                  precioVenta: precioPromedio
+                };
+              }
+              return p;
+            }));
+          }
+        } catch (error) {
+          // En caso de error, usar el precio promedio
+          const precioPromedio = Number(productoSeleccionado.precioPromedio) || 0;
+          console.log('❌ Error al obtener precio, usando promedio:', precioPromedio);
+          
+          setProductos(productos.map((p) => {
+            if (p.id === id) {
+              return {
+                ...p,
+                productoId: value,
+                nombre: productoSeleccionado.nombre,
+                precioVenta: precioPromedio
+              };
+            }
+            return p;
+          }));
+        }
+        return; // Salir de la función ya que manejamos el estado aquí
+      }
+    }
+    
+    // Para otros campos, actualizar normalmente
     setProductos(productos.map((p) => {
       if (p.id === id) {
-        const productoActualizado = { ...p, [field]: value };
-        
-        // Si se cambia el producto, actualizar el precio de venta y el nombre
-        if (field === 'productoId' && catalogoProductos) {
-          const productoSeleccionado = catalogoProductos.find((prod: Producto) => prod.id === value);
-          if (productoSeleccionado) {
-            // Actualizar el nombre del producto
-            productoActualizado.nombre = productoSeleccionado.nombre;
-            
-            // Obtener el precio de venta usando el endpoint específico
-            const fetchPrecioVenta = async () => {
-              try {
-                let endpoint;
-                if (productoSeleccionado.tipo === 'SERVICIO') {
-                  // Para servicios, usar el tipo_servicio_id del producto
-                  const tipoServicioId = productoSeleccionado.tipo_servicio_id;
-                  if (tipoServicioId) {
-                    endpoint = `/api/precios-venta/servicio/${tipoServicioId}`;
-                  } else {
-                    // Si no hay tipo_servicio_id, usar el precio promedio
-                    productoActualizado.precioVenta = Number(productoSeleccionado.precioPromedio) || 0;
-                    console.log('Servicio sin tipo_servicio_id, usando precio promedio:', productoSeleccionado.precioPromedio);
-                    return;
-                  }
-                } else {
-                  endpoint = `/api/precios-venta/producto/${value}`;
-                }
-                
-                console.log('🔍 Consultando precio de venta en:', endpoint);
-                const response = await fetch(endpoint);
-                if (response.ok) {
-                  const precioData = await response.json();
-                  productoActualizado.precioVenta = Number(precioData.precioVenta) || 0;
-                  console.log('✅ Precio de venta encontrado:', precioData.precioVenta);
-                } else {
-                  // Si no hay precio específico, usar el precio promedio del producto
-                  productoActualizado.precioVenta = Number(productoSeleccionado.precioPromedio) || 0;
-                  console.log('⚠️ Usando precio promedio:', productoSeleccionado.precioPromedio);
-                }
-              } catch (error) {
-                // En caso de error, usar el precio promedio
-                productoActualizado.precioVenta = Number(productoSeleccionado.precioPromedio) || 0;
-                console.log('❌ Error al obtener precio, usando promedio:', productoSeleccionado.precioPromedio);
-              }
-            };
-            
-            // Ejecutar la función de forma asíncrona
-            fetchPrecioVenta();
-          }
-        }
-        return productoActualizado;
+        return { ...p, [field]: value };
       }
       return p;
     }));
