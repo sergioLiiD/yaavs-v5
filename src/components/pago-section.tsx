@@ -16,7 +16,7 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, X, Check } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,12 +37,12 @@ interface PagoSectionProps {
 
 interface Pago {
   id: number;
-  ticketId: number;
+  ticket_id: number;
   monto: number;
   metodo: string;
   referencia?: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
@@ -52,6 +52,12 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
   const [metodoPago, setMetodoPago] = useState<string>('EFECTIVO');
   const [pagoToDelete, setPagoToDelete] = useState<Pago | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editingPago, setEditingPago] = useState<Pago | null>(null);
+  const [editForm, setEditForm] = useState({
+    monto: 0,
+    metodo: 'EFECTIVO',
+    referencia: ''
+  });
 
   const { data: presupuesto } = useQuery({
     queryKey: ['presupuesto', ticketId],
@@ -136,10 +142,55 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
       // Limpiar el formulario
       setAnticipo(0);
       setMetodoPago('EFECTIVO');
+      toast.success('Pago registrado correctamente');
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al registrar el pago');
     }
+  };
+
+  const handleEditPago = (pago: Pago) => {
+    setEditingPago(pago);
+    setEditForm({
+      monto: pago.monto,
+      metodo: pago.metodo,
+      referencia: pago.referencia || ''
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingPago) return;
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/tickets/${ticketId}/pagos/${editingPago.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar el pago');
+      }
+
+      toast.success('Pago actualizado correctamente');
+      await queryClient.invalidateQueries({ queryKey: ['pagos', ticketId] });
+      await queryClient.invalidateQueries({ queryKey: ['presupuesto', ticketId] });
+      setEditingPago(null);
+      setEditForm({ monto: 0, metodo: 'EFECTIVO', referencia: '' });
+    } catch (error) {
+      console.error('Error al actualizar pago:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al actualizar el pago');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPago(null);
+    setEditForm({ monto: 0, metodo: 'EFECTIVO', referencia: '' });
   };
 
   const handleDeletePago = async (pago: Pago) => {
@@ -164,6 +215,8 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
       }
 
       toast.success('Pago eliminado correctamente');
+      await queryClient.invalidateQueries({ queryKey: ['pagos', ticketId] });
+      await queryClient.invalidateQueries({ queryKey: ['presupuesto', ticketId] });
       if (onUpdate) {
         onUpdate();
       }
@@ -174,6 +227,18 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
       setIsLoading(false);
       setIsDeleteDialogOpen(false);
       setPagoToDelete(null);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Fecha inválida';
+      }
+      return format(date, 'dd/MM/yyyy HH:mm', { locale: es });
+    } catch (error) {
+      return 'Fecha inválida';
     }
   };
 
@@ -267,13 +332,91 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
         <div className="space-y-4">
           {pagos?.map((pago: Pago) => (
             <div key={pago.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium">${pago.monto.toFixed(2)}</p>
-                <p className="text-sm text-gray-500">{pago.metodo}</p>
-              </div>
-              <p className="text-sm text-gray-500">
-                {new Date(pago.createdAt).toLocaleDateString()}
-              </p>
+              {editingPago?.id === pago.id ? (
+                // Modo edición
+                <div className="flex-1 space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Monto</label>
+                      <input
+                        type="number"
+                        value={editForm.monto}
+                        onChange={(e) => setEditForm({ ...editForm, monto: Number(e.target.value) })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-3 py-2"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Método</label>
+                      <select
+                        value={editForm.metodo}
+                        onChange={(e) => setEditForm({ ...editForm, metodo: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-3 py-2"
+                      >
+                        <option value="EFECTIVO">Efectivo</option>
+                        <option value="TARJETA">Tarjeta</option>
+                        <option value="TRANSFERENCIA">Transferencia</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Referencia</label>
+                      <input
+                        type="text"
+                        value={editForm.referencia}
+                        onChange={(e) => setEditForm({ ...editForm, referencia: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] px-3 py-2"
+                        placeholder="Opcional"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={handleCancelEdit}
+                      className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleSaveEdit}
+                      disabled={isLoading}
+                      className="px-3 py-1 text-sm text-green-600 hover:text-green-800"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Modo visualización
+                <>
+                  <div className="flex-1">
+                    <p className="font-medium">${pago.monto.toFixed(2)}</p>
+                    <p className="text-sm text-gray-500">{pago.metodo}</p>
+                    {pago.referencia && (
+                      <p className="text-xs text-gray-400">Ref: {pago.referencia}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-gray-500">
+                      {formatDate(pago.created_at)}
+                    </p>
+                    <button
+                      onClick={() => handleEditPago(pago)}
+                      className="p-1 text-blue-600 hover:text-blue-800"
+                      title="Editar pago"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeletePago(pago)}
+                      className="p-1 text-red-600 hover:text-red-800"
+                      title="Eliminar pago"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
