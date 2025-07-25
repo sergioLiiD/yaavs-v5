@@ -38,6 +38,7 @@ interface Producto {
   stock: number;
   marca?: { nombre: string };
   modelo?: { nombre: string };
+  tipo_servicio_id?: number; // Nuevo campo para servicios
 }
 
 interface PrecioVenta {
@@ -213,30 +214,57 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
     setProductos(productos.filter((p) => p.id !== id));
   };
 
-  const handleProductoChange = (id: string, field: keyof ProductoSeleccionado, value: any) => {
+  const handleProductoChange = async (id: string, field: keyof ProductoSeleccionado, value: any) => {
     setProductos(productos.map((p) => {
       if (p.id === id) {
         const productoActualizado = { ...p, [field]: value };
         
         // Si se cambia el producto, actualizar el precio de venta y el nombre
-        if (field === 'productoId' && preciosVenta && catalogoProductos) {
+        if (field === 'productoId' && catalogoProductos) {
           const productoSeleccionado = catalogoProductos.find((prod: Producto) => prod.id === value);
           if (productoSeleccionado) {
-            // Buscar el precio de venta según el tipo de producto
-            const precioVenta = preciosVenta.find((pv: PrecioVenta) => {
-              if (productoSeleccionado.tipo === 'SERVICIO') {
-                return pv.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase();
-              } else {
-                return pv.nombre.toLowerCase() === productoSeleccionado.nombre.toLowerCase() &&
-                       pv.marca.toLowerCase() === (productoSeleccionado.marca?.nombre.toLowerCase() || '') &&
-                       pv.modelo.toLowerCase() === (productoSeleccionado.modelo?.nombre.toLowerCase() || '');
-              }
-            });
-
-            if (precioVenta) {
-              productoActualizado.precioVenta = precioVenta.precio_venta;
-            }
+            // Actualizar el nombre del producto
             productoActualizado.nombre = productoSeleccionado.nombre;
+            
+            // Obtener el precio de venta usando el endpoint específico
+            const fetchPrecioVenta = async () => {
+              try {
+                let endpoint;
+                if (productoSeleccionado.tipo === 'SERVICIO') {
+                  // Para servicios, usar el tipo_servicio_id del producto
+                  const tipoServicioId = productoSeleccionado.tipo_servicio_id;
+                  if (tipoServicioId) {
+                    endpoint = `/api/precios-venta/servicio/${tipoServicioId}`;
+                  } else {
+                    // Si no hay tipo_servicio_id, usar el precio promedio
+                    productoActualizado.precioVenta = Number(productoSeleccionado.precioPromedio) || 0;
+                    console.log('Servicio sin tipo_servicio_id, usando precio promedio:', productoSeleccionado.precioPromedio);
+                    return;
+                  }
+                } else {
+                  endpoint = `/api/precios-venta/producto/${value}`;
+                }
+                
+                console.log('🔍 Consultando precio de venta en:', endpoint);
+                const response = await fetch(endpoint);
+                if (response.ok) {
+                  const precioData = await response.json();
+                  productoActualizado.precioVenta = Number(precioData.precioVenta) || 0;
+                  console.log('✅ Precio de venta encontrado:', precioData.precioVenta);
+                } else {
+                  // Si no hay precio específico, usar el precio promedio del producto
+                  productoActualizado.precioVenta = Number(productoSeleccionado.precioPromedio) || 0;
+                  console.log('⚠️ Usando precio promedio:', productoSeleccionado.precioPromedio);
+                }
+              } catch (error) {
+                // En caso de error, usar el precio promedio
+                productoActualizado.precioVenta = Number(productoSeleccionado.precioPromedio) || 0;
+                console.log('❌ Error al obtener precio, usando promedio:', productoSeleccionado.precioPromedio);
+              }
+            };
+            
+            // Ejecutar la función de forma asíncrona
+            fetchPrecioVenta();
           }
         }
         return productoActualizado;
