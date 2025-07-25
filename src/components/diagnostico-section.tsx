@@ -101,15 +101,24 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
       if (response.data.success) {
         // Actualizar el estado local con los datos devueltos
         setDiagnostico(response.data.diagnostico || '');
-        setSaludBateria(response.data.saludBateria?.toString() || '');
+        setSaludBateria(response.data.saludBateria || 0);
         setVersionSO(response.data.versionSO || '');
+        
+        console.log('✅ Diagnóstico guardado exitosamente');
         toast.success('Diagnóstico guardado correctamente');
-        setIsEditing(false);
-        // No llamar onUpdate() inmediatamente para evitar que se pierda el estado del checklist
+        
+        // También guardar el checklist si hay datos
+        if (checklist && checklist.length > 0) {
+          console.log('🔍 Guardando checklist después del diagnóstico...');
+          await handleSaveChecklist();
+        }
+        
+        // No hacer refresh inmediatamente para mantener el estado
         // if (onUpdate) onUpdate();
-        // router.refresh(); // Comentado para evitar refresh
+        // router.refresh();
       }
     } catch (error) {
+      console.error('❌ Error al guardar diagnóstico:', error);
       toast.error('Error al guardar el diagnóstico');
     } finally {
       setIsSaving(false);
@@ -286,7 +295,7 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
         console.log('✅ Checklist guardado exitosamente');
         toast.success('Checklist guardado correctamente');
         setIsEditing(false);
-        // No llamar onUpdate() inmediatamente para evitar que se pierda el estado
+        // No hacer refresh para mantener el estado
         // if (onUpdate) onUpdate();
       }
     } catch (error) {
