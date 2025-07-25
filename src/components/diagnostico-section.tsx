@@ -266,15 +266,21 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
         ? `/api/repair-point/tickets/${ticket.id}/checklist-diagnostico`
         : `/api/tickets/${ticket.id}/checklist-diagnostico`;
 
-      console.log('🔍 Guardando checklist:', checklist);
+      console.log('🔍 Checklist actual antes de enviar:', checklist);
+      
+      const dataToSend = checklist.map(item => ({
+        itemId: item.itemId,
+        respuesta: item.respuesta,
+        observacion: item.observacion
+      }));
+      
+      console.log('🔍 Datos que se van a enviar al servidor:', dataToSend);
 
       const response = await axios.post(apiUrl, {
-        checklist: checklist.map(item => ({
-          itemId: item.itemId,
-          respuesta: item.respuesta,
-          observacion: item.observacion
-        }))
+        checklist: dataToSend
       });
+
+      console.log('🔍 Respuesta del servidor:', response.data);
 
       if (response.data.success) {
         console.log('✅ Checklist guardado exitosamente');

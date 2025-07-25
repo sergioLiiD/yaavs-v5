@@ -29,7 +29,17 @@ export async function POST(
     const ticketId = parseInt(params.id);
     const { checklist } = await request.json() as { checklist: ChecklistItem[] };
 
-    console.log('Checklist recibido en el endpoint:', checklist);
+    console.log('🔍 POST /checklist-diagnostico - Datos recibidos del frontend:', checklist);
+    console.log('🔍 POST /checklist-diagnostico - Tipo de datos:', typeof checklist);
+    console.log('🔍 POST /checklist-diagnostico - Longitud:', checklist?.length);
+    
+    if (checklist && checklist.length > 0) {
+      console.log('🔍 POST /checklist-diagnostico - Primer item:', checklist[0]);
+      console.log('🔍 POST /checklist-diagnostico - Respuestas recibidas:');
+      checklist.forEach((item, index) => {
+        console.log(`  Item ${index + 1}: ID=${item.itemId}, Respuesta=${item.respuesta} (tipo: ${typeof item.respuesta}), Observación="${item.observacion}"`);
+      });
+    }
 
     // Obtener el ticket con su reparación
     const ticket = await prisma.tickets.findUnique({
