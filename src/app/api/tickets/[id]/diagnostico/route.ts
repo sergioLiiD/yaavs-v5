@@ -126,6 +126,16 @@ export async function POST(
 
     console.log('POST /diagnostico - Reparación guardada:', reparacion);
 
+    // Actualizar el estado del ticket a "En Diagnóstico"
+    await prisma.tickets.update({
+      where: { id: ticketId },
+      data: {
+        estatus_reparacion_id: 29, // "En Diagnóstico"
+        fecha_inicio_diagnostico: new Date(),
+        updated_at: new Date()
+      }
+    });
+
     return NextResponse.json({
       success: true,
       diagnostico: reparacion.diagnostico,

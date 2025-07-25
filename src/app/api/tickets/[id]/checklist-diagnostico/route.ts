@@ -89,6 +89,16 @@ export async function POST(
       })
     );
 
+    // Actualizar el estado del ticket a "En Diagnóstico"
+    await prisma.tickets.update({
+      where: { id: ticketId },
+      data: {
+        estatus_reparacion_id: 29, // "En Diagnóstico"
+        fecha_inicio_diagnostico: new Date(),
+        updated_at: new Date()
+      }
+    });
+
     return NextResponse.json({
       success: true,
       checklist: respuestas
@@ -119,9 +129,24 @@ export async function GET(
 
     const ticketId = parseInt(params.id);
 
-    // Obtener el ticket
+    // Obtener el ticket con su reparación y checklist
     const ticket = await prisma.tickets.findUnique({
-      where: { id: ticketId }
+      where: { id: ticketId },
+      include: {
+        reparaciones: {
+          include: {
+            checklist_diagnostico: {
+              include: {
+                checklist_respuesta_diagnostico: {
+                  include: {
+                    checklist_items: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!ticket) {
@@ -131,10 +156,27 @@ export async function GET(
       );
     }
 
-    // Por ahora, devolver un array vacío hasta que se configuren las relaciones de checklist
+    // Obtener la reparación
+    const reparacion = Array.isArray(ticket.reparaciones) ? ticket.reparaciones[0] : ticket.reparaciones;
+
+    if (!reparacion || !reparacion.checklist_diagnostico) {
+      return NextResponse.json({
+        success: true,
+        checklist: []
+      });
+    }
+
+    // Formatear las respuestas del checklist
+    const checklist = reparacion.checklist_diagnostico.checklist_respuesta_diagnostico.map((respuesta: any) => ({
+      itemId: respuesta.checklist_items.id,
+      item: respuesta.checklist_items.nombre,
+      respuesta: respuesta.respuesta,
+      observacion: respuesta.observaciones || ''
+    }));
+
     return NextResponse.json({
       success: true,
-      checklist: []
+      checklist
     });
 
   } catch (error) {

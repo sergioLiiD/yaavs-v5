@@ -6,71 +6,59 @@ async function checkAndCreateChecklistItems() {
     
     // Verificar si existen items de checklist
     const existingItems = await prisma.checklist_items.findMany();
-    console.log(`📋 Items existentes: ${existingItems.length}`);
+    console.log(`📊 Items existentes: ${existingItems.length}`);
     
     if (existingItems.length === 0) {
       console.log('⚠️ No hay items de checklist. Creando items por defecto...');
       
       const defaultItems = [
         {
-          nombre: 'Verificar encendido del dispositivo',
-          descripcion: 'Confirmar que el dispositivo enciende correctamente',
+          nombre: 'Pantalla intacta',
+          descripcion: 'La pantalla no presenta fisuras ni daños visibles',
           para_diagnostico: true,
-          para_reparacion: true
+          para_reparacion: false
         },
         {
-          nombre: 'Revisar pantalla y display',
-          descripcion: 'Verificar que la pantalla funcione sin problemas',
+          nombre: 'Cámara funcional',
+          descripcion: 'La cámara frontal y trasera funcionan correctamente',
           para_diagnostico: true,
-          para_reparacion: true
+          para_reparacion: false
         },
         {
-          nombre: 'Probar conectividad (WiFi, Bluetooth)',
-          descripcion: 'Verificar que las conexiones inalámbricas funcionen',
+          nombre: 'Batería original',
+          descripcion: 'La batería es la original del dispositivo',
           para_diagnostico: true,
-          para_reparacion: true
+          para_reparacion: false
         },
         {
-          nombre: 'Revisar puertos y conectores',
-          descripcion: 'Verificar que todos los puertos estén en buen estado',
+          nombre: 'Carcasa en buen estado',
+          descripcion: 'La carcasa no presenta daños significativos',
           para_diagnostico: true,
-          para_reparacion: true
+          para_reparacion: false
         },
         {
-          nombre: 'Probar cámara y micrófono',
-          descripcion: 'Verificar funcionamiento de cámara y micrófono',
+          nombre: 'Botones funcionales',
+          descripcion: 'Todos los botones físicos funcionan correctamente',
           para_diagnostico: true,
-          para_reparacion: true
+          para_reparacion: false
         },
         {
-          nombre: 'Verificar batería y carga',
-          descripcion: 'Probar que la batería cargue correctamente',
+          nombre: 'Altavoces funcionando',
+          descripcion: 'Los altavoces reproducen audio correctamente',
           para_diagnostico: true,
-          para_reparacion: true
+          para_reparacion: false
         },
         {
-          nombre: 'Limpiar dispositivo',
-          descripcion: 'Limpiar exterior e interior del dispositivo',
-          para_diagnostico: false,
-          para_reparacion: true
+          nombre: 'Micrófono funcional',
+          descripcion: 'El micrófono captura audio correctamente',
+          para_diagnostico: true,
+          para_reparacion: false
         },
         {
-          nombre: 'Actualizar software/firmware',
-          descripcion: 'Instalar actualizaciones disponibles',
-          para_diagnostico: false,
-          para_reparacion: true
-        },
-        {
-          nombre: 'Realizar pruebas de rendimiento',
-          descripcion: 'Ejecutar pruebas para verificar rendimiento',
-          para_diagnostico: false,
-          para_reparacion: true
-        },
-        {
-          nombre: 'Verificar funcionamiento general',
-          descripcion: 'Prueba final de todas las funciones',
-          para_diagnostico: false,
-          para_reparacion: true
+          nombre: 'Sensores funcionando',
+          descripcion: 'Los sensores (proximidad, luz, etc.) funcionan correctamente',
+          para_diagnostico: true,
+          para_reparacion: false
         }
       ];
       
@@ -81,23 +69,15 @@ async function checkAndCreateChecklistItems() {
             updated_at: new Date()
           }
         });
-        console.log(`✅ Creado: ${item.nombre}`);
       }
       
-      console.log('🎉 Items de checklist creados exitosamente');
+      console.log('✅ Items de checklist creados exitosamente');
     } else {
-      console.log('📋 Items existentes:');
+      console.log('✅ Ya existen items de checklist');
       existingItems.forEach(item => {
-        console.log(`  - ${item.nombre} (Diagnóstico: ${item.para_diagnostico}, Reparación: ${item.para_reparacion})`);
+        console.log(`  - ${item.nombre} (ID: ${item.id}, Diagnóstico: ${item.para_diagnostico}, Reparación: ${item.para_reparacion})`);
       });
     }
-    
-    // Verificar items específicos para reparación
-    const itemsReparacion = await prisma.checklist_items.findMany({
-      where: { para_reparacion: true }
-    });
-    
-    console.log(`🔧 Items para reparación: ${itemsReparacion.length}`);
     
   } catch (error) {
     console.error('❌ Error:', error);

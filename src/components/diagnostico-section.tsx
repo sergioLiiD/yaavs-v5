@@ -174,7 +174,7 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
         if (!cancelled && respuestasExistentes && respuestasExistentes.length > 0) {
           const checklistConRespuestas = diagnosticItems.map((item: ChecklistItem) => {
             const respuestaExistente = respuestasExistentes.find(
-              (r: any) => r.checklist_items?.id === item.id
+              (r: any) => r.itemId === item.id
             );
             return {
               itemId: item.id,
@@ -184,7 +184,7 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
                     ? respuestaExistente.respuesta
                     : respuestaExistente.respuesta === true || respuestaExistente.respuesta === 'true')
                 : false,
-              observacion: respuestaExistente ? respuestaExistente.observaciones || '' : ''
+              observacion: respuestaExistente ? respuestaExistente.observacion || '' : ''
             };
           });
           setChecklist(checklistConRespuestas);
