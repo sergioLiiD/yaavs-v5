@@ -172,11 +172,12 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
 
         // Si hay respuestas existentes, las usamos
         if (!cancelled && respuestasExistentes && respuestasExistentes.length > 0) {
+          console.log('🔍 Procesando respuestas existentes del backend...');
           const checklistConRespuestas = diagnosticItems.map((item: ChecklistItem) => {
             const respuestaExistente = respuestasExistentes.find(
               (r: any) => r.itemId === item.id
             );
-            return {
+            const resultado = {
               itemId: item.id,
               item: item.nombre,
               respuesta: respuestaExistente
@@ -186,7 +187,10 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
                 : false,
               observacion: respuestaExistente ? respuestaExistente.observacion || '' : ''
             };
+            console.log(`🔍 Item ${item.nombre}: respuesta=${resultado.respuesta}, observacion="${resultado.observacion}"`);
+            return resultado;
           });
+          console.log('🔍 Checklist final generado:', checklistConRespuestas);
           setChecklist(checklistConRespuestas);
         } else if (!cancelled) {
           // Si no hay respuestas del backend pero el ticket ya trae respuestas (SSR), úsalas
@@ -227,6 +231,7 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
 
   // Agregar un efecto para monitorear cambios en el checklist
   useEffect(() => {
+    console.log('🔍 Checklist actualizado:', checklist);
   }, [checklist]);
 
   const handleChecklistChange = (itemId: number, field: 'respuesta' | 'observacion', value: boolean | string) => {
@@ -250,6 +255,8 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
         ? `/api/repair-point/tickets/${ticket.id}/checklist-diagnostico`
         : `/api/tickets/${ticket.id}/checklist-diagnostico`;
 
+      console.log('🔍 Guardando checklist:', checklist);
+
       const response = await axios.post(apiUrl, {
         checklist: checklist.map(item => ({
           itemId: item.itemId,
@@ -259,11 +266,14 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
       });
 
       if (response.data.success) {
+        console.log('✅ Checklist guardado exitosamente');
         toast.success('Checklist guardado correctamente');
         setIsEditing(false);
-        if (onUpdate) onUpdate();
+        // No llamar onUpdate() inmediatamente para evitar que se pierda el estado
+        // if (onUpdate) onUpdate();
       }
     } catch (error) {
+      console.error('❌ Error al guardar checklist:', error);
       toast.error('Error al guardar el checklist');
     } finally {
       setIsSaving(false);

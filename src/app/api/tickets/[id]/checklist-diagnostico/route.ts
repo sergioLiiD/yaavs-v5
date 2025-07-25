@@ -159,12 +159,18 @@ export async function GET(
     // Obtener la reparación
     const reparacion = Array.isArray(ticket.reparaciones) ? ticket.reparaciones[0] : ticket.reparaciones;
 
+    console.log('🔍 Reparación encontrada:', reparacion);
+
     if (!reparacion || !reparacion.checklist_diagnostico) {
+      console.log('🔍 No hay checklist de diagnóstico, devolviendo array vacío');
       return NextResponse.json({
         success: true,
         checklist: []
       });
     }
+
+    console.log('🔍 Checklist de diagnóstico encontrado:', reparacion.checklist_diagnostico);
+    console.log('🔍 Respuestas del checklist:', reparacion.checklist_diagnostico.checklist_respuesta_diagnostico);
 
     // Formatear las respuestas del checklist
     const checklist = reparacion.checklist_diagnostico.checklist_respuesta_diagnostico.map((respuesta: any) => ({
@@ -173,6 +179,8 @@ export async function GET(
       respuesta: respuesta.respuesta,
       observacion: respuesta.observaciones || ''
     }));
+
+    console.log('🔍 Checklist formateado para devolver:', checklist);
 
     return NextResponse.json({
       success: true,
