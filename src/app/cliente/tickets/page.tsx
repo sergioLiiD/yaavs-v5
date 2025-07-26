@@ -14,7 +14,7 @@ import Link from "next/link";
 import { HiArrowLeft } from "react-icons/hi";
 
 export const metadata: Metadata = {
-  title: 'Mis Tickets | YAAVS',
+  title: 'Mis Tickets | arregla.mx',
   description: 'Gestiona tus tickets de servicio',
 };
 

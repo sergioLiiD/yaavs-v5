@@ -3,7 +3,7 @@ import { NuevoTicketForm } from '@/components/cliente/NuevoTicketForm';
 import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
-  title: 'Nuevo Ticket | YAAVS',
+  title: 'Nuevo Ticket | arregla.mx',
   description: 'Crea un nuevo ticket de servicio',
 };
 

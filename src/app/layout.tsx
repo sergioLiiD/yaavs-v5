@@ -12,7 +12,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "YAAS - Sistema de Gestión",
+  title: "arregla.mx - Sistema de Gestión",
   description: "Sistema de gestión para talleres de reparación",
 };
 

@@ -10,13 +10,13 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ 
   children, 
-  title = 'Sistema de Reparación de Celulares' 
+  title = 'arregla.mx - Sistema de Reparación' 
 }) => {
   return (
     <>
       <Head>
         <title>{title}</title>
-        <meta name="description" content="Sistema de gestión para reparación de celulares" />
+        <meta name="description" content="Sistema de gestión para reparación de dispositivos móviles" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       

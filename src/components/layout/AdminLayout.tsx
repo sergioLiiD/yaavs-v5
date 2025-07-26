@@ -214,7 +214,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
       } lg:translate-x-0 lg:static lg:inset-0`}>
         <div className="h-full overflow-y-auto py-4 px-3 bg-white border-r border-gray-200">
           <div className="flex items-center pl-2.5 mb-5">
-            <img src="/logo.png" className="mr-3 h-18 sm:h-21" alt="YAAVS Logo" 
+                            <img src="/logo.png" className="mr-3 h-18 sm:h-21" alt="arregla.mx Logo" 
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
@@ -402,7 +402,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
               <Link href="/dashboard" className="flex items-center">
                 <img 
                   src="/logo.png" 
-                  alt="YAAVS Logo" 
+                  alt="arregla.mx Logo" 
                   className="h-12 w-auto"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -461,7 +461,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
           <div className="fixed inset-y-0 left-0 z-30 w-9/12 max-w-sm bg-white" onClick={e => e.stopPropagation()}>
             <div className="h-full overflow-y-auto p-4">
               <div className="flex items-center mb-5">
-                <img src="/logo.png" className="mr-3 h-21" alt="YAAVS Logo" 
+                <img src="/logo.png" className="mr-3 h-21" alt="arregla.mx Logo" 
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
