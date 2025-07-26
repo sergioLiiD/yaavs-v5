@@ -704,92 +704,126 @@ export default function StockPage() {
       {/* Modal de Salida */}
       <Modal
         isOpen={showSalidaModal}
-        onClose={() => setShowSalidaModal(false)}
+        onClose={() => {
+          setShowSalidaModal(false);
+          setProductoSeleccionado(null);
+        }}
         title="Registrar Salida de Almacén"
       >
-        <form onSubmit={handleSubmitSalida} className="space-y-4">
-          <div>
-            <label htmlFor="cantidad" className="block text-sm font-medium text-gray-900">
-              Cantidad
-            </label>
-            <input
-              type="number"
-              id="cantidad"
-              name="cantidad"
-              value={formDataSalida.cantidad}
-              onChange={handleInputChangeSalida}
-              className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900 px-4 [&::placeholder]:text-gray-700"
-              required
-              min="1"
-              placeholder="Ingresa la cantidad"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="tipo" className="block text-sm font-medium text-gray-900">
-              Tipo de Salida
-            </label>
+        {!productoSeleccionado ? (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-900">Producto *</label>
             <select
-              id="tipo"
-              name="tipo"
-              value={formDataSalida.tipo}
-              onChange={handleInputChangeSalida}
-              className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900 px-4"
+              name="productoId"
+              value={formData.productoId}
+              onChange={e => {
+                const producto = productos.find(p => p.id === parseInt(e.target.value));
+                setFormDataSalida({ ...formDataSalida, cantidad: '', razon: '', tipo: 'VENTA', referencia: '' });
+                setProductoSeleccionado(producto || null);
+              }}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-700"
               required
             >
-              <option value="VENTA">Venta</option>
-              <option value="DANO">Daño</option>
-              <option value="MERMA">Merma</option>
-              <option value="OTRO">Otro</option>
+              <option value="" className="text-gray-700">Selecciona un producto</option>
+              {productos.map((producto) => (
+                <option key={producto.id} value={producto.id} className="text-gray-700">
+                  {producto.nombre}
+                </option>
+              ))}
             </select>
           </div>
+        ) : (
+          <form onSubmit={handleSubmitSalida} className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Producto: {productoSeleccionado.nombre}</p>
+              <p className="text-sm text-gray-600 mb-2">Stock actual: {productoSeleccionado.stock}</p>
+            </div>
+            <div>
+              <label htmlFor="cantidad" className="block text-sm font-medium text-gray-900">
+                Cantidad
+              </label>
+              <input
+                type="number"
+                id="cantidad"
+                name="cantidad"
+                value={formDataSalida.cantidad}
+                onChange={handleInputChangeSalida}
+                className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900 px-4 [&::placeholder]:text-gray-700"
+                required
+                min="1"
+                placeholder="Ingresa la cantidad"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="razon" className="block text-sm font-medium text-gray-900">
-              Razón
-            </label>
-            <textarea
-              id="razon"
-              name="razon"
-              value={formDataSalida.razon}
-              onChange={handleInputChangeSalida}
-              className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-24 text-base text-gray-900 px-4 py-3 [&::placeholder]:text-gray-700"
-              required
-              placeholder="Ingresa la razón de la salida"
-            />
-          </div>
+            <div>
+              <label htmlFor="tipo" className="block text-sm font-medium text-gray-900">
+                Tipo de Salida
+              </label>
+              <select
+                id="tipo"
+                name="tipo"
+                value={formDataSalida.tipo}
+                onChange={handleInputChangeSalida}
+                className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900 px-4"
+                required
+              >
+                <option value="VENTA">Venta</option>
+                <option value="DANO">Daño</option>
+                <option value="MERMA">Merma</option>
+                <option value="OTRO">Otro</option>
+              </select>
+            </div>
 
-          <div>
-            <label htmlFor="referencia" className="block text-sm font-medium text-gray-900">
-              Referencia
-            </label>
-            <input
-              type="text"
-              id="referencia"
-              name="referencia"
-              value={formDataSalida.referencia}
-              onChange={handleInputChangeSalida}
-              className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900 px-4 [&::placeholder]:text-gray-700"
-              placeholder="Ingresa una referencia (opcional)"
-            />
-          </div>
+            <div>
+              <label htmlFor="razon" className="block text-sm font-medium text-gray-900">
+                Razón
+              </label>
+              <textarea
+                id="razon"
+                name="razon"
+                value={formDataSalida.razon}
+                onChange={handleInputChangeSalida}
+                className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-24 text-base text-gray-900 px-4 py-3 [&::placeholder]:text-gray-700"
+                required
+                placeholder="Ingresa la razón de la salida"
+              />
+            </div>
 
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={() => setShowSalidaModal(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
-            >
-              Registrar Salida
-            </button>
-          </div>
-        </form>
+            <div>
+              <label htmlFor="referencia" className="block text-sm font-medium text-gray-900">
+                Referencia
+              </label>
+              <input
+                type="text"
+                id="referencia"
+                name="referencia"
+                value={formDataSalida.referencia}
+                onChange={handleInputChangeSalida}
+                className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-12 text-base text-gray-900 px-4 [&::placeholder]:text-gray-700"
+                placeholder="Ingresa una referencia (opcional)"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSalidaModal(false);
+                  setProductoSeleccionado(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+              >
+                Registrar Salida
+              </button>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   );
