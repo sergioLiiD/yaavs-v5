@@ -768,9 +768,9 @@ export default function StockPage() {
                 required
               >
                 <option value="VENTA">Venta</option>
-                <option value="DANO">Daño</option>
-                <option value="MERMA">Merma</option>
-                <option value="OTRO">Otro</option>
+                <option value="REPARACION">Reparación</option>
+                <option value="PERDIDA">Pérdida</option>
+                <option value="AJUSTE">Ajuste</option>
               </select>
             </div>
 
