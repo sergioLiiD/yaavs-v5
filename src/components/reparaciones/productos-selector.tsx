@@ -246,15 +246,19 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
             <TableRow key={producto.id}>
               <TableCell>
                 <div className="space-y-4">
-                  <Select
-                    value={producto.productoId?.toString() || ''}
-                    onValueChange={(value) =>
-                      handleProductoChange(producto.id, 'productoId', parseInt(value))
-                    }
-                  >
-                    <SelectTrigger className="bg-white text-black border-gray-200">
-                      <SelectValue placeholder="Buscar y seleccionar producto..." />
-                    </SelectTrigger>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Selecciona un producto o servicio
+                    </Label>
+                    <Select
+                      value={producto.productoId?.toString() || ''}
+                      onValueChange={(value) =>
+                        handleProductoChange(producto.id, 'productoId', parseInt(value))
+                      }
+                    >
+                      <SelectTrigger className="bg-white text-black border-gray-200">
+                        <SelectValue placeholder="Buscar y seleccionar producto..." />
+                      </SelectTrigger>
                     <SelectContent 
                       className="bg-white text-black border-gray-200 max-h-[300px] overflow-y-auto z-50"
                       position="popper"
@@ -288,8 +292,9 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
                           </SelectItem>
                         ))
                       )}
-                    </SelectContent>
-                  </Select>
+                                          </SelectContent>
+                    </Select>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Cantidad</Label>
