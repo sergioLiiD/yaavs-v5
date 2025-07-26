@@ -357,14 +357,18 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
                   </Button>
                 )}
               </div>
-              <Button
-                type="submit"
-                className="bg-[#FEBF19] hover:bg-[#FEBF19]/90 text-white"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Completando...' : 'Concluir Reparación'}
-              </Button>
             </div>
+          </div>
+
+          {/* Botón de Concluir Reparación */}
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              className="bg-[#FEBF19] hover:bg-[#FEBF19]/90 text-white"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Completando...' : 'Concluir Reparación'}
+            </Button>
           </div>
 
           {/* Observaciones */}
