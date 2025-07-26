@@ -321,7 +321,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
           )}
 
           {/* Timer */}
-          <div className="bg-white p-4 rounded-lg shadow">
+          <div className="bg-white p-4 rounded-lg shadow" style={{ display: 'none' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="text-2xl font-mono">
