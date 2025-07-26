@@ -304,7 +304,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Validación de pago */}
           {!hasValidPayment && (
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4" style={{ display: 'none' }}>
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
