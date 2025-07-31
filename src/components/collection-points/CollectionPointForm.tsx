@@ -266,7 +266,26 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
       const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(responseData.error || 'Error al crear punto de recolección');
+        const errorMessage = responseData.error || 'Error al crear punto de recolección';
+        
+        // Manejar errores específicos
+        if (errorMessage.includes('punto principal seleccionado no existe')) {
+          throw new Error('❌ El punto principal seleccionado no existe. Por favor, seleccione un punto válido.');
+        } else if (errorMessage.includes('ID del punto principal es inválido')) {
+          throw new Error('❌ El ID del punto principal es inválido. Por favor, seleccione un punto válido.');
+        } else if (errorMessage.includes('sucursales deben tener un punto principal asignado')) {
+          throw new Error('❌ Las sucursales deben tener un punto principal asignado. Por favor, seleccione un punto principal.');
+        } else if (errorMessage.includes('puntos principales no pueden tener un punto principal asignado')) {
+          throw new Error('❌ Los puntos principales no pueden tener un punto principal asignado. Desmarque la opción de sede principal.');
+        } else if (errorMessage.includes('formato del horario es inválido')) {
+          throw new Error('❌ El formato del horario es inválido. Por favor, complete todos los campos del horario.');
+        } else if (errorMessage.includes('formato de la ubicación es inválido')) {
+          throw new Error('❌ El formato de la ubicación es inválido. Por favor, complete la dirección correctamente.');
+        } else if (errorMessage.includes('coordenadas deben ser números')) {
+          throw new Error('❌ Las coordenadas deben ser números válidos. Por favor, busque la ubicación nuevamente.');
+        } else {
+          throw new Error(`❌ ${errorMessage}`);
+        }
       }
 
       onSuccess?.();

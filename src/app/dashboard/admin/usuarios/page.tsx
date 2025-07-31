@@ -69,6 +69,7 @@ export default function UsuariosPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [usuarioAEditar, setUsuarioAEditar] = useState<Usuario | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
+  const [emailError, setEmailError] = useState('');
 
   const filteredUsuarios = usuarios.filter(usuario => {
     const matchesSearch = 
@@ -155,6 +156,8 @@ export default function UsuariosPage() {
       activo: true,
       roles: []
     });
+    setPasswordError('');
+    setEmailError('');
   };
 
   const validatePasswords = () => {
@@ -196,6 +199,10 @@ export default function UsuariosPage() {
     if (name === 'password' || name === 'confirmPassword') {
       setPasswordError('');
     }
+    // Limpiar error de email cuando el usuario empiece a escribir
+    if (name === 'email') {
+      setEmailError('');
+    }
   };
 
   const handleRoleChange = (roleId: number, checked: boolean) => {
@@ -236,7 +243,22 @@ export default function UsuariosPage() {
       setUsuarios(response.data || []);
     } catch (err) {
       console.error('Error al guardar usuario:', err);
-      toast.error('Error al guardar el usuario');
+      
+      // Manejar errores específicos
+      if (axios.isAxiosError(err)) {
+        const errorMessage = err.response?.data?.error;
+        
+        if (errorMessage === 'El email ya está registrado') {
+          setEmailError('❌ El correo electrónico ya está registrado. Por favor, use un email diferente.');
+          toast.error('❌ El correo electrónico ya está registrado. Por favor, use un email diferente.');
+        } else if (errorMessage) {
+          toast.error(`❌ ${errorMessage}`);
+        } else {
+          toast.error('❌ Error al guardar el usuario. Por favor, intente nuevamente.');
+        }
+      } else {
+        toast.error('❌ Error al guardar el usuario. Por favor, intente nuevamente.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -297,10 +319,17 @@ export default function UsuariosPage() {
     } catch (error) {
       console.error('Error al guardar usuario:', error);
       if (axios.isAxiosError(error)) {
-        console.error('Detalles del error:', error.response?.data);
-        toast.error(`Error al actualizar el usuario: ${error.response?.data?.message || error.message}`);
+        const errorMessage = error.response?.data?.error;
+        
+        if (errorMessage === 'El email ya está registrado') {
+          toast.error('❌ El correo electrónico ya está registrado. Por favor, use un email diferente.');
+        } else if (errorMessage) {
+          toast.error(`❌ ${errorMessage}`);
+        } else {
+          toast.error('❌ Error al actualizar el usuario. Por favor, intente nuevamente.');
+        }
       } else {
-        toast.error('Error al actualizar el usuario');
+        toast.error('❌ Error al actualizar el usuario. Por favor, intente nuevamente.');
       }
     }
   };
@@ -402,7 +431,13 @@ export default function UsuariosPage() {
                         value={currentUsuario.email || ''}
                         onChange={handleInputChange}
                         required
+                        className={emailError ? 'border-red-500' : ''}
                       />
+                      {emailError && (
+                        <div className="text-sm text-red-500">
+                          {emailError}
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="password">

@@ -61,8 +61,18 @@ export async function POST(request: Request) {
 
     // Verificar que el parentId existe si se proporciona
     if (data.parentId) {
+      // Convertir parentId a número si es string
+      const parentId = typeof data.parentId === 'string' ? parseInt(data.parentId, 10) : data.parentId;
+      
+      if (isNaN(parentId)) {
+        return NextResponse.json(
+          { error: 'El ID del punto principal es inválido' },
+          { status: 400 }
+        );
+      }
+
       const parentExists = await prisma.puntos_recoleccion.findUnique({
-        where: { id: data.parentId }
+        where: { id: parentId }
       });
 
       if (!parentExists) {
@@ -155,7 +165,7 @@ export async function POST(request: Request) {
         url: data.url,
         is_headquarters: data.isHeadquarters || false,
         is_repair_point: data.isRepairPoint || false,
-        parent_id: data.parentId,
+        parent_id: data.parentId ? (typeof data.parentId === 'string' ? parseInt(data.parentId, 10) : data.parentId) : null,
         location: location,
         schedule: schedule,
         updated_at: new Date(), // Temporal hasta que se aplique la migración
