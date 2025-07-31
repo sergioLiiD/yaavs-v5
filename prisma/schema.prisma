@@ -388,7 +388,7 @@ model puntos_recoleccion {
   nombre                      String
   activo                      Boolean                       @default(true)
   created_at                  DateTime                      @default(now())
-  updated_at                  DateTime
+  updated_at                  DateTime                      @default(now())
   email                       String?                       @unique
   is_headquarters             Boolean                       @default(false)
   location                    Json?

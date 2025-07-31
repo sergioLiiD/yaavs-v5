@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { HiPlus, HiPencilAlt, HiTrash, HiSearch } from 'react-icons/hi';
 import axios from 'axios';
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 interface Cliente {
   id: number;
@@ -34,6 +35,13 @@ interface Cliente {
     id: number;
     nombre: string;
   };
+}
+
+interface ClientesResponse {
+  clientes: Cliente[];
+  total: number;
+  page: number;
+  totalPages: number;
 }
 
 export default function ClientesPage() {
@@ -65,7 +73,41 @@ export default function ClientesPage() {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [expandedClientes, setExpandedClientes] = useState<number[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const itemsPerPage = 10;
   const router = useRouter();
+
+  const fetchClientes = async (page: number = 1, search: string = '') => {
+    try {
+      setIsLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: itemsPerPage.toString()
+      });
+      
+      if (search) {
+        params.append('search', search);
+      }
+      
+      const response = await axios.get(`/api/clientes?${params}`);
+      const data: ClientesResponse = response.data;
+      
+      console.log('Respuesta de la API:', JSON.stringify(data, null, 2));
+      
+      setClientes(data.clientes);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
+      setCurrentPage(data.page);
+      setError('');
+    } catch (err) {
+      console.error('Error al cargar clientes:', err);
+      setError('Error al cargar los datos. Por favor, intente nuevamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -74,32 +116,6 @@ export default function ClientesPage() {
       router.replace('/repair-point/clientes');
       return;
     }
-    const fetchClientes = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axios.get('/api/clientes');
-        console.log('Respuesta de la API:', JSON.stringify(response.data, null, 2));
-        
-        // Verificar específicamente el cliente número 4
-        const cliente4 = response.data.clientes.find((c: any) => c.id === 4);
-        if (cliente4) {
-          console.log('Cliente 4 encontrado:', {
-            id: cliente4.id,
-            nombre: cliente4.nombre,
-            tipoRegistro: cliente4.tipoRegistro,
-            puntoRecoleccion: cliente4.puntoRecoleccion
-          });
-        }
-        
-        setClientes(response.data.clientes);
-        setError('');
-      } catch (err) {
-        console.error('Error al cargar clientes:', err);
-        setError('Error al cargar los datos. Por favor, intente nuevamente.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchClientes();
   }, [session, status]);
 
@@ -147,18 +163,14 @@ export default function ClientesPage() {
     
     try {
       if (isEditing && currentCliente.id) {
-        const response = await axios.put(`/api/clientes/${currentCliente.id}`, currentCliente);
-        setClientes(clientes.map(cliente => 
-          cliente.id === currentCliente.id 
-            ? response.data
-            : cliente
-        ));
+        await axios.put(`/api/clientes/${currentCliente.id}`, currentCliente);
       } else {
-        const response = await axios.post('/api/clientes', currentCliente);
-        setClientes([...clientes, response.data]);
+        await axios.post('/api/clientes', currentCliente);
       }
       
       closeModal();
+      // Recargar la página actual después de crear/editar
+      fetchClientes(currentPage, searchTerm);
     } catch (err) {
       console.error('Error al guardar cliente:', err);
       setError('Error al guardar los datos. Por favor, intente nuevamente.');
@@ -178,7 +190,8 @@ export default function ClientesPage() {
 
     try {
       await axios.delete(`/api/clientes/${id}`);
-      setClientes(clientes.filter(cliente => cliente.id !== id));
+      // Recargar la página actual después de eliminar
+      fetchClientes(currentPage, searchTerm);
     } catch (err) {
       console.error('Error al eliminar cliente:', err);
       setError('Error al eliminar el cliente. Por favor, intente nuevamente.');
@@ -200,16 +213,20 @@ export default function ClientesPage() {
     });
   };
 
-  const filteredClientes = clientes.filter((cliente) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      cliente.nombre.toLowerCase().includes(searchLower) ||
-      cliente.apellidoPaterno.toLowerCase().includes(searchLower) ||
-      cliente.apellidoMaterno?.toLowerCase().includes(searchLower) ||
-      cliente.email.toLowerCase().includes(searchLower) ||
-      cliente.telefonoCelular.includes(searchTerm)
-    );
-  });
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchClientes(page, searchTerm);
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    setCurrentPage(1);
+    fetchClientes(1, value);
+  };
+
+  // Ya no necesitamos filtrar en el frontend porque la búsqueda se hace en el servidor
+  const filteredClientes = clientes;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -228,7 +245,7 @@ export default function ClientesPage() {
           type="text"
           placeholder="Buscar cliente..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearch}
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:border-transparent"
         />
       </div>
@@ -405,6 +422,54 @@ export default function ClientesPage() {
           </table>
         </div>
       </div>
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center space-x-4 mt-6">
+          <div className="text-sm text-gray-700">
+            Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, total)} de {total} clientes
+          </div>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </Button>
+            <div className="flex items-center space-x-2">
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    onClick={() => handlePageChange(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Siguiente
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Modal de formulario */}
       {isModalOpen && (

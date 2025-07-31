@@ -150,7 +150,15 @@ export async function POST(request: Request) {
     const punto = await prisma.puntos_recoleccion.create({
       data: {
         nombre: data.nombre,
-        // Campos básicos por ahora para evitar errores de schema
+        email: data.email,
+        phone: data.phone,
+        url: data.url,
+        is_headquarters: data.isHeadquarters || false,
+        is_repair_point: data.isRepairPoint || false,
+        parent_id: data.parentId,
+        location: location,
+        schedule: schedule,
+        updated_at: new Date(), // Temporal hasta que se aplique la migración
       },
     });
 
