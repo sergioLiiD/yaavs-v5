@@ -85,6 +85,14 @@ export default function ProveedoresPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Proveedores cargados:', data);
+        
+        // Debug: mostrar estructura del primer proveedor
+        if (data.length > 0) {
+          console.log('Estructura del primer proveedor:', data[0]);
+          console.log('Cuenta bancaria:', data[0].cuentaBancaria);
+          console.log('CLABE:', data[0].clabeInterbancaria);
+        }
+        
         setProveedores(data);
       } else {
         console.error('Error al cargar proveedores:', await response.text());

@@ -23,8 +23,26 @@ export async function GET(req: NextRequest) {
       distinct: ['rfc'] // Asegurar que no haya duplicados por RFC
     });
 
-    console.log('GET /api/catalogo/proveedores - Proveedores encontrados:', proveedores.length);
-    return NextResponse.json(proveedores);
+    // Mapear los datos de snake_case a camelCase para el frontend
+    const proveedoresMapeados = proveedores.map(proveedor => ({
+      id: proveedor.id.toString(),
+      nombre: proveedor.nombre,
+      contacto: proveedor.contacto,
+      telefono: proveedor.telefono,
+      email: proveedor.email,
+      direccion: proveedor.direccion,
+      tipo: proveedor.tipo,
+      rfc: proveedor.rfc,
+      banco: proveedor.banco,
+      cuentaBancaria: proveedor.cuenta_bancaria,
+      clabeInterbancaria: proveedor.clabe_interbancaria,
+      notas: proveedor.notas,
+      createdAt: proveedor.created_at.toISOString(),
+      updatedAt: proveedor.updated_at.toISOString()
+    }));
+
+    console.log('GET /api/catalogo/proveedores - Proveedores encontrados:', proveedoresMapeados.length);
+    return NextResponse.json(proveedoresMapeados);
   } catch (error) {
     console.error('Error al obtener proveedores:', error);
     return NextResponse.json(
@@ -122,7 +140,25 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    console.log('POST /api/catalogo/proveedores - Proveedor creado:', proveedor);
+    // Mapear los datos de snake_case a camelCase para el frontend
+    const proveedorMapeado = {
+      id: proveedor.id.toString(),
+      nombre: proveedor.nombre,
+      contacto: proveedor.contacto,
+      telefono: proveedor.telefono,
+      email: proveedor.email,
+      direccion: proveedor.direccion,
+      tipo: proveedor.tipo,
+      rfc: proveedor.rfc,
+      banco: proveedor.banco,
+      cuentaBancaria: proveedor.cuenta_bancaria,
+      clabeInterbancaria: proveedor.clabe_interbancaria,
+      notas: proveedor.notas,
+      createdAt: proveedor.created_at.toISOString(),
+      updatedAt: proveedor.updated_at.toISOString()
+    };
+
+    console.log('POST /api/catalogo/proveedores - Proveedor creado:', proveedorMapeado);
     
     // Verificar que no haya duplicados
     try {
@@ -150,7 +186,7 @@ export async function POST(req: NextRequest) {
       // No lanzamos el error ya que el proveedor se creó correctamente
     }
     
-    return NextResponse.json(proveedor);
+    return NextResponse.json(proveedorMapeado);
   } catch (error: any) {
     console.error('POST /api/catalogo/proveedores - Error:', error);
     
@@ -205,7 +241,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     // Actualizar el proveedor
-    const proveedores = await prisma.proveedores.update({
+    const proveedor = await prisma.proveedores.update({
       where: { id: parseInt(params.id) },
       data: {
         nombre: data.nombre,
@@ -222,8 +258,26 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       }
     });
 
-    console.log('PUT /api/catalogo/proveedores/[id] - Proveedor actualizado:', proveedores);
-    return NextResponse.json(proveedores);
+    // Mapear los datos de snake_case a camelCase para el frontend
+    const proveedorMapeado = {
+      id: proveedor.id.toString(),
+      nombre: proveedor.nombre,
+      contacto: proveedor.contacto,
+      telefono: proveedor.telefono,
+      email: proveedor.email,
+      direccion: proveedor.direccion,
+      tipo: proveedor.tipo,
+      rfc: proveedor.rfc,
+      banco: proveedor.banco,
+      cuentaBancaria: proveedor.cuenta_bancaria,
+      clabeInterbancaria: proveedor.clabe_interbancaria,
+      notas: proveedor.notas,
+      createdAt: proveedor.created_at.toISOString(),
+      updatedAt: proveedor.updated_at.toISOString()
+    };
+
+    console.log('PUT /api/catalogo/proveedores/[id] - Proveedor actualizado:', proveedorMapeado);
+    return NextResponse.json(proveedorMapeado);
   } catch (error: any) {
     console.error('PUT /api/catalogo/proveedores/[id] - Error:', error);
     
