@@ -54,22 +54,33 @@ export default function CollectionPointDetails({ collectionPoint }: CollectionPo
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    const fetchParentName = async () => {
-      if (collectionPoint.parentId) {
+    console.log('CollectionPoint data:', collectionPoint);
+    console.log('Parent data:', collectionPoint.parent);
+    console.log('ParentId:', collectionPoint.parentId);
+    
+    // Usar la información del parent que ya viene en collectionPoint
+    if (collectionPoint.parent?.nombre) {
+      console.log('Setting parent name from parent object:', collectionPoint.parent.nombre);
+      setParentName(collectionPoint.parent.nombre);
+    } else if (collectionPoint.parentId) {
+      console.log('Fetching parent name from API for ID:', collectionPoint.parentId);
+      // Solo hacer la llamada adicional si no tenemos la información del parent
+      const fetchParentName = async () => {
         try {
           const response = await fetch(`/api/puntos-recoleccion/${collectionPoint.parentId}`);
           if (response.ok) {
             const data = await response.json();
-            setParentName(data.name);
+            console.log('Parent data from API:', data);
+            setParentName(data.nombre);
           }
         } catch (error) {
           console.error('Error al cargar el punto principal:', error);
         }
-      }
-    };
+      };
 
-    fetchParentName();
-  }, [collectionPoint.parentId]);
+      fetchParentName();
+    }
+  }, [collectionPoint.parentId, collectionPoint.parent?.nombre]);
 
   return (
     <div className="container mx-auto px-4 py-8">
