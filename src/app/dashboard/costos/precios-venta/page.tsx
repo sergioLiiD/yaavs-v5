@@ -59,6 +59,10 @@ interface Producto {
     id: number;
     nombre: string;
   };
+  modelos?: {
+    id: number;
+    nombre: string;
+  };
   Modelo?: {
     id: number;
     nombre: string;
@@ -116,6 +120,11 @@ export default function PreciosVentaPage() {
         precios: preciosData.length,
         preciosPromedio: preciosPromedioData.length
       });
+      
+      // Debug: mostrar estructura del primer producto
+      if (productosData.length > 0) {
+        console.log('Estructura del primer producto:', productosData[0]);
+      }
 
       setProductos(productosData);
       setPrecios(preciosData);
@@ -246,6 +255,11 @@ export default function PreciosVentaPage() {
     }
 
     return productos.map(item => {
+      // Debug: mostrar estructura del item
+      if (item.tipo === 'PRODUCTO') {
+        console.log('Producto:', item.nombre, 'Marca:', item.marcas?.nombre, 'Modelo:', item.modelos?.nombre);
+      }
+      
       // Buscar el precio de venta existente con null-safety
       const precio = (precios && Array.isArray(precios)) ? precios.find(p => {
         if (item.tipo === 'SERVICIO') {
@@ -265,7 +279,7 @@ export default function PreciosVentaPage() {
         precio: precio ? Number(precio.precio_venta) : 0, // Actualizado: precio_venta -> precio_venta
         precio_id: precio ? String(precio.id) : '',
         marca: item.tipo === 'PRODUCTO' ? String(item.marcas?.nombre || '-') : '-',
-        modelo: item.tipo === 'PRODUCTO' ? String(item.Modelo?.nombre || '-') : '-',
+        modelo: item.tipo === 'PRODUCTO' ? String(item.modelos?.nombre || '-') : '-',
         precio_compra: item.tipo === 'PRODUCTO' ? Number(precioPromedio) : 0,
         updated_at: precio?.updated_at ? new Date(precio.updated_at).toISOString() : '' // Actualizado: updated_at -> updated_at
       };
