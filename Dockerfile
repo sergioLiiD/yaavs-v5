@@ -62,15 +62,14 @@ RUN adduser --system --uid 1001 nextjs
 # Crear directorio public
 RUN mkdir -p ./public
 
-# Copiar archivos estáticos (usando shell para evitar errores si no existen)
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
-# Copiar directorio public del proyecto
-COPY public ./public
+# Copiar código fuente completo
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/next.config.js ./
 
 # Copiar node_modules optimizado
 COPY --from=base /app/node_modules ./node_modules
@@ -89,4 +88,4 @@ ENV NODE_ENV=production
 ENV PORT=3100
 
 # Script de inicio
-CMD ["node", "server.js"] 
+CMD ["npm", "start"] 

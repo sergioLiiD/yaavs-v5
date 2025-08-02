@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // output: 'standalone', // Comentado para incluir código fuente completo
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client', 'prisma']
   },
