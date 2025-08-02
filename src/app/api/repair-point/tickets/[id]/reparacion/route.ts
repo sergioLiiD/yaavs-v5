@@ -74,7 +74,10 @@ export async function POST(
     // Procesar en transacción si se está completando
     if (completar) {
       console.log('🔄 Iniciando transacción para completar reparación...');
-      await prisma.$transaction(async (tx) => {
+      console.log('📋 Datos de entrada:', { ticketId, observaciones, completar });
+      
+      try {
+        await prisma.$transaction(async (tx) => {
         // Crear o actualizar la reparación
         console.log('📝 Creando/actualizando reparación...');
         const reparacion = await tx.reparaciones.upsert({
@@ -131,6 +134,11 @@ export async function POST(
           throw error;
         }
       });
+      console.log('✅ Transacción completada exitosamente');
+    } catch (error) {
+      console.error('❌ Error en la transacción:', error);
+      throw error;
+    }
     } else {
       // Solo actualizar observaciones si no se está completando
       const reparacion = await prisma.reparaciones.upsert({
