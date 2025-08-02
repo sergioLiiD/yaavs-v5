@@ -73,8 +73,10 @@ export async function POST(
 
     // Procesar en transacción si se está completando
     if (completar) {
+      console.log('🔄 Iniciando transacción para completar reparación...');
       await prisma.$transaction(async (tx) => {
         // Actualizar la reparación
+        console.log('📝 Actualizando reparación...');
         const reparacion = await tx.reparaciones.update({
           where: {
             ticket_id: ticketId
@@ -85,8 +87,10 @@ export async function POST(
             updated_at: new Date()
           }
         });
+        console.log('✅ Reparación actualizada:', reparacion.id);
 
         // Actualizar el estado del ticket
+        console.log('📝 Actualizando estado del ticket...');
         await tx.tickets.update({
           where: {
             id: ticketId
@@ -97,6 +101,7 @@ export async function POST(
             updated_at: new Date()
           }
         });
+        console.log('✅ Estado del ticket actualizado');
 
         // Procesar descuento de inventario
         console.log('🔄 Iniciando procesamiento de descuento de inventario para ticket:', ticketId);
