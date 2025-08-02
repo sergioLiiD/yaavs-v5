@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { validarStockReparacion, procesarDescuentoInventario } from '@/lib/inventory-utils';
+import { validarStockReparacion, procesarDescuentoInventario, convertirConceptosAPiezas } from '@/lib/inventory-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,6 +102,16 @@ export async function POST(
           }
         });
         console.log('✅ Estado del ticket actualizado');
+
+        // Convertir conceptos del presupuesto a piezas de reparación
+        console.log('🔄 Convirtiendo conceptos del presupuesto...');
+        try {
+          await convertirConceptosAPiezas(ticketId, reparacion.id);
+          console.log('✅ Conceptos convertidos exitosamente');
+        } catch (error) {
+          console.error('❌ Error al convertir conceptos:', error);
+          throw error;
+        }
 
         // Procesar descuento de inventario
         console.log('🔄 Iniciando procesamiento de descuento de inventario para ticket:', ticketId);

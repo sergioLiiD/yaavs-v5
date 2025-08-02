@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
+import { PrismaClient } from '@prisma/client';
 
 export interface StockValidationResult {
   success: boolean;
@@ -281,5 +282,69 @@ export async function obtenerResumenDescuentos(ticketId: number) {
   } catch (error) {
     console.error('Error al obtener resumen de descuentos:', error);
     return [];
+  }
+} 
+
+/**
+ * Convierte conceptos del presupuesto en piezas de reparación
+ */
+export async function convertirConceptosAPiezas(ticketId: number, reparacionId: number) {
+  const prisma = new PrismaClient();
+  
+  try {
+    console.log('🔄 Convirtiendo conceptos del presupuesto a piezas de reparación...');
+    
+    // Obtener conceptos del presupuesto
+    const conceptos = await prisma.conceptos_presupuesto.findMany({
+      where: {
+        presupuestos: {
+          ticket_id: ticketId
+        }
+      },
+      include: {
+        presupuestos: true
+      }
+    });
+
+    console.log('Conceptos encontrados:', conceptos.length);
+
+    // Para cada concepto, buscar el producto correspondiente
+    for (const concepto of conceptos) {
+      // Buscar producto por nombre (aproximado)
+      const producto = await prisma.productos.findFirst({
+        where: {
+          nombre: {
+            contains: concepto.descripcion,
+            mode: 'insensitive'
+          }
+        }
+      });
+
+      if (producto) {
+        console.log(`✅ Producto encontrado para "${concepto.descripcion}": ${producto.nombre}`);
+        
+        // Crear pieza de reparación
+        await prisma.piezas_reparacion_productos.create({
+          data: {
+            reparacion_id: reparacionId,
+            producto_id: producto.id,
+            cantidad: concepto.cantidad,
+            precio: concepto.precio_unitario,
+            total: concepto.total,
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
+        
+        console.log(`✅ Pieza de reparación creada para ${producto.nombre}`);
+      } else {
+        console.log(`❌ No se encontró producto para "${concepto.descripcion}"`);
+      }
+    }
+    
+    console.log('✅ Conversión de conceptos completada');
+  } catch (error) {
+    console.error('❌ Error al convertir conceptos:', error);
+    throw error;
   }
 } 
