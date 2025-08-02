@@ -40,10 +40,10 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
     }
 
     // Obtener las piezas de la reparación (solo productos, no servicios)
-    const piezasReparacion = await prisma.piezas_reparacion.findMany({
+    const piezasReparacion = await prisma.piezas_reparacion_productos.findMany({
       where: { reparacion_id: reparacion.id },
       include: {
-        piezas: {
+        productos: {
           include: {
             marcas: true,
             modelos: true
@@ -62,20 +62,20 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
 
     // Verificar stock para cada pieza
     for (const piezaRep of piezasReparacion) {
-      const pieza = piezaRep.piezas;
+      const producto = piezaRep.productos;
       
-      if (pieza.stock < piezaRep.cantidad) {
-        const piezaNombre = `${pieza.nombre} (${pieza.marcas.nombre} ${pieza.modelos.nombre})`;
+      if (producto.stock < piezaRep.cantidad) {
+        const productoNombre = `${producto.nombre} (${producto.marcas?.nombre || 'N/A'} ${producto.modelos?.nombre || 'N/A'})`;
         
         missingStock.push({
-          piezaId: pieza.id,
-          piezaNombre,
+          piezaId: producto.id,
+          piezaNombre: productoNombre,
           cantidadNecesaria: piezaRep.cantidad,
-          stockDisponible: pieza.stock
+          stockDisponible: producto.stock
         });
         
         errors.push(
-          `Stock insuficiente para ${piezaNombre}: necesitas ${piezaRep.cantidad}, tienes ${pieza.stock}`
+          `Stock insuficiente para ${productoNombre}: necesitas ${piezaRep.cantidad}, tienes ${producto.stock}`
         );
       }
     }
@@ -110,10 +110,10 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
     }
 
     // Obtener las piezas de la reparación
-    const piezasReparacion = await prisma.piezas_reparacion.findMany({
+    const piezasReparacion = await prisma.piezas_reparacion_productos.findMany({
       where: { reparacion_id: reparacion.id },
       include: {
-        piezas: true
+        productos: true
       }
     });
 
@@ -127,19 +127,19 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
     // Procesar cada pieza en una transacción
     await prisma.$transaction(async (tx) => {
       for (const piezaRep of piezasReparacion) {
-        const pieza = piezaRep.piezas;
+        const producto = piezaRep.productos;
         
         // Verificar stock nuevamente (por si cambió desde la validación)
-        if (pieza.stock < piezaRep.cantidad) {
+        if (producto.stock < piezaRep.cantidad) {
           throw new Error(
-            `Stock insuficiente para ${pieza.nombre}: necesitas ${piezaRep.cantidad}, tienes ${pieza.stock}`
+            `Stock insuficiente para ${producto.nombre}: necesitas ${piezaRep.cantidad}, tienes ${producto.stock}`
           );
         }
 
         // Crear salida de almacén
         const salida = await tx.salidas_almacen.create({
           data: {
-            producto_id: pieza.id,
+            producto_id: producto.id,
             cantidad: piezaRep.cantidad,
             tipo: 'REPARACION',
             razon: `Reparación completada - Ticket #${ticketId}`,
@@ -152,8 +152,8 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
         });
 
         // Actualizar stock del producto
-        await tx.piezas.update({
-          where: { id: pieza.id },
+        await tx.productos.update({
+          where: { id: producto.id },
           data: {
             stock: {
               decrement: piezaRep.cantidad
@@ -163,7 +163,7 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
         });
 
         salidas.push({
-          productoId: pieza.id,
+          productoId: producto.id,
           cantidad: piezaRep.cantidad,
           razon: `Reparación completada - Ticket #${ticketId}`,
           referencia: `Ticket-${ticketId}`

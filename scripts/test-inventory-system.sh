@@ -6,18 +6,18 @@ echo "🧪 Probando sistema de inventario..."
 echo "📋 Verificando estructura de datos..."
 docker exec yaavs_app psql $DATABASE_URL -c "
 SELECT 
-    'Piezas' as tabla,
+    'Productos' as tabla,
     COUNT(*) as total_registros,
     COUNT(CASE WHEN stock > 0 THEN 1 END) as con_stock,
     COUNT(CASE WHEN stock = 0 THEN 1 END) as sin_stock
-FROM piezas
+FROM productos
 UNION ALL
 SELECT 
-    'Piezas Reparación' as tabla,
+    'Piezas Reparación Productos' as tabla,
     COUNT(*) as total_registros,
-    COUNT(DISTINCT reparacion_id) as reparaciones_con_piezas,
-    COUNT(DISTINCT pieza_id) as piezas_diferentes
-FROM piezas_reparacion;
+    COUNT(DISTINCT reparacion_id) as reparaciones_con_productos,
+    COUNT(DISTINCT producto_id) as productos_diferentes
+FROM piezas_reparacion_productos;
 "
 
 echo ""
@@ -30,11 +30,11 @@ SELECT
     es.nombre as estatus,
     r.id as reparacion_id,
     r.fecha_fin,
-    COUNT(pr.id) as piezas_usadas
+    COUNT(pr.id) as productos_usados
 FROM tickets t
 LEFT JOIN estatus_reparacion es ON t.estatus_reparacion_id = es.id
 LEFT JOIN reparaciones r ON t.id = r.ticket_id
-LEFT JOIN piezas_reparacion pr ON r.id = pr.reparacion_id
+LEFT JOIN piezas_reparacion_productos pr ON r.id = pr.reparacion_id
 WHERE r.fecha_fin IS NOT NULL
 GROUP BY t.id, t.numero_ticket, t.estatus_reparacion_id, es.nombre, r.id, r.fecha_fin
 ORDER BY r.fecha_fin DESC
@@ -63,11 +63,12 @@ LIMIT 10;
 "
 
 echo ""
-echo "📋 Verificando stock actual de piezas..."
+echo "📋 Verificando stock actual de productos..."
 docker exec yaavs_app psql $DATABASE_URL -c "
 SELECT 
     p.id,
     p.nombre,
+    p.sku,
     m.nombre as marca,
     mo.nombre as modelo,
     p.stock,
@@ -76,9 +77,9 @@ SELECT
         WHEN p.stock <= 5 THEN 'STOCK BAJO'
         ELSE 'STOCK OK'
     END as estado_stock
-FROM piezas p
-JOIN marcas m ON p.marca_id = m.id
-JOIN modelos mo ON p.modelo_id = mo.id
+FROM productos p
+LEFT JOIN marcas m ON p.marca_id = m.id
+LEFT JOIN modelos mo ON p.modelo_id = mo.id
 WHERE p.stock <= 10
 ORDER BY p.stock ASC;
 "

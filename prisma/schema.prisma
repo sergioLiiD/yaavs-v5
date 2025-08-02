@@ -274,6 +274,19 @@ model piezas_reparacion {
   reparaciones  reparaciones @relation(fields: [reparacion_id], references: [id])
 }
 
+model piezas_reparacion_productos {
+  id            Int          @id @default(autoincrement())
+  reparacion_id Int
+  producto_id   Int
+  cantidad      Int
+  precio        Float
+  total         Float
+  created_at    DateTime     @default(now())
+  updated_at    DateTime
+  productos     productos    @relation(fields: [producto_id], references: [id])
+  reparaciones  reparaciones @relation(fields: [reparacion_id], references: [id])
+}
+
 model precios_venta {
   id                     Int             @id @default(autoincrement())
   tipo                   TipoProducto
@@ -348,6 +361,7 @@ model productos {
   tipos_servicio                 tipos_servicio?                  @relation(fields: [tipo_servicio_id], references: [id])
   productos_reparacion_frecuente productos_reparacion_frecuente[]
   salidas_almacen                salidas_almacen[]
+  piezas_reparacion_productos    piezas_reparacion_productos[]
 }
 
 model productos_reparacion_frecuente {
@@ -424,6 +438,7 @@ model reparaciones {
   checklist_diagnostico checklist_diagnostico?
   checklist_reparacion  checklist_reparacion?
   piezas_reparacion     piezas_reparacion[]
+  piezas_reparacion_productos piezas_reparacion_productos[]
   tickets               tickets                @relation(fields: [ticket_id], references: [id])
 }
 
