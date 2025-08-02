@@ -40,7 +40,8 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
     }
 
     // Obtener las piezas de la reparación (solo productos, no servicios)
-    const piezasReparacion = await prisma.piezas_reparacion_productos.findMany({
+    // Primero intentar en la tabla nueva
+    let piezasReparacion = await prisma.piezas_reparacion_productos.findMany({
       where: { reparacion_id: reparacion.id },
       include: {
         productos: {
@@ -51,6 +52,35 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
         }
       }
     });
+
+    // Si no hay datos en la tabla nueva, buscar en la tabla antigua
+    if (piezasReparacion.length === 0) {
+      console.log('No se encontraron piezas en tabla nueva, buscando en tabla antigua...');
+      const piezasAntiguas = await prisma.piezas_reparacion.findMany({
+        where: { reparacion_id: reparacion.id },
+        include: {
+          piezas: {
+            include: {
+              marcas: true,
+              modelos: true
+            }
+          }
+        }
+      });
+
+      // Convertir datos de la tabla antigua al formato nuevo
+      piezasReparacion = piezasAntiguas.map(pa => ({
+        id: pa.id,
+        reparacion_id: pa.reparacion_id,
+        producto_id: pa.pieza_id,
+        cantidad: pa.cantidad,
+        precio: pa.precio,
+        total: pa.total,
+        created_at: pa.created_at,
+        updated_at: pa.updated_at,
+        productos: pa.piezas
+      }));
+    }
 
     const errors: string[] = [];
     const missingStock: Array<{
@@ -110,12 +140,37 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
     }
 
     // Obtener las piezas de la reparación
-    const piezasReparacion = await prisma.piezas_reparacion_productos.findMany({
+    // Primero intentar en la tabla nueva
+    let piezasReparacion = await prisma.piezas_reparacion_productos.findMany({
       where: { reparacion_id: reparacion.id },
       include: {
         productos: true
       }
     });
+
+    // Si no hay datos en la tabla nueva, buscar en la tabla antigua
+    if (piezasReparacion.length === 0) {
+      console.log('Procesando descuento: No se encontraron piezas en tabla nueva, buscando en tabla antigua...');
+      const piezasAntiguas = await prisma.piezas_reparacion.findMany({
+        where: { reparacion_id: reparacion.id },
+        include: {
+          piezas: true
+        }
+      });
+
+      // Convertir datos de la tabla antigua al formato nuevo
+      piezasReparacion = piezasAntiguas.map(pa => ({
+        id: pa.id,
+        reparacion_id: pa.reparacion_id,
+        producto_id: pa.pieza_id,
+        cantidad: pa.cantidad,
+        precio: pa.precio,
+        total: pa.total,
+        created_at: pa.created_at,
+        updated_at: pa.updated_at,
+        productos: pa.piezas
+      }));
+    }
 
     const salidas: Array<{
       productoId: number;
