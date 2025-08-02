@@ -129,7 +129,11 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
  * Procesa el descuento de inventario para una reparación completada
  */
 export async function procesarDescuentoInventario(ticketId: number, usuarioId: number): Promise<InventoryTransaction> {
+  const prisma = new PrismaClient();
+  
   try {
+    console.log('🔍 Procesando descuento de inventario para ticket:', ticketId);
+    
     // Obtener la reparación del ticket
     const reparacion = await prisma.reparaciones.findFirst({
       where: { ticket_id: ticketId }
@@ -138,6 +142,8 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
     if (!reparacion) {
       throw new Error('No se encontró la reparación para este ticket');
     }
+    
+    console.log('✅ Reparación encontrada:', reparacion.id);
 
     // Obtener las piezas de la reparación
     // Primero intentar en la tabla nueva
@@ -158,6 +164,8 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
         }
       });
 
+      console.log('Piezas encontradas en tabla antigua:', piezasAntiguas.length);
+
       // Convertir datos de la tabla antigua al formato nuevo
       piezasReparacion = piezasAntiguas.map(pa => ({
         id: pa.id,
@@ -171,6 +179,8 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
         productos: pa.piezas
       }));
     }
+    
+    console.log('Total de piezas a procesar:', piezasReparacion.length);
 
     const salidas: Array<{
       productoId: number;

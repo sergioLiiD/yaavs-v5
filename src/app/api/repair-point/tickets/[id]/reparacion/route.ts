@@ -99,7 +99,14 @@ export async function POST(
         });
 
         // Procesar descuento de inventario
-        await procesarDescuentoInventario(ticketId, Number(session.user.id));
+        console.log('🔄 Iniciando procesamiento de descuento de inventario para ticket:', ticketId);
+        try {
+          await procesarDescuentoInventario(ticketId, Number(session.user.id));
+          console.log('✅ Descuento de inventario procesado exitosamente');
+        } catch (error) {
+          console.error('❌ Error al procesar descuento de inventario:', error);
+          throw error;
+        }
       });
     } else {
       // Solo actualizar observaciones si no se está completando
