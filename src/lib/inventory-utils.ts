@@ -130,8 +130,6 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
  * Procesa el descuento de inventario para una reparación completada
  */
 export async function procesarDescuentoInventario(ticketId: number, usuarioId: number): Promise<InventoryTransaction> {
-  const prisma = new PrismaClient();
-  
   try {
     console.log('🔍 Procesando descuento de inventario para ticket:', ticketId);
     
@@ -289,8 +287,6 @@ export async function obtenerResumenDescuentos(ticketId: number) {
  * Convierte conceptos del presupuesto en piezas de reparación
  */
 export async function convertirConceptosAPiezas(ticketId: number, reparacionId: number) {
-  const prisma = new PrismaClient();
-  
   try {
     console.log('🔄 Convirtiendo conceptos del presupuesto a piezas de reparación...');
     
