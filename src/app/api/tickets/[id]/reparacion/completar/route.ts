@@ -48,10 +48,18 @@ export async function POST(
 
     // Procesar todo en una transacción
     const resultado = await prisma.$transaction(async (tx) => {
-      // Actualizar la reparación
-      const reparacion = await tx.reparaciones.update({
+      // Crear o actualizar la reparación
+      const reparacion = await tx.reparaciones.upsert({
         where: { ticket_id: Number(id) },
-        data: {
+        create: {
+          ticket_id: Number(id),
+          observaciones,
+          fecha_inicio: new Date(),
+          fecha_fin: new Date(),
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        update: {
           fecha_fin: new Date(),
           observaciones,
           updated_at: new Date()

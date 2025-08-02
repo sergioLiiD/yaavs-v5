@@ -75,19 +75,27 @@ export async function POST(
     if (completar) {
       console.log('🔄 Iniciando transacción para completar reparación...');
       await prisma.$transaction(async (tx) => {
-        // Actualizar la reparación
-        console.log('📝 Actualizando reparación...');
-        const reparacion = await tx.reparaciones.update({
+        // Crear o actualizar la reparación
+        console.log('📝 Creando/actualizando reparación...');
+        const reparacion = await tx.reparaciones.upsert({
           where: {
             ticket_id: ticketId
           },
-          data: {
+          create: {
+            ticket_id: ticketId,
+            observaciones,
+            fecha_inicio: new Date(),
+            fecha_fin: new Date(),
+            created_at: new Date(),
+            updated_at: new Date()
+          },
+          update: {
             observaciones,
             fecha_fin: new Date(),
             updated_at: new Date()
           }
         });
-        console.log('✅ Reparación actualizada:', reparacion.id);
+        console.log('✅ Reparación creada/actualizada:', reparacion.id);
 
         // Actualizar el estado del ticket
         console.log('📝 Actualizando estado del ticket...');
@@ -125,11 +133,18 @@ export async function POST(
       });
     } else {
       // Solo actualizar observaciones si no se está completando
-      const reparacion = await prisma.reparaciones.update({
+      const reparacion = await prisma.reparaciones.upsert({
         where: {
           ticket_id: ticketId
         },
-        data: {
+        create: {
+          ticket_id: ticketId,
+          observaciones,
+          fecha_inicio: new Date(),
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        update: {
           observaciones,
           updated_at: new Date()
         }
