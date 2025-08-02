@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { validarStockReparacion, procesarDescuentoInventario } from '@/lib/inventory-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,36 +32,65 @@ export async function POST(
     const { id } = params;
     const { observaciones, checklist, tiempoTranscurrido } = await request.json();
 
-    // Primero actualizamos la reparación
-    const reparacion = await prisma.reparacion.update({
-      where: { ticketId: Number(id) },
-      data: {
-        fechaFin: new Date(),
-        observaciones
-      }
-    });
-
-    // Buscamos el estado "Reparado"
-    const estatusReparado = await prisma.estatusReparacion.findFirst({
-      where: { nombre: 'Reparado' }
-    });
-
-    if (!estatusReparado) {
-      throw new Error('No se encontró el estado "Reparado"');
+    // Validar stock antes de completar la reparación
+    const validacionStock = await validarStockReparacion(Number(id));
+    
+    if (!validacionStock.success) {
+      return NextResponse.json(
+        { 
+          error: 'No se puede completar la reparación por falta de stock',
+          detalles: validacionStock.errors,
+          stockFaltante: validacionStock.missingStock
+        },
+        { status: 400 }
+      );
     }
 
-    // Actualizamos el ticket con el estado "Reparado"
-    const ticket = await prisma.ticket.update({
-      where: { id: Number(id) },
-      data: {
-        estatusReparacionId: estatusReparado.id,
-        fechaFinReparacion: new Date()
+    // Procesar todo en una transacción
+    const resultado = await prisma.$transaction(async (tx) => {
+      // Actualizar la reparación
+      const reparacion = await tx.reparaciones.update({
+        where: { ticket_id: Number(id) },
+        data: {
+          fecha_fin: new Date(),
+          observaciones,
+          updated_at: new Date()
+        }
+      });
+
+      // Buscar el estado "Reparado"
+      const estatusReparado = await tx.estatus_reparacion.findFirst({
+        where: { nombre: 'Reparado' }
+      });
+
+      if (!estatusReparado) {
+        throw new Error('No se encontró el estado "Reparado"');
       }
+
+      // Actualizar el ticket con el estado "Reparado"
+      const ticket = await tx.tickets.update({
+        where: { id: Number(id) },
+        data: {
+          estatus_reparacion_id: estatusReparado.id,
+          fecha_fin_reparacion: new Date(),
+          updated_at: new Date()
+        }
+      });
+
+      // Procesar descuento de inventario
+      const descuentoInventario = await procesarDescuentoInventario(Number(id), Number(session.user.id));
+
+      return {
+        reparacion,
+        ticket,
+        descuentoInventario
+      };
     });
 
     return NextResponse.json({
-      fechaFin: reparacion.fechaFin,
-      ticket
+      fechaFin: resultado.reparacion.fecha_fin,
+      ticket: resultado.ticket,
+      descuentoInventario: resultado.descuentoInventario
     });
   } catch (error) {
     console.error('Error al completar la reparación:', error);
