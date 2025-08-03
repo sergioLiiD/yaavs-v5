@@ -229,8 +229,9 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const limit = parseInt(searchParams.get('limit') || '20'); // Aumentar límite por defecto
     const skip = (page - 1) * limit;
+    const search = searchParams.get('search') || '';
 
     // Construir el where según el rol y punto de recolección
     let where: Prisma.ticketsWhereInput = {};
@@ -240,6 +241,116 @@ export async function GET(request: Request) {
     // Si es usuario de punto de recolección, solo mostrar tickets de su punto
     if ((userRole === 'ADMINISTRADOR_PUNTO' || userRole === 'USUARIO_PUNTO') && userPointId) {
       where.punto_recoleccion_id = userPointId;
+    }
+
+    // Agregar filtros de búsqueda si se proporciona un término de búsqueda
+    if (search.trim()) {
+      where.OR = [
+        // Búsqueda por número de ticket
+        {
+          numero_ticket: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        // Búsqueda por nombre de cliente
+        {
+          clientes: {
+            OR: [
+              {
+                nombre: {
+                  contains: search,
+                  mode: 'insensitive'
+                }
+              },
+              {
+                apellido_paterno: {
+                  contains: search,
+                  mode: 'insensitive'
+                }
+              },
+              {
+                apellido_materno: {
+                  contains: search,
+                  mode: 'insensitive'
+                }
+              },
+              {
+                telefono_celular: {
+                  contains: search,
+                  mode: 'insensitive'
+                }
+              },
+              {
+                email: {
+                  contains: search,
+                  mode: 'insensitive'
+                }
+              }
+            ]
+          }
+        },
+        // Búsqueda por marca/modelo del dispositivo
+        {
+          modelos: {
+            OR: [
+              {
+                nombre: {
+                  contains: search,
+                  mode: 'insensitive'
+                }
+              },
+              {
+                marcas: {
+                  nombre: {
+                    contains: search,
+                    mode: 'insensitive'
+                  }
+                }
+              }
+            ]
+          }
+        },
+        // Búsqueda por IMEI
+        {
+          imei: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        // Búsqueda por descripción del problema
+        {
+          descripcion_problema: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        // Búsqueda por técnico asignado
+        {
+          usuarios_tickets_tecnico_asignado_idTousuarios: {
+            OR: [
+              {
+                nombre: {
+                  contains: search,
+                  mode: 'insensitive'
+                }
+              },
+              {
+                apellido_paterno: {
+                  contains: search,
+                  mode: 'insensitive'
+                }
+              },
+              {
+                apellido_materno: {
+                  contains: search,
+                  mode: 'insensitive'
+                }
+              }
+            ]
+          }
+        }
+      ];
     }
 
     const [tickets, total] = await Promise.all([
@@ -467,7 +578,9 @@ export async function GET(request: Request) {
       tickets: ticketsConOrigen,
       total,
       page,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1
     });
   } catch (error) {
     console.error('Error al obtener tickets:', error);

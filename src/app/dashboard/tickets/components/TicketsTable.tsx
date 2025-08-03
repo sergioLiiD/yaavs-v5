@@ -16,7 +16,7 @@ import { formatDate } from "@/lib/utils";
 import { TicketDetailsModal } from "@/components/tickets/TicketDetailsModal";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
 import { TicketOriginBadge } from "@/components/tickets/TicketOriginBadge";
-import { Pencil, UserPlus, Wrench, Trash2 } from "lucide-react";
+import { Pencil, UserPlus, Wrench, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 interface Ticket {
@@ -26,6 +26,8 @@ interface Ticket {
   fecha_recepcion: string;
   fechaRecepcion?: string; // Para compatibilidad
   descripcion_problema: string | null;
+  descripcionProblema?: string | null; // Para compatibilidad
+  imei?: string;
   clientes?: {
     id: number;
     nombre: string;
@@ -125,27 +127,34 @@ interface Ticket {
   origenCliente?: boolean;
 }
 
+interface PaginationInfo {
+  page: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 interface TicketsTableProps {
   tickets: Ticket[];
   onAssignTechnician?: (ticketId: number) => void;
+  pagination?: PaginationInfo;
+  onPageChange?: (page: number) => void;
+  onSearch?: (searchTerm: string) => void;
+  currentSearch?: string;
 }
 
-export function TicketsTable({ tickets, onAssignTechnician }: TicketsTableProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+export function TicketsTable({ 
+  tickets, 
+  onAssignTechnician, 
+  pagination, 
+  onPageChange, 
+  onSearch, 
+  currentSearch = '' 
+}: TicketsTableProps) {
+  const [searchTerm, setSearchTerm] = useState(currentSearch);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const router = useRouter();
-
-  const filteredTickets = tickets.filter((ticket: any) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      (ticket.numero_ticket || ticket.numeroTicket || '')?.toLowerCase().includes(searchLower) ||
-      (ticket.clientes?.nombre || ticket.cliente?.nombre || '')?.toLowerCase().includes(searchLower) ||
-      (ticket.clientes?.apellido_paterno || ticket.cliente?.apellidoPaterno || '')?.toLowerCase().includes(searchLower) ||
-      (ticket.modelos?.marcas?.nombre || ticket.modelo?.marca?.nombre || '')?.toLowerCase().includes(searchLower) ||
-      (ticket.modelos?.nombre || ticket.modelo?.nombre || '')?.toLowerCase().includes(searchLower) ||
-      (ticket.estatus_reparacion?.nombre || ticket.estatusReparacion?.nombre || '')?.toLowerCase().includes(searchLower)
-    );
-  });
 
   const handleViewDetails = (ticket: Ticket) => {
     setSelectedTicket(ticket);
@@ -183,20 +192,71 @@ export function TicketsTable({ tickets, onAssignTechnician }: TicketsTableProps)
     }
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onSearch) {
+      onSearch(searchTerm);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (onPageChange) {
+      onPageChange(newPage);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Input
-          placeholder="Buscar tickets..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-        />
-        <Button onClick={() => router.push("/dashboard/tickets/nuevo")}>
-          Nuevo Ticket
-        </Button>
+      {/* Barra de búsqueda */}
+      <div className="flex items-center gap-4">
+        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 max-w-md">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Buscar por número de ticket, cliente, marca, modelo, IMEI..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="pl-10"
+            />
+          </div>
+          <Button type="submit" size="sm">
+            Buscar
+          </Button>
+        </form>
+        {currentSearch && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              setSearchTerm('');
+              if (onSearch) {
+                onSearch('');
+              }
+            }}
+          >
+            Limpiar
+          </Button>
+        )}
       </div>
 
+      {/* Información de resultados */}
+      {pagination && (
+        <div className="flex items-center justify-between text-sm text-gray-600">
+          <div>
+            Mostrando {tickets.length} de {pagination.total} tickets
+            {currentSearch && ` para "${currentSearch}"`}
+          </div>
+          <div>
+            Página {pagination.page} de {pagination.totalPages}
+          </div>
+        </div>
+      )}
+
+      {/* Tabla de tickets */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -208,144 +268,199 @@ export function TicketsTable({ tickets, onAssignTechnician }: TicketsTableProps)
               <TableHead>Fecha</TableHead>
               <TableHead>Técnico</TableHead>
               <TableHead>Presupuesto</TableHead>
-              <TableHead>Saldo</TableHead>
-              <TableHead>Origen</TableHead>
               <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTickets.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                  {searchTerm ? 'No se encontraron tickets que coincidan con la búsqueda' : 'No hay tickets disponibles'}
+            {tickets.map((ticket) => (
+              <TableRow key={ticket.id}>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      {ticket.numero_ticket || ticket.numeroTicket}
+                    </span>
+                                         {ticket.creador && (
+                       <TicketOriginBadge 
+                         creador={ticket.creador}
+                         puntoRecoleccion={ticket.puntoRecoleccion}
+                         origenCliente={ticket.origenCliente}
+                       />
+                     )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <div className="font-medium">
+                      {(() => {
+                        const cliente = ticket.clientes || ticket.cliente;
+                        if (cliente) {
+                          const apellido = 'apellido_paterno' in cliente ? cliente.apellido_paterno : cliente.apellidoPaterno;
+                          return `${cliente.nombre} ${apellido}`;
+                        }
+                        return 'Cliente no disponible';
+                      })()}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {(() => {
+                        const cliente = ticket.clientes || ticket.cliente;
+                        if (cliente) {
+                          return 'telefono_celular' in cliente ? cliente.telefono_celular : cliente.telefonoCelular;
+                        }
+                        return '';
+                      })()}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <div className="font-medium">
+                      {ticket.modelos?.marcas?.nombre || ticket.modelo?.marca?.nombre} {ticket.modelos?.nombre || ticket.modelo?.nombre}
+                    </div>
+                    {ticket.imei && (
+                      <div className="text-sm text-gray-500">
+                        IMEI: {ticket.imei}
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <TicketStatusBadge 
+                    status={ticket.estatus_reparacion?.nombre || ticket.estatusReparacion?.nombre || ''} 
+                  />
+                </TableCell>
+                <TableCell>
+                  {formatDate(ticket.fecha_recepcion || ticket.fechaRecepcion || '')}
+                </TableCell>
+                <TableCell>
+                  {ticket.tecnicoAsignado ? (
+                    <div>
+                      <div className="font-medium">
+                        {ticket.tecnicoAsignado.nombre} {ticket.tecnicoAsignado.apellidoPaterno}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">Sin asignar</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {ticket.presupuesto ? (
+                    <div>
+                      <div className="font-medium">
+                        ${ticket.presupuesto.totalFinal.toLocaleString()}
+                      </div>
+                      {ticket.presupuesto.saldo > 0 && (
+                        <div className="text-sm text-orange-600">
+                          Saldo: ${ticket.presupuesto.saldo.toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">Sin presupuesto</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewDetails(ticket)}
+                    >
+                      Ver
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(ticket.id)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    {!ticket.tecnicoAsignado && onAssignTechnician && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onAssignTechnician(ticket.id)}
+                      >
+                        <UserPlus className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(ticket.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
-            ) : (
-              filteredTickets.map((ticket) => {
-                return (
-                  <TableRow 
-                    key={ticket.id}
-                    className={ticket.cancelado ? 'bg-gray-100 opacity-75' : ''}
-                  >
-                    <TableCell className="font-medium">
-                      <button
-                        onClick={() => handleViewDetails(ticket)}
-                        className="text-blue-600 hover:text-blue-800 hover:underline"
-                      >
-                        #{ticket.numero_ticket || ticket.numeroTicket}
-                      </button>
-                    </TableCell>
-                    <TableCell>
-                      {(ticket.clientes || ticket.cliente)
-                        ? `${(ticket.clientes || ticket.cliente)!.nombre} ${(ticket.clientes || ticket.cliente)!.apellido_paterno || (ticket.clientes || ticket.cliente)!.apellidoPaterno} ${
-                          (ticket.clientes || ticket.cliente)!.apellido_materno || (ticket.clientes || ticket.cliente)!.apellidoMaterno || ''
-                        }`
-                        : "No disponible"}
-                    </TableCell>
-                    <TableCell>
-                      {(ticket.modelos || ticket.modelo)
-                        ? `${(ticket.modelos?.marcas || ticket.modelo?.marca)?.nombre} ${(ticket.modelos || ticket.modelo)?.nombre}`
-                        : "No disponible"}
-                    </TableCell>
-                    <TableCell>
-                      <TicketStatusBadge status={(ticket.estatus_reparacion || ticket.estatusReparacion)?.nombre || ""} />
-                    </TableCell>
-                    <TableCell>
-                      {(ticket.fecha_recepcion || ticket.fechaRecepcion) 
-                        ? formatDate(ticket.fecha_recepcion || ticket.fechaRecepcion!) 
-                        : 'Fecha no disponible'}
-                    </TableCell>
-                    <TableCell>
-                      {ticket.tecnicoAsignado
-                        ? `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno}`
-                        : "No asignado"}
-                    </TableCell>
-                    <TableCell>
-                      {ticket.presupuesto ? (
-                        <div className="flex items-center gap-2">
-                          <span className={ticket.presupuesto.aprobado ? "text-green-600" : "text-yellow-600"}>
-                            ${ticket.presupuesto.total.toFixed(2)}
-                          </span>
-                          {ticket.presupuesto.aprobado && (
-                            <span className="text-xs text-green-600">✓</span>
-                          )}
-                        </div>
-                      ) : (
-                        "Sin presupuesto"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {ticket.presupuesto ? (
-                        <span className="font-bold text-red-600">
-                          ${ticket.presupuesto.saldo.toFixed(2)}
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {ticket.creador && (
-                        <TicketOriginBadge
-                          creador={ticket.creador}
-                          puntoRecoleccion={ticket.puntoRecoleccion}
-                          origenCliente={ticket.origenCliente}
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleEdit(ticket.id)}
-                          title="Editar"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        {onAssignTechnician && !ticket.tecnicoAsignado && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => onAssignTechnician(ticket.id)}
-                            title="Asignar Técnico"
-                          >
-                            <UserPlus className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {ticket.estatusReparacion?.nombre !== 'Concluido' && (
-                          ticket.puntoRecoleccion?.isRepairPoint || !ticket.puntoRecoleccion
-                        ) && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => router.push(`/dashboard/tickets/${ticket.id}?tab=diagnostico`)}
-                            title="Iniciar Reparación"
-                          >
-                            <Wrench className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDelete(ticket.id)}
-                          title="Eliminar"
-                          className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
+            ))}
           </TableBody>
         </Table>
       </div>
 
+      {/* Paginación */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Mostrando {tickets.length} de {pagination.total} tickets
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={!pagination.hasPrevPage}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Anterior
+            </Button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                let pageNum;
+                if (pagination.totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (pagination.page <= 3) {
+                  pageNum = i + 1;
+                } else if (pagination.page >= pagination.totalPages - 2) {
+                  pageNum = pagination.totalPages - 4 + i;
+                } else {
+                  pageNum = pagination.page - 2 + i;
+                }
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={pageNum === pagination.page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(pageNum)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={!pagination.hasNextPage}
+            >
+              Siguiente
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de detalles */}
       {selectedTicket && (
         <TicketDetailsModal
           ticket={selectedTicket}
+          isOpen={true}
           onClose={() => setSelectedTicket(null)}
         />
       )}

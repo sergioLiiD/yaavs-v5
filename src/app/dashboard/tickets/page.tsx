@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -21,13 +21,43 @@ interface Ticket {
   cancelado: boolean;
 }
 
+interface TicketsResponse {
+  tickets: Ticket[];
+  total: number;
+  page: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+interface PaginationInfo {
+  page: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 export default function TicketsPage() {
   const { data: session, status } = useSession();
-  const [tickets, setTickets] = useState([]);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
-  const router = useRouter();
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
+
+  // Obtener parámetros de URL
+  const currentPage = parseInt(searchParams.get('page') || '1');
+  const currentSearch = searchParams.get('search') || '';
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -38,13 +68,24 @@ export default function TicketsPage() {
       return;
     }
     fetchTickets();
-  }, [session, status]);
+  }, [session, status, currentPage, currentSearch]);
 
   const fetchTickets = async () => {
     try {
       console.log('=== INICIO DE FETCH TICKETS ===');
-      console.log('Iniciando fetch de tickets...');
-      const response = await fetch('/api/tickets');
+      console.log('Página actual:', currentPage);
+      console.log('Búsqueda actual:', currentSearch);
+      
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '20'
+      });
+      
+      if (currentSearch.trim()) {
+        params.append('search', currentSearch);
+      }
+
+      const response = await fetch(`/api/tickets?${params.toString()}`);
       console.log('Respuesta recibida:', response.status);
       
       if (!response.ok) {
@@ -52,17 +93,21 @@ export default function TicketsPage() {
         throw new Error(`Error al obtener tickets: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data: TicketsResponse = await response.json();
       console.log('Datos recibidos:', data);
       console.log('Número de tickets:', data.tickets.length);
-      console.log('Estados de los tickets:', data.tickets.map((t: Ticket) => ({
-        id: t.id,
-        numeroTicket: t.numeroTicket,
-        estado: t.estatusReparacion?.nombre,
-        cancelado: t.cancelado
-      })));
+      console.log('Total de tickets:', data.total);
+      console.log('Páginas totales:', data.totalPages);
       console.log('=== FIN DE FETCH TICKETS ===');
+      
       setTickets(data.tickets);
+      setPagination({
+        page: data.page,
+        total: data.total,
+        totalPages: data.totalPages,
+        hasNextPage: data.hasNextPage,
+        hasPrevPage: data.hasPrevPage
+      });
     } catch (error) {
       console.error('Error en fetchTickets:', error);
       setError(error instanceof Error ? error.message : 'Error al cargar los tickets');
@@ -79,6 +124,21 @@ export default function TicketsPage() {
   const handleAssignComplete = () => {
     setSelectedTicketId(null);
     fetchTickets(); // Recargar tickets para actualizar la lista
+  };
+
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', newPage.toString());
+    router.push(`/dashboard/tickets?${params.toString()}`);
+  };
+
+  const handleSearch = (searchTerm: string) => {
+    const params = new URLSearchParams();
+    if (searchTerm.trim()) {
+      params.set('search', searchTerm);
+    }
+    params.set('page', '1'); // Resetear a la primera página al buscar
+    router.push(`/dashboard/tickets?${params.toString()}`);
   };
 
   if (loading) {
@@ -103,6 +163,10 @@ export default function TicketsPage() {
         <TicketsTable 
           tickets={tickets} 
           onAssignTechnician={handleAssignTechnician}
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          onSearch={handleSearch}
+          currentSearch={currentSearch}
         />
         {selectedTicketId && (
           <AssignTechnicianModal
