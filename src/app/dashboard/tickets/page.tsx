@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import RouteGuard from '@/components/route-guard';
 import { TicketsTable } from './components/TicketsTable';
 import { AssignTechnicianModal } from '@/components/tickets/AssignTechnicianModal';
@@ -160,8 +161,17 @@ export default function TicketsPage() {
   return (
     <RouteGuard requiredPermissions={['TICKETS_VIEW']} section="Tickets">
       <div className="container mx-auto py-6">
+        {/* Encabezado con botón de nuevo ticket */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Tickets</h1>
+          <Button onClick={() => router.push('/dashboard/tickets/nuevo')}>
+            <Plus className="mr-2 h-5 w-5" />
+            Nuevo Ticket
+          </Button>
+        </div>
+        
         <TicketsTable 
-          tickets={tickets} 
+          tickets={tickets as any} 
           onAssignTechnician={handleAssignTechnician}
           pagination={pagination}
           onPageChange={handlePageChange}
