@@ -7,18 +7,18 @@ import { Prisma } from '@prisma/client';
 export class UsuarioService {
   // Obtener todos los usuarios
   static async getAll(): Promise<Usuario[]> {
-    const usuarios = await prisma.usuario.findMany({
+    const usuarios = await prisma.usuarios.findMany({
       orderBy: {
         nombre: 'asc'
       },
       include: {
-        usuarioRoles: {
+        usuarios_roles: {
           include: {
-            rol: {
+            roles: {
               include: {
-                permisos: {
+                roles_permisos: {
                   include: {
-                    permiso: true
+                    permisos: true
                   }
                 }
               }
@@ -28,21 +28,21 @@ export class UsuarioService {
       }
     });
     console.log('Usuarios cargados:', JSON.stringify(usuarios, null, 2));
-    return usuarios as Usuario[];
+    return usuarios as unknown as Usuario[];
   }
 
   // Obtener un usuario por ID
   static async getById(id: number): Promise<Usuario | null> {
-    const usuario = await prisma.usuario.findUnique({
+    const usuario = await prisma.usuarios.findUnique({
       where: { id },
       include: {
-        usuarioRoles: {
+        usuarios_roles: {
           include: {
-            rol: {
+            roles: {
               include: {
-                permisos: {
+                roles_permisos: {
                   include: {
-                    permiso: true
+                    permisos: true
                   }
                 }
               }
@@ -51,7 +51,7 @@ export class UsuarioService {
         }
       }
     });
-    return usuario as Usuario;
+    return usuario as unknown as Usuario;
   }
 
   // Obtener un usuario por email
@@ -70,102 +70,137 @@ export class UsuarioService {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(data.password, salt);
 
-    const usuario = await prisma.usuario.create({
+    const usuario = await prisma.usuarios.create({
       data: {
         email: data.email,
-        passwordHash,
+        password_hash: passwordHash,
         nombre: data.nombre,
-        apellidoPaterno: data.apellidoPaterno,
-        apellidoMaterno: data.apellidoMaterno,
+        apellido_paterno: data.apellidoPaterno,
+        apellido_materno: data.apellidoMaterno,
         activo: data.activo ?? true,
-        usuarioRoles: {
-          create: data.roles?.map(rolId => ({
-            rolId
-          }))
-        }
-      } as any,
-      include: {
-        usuarioRoles: {
-          include: {
-            rol: {
-              include: {
-                permisos: {
-                  include: {
-                    permiso: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      } as any
+        updated_at: new Date()
+      }
     });
-    return usuario as Usuario;
+
+    // Crear las relaciones de roles por separado
+    if (data.roles && data.roles.length > 0) {
+      await prisma.usuarios_roles.createMany({
+        data: data.roles.map(rolId => ({
+          usuario_id: usuario.id,
+          rol_id: rolId,
+          updated_at: new Date()
+        }))
+      });
+    }
+
+    return usuario as unknown as Usuario;
   }
 
   // Actualizar un usuario
   static async update(id: number, data: UpdateUsuarioDTO): Promise<Usuario> {
-    const updateData: Prisma.UsuarioUpdateInput = {
+    const updateData: Prisma.usuariosUpdateInput = {
       email: data.email,
       nombre: data.nombre,
-      apellidoPaterno: data.apellidoPaterno,
-      apellidoMaterno: data.apellidoMaterno,
-      activo: data.activo
+      apellido_paterno: data.apellidoPaterno,
+      apellido_materno: data.apellidoMaterno,
+      activo: data.activo,
+      updated_at: new Date()
     };
 
     if (data.password) {
       const salt = await bcrypt.genSalt(10);
-      updateData.passwordHash = await bcrypt.hash(data.password, salt);
+      updateData.password_hash = await bcrypt.hash(data.password, salt);
     }
 
-    const usuario = await prisma.usuario.update({
+    const usuario = await prisma.usuarios.update({
       where: { id },
-      data: {
-        ...updateData,
-        usuarioRoles: data.roles ? {
-          deleteMany: {},
-          create: data.roles.map((rolId: number) => ({
-            rolId: rolId
-          }))
-        } : undefined
-      } as any,
-      include: {
-        usuarioRoles: {
-          include: {
-            rol: {
-              include: {
-                permisos: {
-                  include: {
-                    permiso: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      } as any
+      data: updateData
     });
 
-    return usuario as Usuario;
+    // Actualizar roles por separado
+    if (data.roles !== undefined) {
+      // Eliminar roles existentes
+      await prisma.usuarios_roles.deleteMany({
+        where: { usuario_id: id }
+      });
+
+      // Crear nuevos roles
+      if (data.roles.length > 0) {
+        await prisma.usuarios_roles.createMany({
+          data: data.roles.map((rolId: number) => ({
+            usuario_id: id,
+            rol_id: rolId,
+            updated_at: new Date()
+          }))
+        });
+      }
+    }
+
+    return usuario as unknown as Usuario;
   }
 
   // Eliminar un usuario
   static async delete(id: number): Promise<boolean> {
-    // Primero eliminamos las relaciones de roles
-    await prisma.usuarioRol.deleteMany({
-      where: { usuarioId: id }
-    });
+    try {
+      // Primero eliminamos todas las relaciones del usuario
+      
+      // 1. Eliminar relaciones de roles
+      await prisma.usuarios_roles.deleteMany({
+        where: { usuario_id: id }
+      });
 
-    // Luego eliminamos el usuario
-    const result = await prisma.usuario.delete({
-      where: { id }
-    });
-    return !!result;
+      // 2. Eliminar relaciones con puntos de recolección
+      await prisma.usuarios_puntos_recoleccion.deleteMany({
+        where: { usuario_id: id }
+      });
+
+      // 3. Eliminar entradas de almacén
+      await prisma.entradas_almacen.deleteMany({
+        where: { usuario_id: id }
+      });
+
+      // 4. Eliminar salidas de almacén
+      await prisma.salidas_almacen.deleteMany({
+        where: { usuario_id: id }
+      });
+
+      // 5. Para tickets donde el usuario es creador, necesitamos asignar otro usuario o eliminar el ticket
+      // Por ahora, vamos a verificar si hay tickets creados por este usuario
+      const ticketsCreados = await prisma.tickets.count({
+        where: { creador_id: id }
+      });
+
+      if (ticketsCreados > 0) {
+        throw new Error(`No se puede eliminar el usuario porque tiene ${ticketsCreados} tickets creados. Asigne los tickets a otro usuario primero.`);
+      }
+
+      // 6. Actualizar tickets donde el usuario es técnico asignado
+      await prisma.tickets.updateMany({
+        where: { tecnico_asignado_id: id },
+        data: { tecnico_asignado_id: null }
+      });
+
+      // 7. Actualizar clientes creados por este usuario
+      await prisma.clientes.updateMany({
+        where: { creado_por_id: id },
+        data: { creado_por_id: null }
+      });
+
+      // Finalmente eliminamos el usuario
+      const result = await prisma.usuarios.delete({
+        where: { id }
+      });
+      
+      return !!result;
+    } catch (error) {
+      console.error('Error al eliminar usuario:', error);
+      throw error;
+    }
   }
 
   // Verificar si un email ya existe
   static async emailExists(email: string, excludeId?: number): Promise<boolean> {
-    const count = await prisma.usuario.count({
+    const count = await prisma.usuarios.count({
       where: {
         email,
         id: excludeId ? { not: excludeId } : undefined
@@ -176,15 +211,15 @@ export class UsuarioService {
 
   // Verificar credenciales de usuario
   static async verifyCredentials(email: string, password: string): Promise<Usuario | null> {
-    const usuario = await prisma.usuario.findFirst({
+    const usuario = await prisma.usuarios.findFirst({
       where: {
         email,
         activo: true
       },
       include: {
-        roles: {
+        usuarios_roles: {
           include: {
-            rol: true
+            roles: true
           }
         }
       }
@@ -192,9 +227,9 @@ export class UsuarioService {
 
     if (!usuario) return null;
 
-    const isValid = await bcrypt.compare(password, usuario.passwordHash);
+    const isValid = await bcrypt.compare(password, usuario.password_hash);
     if (!isValid) return null;
 
-    return usuario as Usuario;
+    return usuario as unknown as Usuario;
   }
 }
