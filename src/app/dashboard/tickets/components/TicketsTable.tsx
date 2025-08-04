@@ -16,7 +16,7 @@ import { formatDate } from "@/lib/utils";
 import { TicketDetailsModal } from "@/components/tickets/TicketDetailsModal";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
 import { TicketOriginBadge } from "@/components/tickets/TicketOriginBadge";
-import { Pencil, UserPlus, Wrench, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Pencil, UserPlus, Wrench, Trash2, Search, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 interface Ticket {
@@ -276,16 +276,20 @@ export function TicketsTable({
               <TableRow key={ticket.id}>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">
+                    <button
+                      onClick={() => handleViewDetails(ticket)}
+                      className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                      title="Ver detalles del ticket"
+                    >
                       {ticket.numero_ticket || ticket.numeroTicket}
-                    </span>
-                                         {ticket.creador && (
-                       <TicketOriginBadge 
-                         creador={ticket.creador}
-                         puntoRecoleccion={ticket.puntoRecoleccion}
-                         origenCliente={ticket.origenCliente}
-                       />
-                     )}
+                    </button>
+                    {ticket.creador && (
+                      <TicketOriginBadge 
+                        creador={ticket.creador}
+                        puntoRecoleccion={ticket.puntoRecoleccion}
+                        origenCliente={ticket.origenCliente}
+                      />
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -364,13 +368,15 @@ export function TicketsTable({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleViewDetails(ticket)}
+                      title="Ver detalles del ticket"
                     >
-                      Ver
+                      <Eye className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleEdit(ticket.id)}
+                      title="Editar ticket"
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -379,6 +385,7 @@ export function TicketsTable({
                         variant="ghost"
                         size="sm"
                         onClick={() => onAssignTechnician(ticket.id)}
+                        title="Asignar técnico"
                       >
                         <UserPlus className="h-4 w-4" />
                       </Button>
@@ -386,8 +393,17 @@ export function TicketsTable({
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => router.push(`/dashboard/tickets/${ticket.id}/reparacion`)}
+                      title="Iniciar reparación"
+                    >
+                      <Wrench className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleDelete(ticket.id)}
                       className="text-red-600 hover:text-red-700"
+                      title="Eliminar ticket"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -459,8 +475,7 @@ export function TicketsTable({
       {/* Modal de detalles */}
       {selectedTicket && (
         <TicketDetailsModal
-          ticket={selectedTicket}
-          isOpen={true}
+          ticket={selectedTicket as any}
           onClose={() => setSelectedTicket(null)}
         />
       )}
