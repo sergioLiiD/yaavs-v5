@@ -283,7 +283,7 @@ export function TicketsTable({
                     >
                       {ticket.numero_ticket || ticket.numeroTicket}
                     </button>
-                    {ticket.creador && (
+                    {ticket.creador && ticket.creador.nombre && (
                       <TicketOriginBadge 
                         creador={ticket.creador}
                         puntoRecoleccion={ticket.puntoRecoleccion}
@@ -297,9 +297,9 @@ export function TicketsTable({
                     <div className="font-medium">
                       {(() => {
                         const cliente = ticket.clientes || ticket.cliente;
-                        if (cliente) {
+                        if (cliente && cliente.nombre) {
                           const apellido = 'apellido_paterno' in cliente ? cliente.apellido_paterno : cliente.apellidoPaterno;
-                          return `${cliente.nombre} ${apellido}`;
+                          return `${cliente.nombre} ${apellido || ''}`;
                         }
                         return 'Cliente no disponible';
                       })()}
@@ -318,7 +318,18 @@ export function TicketsTable({
                 <TableCell>
                   <div>
                     <div className="font-medium">
-                      {ticket.modelos?.marcas?.nombre || ticket.modelo?.marca?.nombre} {ticket.modelos?.nombre || ticket.modelo?.nombre}
+                      {(() => {
+                        const marcaNombre = ticket.modelos?.marcas?.nombre || ticket.modelo?.marca?.nombre;
+                        const modeloNombre = ticket.modelos?.nombre || ticket.modelo?.nombre;
+                        if (marcaNombre && modeloNombre) {
+                          return `${marcaNombre} ${modeloNombre}`;
+                        } else if (modeloNombre) {
+                          return modeloNombre;
+                        } else if (marcaNombre) {
+                          return marcaNombre;
+                        }
+                        return 'Modelo no disponible';
+                      })()}
                     </div>
                     {ticket.imei && (
                       <div className="text-sm text-gray-500">
@@ -336,10 +347,10 @@ export function TicketsTable({
                   {formatDate(ticket.fecha_recepcion || ticket.fechaRecepcion || '')}
                 </TableCell>
                 <TableCell>
-                  {ticket.tecnicoAsignado ? (
+                  {ticket.tecnicoAsignado && ticket.tecnicoAsignado.nombre ? (
                     <div>
                       <div className="font-medium">
-                        {ticket.tecnicoAsignado.nombre} {ticket.tecnicoAsignado.apellidoPaterno}
+                        {ticket.tecnicoAsignado.nombre} {ticket.tecnicoAsignado.apellidoPaterno || ''}
                       </div>
                     </div>
                   ) : (
