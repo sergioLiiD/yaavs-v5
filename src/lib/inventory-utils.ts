@@ -95,7 +95,16 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
     for (const piezaRep of piezasReparacion) {
       const producto = piezaRep.productos;
       
-      if (producto.stock < piezaRep.cantidad) {
+      // Lista de conceptos que no requieren validación de stock (servicios)
+      const conceptosSinStock = ['Mano de Obra', 'Diagnostico', 'Diagnóstico', 'Servicio'];
+      
+      // Verificar si es un servicio que no requiere stock
+      const esServicio = conceptosSinStock.some(concepto => 
+        producto.nombre?.includes(concepto)
+      );
+      
+      // Solo validar stock para productos físicos, no para servicios
+      if (!esServicio && producto.stock < piezaRep.cantidad) {
         const productoNombre = `${producto.nombre} (${producto.marcas?.nombre || 'N/A'} ${producto.modelos?.nombre || 'N/A'})`;
         
         missingStock.push({
@@ -193,45 +202,56 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
       for (const piezaRep of piezasReparacion) {
         const producto = piezaRep.productos;
         
-        // Verificar stock nuevamente (por si cambió desde la validación)
-        if (producto.stock < piezaRep.cantidad) {
-          throw new Error(
-            `Stock insuficiente para ${producto.nombre}: necesitas ${piezaRep.cantidad}, tienes ${producto.stock}`
-          );
-        }
+        // Lista de conceptos que no requieren descuento de stock (servicios)
+        const conceptosSinStock = ['Mano de Obra', 'Diagnostico', 'Diagnóstico', 'Servicio'];
+        
+        // Verificar si es un servicio que no requiere stock
+        const esServicio = conceptosSinStock.some(concepto => 
+          producto.nombre?.includes(concepto)
+        );
+        
+        // Solo procesar descuento de stock para productos físicos, no para servicios
+        if (!esServicio) {
+          // Verificar stock nuevamente (por si cambió desde la validación)
+          if (producto.stock < piezaRep.cantidad) {
+            throw new Error(
+              `Stock insuficiente para ${producto.nombre}: necesitas ${piezaRep.cantidad}, tienes ${producto.stock}`
+            );
+          }
 
-        // Crear salida de almacén
-        const salida = await tx.salidas_almacen.create({
-          data: {
-            producto_id: producto.id,
+          // Crear salida de almacén
+          const salida = await tx.salidas_almacen.create({
+            data: {
+              producto_id: producto.id,
+              cantidad: piezaRep.cantidad,
+              tipo: 'REPARACION',
+              razon: `Reparación completada - Ticket #${ticketId}`,
+              referencia: `Ticket-${ticketId}`,
+              usuario_id: usuarioId,
+              fecha: new Date(),
+              created_at: new Date(),
+              updated_at: new Date()
+            }
+          });
+
+          // Actualizar stock del producto
+          await tx.productos.update({
+            where: { id: producto.id },
+            data: {
+              stock: {
+                decrement: piezaRep.cantidad
+              },
+              updated_at: new Date()
+            }
+          });
+
+          salidas.push({
+            productoId: producto.id,
             cantidad: piezaRep.cantidad,
-            tipo: 'REPARACION',
             razon: `Reparación completada - Ticket #${ticketId}`,
-            referencia: `Ticket-${ticketId}`,
-            usuario_id: usuarioId,
-            fecha: new Date(),
-            created_at: new Date(),
-            updated_at: new Date()
-          }
-        });
-
-        // Actualizar stock del producto
-        await tx.productos.update({
-          where: { id: producto.id },
-          data: {
-            stock: {
-              decrement: piezaRep.cantidad
-            },
-            updated_at: new Date()
-          }
-        });
-
-        salidas.push({
-          productoId: producto.id,
-          cantidad: piezaRep.cantidad,
-          razon: `Reparación completada - Ticket #${ticketId}`,
-          referencia: `Ticket-${ticketId}`
-        });
+            referencia: `Ticket-${ticketId}`
+          });
+        }
       }
     });
 
