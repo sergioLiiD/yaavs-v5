@@ -66,6 +66,23 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
     fetchTecnicos();
   }, []);
 
+  // Sincronizar formData cuando el ticket cambie
+  useEffect(() => {
+    setFormData({
+      descripcionProblema: ticket.descripcion_problema || '',
+      tecnicoAsignadoId: ticket.tecnico_asignado_id?.toString() || '',
+      estatusReparacionId: ticket.estatus_reparacion_id?.toString() || '',
+      diagnostico: ticket.reparaciones?.diagnostico || '',
+      capacidad: ticket.capacidad || '',
+      color: ticket.color || '',
+      fechaCompra: ticket.fecha_compra instanceof Date ? ticket.fecha_compra.toISOString().split('T')[0] : (ticket.fecha_compra ? new Date(ticket.fecha_compra).toISOString().split('T')[0] : ''),
+      tipoDesbloqueo: ticket.tipo_desbloqueo || 'pin',
+      codigoDesbloqueo: ticket.codigo_desbloqueo || '',
+      patronDesbloqueo: ticket.patron_desbloqueo || [],
+      redCelular: ticket.red_celular || '',
+    });
+  }, [ticket]);
+
   console.log('Estado actual:', {
     ticket: {
       id: ticket.id,
@@ -88,10 +105,15 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
   };
 
   const handleTecnicoChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tecnicoAsignadoId: value
-    }));
+    console.log('Cambiando técnico a:', value);
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        tecnicoAsignadoId: value
+      };
+      console.log('Nuevo formData:', newData);
+      return newData;
+    });
   };
 
   const handleEstatusChange = (value: string) => {
@@ -175,9 +197,18 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue>
-                        {ticket.usuarios_tickets_tecnico_asignado_idTousuarios ? 
-                          `${ticket.usuarios_tickets_tecnico_asignado_idTousuarios.nombre} ${ticket.usuarios_tickets_tecnico_asignado_idTousuarios.apellido_paterno} ${ticket.usuarios_tickets_tecnico_asignado_idTousuarios.apellido_materno}` : 
-                          'Seleccionar técnico'}
+                        {(() => {
+                          if (formData.tecnicoAsignadoId) {
+                            const selectedTecnico = tecnicos.find(t => t.id.toString() === formData.tecnicoAsignadoId);
+                            if (selectedTecnico) {
+                              return `${selectedTecnico.nombre} ${selectedTecnico.apellidoPaterno} ${selectedTecnico.apellidoMaterno}`;
+                            }
+                          }
+                          if (ticket.usuarios_tickets_tecnico_asignado_idTousuarios) {
+                            return `${ticket.usuarios_tickets_tecnico_asignado_idTousuarios.nombre} ${ticket.usuarios_tickets_tecnico_asignado_idTousuarios.apellido_paterno} ${ticket.usuarios_tickets_tecnico_asignado_idTousuarios.apellido_materno}`;
+                          }
+                          return 'Seleccionar técnico';
+                        })()}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
