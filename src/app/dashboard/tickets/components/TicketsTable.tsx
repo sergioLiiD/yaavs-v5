@@ -404,7 +404,7 @@ export function TicketsTable({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => router.push(`/dashboard/tickets/${ticket.id}/repair`)}
+                      onClick={() => router.push(`/dashboard/tickets/${ticket.id}?tab=diagnostico`)}
                       title="Iniciar reparación"
                     >
                       <Wrench className="h-4 w-4" />
