@@ -1,20 +1,29 @@
 version: '3.8'
 
 services:
-  # Base de datos PostgreSQL
+  # ===========================================
+  # BASE DE DATOS POSTGRESQL
+  # ===========================================
   postgres:
     image: postgres:14-alpine
     container_name: yaavs_postgres
     restart: unless-stopped
     environment:
+      # Usuario de la base de datos (cambiar si es necesario)
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      # CONTRASEÑA IMPORTANTE: Cambiar por una contraseña segura
+      POSTGRES_PASSWORD: TU_PASSWORD_AQUI_CAMBIAR_OBLIGATORIO
+      # Nombre de la base de datos
       POSTGRES_DB: yaavs_db
+      # Configuración de codificación
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     volumes:
+      # Volumen para datos persistentes de PostgreSQL
       - postgres_data:/var/lib/postgresql/data
+      # Volumen para backups automáticos (opcional)
       - ./backups:/docker-entrypoint-initdb.d:ro
     ports:
+      # PUERTO EXTERNO: Cambiar si el puerto 5432 está ocupado
       - "5432:5432"
     networks:
       - yaavs_network
@@ -24,7 +33,9 @@ services:
       timeout: 5s
       retries: 5
 
-  # Aplicación Next.js
+  # ===========================================
+  # APLICACIÓN NEXT.JS
+  # ===========================================
   app:
     build:
       context: .
@@ -35,32 +46,44 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      # Entorno de producción
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/yaavs_db?schema=public
-      - NEXTAUTH_URL=http://localhost:3000
+      # URL de conexión a la base de datos (usar la misma contraseña que arriba)
+      - DATABASE_URL=postgresql://postgres:TU_PASSWORD_AQUI_CAMBIAR_OBLIGATORIO@postgres:5432/yaavs_db?schema=public
+      # URL de la aplicación (cambiar por tu dominio)
+      - NEXTAUTH_URL=https://TU_DOMINIO:PUERTO
+      # Secretos de autenticación (se generan automáticamente)
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - JWT_SECRET=${JWT_SECRET}
+      # API Key de Google Maps (opcional)
       - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3000/api}
-      - PORT=3000
+      # URL de la API (se configura automáticamente)
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://TU_DOMINIO:PUERTO/api}
+      # Puerto interno de la aplicación
+      - PORT=4001
+      # Debug deshabilitado en producción
       - NEXTAUTH_DEBUG=false
     ports:
-      - "3000:3000"
+      # PUERTO EXTERNO: Cambiar si el puerto 4001 está ocupado
+      - "4001:4001"
     volumes:
-      # Volumen para archivos de uploads si existen
+      # Volumen para archivos subidos por usuarios
       - uploads_data:/app/public/uploads
-      # Volumen para logs
+      # Volumen para logs de la aplicación
       - ./logs:/app/logs
     networks:
       - yaavs_network
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      # Verificación de salud de la aplicación
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4001/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
-  # Servicio de migración de base de datos
+  # ===========================================
+  # SERVICIO DE MIGRACIÓN DE BASE DE DATOS
+  # ===========================================
   migrations:
     build:
       context: .
@@ -70,20 +93,60 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/yaavs_db?schema=public
+      # URL de conexión a la base de datos (usar la misma contraseña que arriba)
+      - DATABASE_URL=postgresql://postgres:TU_PASSWORD_AQUI_CAMBIAR_OBLIGATORIO@postgres:5432/yaavs_db?schema=public
     command: sh -c "npx prisma migrate deploy && npx prisma db seed"
     volumes:
+      # Volumen para archivos de migración
       - ./prisma:/app/prisma
     networks:
       - yaavs_network
     restart: "no"
 
+# ===========================================
+# VOLÚMENES PARA PERSISTENCIA DE DATOS
+# ===========================================
 volumes:
+  # Volumen para datos de PostgreSQL
   postgres_data:
     driver: local
+  # Volumen para archivos subidos
   uploads_data:
     driver: local
 
+# ===========================================
+# RED INTERNA DE DOCKER
+# ===========================================
 networks:
   yaavs_network:
-    driver: bridge 
+    driver: bridge
+
+# ===========================================
+# INSTRUCCIONES DE CONFIGURACIÓN
+# ===========================================
+# 
+# 1. CAMBIOS OBLIGATORIOS:
+#    - POSTGRES_PASSWORD: Cambiar por una contraseña segura
+#    - NEXTAUTH_URL: Cambiar por tu dominio real
+#    - PUERTOS: Cambiar si están ocupados en tu servidor
+#
+# 2. CAMBIOS OPCIONALES:
+#    - POSTGRES_USER: Cambiar si quieres un usuario diferente
+#    - POSTGRES_DB: Cambiar si quieres un nombre de BD diferente
+#    - PUERTOS EXTERNOS: Cambiar si necesitas puertos específicos
+#
+# 3. VARIABLES DE ENTORNO:
+#    - NEXTAUTH_SECRET: Se genera automáticamente
+#    - JWT_SECRET: Se genera automáticamente
+#    - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: Configurar si usas mapas
+#
+# 4. SEGURIDAD:
+#    - Cambia todas las contraseñas por defecto
+#    - Configura SSL en producción
+#    - Usa puertos no estándar si es posible
+#    - Configura firewall apropiadamente
+#
+# 5. RENDIMIENTO:
+#    - Ajusta límites de memoria si es necesario
+#    - Configura backups automáticos
+#    - Monitorea uso de recursos 

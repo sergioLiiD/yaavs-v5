@@ -16,6 +16,7 @@
 11. [Despliegue con Docker](#despliegue-con-docker)
 12. [Configuración del Servidor](#configuración-del-servidor)
 13. [Mantenimiento](#mantenimiento)
+14. [Últimas Actualizaciones](#últimas-actualizaciones)
 
 ## Introducción
 
@@ -864,10 +865,303 @@ docker-compose logs migrations
 - **Docker**: Usar volúmenes para datos persistentes
 - **Nginx**: Configurar cache y compresión
 
----
+## Últimas Actualizaciones
 
-**Desarrollado por: Sergio Velazco**
+### Correcciones de TypeScript y Manejo de Errores (Agosto 2025)
 
-**Versión**: 5.0
-**Última actualización**: Agosto 2025
-**Licencia**: Propietaria 
+#### Problemas Resueltos
+
+##### 1. Errores de TypeScript en `inventory-utils.ts`
+**Problema**: Errores de tipos relacionados con las relaciones opcionales `marcas` y `modelos` en el modelo `productos`.
+
+**Solución Implementada**:
+- Agregadas verificaciones de null para relaciones opcionales usando operador de coalescencia nula (`?.`)
+- Corregida la conversión de datos entre tablas antigua y nueva de piezas de reparación
+- Actualizado el uso del enum `TipoProducto` con valores correctos (`'PRODUCTO'` en lugar de `'REPUESTO'`)
+
+**Archivos Modificados**:
+```typescript
+// src/lib/inventory-utils.ts
+// Correcciones en validarStockReparacion()
+const marcaNombre = producto.marcas?.nombre || 'N/A';
+const modeloNombre = producto.modelos?.nombre || 'N/A';
+
+// Corrección en conversión de datos antiguos
+productos: {
+  // ... otros campos
+  tipo: 'PRODUCTO' as const,
+  marcas: pa.piezas.marcas,
+  modelos: pa.piezas.modelos
+}
+```
+
+##### 2. Error 400 en Completar Reparaciones
+**Problema**: Error 400 al intentar completar reparaciones cuando no existía una reparación previa para el ticket.
+
+**Causa Raíz**: La función `validarStockReparacion()` fallaba cuando no encontraba una reparación existente, retornando error en lugar de éxito.
+
+**Solución Implementada**:
+- Modificada la lógica de `validarStockReparacion()` para manejar casos donde no existe reparación
+- Agregada validación para casos donde no hay piezas de reparación
+- Mejorado el manejo de errores en el endpoint de reparación
+
+**Cambios en `validarStockReparacion()`**:
+```typescript
+if (!reparacion) {
+  // Si no hay reparación, no hay piezas que validar, por lo que retornamos éxito
+  console.log('No se encontró la reparación para este ticket, pero esto es normal para reparaciones nuevas');
+  return {
+    success: true,
+    errors: [],
+    missingStock: []
+  };
+}
+
+// Si no hay piezas de reparación, no hay stock que validar
+if (piezasReparacion.length === 0) {
+  console.log('No hay piezas de reparación para validar stock');
+  return {
+    success: true,
+    errors: [],
+    missingStock: []
+  };
+}
+```
+
+##### 3. Mejoras en el Manejo de Errores del Endpoint de Reparación
+**Problema**: Errores en la conversión de conceptos y procesamiento de descuento de inventario hacían fallar toda la transacción.
+
+**Solución Implementada**:
+- Modificado el manejo de errores para que los errores no críticos no hagan fallar la transacción completa
+- Agregados logs informativos para mejor debugging
+- Mejorada la robustez del endpoint
+
+**Cambios en el Endpoint**:
+```typescript
+// src/app/api/tickets/[id]/reparacion/route.ts
+try {
+  await convertirConceptosAPiezas(ticketId, reparacion.id);
+  console.log('✅ Conceptos convertidos exitosamente');
+} catch (error) {
+  console.error('❌ Error al convertir conceptos:', error);
+  // No lanzar error, solo logear para no fallar todo el proceso
+}
+
+try {
+  await procesarDescuentoInventario(ticketId, Number(session.user.id));
+  console.log('✅ Descuento de inventario procesado exitosamente');
+} catch (error) {
+  console.error('❌ Error al procesar descuento de inventario:', error);
+  // No lanzar error, solo logear para no fallar todo el proceso
+}
+```
+
+#### Mejoras en la Validación de Stock
+
+##### Lógica Mejorada
+1. **Sin Reparación**: Retorna éxito (no hay piezas que validar)
+2. **Sin Piezas**: Retorna éxito (no hay stock que validar)
+3. **Con Piezas**: Valida stock solo para productos físicos, no servicios
+
+##### Servicios Exentos de Validación
+```typescript
+const conceptosSinStock = ['Mano de Obra', 'Diagnostico', 'Diagnóstico', 'Servicio'];
+const esServicio = conceptosSinStock.some(concepto => 
+  producto.nombre?.includes(concepto)
+);
+```
+
+#### Mejoras en el Sistema de Logging
+
+##### Logs Informativos Agregados
+- Logs detallados en el proceso de validación de stock
+- Logs informativos para debugging de reparaciones
+- Mejor trazabilidad de errores
+
+##### Ejemplo de Logs Mejorados
+```
+🔍 Validando stock para ticket: 47
+No se encontró la reparación para este ticket, pero esto es normal para reparaciones nuevas
+✅ Validación de stock exitosa
+🔄 Iniciando transacción para completar reparación (Sistema Central)...
+📝 Creando/actualizando reparación...
+✅ Reparación creada/actualizada: 123
+```
+
+#### Beneficios de las Correcciones
+
+1. **Robustez**: El sistema ahora maneja correctamente casos edge donde no existe reparación previa
+2. **Type Safety**: Eliminados todos los errores de TypeScript relacionados con tipos opcionales
+3. **Experiencia de Usuario**: Mejorada la experiencia al completar reparaciones
+4. **Debugging**: Logs más informativos para facilitar el troubleshooting
+5. **Mantenibilidad**: Código más limpio y fácil de mantener
+
+#### Archivos Modificados
+
+1. **`src/lib/inventory-utils.ts`**:
+   - Corrección de tipos para relaciones opcionales
+   - Mejora en la lógica de validación de stock
+   - Manejo de casos edge
+
+2. **`src/app/api/tickets/[id]/reparacion/route.ts`**:
+   - Mejora en el manejo de errores no críticos
+   - Logs más informativos
+   - Mayor robustez en transacciones
+
+#### Testing Recomendado
+
+Para verificar que las correcciones funcionan correctamente:
+
+1. **Crear ticket nuevo y completar reparación**:
+   ```bash
+   # Verificar logs del servidor
+   docker-compose logs -f app
+   ```
+
+2. **Verificar validación de stock**:
+   - Crear ticket con productos que requieren stock
+   - Verificar que la validación funcione correctamente
+
+3. **Verificar manejo de servicios**:
+   - Crear ticket con servicios (Mano de Obra, Diagnóstico)
+   - Verificar que no se valide stock para servicios
+
+#### Próximas Mejoras Planificadas
+
+1. **Métricas de Rendimiento**: Agregar métricas para monitorear el rendimiento del sistema
+2. **Cache de Consultas**: Implementar cache para consultas frecuentes
+3. **Validación Avanzada**: Mejorar validaciones de datos de entrada
+4. **Reportes Automáticos**: Generar reportes automáticos de errores
+
+#### 7. Script de Creación de Usuarios Administradores
+**Problema**: Necesidad de una herramienta fácil para crear usuarios administradores después de la instalación.
+
+**Solución Implementada**:
+- Script interactivo para crear usuarios administradores
+- Validación de datos de entrada
+- Generación automática de contraseñas seguras
+- Asignación automática de roles de administrador
+- Modo rápido para instalaciones estándar
+
+**Características del Script**:
+```bash
+# Modo interactivo (recomendado)
+./scripts/create-admin-user.sh
+
+# Modo rápido con valores por defecto
+./scripts/create-admin-user.sh --quick
+
+# Mostrar ayuda
+./scripts/create-admin-user.sh --help
+```
+
+**Funcionalidades del Script**:
+- **Validación de Email**: Verifica formato correcto de email
+- **Validación de Contraseña**: Asegura contraseñas seguras (mínimo 8 caracteres, mayúscula, minúscula, número)
+- **Generación Automática**: Crea contraseñas seguras automáticamente
+- **Verificación de Existencia**: Detecta usuarios existentes y permite actualización
+- **Asignación de Roles**: Crea rol ADMIN si no existe y lo asigna al usuario
+- **Manejo de Errores**: Validación completa de entorno y conexiones
+
+**Ejemplo de Uso**:
+```bash
+# Navegar al directorio del proyecto
+cd /opt/yaavs-v5
+
+# Ejecutar script
+./scripts/create-admin-user.sh
+
+# El script solicitará:
+# - Email del administrador
+# - Nombre
+# - Apellido paterno
+# - Apellido materno (opcional)
+# - Teléfono (opcional)
+# - Contraseña (o generará una automáticamente)
+```
+
+**Salida del Script**:
+```
+================================
+Crear Usuario Administrador - YAAVS v5
+================================
+[INFO] Verificando conexión a la base de datos...
+[INFO] Conexión a la base de datos exitosa
+
+Ingresa la información del usuario administrador:
+
+Email del administrador: admin@empresa.com
+Nombre: Juan
+Apellido paterno: Pérez
+Apellido materno (opcional): 
+Teléfono (opcional): 5551234567
+
+[WARNING] La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.
+Contraseña: ********
+Confirmar contraseña: ********
+
+[INFO] Verificando si el usuario ya existe...
+[INFO] Creando nuevo usuario administrador...
+[INFO] Generando hash de la contraseña...
+[INFO] Creando usuario en la base de datos.
+[INFO] Usuario creado exitosamente en la base de datos.
+[INFO] Configurando rol de administrador...
+[INFO] Asignando rol de administrador al usuario...
+[INFO] Rol de administrador asignado exitosamente.
+
+================================
+Usuario Administrador Creado/Actualizado
+================================
+✅ Usuario configurado exitosamente
+
+Información del usuario:
+- Email: admin@empresa.com
+- Contraseña: ********
+- Rol: Administrador
+- Estado: Activo
+
+Puedes acceder al sistema con estas credenciales.
+
+[WARNING] IMPORTANTE: Guarda la contraseña en un lugar seguro.
+[WARNING] Se recomienda cambiar la contraseña después del primer acceso.
+```
+
+**Archivos Modificados**:
+
+1. **`scripts/create-admin-user.sh`**:
+   - Script completo de creación de usuarios
+   - Validaciones de seguridad
+   - Manejo de errores robusto
+   - Interfaz de usuario amigable
+
+**Beneficios de la Implementación**:
+
+1. **Facilidad de Uso**: Interfaz interactiva clara y guiada
+2. **Seguridad**: Validación de contraseñas y generación de hashes seguros
+3. **Flexibilidad**: Modo interactivo y modo rápido
+4. **Robustez**: Manejo completo de errores y verificaciones
+5. **Automatización**: Asignación automática de roles y permisos
+
+**Comandos de Mantenimiento Relacionados**:
+
+```bash
+# Verificar usuarios existentes
+docker exec yaavs_postgres psql -U postgres -d yaavs_db -c "SELECT id, email, nombre, activo FROM usuarios;"
+
+# Verificar roles asignados
+docker exec yaavs_postgres psql -U postgres -d yaavs_db -c "SELECT u.email, r.nombre as rol FROM usuarios u JOIN usuarios_roles ur ON u.id = ur.usuario_id JOIN roles r ON ur.rol_id = r.id;"
+
+# Desactivar usuario
+docker exec yaavs_postgres psql -U postgres -d yaavs_db -c "UPDATE usuarios SET activo = false WHERE email = 'admin@empresa.com';"
+
+# Activar usuario
+docker exec yaavs_postgres psql -U postgres -d yaavs_db -c "UPDATE usuarios SET activo = true WHERE email = 'admin@empresa.com';"
+```
+
+**Próximas Mejoras Planificadas**:
+
+1. **Script de Gestión de Usuarios**: Herramienta completa para gestionar usuarios
+2. **Importación Masiva**: Crear múltiples usuarios desde archivo CSV
+3. **Gestión de Roles**: Script para asignar/quitar roles específicos
+4. **Auditoría**: Logs detallados de cambios en usuarios
+5. **Backup de Usuarios**: Exportar/importar configuración de usuarios 

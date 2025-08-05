@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -68,6 +68,14 @@ interface TipoServicio {
   nombre: string;
 }
 
+interface Tecnico {
+  id: number;
+  nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno?: string;
+  email?: string;
+}
+
 interface TicketFormProps {
   clientes: Cliente[];
   marcas: any[];
@@ -86,12 +94,15 @@ interface TicketFormProps {
     color?: string | null;
     fechaCompra?: Date | null;
     redCelular?: string | null;
+    tecnicoAsignadoId?: number | null;
   };
 }
 
 export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }: TicketFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
+  const [selectedTecnico, setSelectedTecnico] = useState<string>('');
 
   console.log('TicketForm - Ticket recibido:', ticket);
   console.log('TicketForm - ClienteId:', ticket?.clienteId);
@@ -100,6 +111,61 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
   console.log('TicketForm - Clientes disponibles:', clientes.length);
   console.log('TicketForm - Modelos disponibles:', modelos.length);
   console.log('TicketForm - Tipos de servicio disponibles:', tiposServicio.length);
+
+  // Cargar técnicos cuando el componente se monta
+  useEffect(() => {
+    const fetchTecnicos = async () => {
+      try {
+        const response = await fetch('/api/usuarios/tecnicos');
+        if (!response.ok) {
+          throw new Error('Error al cargar técnicos');
+        }
+        const data = await response.json();
+        setTecnicos(data);
+        
+        // Si hay un ticket y tiene técnico asignado, seleccionarlo
+        if (ticket?.tecnicoAsignadoId) {
+          setSelectedTecnico(ticket.tecnicoAsignadoId.toString());
+        }
+      } catch (error) {
+        console.error('Error al cargar técnicos:', error);
+        toast.error('Error al cargar la lista de técnicos');
+      }
+    };
+
+    fetchTecnicos();
+  }, [ticket?.tecnicoAsignadoId]);
+
+  // Función para cambiar técnico asignado
+  const handleTecnicoChange = async (tecnicoId: string) => {
+    if (!ticket?.id) return;
+    
+    try {
+      const response = await fetch(`/api/tickets/${ticket.id}/assign`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tecnicoId: parseInt(tecnicoId) }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al asignar técnico');
+      }
+
+      setSelectedTecnico(tecnicoId);
+      toast.success('Técnico asignado correctamente');
+    } catch (error) {
+      console.error('Error al asignar técnico:', error);
+      toast.error('Error al asignar técnico');
+    }
+  };
+
+  // Función para reiniciar patrón de desbloqueo
+  const handleResetPattern = () => {
+    form.setValue('patronDesbloqueo', []);
+    toast.success('Patrón reiniciado');
+  };
 
   const form = useForm<z.infer<typeof ticketSchema>>({
     resolver: zodResolver(ticketSchema),
@@ -438,8 +504,24 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
                       ))}
                     </div>
                     {field.value && field.value.length > 0 && (
-                      <div className="mt-2 text-sm text-gray-600 text-center">
-                        Patrón actual: {field.value.join(' → ')}
+                      <div className="mt-3 text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">Orden del Patrón:</div>
+                        <div className="text-lg font-mono text-blue-600 bg-blue-50 px-3 py-2 rounded-lg inline-block mb-2">
+                          {field.value.join(' → ')}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleResetPattern}
+                        >
+                          Reiniciar Patrón
+                        </Button>
+                      </div>
+                    )}
+                    {field.value && field.value.length === 0 && (
+                      <div className="mt-2 text-sm text-gray-500 text-center">
+                        Toca los números para crear el patrón
                       </div>
                     )}
                     <FormMessage />
@@ -461,6 +543,30 @@ export function TicketForm({ clientes, marcas, modelos, tiposServicio, ticket }:
                 </FormItem>
               )}
             />
+
+            {/* Técnico Asignado - Solo visible en modo edición */}
+            {ticket && (
+              <FormItem>
+                <FormLabel>Técnico Asignado</FormLabel>
+                <Select
+                  value={selectedTecnico}
+                  onValueChange={handleTecnicoChange}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un técnico" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {tecnicos.map((tecnico) => (
+                      <SelectItem key={tecnico.id} value={tecnico.id.toString()}>
+                        {`${tecnico.nombre} ${tecnico.apellidoPaterno} ${tecnico.apellidoMaterno || ''}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
           </div>
 
           {/* Descripción del Problema */}

@@ -268,28 +268,38 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
                     placeholder="Ingresa el PIN"
                   />
                 ) : (
-                  <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((numero) => (
-                      <button
-                        key={numero}
-                        type="button"
-                        className={`aspect-square border rounded-lg flex items-center justify-center text-lg font-medium hover:bg-gray-100 ${
-                          formData.patronDesbloqueo?.includes(numero) ? 'bg-blue-100' : ''
-                        }`}
-                        onClick={() => {
-                          if (!isEditing) return;
-                          const currentPattern = formData.patronDesbloqueo || [];
-                          if (currentPattern.length < 9) {
-                            setFormData(prev => ({
-                              ...prev,
-                              patronDesbloqueo: [...currentPattern, numero]
-                            }));
-                          }
-                        }}
-                      >
-                        {numero}
-                      </button>
-                    ))}
+                  <div>
+                    <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((numero) => (
+                        <button
+                          key={numero}
+                          type="button"
+                          className={`aspect-square border rounded-lg flex items-center justify-center text-lg font-medium hover:bg-gray-100 ${
+                            formData.patronDesbloqueo?.includes(numero) ? 'bg-blue-100' : ''
+                          }`}
+                          onClick={() => {
+                            if (!isEditing) return;
+                            const currentPattern = formData.patronDesbloqueo || [];
+                            if (currentPattern.length < 9) {
+                              setFormData(prev => ({
+                                ...prev,
+                                patronDesbloqueo: [...currentPattern, numero]
+                              }));
+                            }
+                          }}
+                        >
+                          {numero}
+                        </button>
+                      ))}
+                    </div>
+                    {formData.patronDesbloqueo && formData.patronDesbloqueo.length > 0 && (
+                      <div className="mt-3 text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">Orden del Patrón:</div>
+                        <div className="text-lg font-mono text-blue-600 bg-blue-50 px-3 py-2 rounded-lg inline-block">
+                          {formData.patronDesbloqueo.join(' → ')}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

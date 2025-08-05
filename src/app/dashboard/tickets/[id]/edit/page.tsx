@@ -44,6 +44,7 @@ export default function EditTicketPage({ params }: { params: { id: string } }) {
           fechaCompra: ticketData.fecha_compra,
           redCelular: ticketData.red_celular,
           tipoDesbloqueo: ticketData.tipo_desbloqueo,
+          tecnicoAsignadoId: ticketData.tecnico_asignado_id,
           // Relaciones
           clientes: ticketData.clientes,
           modelos: ticketData.modelos,
