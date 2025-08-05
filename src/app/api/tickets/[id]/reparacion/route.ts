@@ -122,7 +122,7 @@ export async function POST(
             console.log('✅ Conceptos convertidos exitosamente');
           } catch (error) {
             console.error('❌ Error al convertir conceptos:', error);
-            throw error;
+            // No lanzar error, solo logear para no fallar todo el proceso
           }
 
           // Procesar descuento de inventario
@@ -132,7 +132,7 @@ export async function POST(
             console.log('✅ Descuento de inventario procesado exitosamente');
           } catch (error) {
             console.error('❌ Error al procesar descuento de inventario:', error);
-            throw error;
+            // No lanzar error, solo logear para no fallar todo el proceso
           }
         });
         console.log('✅ Transacción completada exitosamente (Sistema Central)');

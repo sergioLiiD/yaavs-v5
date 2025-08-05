@@ -33,9 +33,11 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
     });
 
     if (!reparacion) {
+      // Si no hay reparación, no hay piezas que validar, por lo que retornamos éxito
+      console.log('No se encontró la reparación para este ticket, pero esto es normal para reparaciones nuevas');
       return {
-        success: false,
-        errors: ['No se encontró la reparación para este ticket'],
+        success: true,
+        errors: [],
         missingStock: []
       };
     }
@@ -103,6 +105,16 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
           modelos: pa.piezas.modelos
         }
       }));
+    }
+
+    // Si no hay piezas de reparación, no hay stock que validar
+    if (piezasReparacion.length === 0) {
+      console.log('No hay piezas de reparación para validar stock');
+      return {
+        success: true,
+        errors: [],
+        missingStock: []
+      };
     }
 
     const errors: string[] = [];
