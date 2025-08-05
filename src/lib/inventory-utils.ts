@@ -79,7 +79,29 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
         total: pa.total,
         created_at: pa.created_at,
         updated_at: pa.updated_at,
-        productos: pa.piezas
+        productos: {
+          id: pa.piezas.id,
+          created_at: pa.piezas.created_at,
+          updated_at: pa.piezas.updated_at,
+          nombre: pa.piezas.nombre,
+          marca_id: pa.piezas.marca_id,
+          modelo_id: pa.piezas.modelo_id,
+          stock: pa.piezas.stock,
+          sku: pa.piezas.nombre, // Usar nombre como SKU para piezas antiguas
+          descripcion: null,
+          notas_internas: null,
+          garantia_valor: null,
+          garantia_unidad: null,
+          categoria_id: null,
+          proveedor_id: null,
+          precio_promedio: pa.piezas.precio,
+          stock_maximo: null,
+          stock_minimo: null,
+          tipo_servicio_id: null,
+          tipo: 'PRODUCTO' as const,
+          marcas: pa.piezas.marcas,
+          modelos: pa.piezas.modelos
+        }
       }));
     }
 
@@ -105,7 +127,9 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
       
       // Solo validar stock para productos físicos, no para servicios
       if (!esServicio && producto.stock < piezaRep.cantidad) {
-        const productoNombre = `${producto.nombre} (${producto.marcas?.nombre || 'N/A'} ${producto.modelos?.nombre || 'N/A'})`;
+        const marcaNombre = producto.marcas?.nombre || 'N/A';
+        const modeloNombre = producto.modelos?.nombre || 'N/A';
+        const productoNombre = `${producto.nombre} (${marcaNombre} ${modeloNombre})`;
         
         missingStock.push({
           piezaId: producto.id,
@@ -184,7 +208,27 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
         total: pa.total,
         created_at: pa.created_at,
         updated_at: pa.updated_at,
-        productos: pa.piezas
+        productos: {
+          id: pa.piezas.id,
+          created_at: pa.piezas.created_at,
+          updated_at: pa.piezas.updated_at,
+          nombre: pa.piezas.nombre,
+          marca_id: pa.piezas.marca_id,
+          modelo_id: pa.piezas.modelo_id,
+          stock: pa.piezas.stock,
+          sku: pa.piezas.nombre, // Usar nombre como SKU para piezas antiguas
+          descripcion: null,
+          notas_internas: null,
+          garantia_valor: null,
+          garantia_unidad: null,
+          categoria_id: null,
+          proveedor_id: null,
+          precio_promedio: pa.piezas.precio,
+          stock_maximo: null,
+          stock_minimo: null,
+          tipo_servicio_id: null,
+          tipo: 'PRODUCTO' as const
+        }
       }));
     }
     
@@ -291,8 +335,8 @@ export async function obtenerResumenDescuentos(ticketId: number) {
     return salidas.map(salida => ({
       id: salida.id,
       producto: salida.productos.nombre,
-      marca: salida.productos.marcas.nombre,
-      modelo: salida.productos.modelos.nombre,
+      marca: salida.productos.marcas?.nombre || 'N/A',
+      modelo: salida.productos.modelos?.nombre || 'N/A',
       cantidad: salida.cantidad,
       fecha: salida.fecha,
       razon: salida.razon

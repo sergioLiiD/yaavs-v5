@@ -84,18 +84,18 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Detalles del Ticket #{ticket.numeroTicket}</DialogTitle>
           <DialogDescription>
             Información completa del ticket de reparación
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto flex-1 pr-2 pb-4">
           {/* Información del Cliente */}
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold">Información del Cliente</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Información del Cliente</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Nombre</p>
@@ -116,7 +116,7 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
 
           {/* Información del Dispositivo */}
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold">Información del Dispositivo</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Información del Dispositivo</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Marca</p>
@@ -139,7 +139,7 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
 
           {/* Información del Servicio */}
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold">Información del Servicio</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Información del Servicio</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Tipo de Servicio</p>
@@ -166,14 +166,14 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
 
           {/* Descripción del Problema */}
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold">Descripción del Problema</h3>
-            <p className="text-sm">{ticket.descripcionProblema || 'No disponible'}</p>
+            <h3 className="text-lg font-semibold text-gray-900">Descripción del Problema</h3>
+            <p className="text-sm bg-gray-50 p-3 rounded-md">{ticket.descripcionProblema || 'No disponible'}</p>
           </div>
 
           {/* Presupuesto */}
           {ticket.presupuesto && (
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Presupuesto</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Presupuesto</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Total</p>
@@ -220,7 +220,7 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
           {/* Pagos */}
           {ticket.pagos && ticket.pagos.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Pagos</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Pagos</h3>
               <div className="space-y-2">
                 {ticket.pagos.map((pago) => (
                   <div key={pago.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
