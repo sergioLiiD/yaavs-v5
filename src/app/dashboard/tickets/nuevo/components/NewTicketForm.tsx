@@ -560,8 +560,27 @@ export function NewTicketForm() {
               ))}
             </div>
             {(form.watch('patronDesbloqueo') || []).length > 0 && (
-              <div className="mt-2 text-sm text-gray-600 text-center">
-                Patrón actual: {(form.watch('patronDesbloqueo') || []).join(', ')}
+              <div className="mt-3 text-center">
+                <div className="text-sm font-medium text-gray-700 mb-1">Orden del Patrón:</div>
+                <div className="text-lg font-mono text-blue-600 bg-blue-50 px-3 py-2 rounded-lg inline-block mb-2">
+                  {(form.watch('patronDesbloqueo') || []).join(' → ')}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    form.setValue('patronDesbloqueo', []);
+                    toast.success('Patrón reiniciado');
+                  }}
+                >
+                  Reiniciar Patrón
+                </Button>
+              </div>
+            )}
+            {(form.watch('patronDesbloqueo') || []).length === 0 && (
+              <div className="mt-2 text-sm text-gray-500 text-center">
+                Toca los números para crear el patrón
               </div>
             )}
           </div>
