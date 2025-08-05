@@ -220,7 +220,10 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
         checklist,
         fotos,
         videos,
-        completar: true
+        completar: true,
+        diagnostico: ticket.reparacion?.diagnostico || '',
+        saludBateria: ticket.reparacion?.saludBateria || null,
+        versionSO: ticket.reparacion?.versionSO || ''
       });
 
       console.log('Respuesta del servidor:', response.data);
