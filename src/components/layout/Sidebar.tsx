@@ -150,6 +150,7 @@ const menuItems: MenuItem[] = [
 ];
 
 const Sidebar: React.FC = () => {
+  console.log('🔍 Sidebar component rendering...');
   const pathname = usePathname();
   const { data: session } = useSession();
   const userPermissions = session?.user?.permissions || [];
@@ -271,6 +272,8 @@ const Sidebar: React.FC = () => {
       </div>
     </aside>
   );
+  
+  console.log('🔍 Sidebar render complete');
 };
 
 export default Sidebar; 
