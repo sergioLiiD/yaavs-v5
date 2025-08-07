@@ -143,6 +143,18 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
+    title: 'Reportes',
+    path: '/dashboard/reportes',
+    requiredPermissions: ['REPORTS_VIEW'],
+    submenu: [
+      {
+        title: 'Reporte Financiero',
+        path: '/dashboard/reportes/financiero',
+        requiredPermissions: ['REPORTS_VIEW']
+      }
+    ]
+  },
+  {
     title: 'Puntos de Recolección',
     path: '/dashboard/puntos-recoleccion',
     requiredPermissions: ['COLLECTION_POINTS_VIEW']
