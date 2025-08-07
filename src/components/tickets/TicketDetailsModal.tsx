@@ -9,6 +9,20 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatDate } from "@/lib/utils";
 
+// Función para formatear fecha de pago con fallback
+const formatPagoDate = (pago: any) => {
+  const dateString = pago.fecha || pago.fechaPago || pago.created_at;
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return 'Fecha inválida';
+    }
+    return format(date, 'dd/MM/yyyy HH:mm', { locale: es });
+  } catch (error) {
+    return 'Fecha inválida';
+  }
+};
+
 interface Ticket {
   id: number;
   numeroTicket: string;
@@ -71,6 +85,7 @@ interface Ticket {
     monto: number;
     fecha: string;
     metodoPago: string;
+    referencia?: string;
   }[];
 }
 
@@ -225,7 +240,7 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
                 {ticket.pagos.map((pago) => (
                   <div key={pago.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                     <div>
-                      <p className="font-medium">{formatDate(pago.fecha)}</p>
+                      <p className="font-medium">{formatPagoDate(pago)}</p>
                       <p className="text-sm text-muted-foreground">{pago.metodoPago}</p>
                     </div>
                     <p className="font-medium">${pago.monto.toFixed(2)}</p>

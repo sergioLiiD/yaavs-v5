@@ -5,17 +5,62 @@
 **Desarrollado por**: Sergio Velazco
 
 ## Índice
-1. [Requisitos del Sistema](#requisitos-del-sistema)
-2. [Preparación del Servidor](#preparación-del-servidor)
-3. [Instalación de Docker](#instalación-de-docker)
-4. [Configuración del Proyecto](#configuración-del-proyecto)
-5. [Configuración de Variables de Entorno](#configuración-de-variables-de-entorno)
-6. [Configuración de Docker](#configuración-de-docker)
-7. [Despliegue](#despliegue)
-8. [Verificación de la Instalación](#verificación-de-la-instalación)
-9. [Configuración de SSL (Opcional)](#configuración-de-ssl-opcional)
-10. [Mantenimiento](#mantenimiento)
-11. [Solución de Problemas](#solución-de-problemas)
+1. [Opciones de Instalación](#opciones-de-instalación)
+2. [Requisitos del Sistema](#requisitos-del-sistema)
+3. [Preparación del Servidor](#preparación-del-servidor)
+4. [Instalación de Docker](#instalación-de-docker)
+5. [Configuración del Proyecto](#configuración-del-proyecto)
+6. [Configuración de Variables de Entorno](#configuración-de-variables-de-entorno)
+7. [Configuración de Docker](#configuración-de-docker)
+8. [Despliegue](#despliegue)
+9. [Verificación de la Instalación](#verificación-de-la-instalación)
+10. [Configuración de SSL (Opcional)](#configuración-de-ssl-opcional)
+11. [Mantenimiento](#mantenimiento)
+12. [Solución de Problemas](#solución-de-problemas)
+
+## Opciones de Instalación
+
+### Opción 1: Instalación Automática (Recomendada)
+
+Si tienes todos los archivos del proyecto, puedes usar el script de instalación automática:
+
+```bash
+# Navegar al directorio del proyecto
+cd /ruta/al/proyecto/yaavs-v5
+
+# Ejecutar instalador automático
+./scripts/install-yaavs.sh
+```
+
+**El script automático realizará**:
+- ✅ Actualización del sistema
+- ✅ Instalación de Docker
+- ✅ Configuración de zona horaria
+- ✅ Preparación del directorio del proyecto
+- ✅ Configuración de variables de entorno
+- ✅ Generación de secrets seguros
+- ✅ Construcción y despliegue de servicios
+- ✅ Ejecución de migraciones
+- ✅ Verificación de la instalación
+
+### Opción 2: Instalación Manual
+
+Si prefieres seguir el proceso paso a paso, continúa con las siguientes secciones.
+
+### Opción 3: Instalación desde Archivo Comprimido
+
+Si recibiste el proyecto en un archivo `.tar.gz`:
+
+```bash
+# Extraer el archivo
+cd /opt
+sudo tar -xzf /ruta/al/archivo/yaavs-v5.tar.gz
+sudo chown -R $USER:$USER yaavs-v5
+cd yaavs-v5
+
+# Ejecutar instalador automático
+./scripts/install-yaavs.sh
+```
 
 ## Requisitos del Sistema
 
@@ -113,14 +158,26 @@ docker-compose --version
 
 ## Configuración del Proyecto
 
-### 1. Clonar el Repositorio
+### 1. Preparar los Archivos del Proyecto
 
 ```bash
 # Navegar al directorio donde se instalará la aplicación
 cd /opt
 
-# Clonar el repositorio
-sudo git clone https://github.com/sergioLiiD/yaavs-v5.git
+# Crear directorio del proyecto
+sudo mkdir yaavs-v5
+sudo chown -R $USER:$USER yaavs-v5
+cd yaavs-v5
+
+# Copiar todos los archivos del proyecto a este directorio
+# (Asegúrate de que todos los archivos del proyecto estén en /opt/yaavs-v5)
+```
+
+**Alternativa si tienes el código en un archivo comprimido**:
+```bash
+# Si tienes el código en un archivo .tar.gz o .zip
+cd /opt
+sudo tar -xzf /ruta/al/archivo/yaavs-v5.tar.gz
 sudo chown -R $USER:$USER yaavs-v5
 cd yaavs-v5
 ```

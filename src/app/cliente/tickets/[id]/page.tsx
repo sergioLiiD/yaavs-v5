@@ -322,7 +322,7 @@ export default function TicketDetailPage({ params }: { params: { id: string } })
                     <div>
                       <p className="font-medium">{pago.concepto}</p>
                       <p className="text-sm text-gray-600">
-                        {new Date(pago.fecha).toLocaleDateString()}
+                        {pago.fecha ? new Date(pago.fecha).toLocaleDateString() : 'Fecha no disponible'}
                       </p>
                     </div>
                     <div className="text-right">

@@ -43,6 +43,8 @@ interface Pago {
   referencia?: string;
   created_at: string;
   updated_at: string;
+  fecha?: string; // Para compatibilidad
+  fechaPago?: string; // Para compatibilidad
 }
 
 export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
@@ -242,6 +244,12 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
     }
   };
 
+  const getPagoDate = (pago: Pago) => {
+    // Intentar usar fecha, luego fechaPago, luego created_at
+    const dateString = pago.fecha || pago.fechaPago || pago.created_at;
+    return formatDate(dateString);
+  };
+
   if (!presupuesto) {
     return (
       <Card>
@@ -398,7 +406,7 @@ export function PagoSection({ ticketId, onUpdate }: PagoSectionProps) {
                   </div>
                   <div className="flex items-center space-x-2">
                     <p className="text-sm text-gray-500">
-                      {formatDate(pago.created_at)}
+                      {getPagoDate(pago)}
                     </p>
                     <button
                       onClick={() => handleEditPago(pago)}

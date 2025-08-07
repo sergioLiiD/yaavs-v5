@@ -131,9 +131,9 @@ export default async function ClienteTicketsPage() {
       id: pago.id,
       ticketId: pago.ticket_id,
       monto: pago.monto,
-      metodoPago: pago.metodo_pago,
+      metodoPago: pago.metodo,
       referencia: pago.referencia,
-      fechaPago: pago.fecha_pago,
+      fechaPago: pago.created_at, // Usar created_at en lugar de fecha_pago
       createdAt: pago.created_at,
       updatedAt: pago.updated_at
     })) || []

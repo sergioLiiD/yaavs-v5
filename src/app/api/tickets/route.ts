@@ -409,7 +409,7 @@ export async function GET(request: Request) {
           ...ticket,
           presupuestos: {
             ...ticket.presupuestos,
-            saldo: Math.max(0, saldoCalculado) // El saldo no puede ser negativo
+            saldo: Math.max(0, saldoCalculado) // Usar cálculo en tiempo real
           }
         };
       }
@@ -530,7 +530,7 @@ export async function GET(request: Request) {
           fechaCreacion: ticket.presupuestos.fecha_creacion,
           createdAt: ticket.presupuestos.created_at,
           updatedAt: ticket.presupuestos.updated_at,
-          saldo: ticket.presupuestos.saldo || 0,
+          saldo: ticket.presupuestos.saldo || 0, // Usar el saldo calculado en tiempo real
           conceptos: ticket.presupuestos.conceptos_presupuesto?.map((concepto: any) => ({
             id: concepto.id,
             descripcion: concepto.descripcion,
@@ -546,10 +546,10 @@ export async function GET(request: Request) {
           id: pago.id,
           ticketId: pago.ticket_id,
           monto: pago.monto,
-          metodoPago: pago.metodo_pago,
+          metodoPago: pago.metodo,
           referencia: pago.referencia,
-          fecha: pago.fecha_pago,
-          fechaPago: pago.fecha_pago,
+          fecha: pago.created_at, // Usar created_at en lugar de fecha_pago
+          fechaPago: pago.created_at, // Usar created_at en lugar de fecha_pago
           createdAt: pago.created_at,
           updatedAt: pago.updated_at
         })) || [],

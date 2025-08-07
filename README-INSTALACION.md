@@ -1,270 +1,87 @@
-# 🚀 Instalación Rápida - YAAVS v5
+# Instalación de YAAVS v5
 
-## ⚡ Instalación Automatizada (Recomendada)
+## 🚀 Instalación Rápida
 
-### Opción 1: Script Automatizado
+### Opción 1: Instalación Automática (Recomendada)
+
+Si tienes todos los archivos del proyecto:
 
 ```bash
-# Descargar el script de instalación
-curl -fsSL https://raw.githubusercontent.com/sergioLiiD/yaavs-v5/main/scripts/install.sh -o install.sh
+# 1. Navegar al directorio del proyecto
+cd /ruta/donde/estan/los/archivos/yaavs-v5
 
-# Dar permisos de ejecución
-chmod +x install.sh
-
-# Ejecutar instalación automatizada
-./install.sh
+# 2. Ejecutar instalador automático
+./scripts/install-yaavs.sh
 ```
 
 ### Opción 2: Instalación Manual
 
-```bash
-# 1. Clonar repositorio
-sudo git clone https://github.com/sergioLiiD/yaavs-v5.git /opt/yaavs-v5
-sudo chown -R $USER:$USER /opt/yaavs-v5
-cd /opt/yaavs-v5
-
-# 2. Configurar variables de entorno
-cp .env.example .env
-nano .env
-
-# 3. Configurar Docker Compose
-cp docker-compose.example.yml docker-compose.yml
-nano docker-compose.yml
-
-# 4. Desplegar
-docker-compose up -d --build
-```
-
-## 📋 Requisitos Previos
-
-- **Sistema**: Ubuntu 20.04+ / Debian 11+
-- **RAM**: 4GB mínimo, 8GB recomendado
-- **Almacenamiento**: 50GB SSD mínimo
-- **Docker**: Versión 20.10+
-- **Docker Compose**: Versión 2.0+
-
-## ⚙️ Configuración Rápida
-
-### 1. Variables de Entorno (.env)
-
-```env
-# OBLIGATORIO: Cambiar estos valores
-DATABASE_URL=postgresql://postgres:TU_PASSWORD@postgres:5432/yaavs_db?schema=public
-NEXTAUTH_URL=https://TU_DOMINIO:PUERTO
-NEXTAUTH_SECRET=TU_SECRET_MUY_SEGURO
-JWT_SECRET=TU_JWT_SECRET
-
-# OPCIONAL: Configurar si usas mapas
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=TU_API_KEY
-```
-
-### 2. Docker Compose (docker-compose.yml)
-
-```yaml
-# Cambiar estos valores obligatorios:
-POSTGRES_PASSWORD: TU_PASSWORD_AQUI
-NEXTAUTH_URL: https://TU_DOMINIO:PUERTO
-ports:
-  - "PUERTO_EXTERNO:4001"  # Cambiar puerto si es necesario
-```
-
-## 🔧 Comandos Útiles
+Si prefieres control total del proceso:
 
 ```bash
-# Ver estado de servicios
-docker-compose ps
-
-# Ver logs en tiempo real
-docker-compose logs -f app
-
-# Reiniciar servicios
-docker-compose restart
-
-# Actualizar aplicación
-git pull && docker-compose up -d --build
-
-# Backup de base de datos
-docker exec yaavs_postgres pg_dump -U postgres yaavs_db > backup.sql
-
-# Restaurar backup
-docker exec -i yaavs_postgres psql -U postgres yaavs_db < backup.sql
+# 1. Seguir el MANUAL-INSTALACION.md paso a paso
+# 2. Omitir la sección "Clonar el Repositorio"
+# 3. Usar los archivos que ya tienes
 ```
 
-## 🌐 Acceso a la Aplicación
+## 📋 ¿Qué necesitas?
 
-- **URL**: http://localhost:4001
-- **Base de datos**: localhost:5432
-- **Usuario BD**: postgres
-- **Contraseña**: La que configuraste en POSTGRES_PASSWORD
+- ✅ **Archivos del proyecto** (que ya tienes)
+- ✅ **Servidor Ubuntu/Debian** con acceso root
+- ✅ **Conexión a internet** para descargar Docker
+- ✅ **Conocimientos básicos de Linux** (opcional)
 
-## 👤 Crear Usuario Administrador
+## 🔧 ¿Qué hace el instalador automático?
 
-Después de la instalación, necesitas crear un usuario administrador para acceder al sistema:
+El script `install-yaavs.sh` realiza automáticamente:
 
-```bash
-# Navegar al directorio del proyecto
-cd /opt/yaavs-v5
+1. **Actualización del sistema**
+2. **Instalación de Docker**
+3. **Configuración de zona horaria**
+4. **Preparación del directorio del proyecto**
+5. **Configuración de variables de entorno**
+6. **Generación de secrets seguros**
+7. **Construcción y despliegue de servicios**
+8. **Ejecución de migraciones de base de datos**
+9. **Verificación de la instalación**
 
-# Crear usuario administrador (modo interactivo)
-./scripts/create-admin-user.sh
+## ⚠️ Notas Importantes
 
-# O modo rápido con valores por defecto
-./scripts/create-admin-user.sh --quick
-```
+- **NO necesitas un repositorio de GitHub** - todos los archivos están incluidos
+- **NO necesitas credenciales de Git** - el proyecto es autónomo
+- **El instalador funciona con los archivos locales** que ya tienes
+- **Puedes ejecutar el script desde cualquier directorio** que contenga los archivos del proyecto
 
-**El script te guiará para:**
-- Ingresar información del administrador
-- Crear contraseña segura (o generar automáticamente)
-- Asignar rol de administrador
-- Verificar la creación exitosa
+## 🆘 Si tienes problemas
 
-**Ejemplo de uso:**
-```bash
-================================
-Crear Usuario Administrador - YAAVS v5
-================================
-[INFO] Verificando conexión a la base de datos...
-[INFO] Conexión a la base de datos exitosa
+1. **Verifica que todos los archivos estén presentes**:
+   ```bash
+   ls -la
+   # Deberías ver: docker-compose.yml, Dockerfile, scripts/, src/, etc.
+   ```
 
-Ingresa la información del usuario administrador:
+2. **Verifica permisos del script**:
+   ```bash
+   chmod +x scripts/install-yaavs.sh
+   ```
 
-Email del administrador: admin@miempresa.com
-Nombre: Juan
-Apellido paterno: Pérez
-Contraseña: ********
+3. **Ejecuta con logs detallados**:
+   ```bash
+   bash -x scripts/install-yaavs.sh
+   ```
 
-[INFO] Usuario creado exitosamente
-✅ Usuario configurado exitosamente
+4. **Consulta el manual completo**: `MANUAL-INSTALACION.md`
 
-Información del usuario:
-- Email: admin@miempresa.com
-- Contraseña: ********
-- Rol: Administrador
-```
+## 📞 Soporte
 
-## 🔒 Configuración de Seguridad
+Si tienes problemas con la instalación:
 
-### 1. Cambiar Contraseñas por Defecto
-
-```bash
-# Generar contraseña segura
-openssl rand -base64 32
-
-# Editar docker-compose.yml y .env
-nano docker-compose.yml
-nano .env
-```
-
-### 2. Configurar SSL (Recomendado)
-
-```bash
-# Instalar Certbot
-sudo apt install certbot python3-certbot-nginx
-
-# Obtener certificado SSL
-sudo certbot --nginx -d TU_DOMINIO
-```
-
-### 3. Configurar Firewall
-
-```bash
-# Instalar UFW
-sudo apt install ufw
-
-# Configurar reglas básicas
-sudo ufw allow ssh
-sudo ufw allow 4001
-sudo ufw enable
-```
-
-## 📊 Monitoreo
-
-### Verificar Estado del Sistema
-
-```bash
-# Estado de contenedores
-docker-compose ps
-
-# Uso de recursos
-docker stats
-
-# Logs de errores
-docker-compose logs --tail=100 app | grep ERROR
-```
-
-### Script de Monitoreo
-
-```bash
-#!/bin/bash
-# Crear script de monitoreo
-cat > /opt/yaavs/monitor.sh << 'EOF'
-#!/bin/bash
-echo "=== Estado de YAAVS v5 ==="
-echo "Fecha: $(date)"
-echo "Uptime: $(uptime)"
-echo
-echo "=== Contenedores ==="
-docker-compose ps
-echo
-echo "=== Recursos ==="
-docker stats --no-stream
-echo
-echo "=== Logs Recientes ==="
-docker-compose logs --tail=20 app
-EOF
-
-chmod +x /opt/yaavs/monitor.sh
-```
-
-## 🆘 Solución de Problemas
-
-### Problema: Contenedor no inicia
-
-```bash
-# Verificar logs
-docker-compose logs app
-
-# Verificar configuración
-docker-compose config
-
-# Reiniciar contenedor
-docker-compose restart app
-```
-
-### Problema: Base de datos no conecta
-
-```bash
-# Verificar conexión
-docker exec yaavs_app npx prisma db push
-
-# Reiniciar base de datos
-docker-compose restart postgres
-```
-
-### Problema: Migraciones fallan
-
-```bash
-# Ejecutar migraciones manualmente
-docker-compose run --rm migrations
-
-# Verificar estado
-docker exec yaavs_app npx prisma migrate status
-```
-
-## 📚 Documentación Completa
-
-Para información detallada, consulta:
-- [Manual de Instalación Completo](MANUAL-INSTALACION.md)
-- [Manual Técnico](manual-tecnico.md)
-
-## 🆘 Soporte
-
-- **Issues**: [GitHub Issues](https://github.com/sergioLiiD/yaavs-v5/issues)
-- **Documentación**: [Wiki del Proyecto](https://github.com/sergioLiiD/yaavs-v5/wiki)
-- **Contacto**: Sergio Velazco
+1. Revisa la sección "Solución de Problemas" en el manual
+2. Verifica que tu servidor cumpla con los requisitos mínimos
+3. Asegúrate de tener conexión a internet para descargar Docker
 
 ---
 
+**Desarrollado por**: Sergio Velazco  
 **Versión**: 5.1  
-**Última actualización**: Agosto 2025  
-**Desarrollado por**: Sergio Velazco 
+**Fecha**: Agosto 2025 
