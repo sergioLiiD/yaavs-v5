@@ -62,18 +62,18 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return new NextResponse('No autorizado', { status: 401 });
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     if (session.user.role !== 'ADMINISTRADOR') {
-      return new NextResponse('No autorizado', { status: 403 });
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
     const body = await request.json();
     const { nombre, descripcion, codigo, categoria } = body;
 
     if (!nombre || !descripcion || !codigo || !categoria) {
-      return new NextResponse('Faltan campos requeridos', { status: 400 });
+      return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
     }
 
     const permisoExistente = await prisma.permisos.findFirst({
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     });
 
     if (permisoExistente) {
-      return new NextResponse('Ya existe un permiso con ese nombre o código', { status: 400 });
+      return NextResponse.json({ error: 'Ya existe un permiso con ese nombre o código' }, { status: 400 });
     }
 
     const permiso = await prisma.permisos.create({
@@ -95,6 +95,7 @@ export async function POST(request: Request) {
         descripcion,
         codigo,
         categoria,
+        created_at: new Date(),
         updated_at: new Date()
       }
     });
@@ -102,6 +103,6 @@ export async function POST(request: Request) {
     return NextResponse.json(permiso);
   } catch (error) {
     console.error('Error al crear permiso:', error);
-    return new NextResponse('Error interno del servidor', { status: 500 });
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 } 
