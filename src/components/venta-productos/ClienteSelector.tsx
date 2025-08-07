@@ -1,48 +1,28 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Cliente } from '@/types/cliente';
-import { ClienteServiceFrontend } from '@/services/clienteServiceFrontend';
-import { HiSearch, HiUser, HiX } from 'react-icons/hi';
+import { ClienteServiceFrontend, Cliente } from '@/services/clienteServiceFrontend';
 
 interface ClienteSelectorProps {
   clienteSeleccionado: Cliente | null;
-  onClienteChange: (cliente: Cliente | null) => void;
+  onClienteSeleccionado: (cliente: Cliente | null) => void;
 }
 
-export function ClienteSelector({ clienteSeleccionado, onClienteChange }: ClienteSelectorProps) {
+export default function ClienteSelector({ clienteSeleccionado, onClienteSeleccionado }: ClienteSelectorProps) {
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [terminoBusqueda, setTerminoBusqueda] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
 
-  // Cargar clientes al montar el componente
   useEffect(() => {
     cargarClientes();
   }, []);
 
-  // Filtrar clientes cuando cambia el término de búsqueda
-  useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredClientes(clientes);
-    } else {
-      const filtered = clientes.filter(cliente =>
-        cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cliente.apellido_paterno.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cliente.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cliente.telefono_celular.includes(searchTerm)
-      );
-      setFilteredClientes(filtered);
-    }
-  }, [searchTerm, clientes]);
-
   const cargarClientes = async () => {
-    setIsLoading(true);
     try {
-      const clientesData = await ClienteServiceFrontend.getAll();
-      setClientes(clientesData);
-      setFilteredClientes(clientesData);
+      setIsLoading(true);
+      const data = await ClienteServiceFrontend.obtenerClientes();
+      setClientes(data);
     } catch (error) {
       console.error('Error al cargar clientes:', error);
     } finally {
@@ -50,109 +30,103 @@ export function ClienteSelector({ clienteSeleccionado, onClienteChange }: Client
     }
   };
 
-  const handleClienteSelect = (cliente: Cliente) => {
-    onClienteChange(cliente);
-    setSearchTerm(`${cliente.nombre} ${cliente.apellido_paterno}`);
+  const buscarClientes = async (termino: string) => {
+    if (termino.length < 2) {
+      setClientes([]);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const data = await ClienteServiceFrontend.buscarClientes(termino);
+      setClientes(data);
+      setShowDropdown(true);
+    } catch (error) {
+      console.error('Error al buscar clientes:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valor = e.target.value;
+    setTerminoBusqueda(valor);
+    
+    if (valor.trim()) {
+      buscarClientes(valor);
+    } else {
+      setClientes([]);
+      setShowDropdown(false);
+    }
+  };
+
+  const seleccionarCliente = (cliente: Cliente) => {
+    onClienteSeleccionado(cliente);
+    setTerminoBusqueda(`${cliente.nombre} ${cliente.apellido_paterno} ${cliente.apellido_materno || ''}`.trim());
     setShowDropdown(false);
   };
 
-  const handleClearSelection = () => {
-    onClienteChange(null);
-    setSearchTerm('');
+  const limpiarSeleccion = () => {
+    onClienteSeleccionado(null);
+    setTerminoBusqueda('');
     setShowDropdown(false);
-  };
-
-  const getClienteDisplayName = (cliente: Cliente) => {
-    return `${cliente.nombre} ${cliente.apellido_paterno}${cliente.apellido_materno ? ` ${cliente.apellido_materno}` : ''}`;
   };
 
   return (
     <div className="relative">
       <div className="flex items-center space-x-2">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <HiSearch className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Buscar cliente por nombre, email o teléfono..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setShowDropdown(true);
-            }}
-            onFocus={() => setShowDropdown(true)}
-            className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-[#FEBF19] focus:border-[#FEBF19] sm:text-sm"
-          />
-          {clienteSeleccionado && (
-            <button
-              onClick={handleClearSelection}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-            >
-              <HiX className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-            </button>
-          )}
-        </div>
+        <input
+          type="text"
+          placeholder="Buscar cliente por nombre, email o teléfono..."
+          value={terminoBusqueda}
+          onChange={handleInputChange}
+          onFocus={() => setShowDropdown(true)}
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        {clienteSeleccionado && (
+          <button
+            onClick={limpiarSeleccion}
+            className="px-3 py-2 text-sm text-red-600 hover:text-red-800"
+          >
+            Limpiar
+          </button>
+        )}
       </div>
 
-      {/* Dropdown de clientes */}
       {showDropdown && (
-        <div className="absolute z-10 w-full mt-1 bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
           {isLoading ? (
-            <div className="px-4 py-2 text-gray-500">Cargando clientes...</div>
-          ) : filteredClientes.length === 0 ? (
-            <div className="px-4 py-2 text-gray-500">No se encontraron clientes</div>
-          ) : (
-            filteredClientes.map((cliente) => (
-              <button
+            <div className="px-4 py-2 text-gray-500">Cargando...</div>
+          ) : clientes.length > 0 ? (
+            clientes.map((cliente) => (
+              <div
                 key={cliente.id}
-                onClick={() => handleClienteSelect(cliente)}
-                className="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 flex items-center space-x-3"
+                onClick={() => seleccionarCliente(cliente)}
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
               >
-                <HiUser className="h-4 w-4 text-gray-400" />
-                <div>
-                  <div className="font-medium">{getClienteDisplayName(cliente)}</div>
-                  <div className="text-gray-500 text-xs">
-                    {cliente.email} • {cliente.telefono_celular}
-                  </div>
+                <div className="font-medium">
+                  {cliente.nombre} {cliente.apellido_paterno} {cliente.apellido_materno || ''}
                 </div>
-              </button>
+                <div className="text-sm text-gray-600">
+                  {cliente.email} • {cliente.telefono_celular}
+                </div>
+              </div>
             ))
+          ) : (
+            <div className="px-4 py-2 text-gray-500">No se encontraron clientes</div>
           )}
         </div>
       )}
 
-      {/* Cliente seleccionado */}
       {clienteSeleccionado && (
-        <div className="mt-3 p-3 bg-[#FEBF19]/10 border border-[#FEBF19]/20 rounded-md">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <HiUser className="h-5 w-5 text-[#FEBF19]" />
-              <div>
-                <div className="font-medium text-gray-900">
-                  {getClienteDisplayName(clienteSeleccionado)}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {clienteSeleccionado.email} • {clienteSeleccionado.telefono_celular}
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={handleClearSelection}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <HiX className="h-4 w-4" />
-            </button>
+        <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+          <div className="font-medium text-green-800">
+            Cliente seleccionado: {clienteSeleccionado.nombre} {clienteSeleccionado.apellido_paterno}
+          </div>
+          <div className="text-sm text-green-600">
+            {clienteSeleccionado.email} • {clienteSeleccionado.telefono_celular}
           </div>
         </div>
-      )}
-
-      {/* Overlay para cerrar dropdown */}
-      {showDropdown && (
-        <div
-          className="fixed inset-0 z-0"
-          onClick={() => setShowDropdown(false)}
-        />
       )}
     </div>
   );

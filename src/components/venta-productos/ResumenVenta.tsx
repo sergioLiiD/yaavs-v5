@@ -1,23 +1,32 @@
 'use client';
 
 import React from 'react';
-import { Cliente } from '@/types/cliente';
-import { HiShoppingCart, HiCheck } from 'react-icons/hi';
+import { Cliente } from '@/services/clienteServiceFrontend';
 
-interface ResumenVentaProps {
-  total: number;
-  productosCount: number;
-  clienteSeleccionado: Cliente | null;
-  onCreateVenta: () => void;
-  isLoading: boolean;
+interface ProductoSeleccionado {
+  id: number;
+  nombre: string;
+  sku: string;
+  precio: number;
+  stock: number;
+  cantidad: number;
+  subtotal: number;
 }
 
-export function ResumenVenta({ 
+interface ResumenVentaProps {
+  cliente: Cliente | null;
+  productos: ProductoSeleccionado[];
+  total: number;
+  onFinalizarVenta: () => void;
+  loading: boolean;
+}
+
+export default function ResumenVenta({ 
+  cliente, 
+  productos, 
   total, 
-  productosCount, 
-  clienteSeleccionado, 
-  onCreateVenta, 
-  isLoading 
+  onFinalizarVenta, 
+  loading 
 }: ResumenVentaProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -26,95 +35,99 @@ export function ResumenVenta({
     }).format(price);
   };
 
-  const canCreateVenta = clienteSeleccionado && productosCount > 0 && !isLoading;
+  const canFinalizar = cliente && productos.length > 0 && !loading;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Resumen de Venta</h3>
-        <div className="flex items-center space-x-2 text-sm text-gray-500">
-          <HiShoppingCart className="h-4 w-4" />
-          <span>{productosCount} {productosCount === 1 ? 'producto' : 'productos'}</span>
-        </div>
-      </div>
-
+    <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen de Venta</h3>
+      
       {/* Información del cliente */}
-      {clienteSeleccionado && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-md">
-          <div className="text-sm text-gray-600 mb-1">Cliente:</div>
-          <div className="font-medium text-gray-900">
-            {clienteSeleccionado.nombre} {clienteSeleccionado.apellido_paterno}
-            {clienteSeleccionado.apellido_materno && ` ${clienteSeleccionado.apellido_materno}`}
+      {cliente && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="font-medium text-blue-900">
+            Cliente: {cliente.nombre} {cliente.apellido_paterno}
           </div>
-          <div className="text-sm text-gray-500">
-            {clienteSeleccionado.email} • {clienteSeleccionado.telefono_celular}
+          <div className="text-sm text-blue-700">
+            {cliente.email} • {cliente.telefono_celular}
           </div>
         </div>
       )}
 
+      {/* Resumen de productos */}
+      <div className="mb-4">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-medium text-gray-700">Productos:</span>
+          <span className="text-sm text-gray-600">{productos.length} items</span>
+        </div>
+        
+        {productos.length > 0 && (
+          <div className="space-y-2 max-h-40 overflow-y-auto">
+            {productos.map((producto) => (
+              <div key={producto.id} className="flex justify-between text-sm">
+                <span className="text-gray-600">
+                  {producto.nombre} × {producto.cantidad}
+                </span>
+                <span className="font-medium">{formatPrice(producto.subtotal)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Total */}
       <div className="border-t border-gray-200 pt-4">
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-medium text-gray-900">Total:</span>
-          <span className="text-2xl font-bold text-[#FEBF19]">
-            {formatPrice(total)}
-          </span>
+        <div className="flex justify-between items-center">
+          <span className="text-lg font-semibold text-gray-900">Total:</span>
+          <span className="text-xl font-bold text-blue-600">{formatPrice(total)}</span>
         </div>
       </div>
 
-      {/* Validaciones */}
-      <div className="mt-4 space-y-2">
-        {!clienteSeleccionado && (
-          <div className="flex items-center space-x-2 text-red-600 text-sm">
-            <HiCheck className="h-4 w-4" />
-            <span>Debe seleccionar un cliente</span>
-          </div>
-        )}
-        {productosCount === 0 && (
-          <div className="flex items-center space-x-2 text-red-600 text-sm">
-            <HiCheck className="h-4 w-4" />
-            <span>Debe agregar al menos un producto</span>
-          </div>
-        )}
-        {clienteSeleccionado && productosCount > 0 && (
-          <div className="flex items-center space-x-2 text-green-600 text-sm">
-            <HiCheck className="h-4 w-4" />
-            <span>Listo para crear la venta</span>
-          </div>
-        )}
-      </div>
-
-      {/* Botón crear venta */}
+      {/* Botón de finalizar */}
       <div className="mt-6">
         <button
-          onClick={onCreateVenta}
-          disabled={!canCreateVenta}
-          className={`w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-md font-medium text-white transition-colors ${
-            canCreateVenta
-              ? 'bg-[#FEBF19] hover:bg-[#FEBF19]/90'
-              : 'bg-gray-300 cursor-not-allowed'
+          onClick={onFinalizarVenta}
+          disabled={!canFinalizar}
+          className={`w-full py-3 px-4 rounded-md font-medium text-white transition-colors ${
+            canFinalizar
+              ? 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500'
+              : 'bg-gray-400 cursor-not-allowed'
           }`}
         >
-          {isLoading ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              <span>Creando venta...</span>
-            </>
+          {loading ? (
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+              Procesando venta...
+            </div>
           ) : (
-            <>
-              <HiShoppingCart className="h-5 w-5" />
-              <span>Crear Venta</span>
-            </>
+            'Finalizar Venta'
           )}
         </button>
       </div>
 
-      {/* Información adicional */}
-      <div className="mt-4 text-xs text-gray-500 text-center">
-        <p>• Al crear la venta se descontará automáticamente el stock</p>
-        <p>• Se generará un recibo con todos los detalles</p>
-        <p>• La venta quedará registrada en el sistema</p>
-      </div>
+      {/* Mensajes de validación */}
+      {!cliente && (
+        <div className="mt-3 text-sm text-orange-600">
+          ⚠️ Debes seleccionar un cliente
+        </div>
+      )}
+      
+      {productos.length === 0 && (
+        <div className="mt-3 text-sm text-orange-600">
+          ⚠️ Debes agregar al menos un producto
+        </div>
+      )}
+
+      {/* Advertencias de stock */}
+      {productos.some(p => p.cantidad > p.stock) && (
+        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+          <div className="text-sm font-medium text-red-800">
+            ⚠️ Algunos productos no tienen suficiente stock
+          </div>
+          <div className="text-xs text-red-600 mt-1">
+            Revisa las cantidades antes de finalizar la venta
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

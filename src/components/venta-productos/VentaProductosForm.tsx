@@ -2,218 +2,196 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { ClienteSelector } from './ClienteSelector';
-import { ProductoSelector } from './ProductoSelector';
-import { ProductoItem } from './ProductoItem';
-import { ResumenVenta } from './ResumenVenta';
-import { ReciboVenta } from './ReciboVenta';
-import { ProductoVenta, ProductoService } from '@/services/productoService';
-import { VentaService, VentaData, ItemVenta } from '@/services/ventaService';
-import { Cliente } from '@/types/cliente';
-import { toast } from 'react-hot-toast';
+import ClienteSelector from './ClienteSelector';
+import ProductoSelector from './ProductoSelector';
+import ProductoItem from './ProductoItem';
+import ResumenVenta from './ResumenVenta';
+import ReciboVenta from './ReciboVenta';
+import { VentaService } from '@/services/ventaService';
 
 interface ProductoSeleccionado {
-  producto: ProductoVenta;
+  id: number;
+  nombre: string;
+  sku: string;
+  precio: number;
+  stock: number;
   cantidad: number;
   subtotal: number;
 }
 
-export function VentaProductosForm() {
+interface Cliente {
+  id: number;
+  nombre: string;
+  apellido_paterno: string;
+  apellido_materno?: string;
+  telefono_celular: string;
+  email: string;
+}
+
+export default function VentaProductosForm() {
   const { data: session } = useSession();
   const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente | null>(null);
   const [productosSeleccionados, setProductosSeleccionados] = useState<ProductoSeleccionado[]>([]);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showRecibo, setShowRecibo] = useState(false);
-  const [ventaCreada, setVentaCreada] = useState<any>(null);
+  const [ventaCompletada, setVentaCompletada] = useState(false);
+  const [ventaData, setVentaData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Calcular total cuando cambian los productos
-  useEffect(() => {
-    const nuevoTotal = productosSeleccionados.reduce((sum, item) => sum + item.subtotal, 0);
-    setTotal(nuevoTotal);
-  }, [productosSeleccionados]);
-
-  const agregarProducto = (producto: ProductoVenta, cantidad: number) => {
-    // Verificar si el producto ya está en la lista
-    const productoExistente = productosSeleccionados.find(
-      item => item.producto.id === producto.id
-    );
-
+  const agregarProducto = (producto: any) => {
+    const productoExistente = productosSeleccionados.find(p => p.id === producto.id);
+    
     if (productoExistente) {
-      // Actualizar cantidad del producto existente
-      const nuevaCantidad = productoExistente.cantidad + cantidad;
-      if (nuevaCantidad > producto.stock) {
-        toast.error(`Stock insuficiente. Solo hay ${producto.stock} unidades disponibles.`);
-        return;
-      }
-
-      setProductosSeleccionados(prev =>
-        prev.map(item =>
-          item.producto.id === producto.id
-            ? {
-                ...item,
-                cantidad: nuevaCantidad,
-                subtotal: nuevaCantidad * item.producto.precio
-              }
-            : item
+      // Si ya existe, aumentar cantidad
+      setProductosSeleccionados(prev => 
+        prev.map(p => 
+          p.id === producto.id 
+            ? { ...p, cantidad: p.cantidad + 1, subtotal: (p.cantidad + 1) * p.precio }
+            : p
         )
       );
     } else {
       // Agregar nuevo producto
-      if (cantidad > producto.stock) {
-        toast.error(`Stock insuficiente. Solo hay ${producto.stock} unidades disponibles.`);
-        return;
-      }
-
-      setProductosSeleccionados(prev => [
-        ...prev,
-        {
-          producto,
-          cantidad,
-          subtotal: cantidad * producto.precio
-        }
-      ]);
+      const nuevoProducto: ProductoSeleccionado = {
+        id: producto.id,
+        nombre: producto.nombre,
+        sku: producto.sku,
+        precio: producto.precio_promedio || 0,
+        stock: producto.stock,
+        cantidad: 1,
+        subtotal: producto.precio_promedio || 0
+      };
+      setProductosSeleccionados(prev => [...prev, nuevoProducto]);
     }
-
-    toast.success(`${cantidad} ${cantidad === 1 ? 'unidad' : 'unidades'} de ${producto.nombre} agregada`);
   };
 
   const actualizarCantidad = (productoId: number, nuevaCantidad: number) => {
-    const producto = productosSeleccionados.find(item => item.producto.id === productoId);
-    if (!producto) return;
-
-    if (nuevaCantidad > producto.producto.stock) {
-      toast.error(`Stock insuficiente. Solo hay ${producto.producto.stock} unidades disponibles.`);
-      return;
-    }
-
-    setProductosSeleccionados(prev =>
-      prev.map(item =>
-        item.producto.id === productoId
-          ? {
-              ...item,
-              cantidad: nuevaCantidad,
-              subtotal: nuevaCantidad * item.producto.precio
-            }
-          : item
+    setProductosSeleccionados(prev => 
+      prev.map(p => 
+        p.id === productoId 
+          ? { ...p, cantidad: nuevaCantidad, subtotal: nuevaCantidad * p.precio }
+          : p
       )
     );
   };
 
   const eliminarProducto = (productoId: number) => {
-    setProductosSeleccionados(prev =>
-      prev.filter(item => item.producto.id !== productoId)
-    );
+    setProductosSeleccionados(prev => prev.filter(p => p.id !== productoId));
   };
 
-  const crearVenta = async () => {
-    if (!clienteSeleccionado) {
-      toast.error('Debe seleccionar un cliente');
+  const calcularTotal = () => {
+    return productosSeleccionados.reduce((total, producto) => total + producto.subtotal, 0);
+  };
+
+  const finalizarVenta = async () => {
+    if (!clienteSeleccionado || productosSeleccionados.length === 0) {
+      alert('Por favor selecciona un cliente y al menos un producto');
       return;
     }
 
-    if (productosSeleccionados.length === 0) {
-      toast.error('Debe agregar al menos un producto');
+    // Validar stock
+    const productosSinStock = productosSeleccionados.filter(p => p.cantidad > p.stock);
+    if (productosSinStock.length > 0) {
+      alert(`Los siguientes productos no tienen suficiente stock: ${productosSinStock.map(p => p.nombre).join(', ')}`);
       return;
     }
 
-    if (!session?.user?.id) {
-      toast.error('Error de sesión');
-      return;
-    }
-
-    setIsLoading(true);
-
+    setLoading(true);
     try {
-      const items: ItemVenta[] = productosSeleccionados.map(item => ({
-        productoId: item.producto.id,
-        cantidad: item.cantidad,
-        precioUnitario: item.producto.precio,
-        subtotal: item.subtotal
-      }));
-
-      const ventaData: VentaData = {
-        clienteId: clienteSeleccionado.id,
-        items,
-        total,
-        usuarioId: session.user.id
+      const ventaData = {
+        cliente_id: clienteSeleccionado.id,
+        usuario_id: session?.user?.id,
+        total: calcularTotal(),
+        productos: productosSeleccionados.map(p => ({
+          producto_id: p.id,
+          cantidad: p.cantidad,
+          precio_unitario: p.precio,
+          subtotal: p.subtotal
+        }))
       };
 
-      const venta = await VentaService.crearVenta(ventaData);
-      setVentaCreada(venta);
-      setShowRecibo(true);
+      const resultado = await VentaService.crearVenta(ventaData);
+      setVentaData(resultado);
+      setVentaCompletada(true);
       
       // Limpiar formulario
       setClienteSeleccionado(null);
       setProductosSeleccionados([]);
-      setTotal(0);
-
-      toast.success('Venta creada exitosamente');
-    } catch (error: any) {
-      console.error('Error al crear venta:', error);
-      toast.error(error.message || 'Error al crear la venta');
+    } catch (error) {
+      console.error('Error al finalizar la venta:', error);
+      alert('Error al finalizar la venta');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const cerrarRecibo = () => {
-    setShowRecibo(false);
-    setVentaCreada(null);
+  const reiniciarVenta = () => {
+    setVentaCompletada(false);
+    setVentaData(null);
   };
 
+  if (ventaCompletada && ventaData) {
+    return <ReciboVenta venta={ventaData} onNuevaVenta={reiniciarVenta} />;
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Selección de Cliente */}
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">1. Seleccionar Cliente</h2>
-        <ClienteSelector
-          clienteSeleccionado={clienteSeleccionado}
-          onClienteChange={setClienteSeleccionado}
-        />
-      </div>
+    <div className="max-w-6xl mx-auto">
+      <div className="bg-white shadow-sm rounded-lg p-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+          Venta de Productos
+        </h1>
 
-      {/* Selección de Productos */}
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">2. Agregar Productos</h2>
-        <ProductoSelector onProductoSeleccionado={agregarProducto} />
-      </div>
-
-      {/* Lista de Productos Seleccionados */}
-      {productosSeleccionados.length > 0 && (
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">3. Productos Seleccionados</h2>
-          <div className="space-y-3">
-            {productosSeleccionados.map((item) => (
-              <ProductoItem
-                key={item.producto.id}
-                item={item}
-                onCantidadChange={(cantidad) => actualizarCantidad(item.producto.id, cantidad)}
-                onEliminar={() => eliminarProducto(item.producto.id)}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Panel izquierdo - Selección de cliente y productos */}
+          <div className="space-y-6">
+            {/* Selector de cliente */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Cliente</h2>
+              <ClienteSelector 
+                clienteSeleccionado={clienteSeleccionado}
+                onClienteSeleccionado={setClienteSeleccionado}
               />
-            ))}
+            </div>
+
+            {/* Selector de productos */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Productos</h2>
+              <ProductoSelector onProductoSeleccionado={agregarProducto} />
+            </div>
+          </div>
+
+          {/* Panel derecho - Lista de productos seleccionados */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Productos Seleccionados ({productosSeleccionados.length})
+            </h2>
+            
+            {productosSeleccionados.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">
+                No hay productos seleccionados
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {productosSeleccionados.map((producto) => (
+                  <ProductoItem
+                    key={producto.id}
+                    producto={producto}
+                    onCantidadChange={actualizarCantidad}
+                    onEliminar={eliminarProducto}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      )}
 
-      {/* Resumen y Botón de Venta */}
-      {productosSeleccionados.length > 0 && (
+        {/* Resumen y botón de finalizar */}
         <ResumenVenta
-          total={total}
-          productosCount={productosSeleccionados.length}
-          clienteSeleccionado={clienteSeleccionado}
-          onCreateVenta={crearVenta}
-          isLoading={isLoading}
+          cliente={clienteSeleccionado}
+          productos={productosSeleccionados}
+          total={calcularTotal()}
+          onFinalizarVenta={finalizarVenta}
+          loading={loading}
         />
-      )}
-
-      {/* Modal de Recibo */}
-      {showRecibo && ventaCreada && (
-        <ReciboVenta
-          venta={ventaCreada}
-          onClose={cerrarRecibo}
-        />
-      )}
+      </div>
     </div>
   );
 } 
