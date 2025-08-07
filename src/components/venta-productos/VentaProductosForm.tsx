@@ -6,7 +6,7 @@ import ClienteSelector from './ClienteSelector';
 import ProductoSelector from './ProductoSelector';
 import ProductoItem from './ProductoItem';
 import ResumenVenta from './ResumenVenta';
-import ReciboVenta from './ReciboVenta';
+import ReciboModal from './ReciboModal';
 import { VentaService } from '@/services/ventaService';
 
 interface ProductoSeleccionado {
@@ -35,6 +35,7 @@ export default function VentaProductosForm() {
   const [ventaCompletada, setVentaCompletada] = useState(false);
   const [ventaData, setVentaData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [showReciboModal, setShowReciboModal] = useState(false);
 
   const agregarProducto = (producto: any) => {
     const productoExistente = productosSeleccionados.find(p => p.id === producto.id);
@@ -111,6 +112,7 @@ export default function VentaProductosForm() {
       const resultado = await VentaService.crearVenta(ventaData);
       setVentaData(resultado);
       setVentaCompletada(true);
+      setShowReciboModal(true);
       
       // Limpiar formulario
       setClienteSeleccionado(null);
@@ -126,11 +128,12 @@ export default function VentaProductosForm() {
   const reiniciarVenta = () => {
     setVentaCompletada(false);
     setVentaData(null);
+    setShowReciboModal(false);
   };
 
-  if (ventaCompletada && ventaData) {
-    return <ReciboVenta venta={ventaData} onNuevaVenta={reiniciarVenta} />;
-  }
+  const cerrarModal = () => {
+    setShowReciboModal(false);
+  };
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -192,6 +195,16 @@ export default function VentaProductosForm() {
           loading={loading}
         />
       </div>
+
+      {/* Modal del recibo */}
+      {ventaData && (
+        <ReciboModal
+          venta={ventaData}
+          isOpen={showReciboModal}
+          onClose={cerrarModal}
+          onNuevaVenta={reiniciarVenta}
+        />
+      )}
     </div>
   );
 } 
