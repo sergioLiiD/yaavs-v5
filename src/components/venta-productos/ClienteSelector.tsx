@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Cliente } from '@/types/cliente';
-import { ClienteService } from '@/services/clienteService';
+import { ClienteServiceFrontend } from '@/services/clienteServiceFrontend';
 import { HiSearch, HiUser, HiX } from 'react-icons/hi';
 
 interface ClienteSelectorProps {
@@ -40,7 +40,7 @@ export function ClienteSelector({ clienteSeleccionado, onClienteChange }: Client
   const cargarClientes = async () => {
     setIsLoading(true);
     try {
-      const clientesData = await ClienteService.getAll();
+      const clientesData = await ClienteServiceFrontend.getAll();
       setClientes(clientesData);
       setFilteredClientes(clientesData);
     } catch (error) {
