@@ -86,11 +86,18 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
   const getFilteredMenuLinks = () => {
     const userRole = session?.user?.role;
     const userPermissions = session?.user?.permissions || [];
+    
+    console.log('🔍 AdminLayout Debug:', {
+      userRole,
+      userPermissions,
+      session: session?.user
+    });
 
     // Enlaces principales - todos los usuarios pueden ver estos
     const baseLinks = [
       { href: '/dashboard', icon: HiChartPie, text: 'Dashboard', active: pathname === '/dashboard' },
       { href: '/dashboard/tickets', icon: HiTicket, text: 'Tickets', active: pathname?.includes('/dashboard/tickets') },
+      { href: '/dashboard/venta-productos', icon: HiShoppingBag, text: 'Venta de Productos', active: pathname?.includes('/dashboard/venta-productos') },
       { href: '/dashboard/clientes', icon: HiUsers, text: 'Clientes', active: pathname?.includes('/dashboard/clientes') },
     ];
 
@@ -112,7 +119,9 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
       );
     }
 
-    return [...baseLinks, ...additionalLinks];
+    const finalLinks = [...baseLinks, ...additionalLinks];
+    console.log('🔍 Final menu links:', finalLinks.map(link => link.text));
+    return finalLinks;
   };
 
   // Función para determinar qué submenús puede ver el usuario
