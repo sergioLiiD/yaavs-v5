@@ -162,7 +162,7 @@ const Sidebar: React.FC = () => {
     ? menuItems.filter(item => ['Tickets', 'Clientes'].includes(item.title))
     : menuItems.filter(item => {
         if (!item.requiredPermissions) return true;
-        if (userRole === 'ADMINISTRATOR') return true;
+        if (userRole === 'ADMINISTRADOR') return true;
         return item.requiredPermissions.some(permission => userPermissions.includes(permission));
       });
 
@@ -211,7 +211,7 @@ const Sidebar: React.FC = () => {
                         {item.submenu
                           .filter(subItem => 
                             !subItem.requiredPermissions || 
-                            session?.user?.role === 'ADMINISTRATOR' ||
+                            session?.user?.role === 'ADMINISTRADOR' ||
                             subItem.requiredPermissions.some(permission => 
                               userPermissions.includes(permission)
                             )
