@@ -3,27 +3,27 @@
 echo "🚀 Ejecutando migración de ventas en producción..."
 
 # Verificar que el contenedor esté corriendo
-if ! docker ps | grep -q "yaavs_app"; then
-    echo "❌ Error: El contenedor yaavs_app no está corriendo"
+if ! docker ps | grep -q "yaavs-v5_app"; then
+    echo "❌ Error: El contenedor yaavs-v5_app no está corriendo"
     echo "Por favor, inicia los servicios primero"
     exit 1
 fi
 
 # Ejecutar la migración de Prisma
 echo "📦 Ejecutando migración de Prisma..."
-docker exec yaavs_app npx prisma migrate deploy
+docker exec yaavs-v5_app npx prisma migrate deploy
 
 echo "✅ Migración completada!"
 
 # Regenerar el cliente de Prisma
 echo "🔧 Regenerando cliente de Prisma..."
-docker exec yaavs_app npx prisma generate
+docker exec yaavs-v5_app npx prisma generate
 
 echo "✅ Cliente de Prisma regenerado!"
 
 # Verificar que las nuevas tablas se crearon
 echo "🔍 Verificando que las tablas se crearon correctamente..."
-docker exec yaavs_app psql $DATABASE_URL -c "
+docker exec yaavs-v5_app psql $DATABASE_URL -c "
 SELECT 
     table_name,
     'Tabla creada' as estado
@@ -34,7 +34,7 @@ ORDER BY table_name;
 
 echo ""
 echo "📋 Verificando estructura de las tablas..."
-docker exec yaavs_app psql $DATABASE_URL -c "
+docker exec yaavs-v5_app psql $DATABASE_URL -c "
 SELECT 
     column_name,
     data_type,
