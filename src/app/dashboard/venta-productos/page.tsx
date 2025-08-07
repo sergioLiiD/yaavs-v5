@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import AdminLayout from '@/components/adminLayout';
 import VentaProductosForm from '@/components/venta-productos/VentaProductosForm';
 import RouteGuard from '@/components/route-guard';
 
@@ -11,9 +10,7 @@ export const metadata: Metadata = {
 export default function VentaProductosPage() {
   return (
     <RouteGuard requiredPermissions={['SALES_VIEW']} section="Venta de Productos">
-      <AdminLayout>
-        <VentaProductosForm />
-      </AdminLayout>
+      <VentaProductosForm />
     </RouteGuard>
   );
 } 
