@@ -157,14 +157,32 @@ const Sidebar: React.FC = () => {
   const isRepairPointUser = userRole === 'ADMINISTRADOR_PUNTO' || userRole === 'USUARIO_PUNTO';
   const [openMenus, setOpenMenus] = useState<string[]>(['Catálogos', 'Inventario']);
   
+  // Debug: Log de información del usuario
+  console.log('🔍 Sidebar Debug:', {
+    userRole,
+    userPermissions,
+    isRepairPointUser,
+    session: session?.user
+  });
+
   // Filtrar elementos del menú según los permisos del usuario
   const filteredMenuItems = isRepairPointUser
     ? menuItems.filter(item => ['Tickets', 'Clientes'].includes(item.title))
     : menuItems.filter(item => {
         if (!item.requiredPermissions) return true;
         if (userRole === 'ADMINISTRADOR') return true;
-        return item.requiredPermissions.some(permission => userPermissions.includes(permission));
+        
+        const hasPermission = item.requiredPermissions.some(permission => userPermissions.includes(permission));
+        console.log(`🔍 Menu item "${item.title}":`, {
+          requiredPermissions: item.requiredPermissions,
+          hasPermission,
+          userPermissions
+        });
+        
+        return hasPermission;
       });
+
+  console.log('🔍 Filtered menu items:', filteredMenuItems.map(item => item.title));
 
   const toggleMenu = (menuName: string) => {
     setOpenMenus(prev => 
