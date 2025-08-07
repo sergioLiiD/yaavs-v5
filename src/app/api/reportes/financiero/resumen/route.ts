@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
       })
     ]);
 
-    // Calcular totales
-    const ingresosVentasProductos = ventasProductos._sum.total || 0;
-    const ingresosServiciosReparacion = serviciosReparacion._sum.total_final || 0;
-    const egresosComprasInsumos = comprasInsumos._sum.costo_total || 0;
+    // Calcular totales - manejar casos donde _sum puede ser null
+    const ingresosVentasProductos = ventasProductos._sum?.total || 0;
+    const ingresosServiciosReparacion = serviciosReparacion._sum?.total_final || 0;
+    const egresosComprasInsumos = comprasInsumos._sum?.costo_total || 0;
 
     const ingresosTotales = ingresosVentasProductos + ingresosServiciosReparacion;
     const egresosTotales = egresosComprasInsumos;
@@ -114,8 +114,8 @@ export async function POST(request: NextRequest) {
       })
     ]);
 
-    const ingresosAnterior = (ventasProductosAnterior._sum.total || 0) + (serviciosReparacionAnterior._sum.total_final || 0);
-    const egresosAnterior = comprasInsumosAnterior._sum.costo_total || 0;
+    const ingresosAnterior = (ventasProductosAnterior._sum?.total || 0) + (serviciosReparacionAnterior._sum?.total_final || 0);
+    const egresosAnterior = comprasInsumosAnterior._sum?.costo_total || 0;
     const balanceAnterior = ingresosAnterior - egresosAnterior;
 
     // Calcular porcentaje de cambio

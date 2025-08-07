@@ -74,16 +74,16 @@ export async function POST(request: NextRequest) {
 
     // Transformar ventas de productos
     const ingresosVentas = ventasProductos.map(venta => {
-      const nombreCliente = `${venta.clientes.nombre} ${venta.clientes.apellido_paterno} ${venta.clientes.apellido_materno}`.trim();
-      const detalles = venta.detalle_ventas.map(detalle => 
-        `${detalle.cantidad}x ${detalle.productos.nombre} - $${detalle.precio_unitario}`
-      );
+      const nombreCliente = `${venta.clientes?.nombre || ''} ${venta.clientes?.apellido_paterno || ''} ${venta.clientes?.apellido_materno || ''}`.trim();
+      const detalles = venta.detalle_ventas?.map(detalle => 
+        `${detalle.cantidad}x ${detalle.productos?.nombre || 'Producto'} - $${detalle.precio_unitario}`
+      ) || [];
 
       return {
         id: venta.id,
         fecha: venta.created_at.toISOString(),
         tipo: 'venta_producto' as const,
-        cliente: nombreCliente,
+        cliente: nombreCliente || 'Cliente no especificado',
         monto: venta.total,
         metodoPago: 'Efectivo', // Por defecto, se puede expandir después
         referencia: `Venta #${venta.id}`,
@@ -93,17 +93,17 @@ export async function POST(request: NextRequest) {
 
     // Transformar servicios de reparación
     const ingresosServicios = serviciosReparacion.map(presupuesto => {
-      const nombreCliente = `${presupuesto.tickets.clientes.nombre} ${presupuesto.tickets.clientes.apellido_paterno} ${presupuesto.tickets.clientes.apellido_materno}`.trim();
+      const nombreCliente = `${presupuesto.tickets?.clientes?.nombre || ''} ${presupuesto.tickets?.clientes?.apellido_paterno || ''} ${presupuesto.tickets?.clientes?.apellido_materno || ''}`.trim();
       
       return {
         id: presupuesto.id,
         fecha: presupuesto.created_at.toISOString(),
         tipo: 'servicio_reparacion' as const,
-        cliente: nombreCliente,
+        cliente: nombreCliente || 'Cliente no especificado',
         monto: presupuesto.total_final || 0,
         metodoPago: 'Efectivo', // Por defecto
         referencia: `Presupuesto #${presupuesto.id}`,
-        detalles: [`Ticket #${presupuesto.tickets.numero_ticket}`]
+        detalles: presupuesto.tickets?.numero_ticket ? [`Ticket #${presupuesto.tickets.numero_ticket}`] : []
       };
     });
 

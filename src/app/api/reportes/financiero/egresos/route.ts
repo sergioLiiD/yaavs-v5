@@ -42,14 +42,14 @@ export async function POST(request: NextRequest) {
 
     // Transformar compras de insumos
     const egresos = comprasInsumos.map(compra => {
-      const productos = compra.detalle_entradas.map(detalle => 
-        `${detalle.cantidad}x ${detalle.productos.nombre} - $${detalle.precio_unitario}`
-      );
+      const productos = compra.detalle_entradas?.map(detalle => 
+        `${detalle.cantidad}x ${detalle.productos?.nombre || 'Producto'} - $${detalle.precio_unitario}`
+      ) || [];
 
       return {
         id: compra.id,
         fecha: compra.fecha_entrada.toISOString(),
-        proveedor: compra.proveedores.nombre,
+        proveedor: compra.proveedores?.nombre || 'Proveedor no especificado',
         monto: compra.costo_total,
         productos,
         notas: compra.notas || undefined

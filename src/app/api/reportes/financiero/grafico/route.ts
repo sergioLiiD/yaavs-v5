@@ -43,23 +43,19 @@ export async function POST(request: NextRequest) {
             }
           }),
 
-          // Servicios de reparación
-          prisma.tickets.aggregate({
+          // Servicios de reparación (presupuestos)
+          prisma.presupuestos.aggregate({
             where: {
               created_at: {
                 gte: inicioDia,
                 lte: finDia
               },
-              presupuestos: {
-                some: {
-                  total_final: {
-                    not: null
-                  }
-                }
+              total_final: {
+                not: null
               }
             },
             _sum: {
-              costo_reparacion: true
+              total_final: true
             }
           }),
 
@@ -77,8 +73,8 @@ export async function POST(request: NextRequest) {
           })
         ]);
 
-        const ingresos = (ventasProductos._sum.total || 0) + (serviciosReparacion._sum.costo_reparacion || 0);
-        const egresos = comprasInsumos._sum.costo_total || 0;
+        const ingresos = (ventasProductos._sum?.total || 0) + (serviciosReparacion._sum?.total_final || 0);
+        const egresos = comprasInsumos._sum?.costo_total || 0;
         const balance = ingresos - egresos;
 
         return {
