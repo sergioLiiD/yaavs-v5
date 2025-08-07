@@ -42,7 +42,7 @@ export async function PUT(
     console.log('Permisos filtrados:', permisosFiltrados);
 
     // Verificar que todos los permisos existan
-    const permisosExistentes = await prisma.permiso.findMany({
+    const permisosExistentes = await prisma.permisos.findMany({
       where: {
         id: {
           in: permisosFiltrados
@@ -68,49 +68,62 @@ export async function PUT(
 
     // Primero eliminamos todos los permisos actuales
     console.log('Eliminando permisos actuales...');
-    await prisma.rolPermiso.deleteMany({
+    await prisma.roles_permisos.deleteMany({
       where: {
-        rolId: parseInt(params.id)
+        rol_id: parseInt(params.id)
       }
     });
 
-    // Luego actualizamos el rol y creamos los nuevos permisos
-    console.log('Actualizando rol y creando nuevos permisos...');
-    const rol = await prisma.rol.update({
+    // Luego actualizamos el rol
+    console.log('Actualizando rol...');
+    const rol = await prisma.roles.update({
       where: {
         id: parseInt(params.id)
       },
       data: {
         nombre,
         descripcion,
-        permisos: {
-          create: permisosFiltrados.map((permisoId: number) => ({
-            permiso: {
-              connect: { id: permisoId }
-            }
-          }))
+        updated_at: new Date()
+      }
+    });
+
+    // Crear los nuevos permisos
+    console.log('Creando nuevos permisos...');
+    for (const permisoId of permisosFiltrados) {
+      await prisma.roles_permisos.create({
+        data: {
+          rol_id: parseInt(params.id),
+          permiso_id: permisoId,
+          created_at: new Date(),
+          updated_at: new Date()
         }
+      });
+    }
+
+    // Obtener el rol con sus permisos
+    const rolCompleto = await prisma.roles.findUnique({
+      where: {
+        id: parseInt(params.id)
       },
       include: {
-        permisos: {
+        roles_permisos: {
           include: {
-            permiso: true
+            permisos: true
           }
         }
       }
     });
 
-    console.log('Rol actualizado:', rol);
+    console.log('Rol actualizado:', rolCompleto);
 
     const rolFormateado = {
-      id: rol.id,
-      nombre: rol.nombre,
-      descripcion: rol.descripcion,
-      activo: rol.activo,
-      permisos: rol.permisos.map((rp) => ({
-        id: rp.permiso.id,
-        codigo: rp.permiso.codigo,
-        nombre: rp.permiso.nombre
+      id: rolCompleto!.id,
+      nombre: rolCompleto!.nombre,
+      descripcion: rolCompleto!.descripcion,
+      permisos: rolCompleto!.roles_permisos.map((rp) => ({
+        id: rp.permisos.id,
+        codigo: rp.permisos.codigo,
+        nombre: rp.permisos.nombre
       }))
     };
 
@@ -141,29 +154,29 @@ export async function DELETE(
     }
 
     // Primero eliminamos los permisos asociados
-    await prisma.rolPermiso.deleteMany({
+    await prisma.roles_permisos.deleteMany({
       where: {
-        rolId: parseInt(params.id)
+        rol_id: parseInt(params.id)
       }
     });
 
     // Luego eliminamos los roles de usuario asociados
-    await prisma.usuarioRol.deleteMany({
+    await prisma.usuarios_roles.deleteMany({
       where: {
-        rolId: parseInt(params.id)
+        rol_id: parseInt(params.id)
       }
     });
 
     // Finalmente eliminamos el rol
-    await prisma.rol.delete({
+    await prisma.roles.delete({
       where: {
         id: parseInt(params.id)
       }
     });
 
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ success: true }, { status: 204 });
   } catch (error) {
     console.error('Error al eliminar rol:', error);
-    return new NextResponse('Error interno del servidor', { status: 500 });
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 } 
