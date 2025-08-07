@@ -145,39 +145,39 @@ export async function GET(request: Request) {
 
     console.log('Clientes raw de la base de datos:', clientesRaw);
 
-    // Mapear los datos a formato camelCase para el frontend
+    // Mapear los datos al formato esperado por el frontend
     const clientes = clientesRaw.map((cliente: any) => {
       const clienteMapeado = {
         id: cliente.id,
         nombre: cliente.nombre,
-        apellidoPaterno: cliente.apellido_paterno,
-        apellidoMaterno: cliente.apellido_materno,
-        telefonoCelular: cliente.telefono_celular,
-        telefonoContacto: cliente.telefono_contacto,
+        apellido_paterno: cliente.apellido_paterno,
+        apellido_materno: cliente.apellido_materno,
+        telefono_celular: cliente.telefono_celular,
+        telefono_contacto: cliente.telefono_contacto,
         email: cliente.email,
         calle: cliente.calle,
-        numeroExterior: cliente.numero_exterior,
-        numeroInterior: cliente.numero_interior,
+        numero_exterior: cliente.numero_exterior,
+        numero_interior: cliente.numero_interior,
         colonia: cliente.colonia,
         ciudad: cliente.ciudad,
         estado: cliente.estado,
-        codigoPostal: cliente.codigo_postal,
+        codigo_postal: cliente.codigo_postal,
         latitud: cliente.latitud,
         longitud: cliente.longitud,
-        fuenteReferencia: cliente.fuente_referencia,
+        fuente_referencia: cliente.fuente_referencia,
         rfc: cliente.rfc,
-        tipoRegistro: cliente.tipo_registro,
-        createdAt: cliente.created_at ? new Date(cliente.created_at).toISOString() : null,
-        updatedAt: cliente.updated_at ? new Date(cliente.updated_at).toISOString() : null,
-        puntoRecoleccionId: cliente.punto_recoleccion_id,
-        creadoPor: cliente.usuarios ? {
+        tipo_registro: cliente.tipo_registro,
+        created_at: cliente.created_at ? new Date(cliente.created_at).toISOString() : null,
+        updated_at: cliente.updated_at ? new Date(cliente.updated_at).toISOString() : null,
+        punto_recoleccion_id: cliente.punto_recoleccion_id,
+        creado_por: cliente.usuarios ? {
           id: cliente.usuarios.id,
           nombre: cliente.usuarios.nombre,
-          apellidoPaterno: cliente.usuarios.apellido_paterno,
-          apellidoMaterno: cliente.usuarios.apellido_materno,
+          apellido_paterno: cliente.usuarios.apellido_paterno,
+          apellido_materno: cliente.usuarios.apellido_materno,
           email: cliente.usuarios.email
         } : null,
-        puntoRecoleccion: cliente.puntos_recoleccion ? {
+        punto_recoleccion: cliente.puntos_recoleccion ? {
           id: cliente.puntos_recoleccion.id,
           nombre: cliente.puntos_recoleccion.nombre
         } : null
@@ -187,12 +187,7 @@ export async function GET(request: Request) {
       return clienteMapeado;
     });
 
-    return NextResponse.json({
-      clientes,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit)
-    });
+    return NextResponse.json(clientes);
   } catch (error) {
     console.error('Error al obtener clientes:', error);
     return NextResponse.json(

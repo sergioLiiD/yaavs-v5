@@ -3,15 +3,34 @@ import prisma from '@/lib/db/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+
+    let where: any = {};
+    if (search) {
+      where.OR = [
+        { nombre: { contains: search, mode: 'insensitive' } },
+        { sku: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
     const productos = await prisma.productos.findMany({
+      where,
       select: {
         id: true,
+        sku: true,
         nombre: true,
+        descripcion: true,
         precio_promedio: true,
         stock: true,
         tipo: true,
+        categoria_id: true,
+        marca_id: true,
+        modelo_id: true,
+        created_at: true,
+        updated_at: true,
         marcas: {
           select: {
             id: true,
