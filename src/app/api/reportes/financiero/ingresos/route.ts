@@ -43,38 +43,27 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Obtener servicios de reparación
-    const serviciosReparacion = await prisma.tickets.findMany({
+    // Obtener servicios de reparación (presupuestos)
+    const serviciosReparacion = await prisma.presupuestos.findMany({
       where: {
         created_at: {
           gte: fechaInicioDate,
           lte: fechaFinDate
         },
-        presupuestos: {
-          some: {
-            total_final: {
-              not: null
-            }
-          }
+        total_final: {
+          not: null
         }
       },
       include: {
-        clientes: {
-          select: {
-            nombre: true,
-            apellido_paterno: true,
-            apellido_materno: true
-          }
-        },
-        presupuestos: {
-          where: {
-            total_final: {
-              not: null
+        tickets: {
+          include: {
+            clientes: {
+              select: {
+                nombre: true,
+                apellido_paterno: true,
+                apellido_materno: true
+              }
             }
-          },
-          select: {
-            total_final: true,
-            descripcion: true
           }
         }
       },
@@ -103,19 +92,18 @@ export async function POST(request: NextRequest) {
     });
 
     // Transformar servicios de reparación
-    const ingresosServicios = serviciosReparacion.map(ticket => {
-      const nombreCliente = `${ticket.clientes.nombre} ${ticket.clientes.apellido_paterno} ${ticket.clientes.apellido_materno}`.trim();
-      const presupuesto = ticket.presupuestos[0]; // Tomar el primer presupuesto con total_final
+    const ingresosServicios = serviciosReparacion.map(presupuesto => {
+      const nombreCliente = `${presupuesto.tickets.clientes.nombre} ${presupuesto.tickets.clientes.apellido_paterno} ${presupuesto.tickets.clientes.apellido_materno}`.trim();
       
       return {
-        id: ticket.id,
-        fecha: ticket.created_at.toISOString(),
+        id: presupuesto.id,
+        fecha: presupuesto.created_at.toISOString(),
         tipo: 'servicio_reparacion' as const,
         cliente: nombreCliente,
-        monto: presupuesto?.total_final || ticket.costo_reparacion || 0,
+        monto: presupuesto.total_final || 0,
         metodoPago: 'Efectivo', // Por defecto
-        referencia: `Ticket #${ticket.id}`,
-        detalles: presupuesto?.descripcion ? [presupuesto.descripcion] : []
+        referencia: `Presupuesto #${presupuesto.id}`,
+        detalles: [`Ticket #${presupuesto.tickets.numero_ticket}`]
       };
     });
 

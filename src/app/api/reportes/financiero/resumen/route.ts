@@ -27,23 +27,19 @@ export async function POST(request: NextRequest) {
         }
       }),
 
-      // Servicios de reparación (tickets con presupuestos)
-      prisma.tickets.aggregate({
+      // Servicios de reparación (presupuestos con total_final)
+      prisma.presupuestos.aggregate({
         where: {
           created_at: {
             gte: fechaInicioDate,
             lte: fechaFinDate
           },
-          presupuestos: {
-            some: {
-              total_final: {
-                not: null
-              }
-            }
+          total_final: {
+            not: null
           }
         },
         _sum: {
-          costo_reparacion: true
+          total_final: true
         }
       }),
 
@@ -63,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // Calcular totales
     const ingresosVentasProductos = ventasProductos._sum.total || 0;
-    const ingresosServiciosReparacion = serviciosReparacion._sum.costo_reparacion || 0;
+    const ingresosServiciosReparacion = serviciosReparacion._sum.total_final || 0;
     const egresosComprasInsumos = comprasInsumos._sum.costo_total || 0;
 
     const ingresosTotales = ingresosVentasProductos + ingresosServiciosReparacion;
@@ -90,22 +86,18 @@ export async function POST(request: NextRequest) {
         }
       }),
 
-      prisma.tickets.aggregate({
+      prisma.presupuestos.aggregate({
         where: {
           created_at: {
             gte: mesAnteriorInicio,
             lte: mesAnteriorFin
           },
-          presupuestos: {
-            some: {
-              total_final: {
-                not: null
-              }
-            }
+          total_final: {
+            not: null
           }
         },
         _sum: {
-          costo_reparacion: true
+          total_final: true
         }
       }),
 
@@ -122,7 +114,7 @@ export async function POST(request: NextRequest) {
       })
     ]);
 
-    const ingresosAnterior = (ventasProductosAnterior._sum.total || 0) + (serviciosReparacionAnterior._sum.costo_reparacion || 0);
+    const ingresosAnterior = (ventasProductosAnterior._sum.total || 0) + (serviciosReparacionAnterior._sum.total_final || 0);
     const egresosAnterior = comprasInsumosAnterior._sum.costo_total || 0;
     const balanceAnterior = ingresosAnterior - egresosAnterior;
 
