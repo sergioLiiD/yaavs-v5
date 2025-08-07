@@ -23,6 +23,7 @@ interface Permiso {
   nombre: string;
   descripcion: string;
   codigo: string;
+  categoria: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +32,7 @@ interface CreatePermisoDTO {
   nombre: string;
   descripcion: string;
   codigo: string;
+  categoria: string;
 }
 
 export default function PermisosPage() {
@@ -45,7 +47,8 @@ export default function PermisosPage() {
   const [currentPermiso, setCurrentPermiso] = useState<Partial<CreatePermisoDTO>>({
     nombre: '',
     descripcion: '',
-    codigo: ''
+    codigo: '',
+    categoria: ''
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -88,7 +91,8 @@ export default function PermisosPage() {
     setCurrentPermiso({
       nombre: '',
       descripcion: '',
-      codigo: ''
+      codigo: '',
+      categoria: ''
     });
   };
 
@@ -97,7 +101,8 @@ export default function PermisosPage() {
     setCurrentPermiso({
       nombre: '',
       descripcion: '',
-      codigo: ''
+      codigo: '',
+      categoria: ''
     });
   };
 
@@ -128,7 +133,8 @@ export default function PermisosPage() {
     setCurrentPermiso({
       nombre: permiso.nombre,
       descripcion: permiso.descripcion,
-      codigo: permiso.codigo
+      codigo: permiso.codigo,
+      categoria: permiso.categoria || ''
     });
     setIsEditing(true);
     setEditingId(permiso.id);
@@ -202,6 +208,16 @@ export default function PermisosPage() {
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="categoria">Categoría</Label>
+                <Input
+                  id="categoria"
+                  name="categoria"
+                  value={currentPermiso.categoria}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
               <div className="flex justify-end space-x-2">
                 <Button type="button" variant="outline" onClick={closeModal}>
                   Cancelar
@@ -228,6 +244,7 @@ export default function PermisosPage() {
               <TableHead>Nombre</TableHead>
               <TableHead>Descripción</TableHead>
               <TableHead>Código</TableHead>
+              <TableHead>Categoría</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -241,6 +258,7 @@ export default function PermisosPage() {
                     {permiso.codigo}
                   </span>
                 </TableCell>
+                <TableCell>{permiso.categoria}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex gap-2">
                     <button
