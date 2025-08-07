@@ -1,48 +1,79 @@
-import { NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search');
+
+    let whereClause: any = {
+      tipo: 'PRODUCTO',
+      stock: {
+        gt: 0
+      }
+    };
+
+    if (search) {
+      whereClause.OR = [
+        {
+          nombre: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          sku: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        }
+      ];
+    }
+
     const productos = await prisma.productos.findMany({
+      where: whereClause,
       select: {
         id: true,
         nombre: true,
-        precio_promedio: true,
+        descripcion: true,
         stock: true,
-        tipo: true,
+        precio_promedio: true,
+        sku: true,
+        categorias: {
+          select: {
+            id: true,
+            nombre: true
+          }
+        },
         marcas: {
           select: {
             id: true,
-            nombre: true,
-          },
+            nombre: true
+          }
         },
         modelos: {
           select: {
             id: true,
-            nombre: true,
-          },
-        },
-        stock_minimo: true,
-        stock_maximo: true,
-        proveedores: {
-          select: {
-            id: true,
-            nombre: true,
-          },
-        },
+            nombre: true
+          }
+        }
       },
       orderBy: {
-        nombre: 'asc',
+        nombre: 'asc'
       },
+      take: search ? 10 : undefined
     });
 
-    console.log('Productos desde la API:', productos);
+    const productosFormateados = productos.map(p => ({
+      ...p,
+      precio: p.precio_promedio
+    }));
 
-    return NextResponse.json(productos);
+    return NextResponse.json(productosFormateados);
   } catch (error) {
-    console.error('Error al obtener productos:', error);
+    console.error('Error en API productos:', error);
     return NextResponse.json(
       { error: 'Error al obtener productos' },
       { status: 500 }

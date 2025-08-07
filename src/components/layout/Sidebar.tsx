@@ -25,6 +25,11 @@ const menuItems: MenuItem[] = [
     requiredPermissions: ['TICKETS_VIEW']
   },
   {
+    title: 'Venta de Productos',
+    path: '/dashboard/venta-productos',
+    requiredPermissions: ['SALES_VIEW']
+  },
+  {
     title: 'Clientes',
     path: '/dashboard/clientes',
     requiredPermissions: ['CLIENTS_VIEW']

@@ -99,6 +99,7 @@ model clientes {
   puntos_recoleccion   puntos_recoleccion? @relation(fields: [punto_recoleccion_id], references: [id])
   direcciones          direcciones[]
   tickets              tickets[]
+  ventas               ventas[]
 }
 
 model conceptos_presupuesto {
@@ -362,6 +363,7 @@ model productos {
   productos_reparacion_frecuente productos_reparacion_frecuente[]
   salidas_almacen                salidas_almacen[]
   piezas_reparacion_productos    piezas_reparacion_productos[]
+  detalle_ventas                 detalle_ventas[]
 }
 
 model productos_reparacion_frecuente {
@@ -578,6 +580,34 @@ model usuarios {
   tickets_tickets_tecnico_asignado_idTousuarios tickets[]                     @relation("tickets_tecnico_asignado_idTousuarios")
   usuarios_puntos_recoleccion                   usuarios_puntos_recoleccion[]
   usuarios_roles                                usuarios_roles[]
+  ventas                                        ventas[]
+}
+
+model ventas {
+  id            Int             @id @default(autoincrement())
+  cliente_id    Int
+  usuario_id    Int
+  fecha         DateTime        @default(now())
+  total         Float
+  estado        String          @default("COMPLETADA")
+  created_at    DateTime        @default(now())
+  updated_at    DateTime
+  clientes      clientes        @relation(fields: [cliente_id], references: [id])
+  usuarios      usuarios        @relation(fields: [usuario_id], references: [id])
+  detalle_ventas detalle_ventas[]
+}
+
+model detalle_ventas {
+  id              Int       @id @default(autoincrement())
+  venta_id        Int
+  producto_id     Int
+  cantidad        Int
+  precio_unitario Float
+  subtotal        Float
+  created_at      DateTime  @default(now())
+  updated_at      DateTime
+  ventas          ventas    @relation(fields: [venta_id], references: [id])
+  productos       productos @relation(fields: [producto_id], references: [id])
 }
 
 model usuarios_puntos_recoleccion {
