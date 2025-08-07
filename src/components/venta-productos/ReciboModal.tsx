@@ -90,8 +90,8 @@ export default function ReciboModal({ venta, isOpen, onClose, onNuevaVenta }: Re
         </head>
         <body>
           <div class="recibo">
-            <div class="header">
-              <img src="/images/logo.png" alt="Arregla.mx" class="logo" />
+                         <div class="header">
+               <img src="/logo.png" alt="Arregla.mx" class="logo" />
               <div class="title">RECIBO DE VENTA</div>
               <div class="subtitle">Arregla.mx, Plaza Ecatepec local D1 y D2, tel. 56-3814-3944</div>
             </div>
@@ -166,11 +166,11 @@ export default function ReciboModal({ venta, isOpen, onClose, onNuevaVenta }: Re
             {/* Encabezado del recibo */}
             <div className="text-center mb-8">
               <div className="flex items-center justify-center mb-4">
-                <img 
-                  src="/images/logo.png" 
-                  alt="Arregla.mx" 
-                  className="h-16 w-auto"
-                />
+                              <img 
+                src="/logo.png" 
+                alt="Arregla.mx" 
+                className="h-16 w-auto"
+              />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">RECIBO DE VENTA</h1>
               <div className="text-sm text-gray-600">
@@ -246,7 +246,7 @@ export default function ReciboModal({ venta, isOpen, onClose, onNuevaVenta }: Re
               </button>
               <button
                 onClick={onNuevaVenta}
-                className="flex-1 bg-green-600 text-white py-3 px-6 rounded-md font-medium hover:bg-green-700 transition-colors"
+                className="flex-1 bg-[#FEBF19] text-white py-3 px-6 rounded-md font-medium hover:bg-[#E6AC17] transition-colors"
               >
                 Nueva Venta
               </button>

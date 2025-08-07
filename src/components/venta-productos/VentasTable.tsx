@@ -133,7 +133,7 @@ export default function VentasTable({ onNuevaVenta, onVerDetalle }: VentasTableP
           <h2 className="text-xl font-semibold text-gray-900">Historial de Ventas</h2>
           <button
             onClick={onNuevaVenta}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
+            className="bg-[#FEBF19] text-white px-4 py-2 rounded-md hover:bg-[#E6AC17] transition-colors flex items-center space-x-2"
           >
             <Plus size={16} />
             <span>Nueva Venta</span>
