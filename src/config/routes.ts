@@ -39,6 +39,9 @@ export const routePermissions: Record<string, string[]> = {
   '/dashboard/tickets/[id]/delete': ['TICKETS_DELETE'],
   '/dashboard/tickets/[id]/assign': ['TICKETS_ASSIGN'],
 
+  // Venta de Productos
+  '/dashboard/venta-productos': ['SALES_VIEW'],
+
   // Reparaciones
   '/dashboard/reparaciones': ['REPAIRS_VIEW'],
   '/dashboard/reparaciones/[id]': ['REPAIRS_VIEW'],
