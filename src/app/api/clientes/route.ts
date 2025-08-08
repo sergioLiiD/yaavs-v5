@@ -187,7 +187,12 @@ export async function GET(request: Request) {
       return clienteMapeado;
     });
 
-    return NextResponse.json(clientes);
+    return NextResponse.json({
+      clientes,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
+    });
   } catch (error) {
     console.error('Error al obtener clientes:', error);
     return NextResponse.json(
