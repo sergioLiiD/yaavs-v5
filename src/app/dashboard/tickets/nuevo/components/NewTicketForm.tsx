@@ -187,7 +187,7 @@ export function NewTicketForm() {
     const fetchData = async () => {
       try {
         const [clientesRes, tecnicosRes, marcasRes] = await Promise.all([
-          fetch('/api/clientes'),
+          fetch('/api/clientes?format=simple'),
           fetch('/api/usuarios/tecnicos'),
           fetch('/api/catalogo/marcas'),
         ]);

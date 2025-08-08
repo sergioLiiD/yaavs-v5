@@ -85,6 +85,7 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search') || '';
+    const format = searchParams.get('format');
     const skip = (page - 1) * limit;
 
     // Construir el where base con búsqueda
@@ -187,6 +188,12 @@ export async function GET(request: Request) {
       return clienteMapeado;
     });
 
+    // Si se solicita formato simple (para formularios), devolver solo el array
+    if (format === 'simple') {
+      return NextResponse.json(clientes);
+    }
+    
+    // Por defecto, devolver formato completo con paginación
     return NextResponse.json({
       clientes,
       total,
