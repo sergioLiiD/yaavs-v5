@@ -22,7 +22,7 @@ export interface Cliente {
 export class ClienteServiceFrontend {
   static async obtenerClientes(): Promise<Cliente[]> {
     try {
-      const response = await axios.get('/api/clientes');
+      const response = await axios.get('/api/clientes?format=simple');
       return response.data;
     } catch (error: any) {
       console.error('Error al obtener clientes:', error);
@@ -32,7 +32,7 @@ export class ClienteServiceFrontend {
 
   static async buscarClientes(termino: string): Promise<Cliente[]> {
     try {
-      const response = await axios.get(`/api/clientes?search=${encodeURIComponent(termino)}`);
+      const response = await axios.get(`/api/clientes?search=${encodeURIComponent(termino)}&format=simple`);
       return response.data;
     } catch (error: any) {
       console.error('Error al buscar clientes:', error);
