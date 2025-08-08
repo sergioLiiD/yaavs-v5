@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
           lte: fechaFinDate
         },
         total_final: {
-          isNot: null
+          not: null
         }
       },
       include: {
