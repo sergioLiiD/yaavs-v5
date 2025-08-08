@@ -202,7 +202,33 @@ export function NewTicketForm() {
           marcasRes.json(),
         ]);
 
-        setClientes(clientesData);
+        // Mapear los datos de clientes de snake_case a camelCase
+        const clientesMapeados = clientesData.map((cliente: any) => ({
+          id: cliente.id,
+          nombre: cliente.nombre,
+          apellidoPaterno: cliente.apellido_paterno,
+          apellidoMaterno: cliente.apellido_materno,
+          telefonoCelular: cliente.telefono_celular,
+          telefonoContacto: cliente.telefono_contacto,
+          email: cliente.email,
+          calle: cliente.calle,
+          numeroExterior: cliente.numero_exterior,
+          numeroInterior: cliente.numero_interior,
+          colonia: cliente.colonia,
+          ciudad: cliente.ciudad,
+          estado: cliente.estado,
+          codigoPostal: cliente.codigo_postal,
+          latitud: cliente.latitud,
+          longitud: cliente.longitud,
+          fuenteReferencia: cliente.fuente_referencia,
+          rfc: cliente.rfc,
+          tipoRegistro: cliente.tipo_registro,
+          createdAt: cliente.created_at,
+          updatedAt: cliente.updated_at,
+          puntoRecoleccion: cliente.punto_recoleccion
+        }));
+
+        setClientes(clientesMapeados);
         setTecnicos(tecnicosData);
         setMarcas(marcasData);
 
