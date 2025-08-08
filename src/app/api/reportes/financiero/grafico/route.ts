@@ -49,9 +49,6 @@ export async function POST(request: NextRequest) {
               created_at: {
                 gte: inicioDia,
                 lte: finDia
-              },
-              total_final: {
-                not: null
               }
             },
             _sum: {

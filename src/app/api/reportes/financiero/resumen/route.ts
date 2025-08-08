@@ -33,9 +33,6 @@ export async function POST(request: NextRequest) {
           created_at: {
             gte: fechaInicioDate,
             lte: fechaFinDate
-          },
-          total_final: {
-            not: null
           }
         },
         _sum: {
@@ -94,9 +91,6 @@ export async function POST(request: NextRequest) {
           created_at: {
             gte: mesAnteriorInicio,
             lte: mesAnteriorFin
-          },
-          total_final: {
-            not: null
           }
         },
         _sum: {
