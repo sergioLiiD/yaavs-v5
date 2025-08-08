@@ -24,6 +24,11 @@ interface DetalleVenta {
   subtotal: number;
   created_at: string;
   updated_at: string;
+  productos?: {
+    id: number;
+    nombre: string;
+    sku: string;
+  };
 }
 
 interface ReciboModalProps {
@@ -205,7 +210,7 @@ export default function ReciboModal({ venta, isOpen, onClose, onNuevaVenta }: Re
                   {venta.detalle_ventas.map((detalle, index) => (
                     <tr key={detalle.id} className="border-b border-gray-200">
                       <td className="py-3 px-4 text-gray-900">
-                        Producto #{detalle.producto_id}
+                        {detalle.productos?.nombre || `Producto #${detalle.producto_id}`}
                       </td>
                       <td className="py-3 px-4 text-center text-gray-900">
                         {detalle.cantidad}
