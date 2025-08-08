@@ -141,10 +141,10 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
                 <p className="text-sm text-muted-foreground">Modelo</p>
                 <p className="font-medium">{ticket.modelo?.nombre || 'No disponible'}</p>
               </div>
-              <div>
+              {/* <div>
                 <p className="text-sm text-muted-foreground">Tipo</p>
                 <p className="font-medium">{ticket.dispositivo?.tipo || 'No disponible'}</p>
-              </div>
+              </div> */}
               <div>
                 <p className="text-sm text-muted-foreground">IMEI</p>
                 <p className="font-medium">{ticket.imei || 'No disponible'}</p>
