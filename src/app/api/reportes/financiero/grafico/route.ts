@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
                 lte: finDia
               },
               total_final: {
-                not: null
+                isNot: null
               }
             },
             _sum: {

@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
             lte: fechaFinDate
           },
           total_final: {
-            not: null
+            isNot: null
           }
         },
         _sum: {
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
             lte: mesAnteriorFin
           },
           total_final: {
-            not: null
+            isNot: null
           }
         },
         _sum: {
