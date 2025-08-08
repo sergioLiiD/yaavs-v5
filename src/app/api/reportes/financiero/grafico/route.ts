@@ -59,22 +59,25 @@ export async function POST(request: NextRequest) {
             }
           }),
 
-          // Compras de insumos
-          prisma.entradas_almacen.aggregate({
+          // Compras de insumos - obtener todos los registros y calcular el total
+          prisma.entradas_almacen.findMany({
             where: {
-              fecha_entrada: {
+              fecha: {
                 gte: inicioDia,
                 lte: finDia
               }
             },
-            _sum: {
-              costo_total: true
+            select: {
+              precio_compra: true,
+              cantidad: true
             }
           })
         ]);
 
         const ingresos = (ventasProductos._sum?.total || 0) + (serviciosReparacion._sum?.total_final || 0);
-        const egresos = comprasInsumos._sum?.costo_total || 0;
+        const egresos = comprasInsumos.reduce((total, entrada) => 
+          total + (entrada.precio_compra * entrada.cantidad), 0
+        );
         const balance = ingresos - egresos;
 
         return {

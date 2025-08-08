@@ -43,16 +43,17 @@ export async function POST(request: NextRequest) {
         }
       }),
 
-      // Compras de insumos
-      prisma.entradas_almacen.aggregate({
+      // Compras de insumos - obtener todos los registros y calcular el total
+      prisma.entradas_almacen.findMany({
         where: {
-          fecha_entrada: {
+          fecha: {
             gte: fechaInicioDate,
             lte: fechaFinDate
           }
         },
-        _sum: {
-          costo_total: true
+        select: {
+          precio_compra: true,
+          cantidad: true
         }
       })
     ]);
@@ -60,7 +61,9 @@ export async function POST(request: NextRequest) {
     // Calcular totales - manejar casos donde _sum puede ser null
     const ingresosVentasProductos = ventasProductos._sum?.total || 0;
     const ingresosServiciosReparacion = serviciosReparacion._sum?.total_final || 0;
-    const egresosComprasInsumos = comprasInsumos._sum?.costo_total || 0;
+    const egresosComprasInsumos = comprasInsumos.reduce((total, entrada) => 
+      total + (entrada.precio_compra * entrada.cantidad), 0
+    );
 
     const ingresosTotales = ingresosVentasProductos + ingresosServiciosReparacion;
     const egresosTotales = egresosComprasInsumos;
@@ -101,21 +104,24 @@ export async function POST(request: NextRequest) {
         }
       }),
 
-      prisma.entradas_almacen.aggregate({
+      prisma.entradas_almacen.findMany({
         where: {
-          fecha_entrada: {
+          fecha: {
             gte: mesAnteriorInicio,
             lte: mesAnteriorFin
           }
         },
-        _sum: {
-          costo_total: true
+        select: {
+          precio_compra: true,
+          cantidad: true
         }
       })
     ]);
 
     const ingresosAnterior = (ventasProductosAnterior._sum?.total || 0) + (serviciosReparacionAnterior._sum?.total_final || 0);
-    const egresosAnterior = comprasInsumosAnterior._sum?.costo_total || 0;
+    const egresosAnterior = comprasInsumosAnterior.reduce((total, entrada) => 
+      total + (entrada.precio_compra * entrada.cantidad), 0
+    );
     const balanceAnterior = ingresosAnterior - egresosAnterior;
 
     // Calcular porcentaje de cambio
