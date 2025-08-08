@@ -202,7 +202,7 @@ export function NewTicketForm() {
           marcasRes.json(),
         ]);
 
-        setClientes(clientesData.clientes);
+        setClientes(clientesData);
         setTecnicos(tecnicosData);
         setMarcas(marcasData);
 
@@ -298,7 +298,7 @@ export function NewTicketForm() {
                 <CommandInput placeholder="Buscar cliente..." />
                 <CommandEmpty>No se encontró ningún cliente.</CommandEmpty>
                 <CommandGroup>
-                  {clientes.map((cliente) => (
+                  {clientes?.map((cliente) => (
                     <CommandItem
                       key={cliente.id}
                       value={cliente.id.toString()}
@@ -333,7 +333,7 @@ export function NewTicketForm() {
             className="w-full rounded-md border border-input bg-background px-3 py-2"
           >
             <option value="">Seleccione un tipo de servicio</option>
-            {tiposServicio.map((tipo) => (
+            {tiposServicio?.map((tipo) => (
               <option key={tipo.id} value={tipo.id}>
                 {tipo.nombre}
               </option>
@@ -371,7 +371,7 @@ export function NewTicketForm() {
                 <CommandInput placeholder="Buscar marca..." />
                 <CommandEmpty>No se encontró ninguna marca.</CommandEmpty>
                 <CommandGroup>
-                  {marcas.map((marca) => (
+                  {marcas?.map((marca) => (
                     <CommandItem
                       key={marca.id}
                       value={marca.id.toString()}
@@ -429,7 +429,7 @@ export function NewTicketForm() {
                 <CommandInput placeholder="Buscar modelo..." />
                 <CommandEmpty>No se encontró ningún modelo.</CommandEmpty>
                 <CommandGroup>
-                  {modelosFiltrados.map((modelo) => (
+                  {modelosFiltrados?.map((modelo) => (
                     <CommandItem
                       key={modelo.id}
                       value={modelo.id.toString()}
