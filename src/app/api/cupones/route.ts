@@ -66,12 +66,18 @@ export async function GET(request: NextRequest) {
 // POST /api/cupones - Crear un nuevo cupón
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔄 POST /api/cupones - Iniciando creación de cupón')
+    
     const session = await getServerSession(authOptions)
+    console.log('👤 Session:', session?.user?.email)
+    
     if (!session) {
+      console.log('❌ No autorizado')
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
     const body = await request.json()
+    console.log('📦 Body recibido:', body)
     const {
       codigo,
       nombre,
@@ -119,6 +125,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log('💾 Intentando crear cupón en la base de datos...')
+    
     const cupon = await prisma.cupones.create({
       data: {
         codigo,
@@ -136,11 +144,17 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    console.log('✅ Cupón creado exitosamente:', cupon.id)
     return NextResponse.json(cupon, { status: 201 })
   } catch (error) {
-    console.error('Error al crear cupón:', error)
+    console.error('❌ Error al crear cupón:', error)
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { error: 'Error interno del servidor', details: error.message },
       { status: 500 }
     )
   }
