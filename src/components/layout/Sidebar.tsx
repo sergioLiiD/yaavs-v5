@@ -183,6 +183,17 @@ const Sidebar: React.FC = () => {
     session: session?.user
   });
 
+  // Debug: Verificar específicamente el elemento Presupuestos
+  const presupuestosItem = menuItems.find(item => item.title === 'Presupuestos');
+  console.log('🔍 Presupuestos item:', presupuestosItem);
+  if (presupuestosItem) {
+    console.log('🔍 Presupuestos permissions check:', {
+      requiredPermissions: presupuestosItem.requiredPermissions,
+      hasPermission: presupuestosItem.requiredPermissions?.some(permission => userPermissions.includes(permission)),
+      userPermissions
+    });
+  }
+
   // Filtrar elementos del menú según los permisos del usuario
   const filteredMenuItems = isRepairPointUser
     ? menuItems.filter(item => ['Tickets', 'Clientes'].includes(item.title))
