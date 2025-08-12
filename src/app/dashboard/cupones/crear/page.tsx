@@ -37,11 +37,13 @@ export default function CrearCuponPage() {
   const createCuponMutation = useMutation({
     mutationFn: cuponService.createCupon,
     onSuccess: () => {
+      console.log('✅ Cupón creado exitosamente')
       toast.success('Cupón creado exitosamente')
       queryClient.invalidateQueries({ queryKey: ['cupones'] })
       router.push('/dashboard/cupones')
     },
     onError: (error: any) => {
+      console.error('❌ Error al crear cupón:', error)
       toast.error(error.response?.data?.message || 'Error al crear el cupón')
     },
   })
@@ -67,6 +69,7 @@ export default function CrearCuponPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('🔄 Formulario enviado', formData)
     
     if (formData.tipo === 'GENERAL' && !formData.codigo) {
       toast.error('El código es requerido para cupones generales')
@@ -77,8 +80,10 @@ export default function CrearCuponPage() {
       // Para cupones personalizados, generamos el código automáticamente
       const codigoGenerado = generateUniqueCode()
       formData.codigo = codigoGenerado
+      console.log('🎫 Código generado:', codigoGenerado)
     }
 
+    console.log('📤 Enviando datos:', formData)
     createCuponMutation.mutate(formData)
   }
 
