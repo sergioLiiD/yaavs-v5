@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { db as prisma } from '@/lib/db';
 import { PresupuestoIndependienteCompleto } from '@/types/presupuesto-independiente';
 
 export async function GET(
