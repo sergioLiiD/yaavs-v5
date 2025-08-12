@@ -11,6 +11,7 @@ import {
   UsersIcon,
   ChartBarIcon,
   Cog6ToothIcon,
+  TicketIcon,
 } from "@heroicons/react/24/outline"
 
 const navigation = [
@@ -43,6 +44,11 @@ const navigation = [
     name: "Clientes",
     href: "/dashboard/clientes",
     icon: UsersIcon,
+  },
+  {
+    name: "Cupones",
+    href: "/dashboard/cupones",
+    icon: TicketIcon,
   },
   {
     name: "Reportes",

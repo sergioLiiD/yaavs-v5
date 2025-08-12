@@ -542,6 +542,7 @@ model tickets {
   presupuestos                                   presupuestos?
   reparaciones                                   reparaciones?
   ticket_problemas                               ticket_problemas[]
+  usos_cupon                                     usos_cupon[]
   clientes                                       clientes            @relation(fields: [cliente_id], references: [id])
   usuarios_tickets_creador_idTousuarios          usuarios            @relation("tickets_creador_idTousuarios", fields: [creador_id], references: [id])
   direcciones                                    direcciones?        @relation(fields: [direccion_id], references: [id])
@@ -583,6 +584,7 @@ model usuarios {
   usuarios_roles                                usuarios_roles[]
   ventas                                        ventas[]
   presupuestos_independientes                   presupuestos_independientes[]
+  usos_cupon                                    usos_cupon[]
 }
 
 model presupuestos_independientes {
@@ -646,6 +648,7 @@ model ventas {
   clientes     clientes        @relation(fields: [cliente_id], references: [id])
   usuarios     usuarios        @relation(fields: [usuario_id], references: [id])
   detalle_ventas detalle_ventas[]
+  usos_cupon   usos_cupon[]
 }
 
 model detalle_ventas {
@@ -659,6 +662,40 @@ model detalle_ventas {
   updated_at       DateTime
   ventas           ventas    @relation(fields: [venta_id], references: [id])
   productos        productos @relation(fields: [producto_id], references: [id])
+}
+
+model cupones {
+  id                    Int                    @id @default(autoincrement())
+  codigo                String                 @unique
+  nombre                String
+  descripcion           String?
+  tipo                  TipoCupon
+  tipo_descuento        TipoDescuento
+  valor_descuento       Float
+  monto_minimo          Float?                 @default(0)
+  fecha_inicio          DateTime
+  fecha_expiracion      DateTime
+  limite_usos           Int?
+  usos_actuales         Int                    @default(0)
+  activo                Boolean                @default(true)
+  created_at            DateTime               @default(now())
+  updated_at            DateTime
+  usos_cupon            usos_cupon[]
+}
+
+model usos_cupon {
+  id         Int       @id @default(autoincrement())
+  cupon_id   Int
+  ticket_id  Int?
+  venta_id   Int?
+  usuario_id Int
+  monto_descuento Float
+  created_at DateTime  @default(now())
+  updated_at DateTime
+  cupones    cupones   @relation(fields: [cupon_id], references: [id])
+  tickets    tickets?  @relation(fields: [ticket_id], references: [id])
+  ventas     ventas?   @relation(fields: [venta_id], references: [id])
+  usuarios   usuarios  @relation(fields: [usuario_id], references: [id])
 }
 
 enum MetodoPago {
@@ -694,4 +731,14 @@ enum TipoSalida {
   REPARACION
   PERDIDA
   AJUSTE
+}
+
+enum TipoCupon {
+  GENERAL
+  PERSONALIZADO
+}
+
+enum TipoDescuento {
+  PORCENTAJE
+  MONTO_FIJO
 }
