@@ -197,7 +197,7 @@ export default function PresupuestoPrint({ presupuesto, onClose }: PresupuestoPr
 
           {/* Footer */}
           <div className="border-t pt-6 text-center text-sm text-gray-600">
-            <p>Este presupuesto es válido por 30 días desde la fecha de emisión.</p>
+            <p>Este presupuesto es válido por 15 días desde la fecha de emisión.</p>
             <p className="mt-2">Para cualquier consulta, contacte a nuestro equipo de servicio al cliente.</p>
           </div>
         </div>
