@@ -22,4 +22,5 @@ axios.interceptors.response.use(
   }
 );
 
+export const axiosInstance = axios;
 export default axios; 
