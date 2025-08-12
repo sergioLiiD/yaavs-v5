@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
           limite_usos: 1, // Cupones personalizados solo se pueden usar una vez
           usos_actuales: 0,
           activo: true,
+          updated_at: new Date(),
         },
       })
 

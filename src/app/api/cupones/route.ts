@@ -141,6 +141,7 @@ export async function POST(request: NextRequest) {
         limite_usos,
         usos_actuales: 0,
         activo: true,
+        updated_at: new Date(),
       },
     })
 

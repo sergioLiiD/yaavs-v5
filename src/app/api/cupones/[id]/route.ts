@@ -123,7 +123,9 @@ export async function PUT(
     if (limite_usos !== undefined) updateData.limite_usos = limite_usos
     if (activo !== undefined) updateData.activo = activo
 
-    updateData.updated_at = new Date()
+    if (Object.keys(updateData).length > 0) {
+      updateData.updated_at = new Date()
+    }
 
     const cupon = await prisma.cupones.update({
       where: { id },
