@@ -100,6 +100,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
       { href: '/dashboard/venta-productos', icon: HiShoppingBag, text: 'Venta de Productos', active: pathname?.includes('/dashboard/venta-productos') },
       { href: '/dashboard/presupuestos', icon: HiClipboardCheck, text: 'Presupuestos', active: pathname?.includes('/dashboard/presupuestos') },
       { href: '/dashboard/clientes', icon: HiUsers, text: 'Clientes', active: pathname?.includes('/dashboard/clientes') },
+      { href: '/dashboard/cupones', icon: HiTag, text: 'Cupones', active: pathname?.includes('/dashboard/cupones') },
     ];
 
     // Enlaces adicionales según el rol
