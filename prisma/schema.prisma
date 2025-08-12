@@ -364,6 +364,7 @@ model productos {
   salidas_almacen                salidas_almacen[]
   piezas_reparacion_productos    piezas_reparacion_productos[]
   detalle_ventas                 detalle_ventas[]
+  productos_presupuesto_independiente productos_presupuesto_independiente[]
 }
 
 model productos_reparacion_frecuente {
@@ -581,6 +582,34 @@ model usuarios {
   usuarios_puntos_recoleccion                   usuarios_puntos_recoleccion[]
   usuarios_roles                                usuarios_roles[]
   ventas                                        ventas[]
+  presupuestos_independientes                   presupuestos_independientes[]
+}
+
+model presupuestos_independientes {
+  id                                    Int                                      @id @default(autoincrement())
+  nombre                                String
+  descripcion                           String?
+  cliente_nombre                        String?
+  usuario_id                            Int
+  total                                 Float                                    @default(0)
+  created_at                            DateTime                                 @default(now())
+  updated_at                            DateTime
+  usuarios                              usuarios                                 @relation(fields: [usuario_id], references: [id])
+  productos_presupuesto_independiente   productos_presupuesto_independiente[]
+}
+
+model productos_presupuesto_independiente {
+  id                              Int                      @id @default(autoincrement())
+  presupuesto_independiente_id    Int
+  producto_id                     Int?
+  cantidad                        Int
+  precio_venta                    Float
+  concepto_extra                  String?
+  precio_concepto_extra           Float?
+  created_at                      DateTime                 @default(now())
+  updated_at                      DateTime
+  presupuestos_independientes     presupuestos_independientes @relation(fields: [presupuesto_independiente_id], references: [id], onDelete: Cascade)
+  productos                       productos?               @relation(fields: [producto_id], references: [id], onDelete: SetNull)
 }
 
 model usuarios_puntos_recoleccion {
