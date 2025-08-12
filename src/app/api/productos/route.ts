@@ -26,6 +26,7 @@ export async function GET(request: Request) {
         precio_promedio: true,
         stock: true,
         tipo: true,
+        tipo_servicio_id: true,
         categoria_id: true,
         marca_id: true,
         modelo_id: true,
@@ -38,6 +39,12 @@ export async function GET(request: Request) {
           },
         },
         modelos: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+        tipos_servicio: {
           select: {
             id: true,
             nombre: true,
