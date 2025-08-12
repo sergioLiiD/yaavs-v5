@@ -94,3 +94,51 @@ body {
     --foreground: #ededed;
   }
 }
+
+/* Estilos para impresión */
+@media print {
+  /* Ocultar elementos que no queremos imprimir */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Mostrar solo el contenido de impresión */
+  .print-content, .print-content * {
+    visibility: visible;
+  }
+  
+  /* Posicionar el contenido de impresión */
+  .print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Ocultar botones y elementos de navegación */
+  button, .no-print {
+    display: none !important;
+  }
+  
+  /* Asegurar que el fondo sea blanco */
+  body {
+    background: white !important;
+  }
+  
+  /* Ajustar márgenes para impresión */
+  @page {
+    margin: 1cm;
+  }
+  
+  /* Asegurar que las tablas se impriman correctamente */
+  table {
+    page-break-inside: avoid;
+  }
+  
+  /* Evitar que las filas se corten */
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+}

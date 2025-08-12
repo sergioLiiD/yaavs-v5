@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
-import { HiPencilAlt, HiArrowLeft } from 'react-icons/hi';
+import { HiPencilAlt, HiArrowLeft, HiPrinter } from 'react-icons/hi';
 import { PresupuestoIndependienteCompleto } from '@/types/presupuesto-independiente';
+import PresupuestoPrint from '@/components/presupuestos/presupuesto-print';
 
 interface PageProps {
   params: {
@@ -21,6 +22,7 @@ export default function PresupuestoDetallePage({ params }: PageProps) {
   const [presupuesto, setPresupuesto] = useState<PresupuestoIndependienteCompleto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   // Cargar el presupuesto al montar el componente
   useEffect(() => {
@@ -79,11 +81,19 @@ export default function PresupuestoDetallePage({ params }: PageProps) {
     return (
       <div className="container mx-auto py-10">
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Cargando presupuesto...</div>
-        </div>
+          <div className="text-lg">Cargando presupuesto...        </div>
       </div>
-    );
-  }
+
+      {/* Modal de impresión */}
+      {showPrintModal && presupuesto && (
+        <PresupuestoPrint
+          presupuesto={presupuesto}
+          onClose={() => setShowPrintModal(false)}
+        />
+      )}
+    </div>
+  );
+}
 
   if (error || !presupuesto) {
     return (
@@ -116,13 +126,23 @@ export default function PresupuestoDetallePage({ params }: PageProps) {
             <p className="text-gray-600">Detalle del presupuesto</p>
           </div>
         </div>
-        <Button
-          onClick={() => router.push(`/dashboard/presupuestos/${presupuesto.id}/editar`)}
-          className="flex items-center gap-2"
-        >
-          <HiPencilAlt className="h-4 w-4" />
-          Editar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowPrintModal(true)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <HiPrinter className="h-4 w-4" />
+            Imprimir
+          </Button>
+          <Button
+            onClick={() => router.push(`/dashboard/presupuestos/${presupuesto.id}/editar`)}
+            className="flex items-center gap-2"
+          >
+            <HiPencilAlt className="h-4 w-4" />
+            Editar
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -246,6 +266,14 @@ export default function PresupuestoDetallePage({ params }: PageProps) {
           </Card>
         </div>
       </div>
+
+      {/* Modal de impresión */}
+      {showPrintModal && presupuesto && (
+        <PresupuestoPrint
+          presupuesto={presupuesto}
+          onClose={() => setShowPrintModal(false)}
+        />
+      )}
     </div>
   );
 }
