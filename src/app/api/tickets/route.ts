@@ -403,7 +403,7 @@ export async function GET(request: Request) {
     const ticketsConSaldo = tickets.map((ticket: any) => {
       if (ticket.presupuestos) {
         const totalPagos = ticket.pagos?.reduce((sum: number, pago: any) => sum + pago.monto, 0) || 0;
-        const saldoCalculado = ticket.presupuestos.total - totalPagos;
+        const saldoCalculado = ticket.presupuestos.total_final - totalPagos;
         
         return {
           ...ticket,

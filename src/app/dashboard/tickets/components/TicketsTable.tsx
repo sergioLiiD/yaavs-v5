@@ -268,6 +268,8 @@ export function TicketsTable({
               <TableHead>Fecha</TableHead>
               <TableHead>Técnico</TableHead>
               <TableHead>Presupuesto</TableHead>
+              <TableHead>Pagos</TableHead>
+              <TableHead>Saldo</TableHead>
               <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -359,18 +361,29 @@ export function TicketsTable({
                 </TableCell>
                 <TableCell>
                   {ticket.presupuesto ? (
-                    <div>
-                      <div className="font-medium">
-                        ${ticket.presupuesto.totalFinal.toLocaleString()}
-                      </div>
-                      {ticket.presupuesto.saldo > 0 && (
-                        <div className="text-sm text-orange-600">
-                          Saldo: ${ticket.presupuesto.saldo.toLocaleString()}
-                        </div>
-                      )}
+                    <div className="font-medium text-green-600">
+                      ${ticket.presupuesto.totalFinal.toLocaleString()}
                     </div>
                   ) : (
                     <span className="text-gray-400">Sin presupuesto</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {ticket.pagos && ticket.pagos.length > 0 ? (
+                    <div className="font-medium text-blue-600">
+                      ${ticket.pagos.reduce((sum, pago) => sum + pago.monto, 0).toLocaleString()}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">Sin pagos</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {ticket.presupuesto ? (
+                    <div className={`font-medium ${ticket.presupuesto.saldo > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                      ${ticket.presupuesto.saldo.toLocaleString()}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">-</span>
                   )}
                 </TableCell>
                 <TableCell>
