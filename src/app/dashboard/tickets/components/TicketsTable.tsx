@@ -379,7 +379,7 @@ export function TicketsTable({
                 </TableCell>
                 <TableCell>
                   {ticket.presupuesto ? (
-                    <div className={`font-medium ${ticket.presupuesto.saldo > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                    <div className="font-medium text-red-600">
                       ${ticket.presupuesto.saldo.toLocaleString()}
                     </div>
                   ) : (
