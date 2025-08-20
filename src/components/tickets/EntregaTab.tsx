@@ -20,6 +20,12 @@ export function EntregaTab({ ticket, presupuesto, pagos, saldo }: EntregaTabProp
   const [showModal, setShowModal] = useState(false);
   const { data: session } = useSession();
 
+  // Debug logs
+  console.log('EntregaTab - presupuesto:', presupuesto);
+  console.log('EntregaTab - presupuesto?.total:', presupuesto?.total);
+  console.log('EntregaTab - pagos:', pagos);
+  console.log('EntregaTab - saldo:', saldo);
+
   const canDeliver = ticket.estatus_reparacion?.nombre === 'Reparado' && saldo === 0;
 
   const handleEntregar = () => {
