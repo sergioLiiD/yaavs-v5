@@ -43,12 +43,53 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
     }
   });
 
-  const handleEntregar = async () => {
-    if (!firma.trim()) {
-      toast.error('La firma es requerida');
-      return;
+  const handleImprimir = () => {
+    const printContent = document.getElementById('print-content');
+    if (printContent) {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Acta de Entrega - ${ticket.numero_ticket}</title>
+              <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .header { text-align: center; margin-bottom: 30px; }
+                .header img { height: 60px; }
+                .section { margin-bottom: 20px; }
+                .section h3 { color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+                .info-item { margin-bottom: 10px; }
+                .info-label { font-weight: bold; color: #666; font-size: 14px; }
+                .info-value { font-size: 16px; }
+                .financial-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 20px 0; }
+                .financial-item { text-align: center; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+                .financial-label { font-weight: bold; color: #666; font-size: 14px; }
+                .financial-value { font-size: 24px; font-weight: bold; margin-top: 5px; }
+                .receipt { background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0; }
+                .signature-space { border: 1px solid #ccc; height: 100px; margin: 20px 0; display: flex; align-items: center; justify-content: center; color: #666; }
+                .warranty { font-size: 12px; color: #666; }
+                .warranty h4 { color: #d32f2f; margin-bottom: 10px; }
+                .warranty ul { margin: 10px 0; padding-left: 20px; }
+                .warranty li { margin-bottom: 5px; }
+                @media print {
+                  body { margin: 0; }
+                  .no-print { display: none; }
+                }
+              </style>
+            </head>
+            <body>
+              ${printContent.innerHTML}
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+      }
     }
+  };
 
+  const handleEntregar = async () => {
     setIsSubmitting(true);
     try {
       await entregarMutation.mutateAsync();
@@ -76,14 +117,19 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 <p className="text-gray-600">Ticket: {ticket.numero_ticket}</p>
               </div>
             </div>
-            <Button variant="outline" onClick={onClose}>
-              ✕
-            </Button>
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={handleImprimir}>
+                🖨️ Imprimir
+              </Button>
+              <Button variant="outline" onClick={onClose}>
+                ✕
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Contenido */}
-        <div className="p-6 space-y-6">
+        {/* Contenido imprimible */}
+        <div id="print-content" className="p-6 space-y-6">
           {/* Información del ticket */}
           <Card>
             <CardHeader>
@@ -223,14 +269,13 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
               </div>
 
               <div>
-                <Label htmlFor="firma">Firma del Cliente</Label>
-                <Textarea
-                  id="firma"
-                  placeholder="Ingrese su firma aquí..."
-                  value={firma}
-                  onChange={(e) => setFirma(e.target.value)}
-                  className="min-h-[100px]"
-                />
+                <Label htmlFor="firma">Espacio para Firma del Cliente</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px] flex items-center justify-center bg-gray-50">
+                  <p className="text-gray-500 text-center">
+                    Espacio reservado para firma física del cliente<br/>
+                    <span className="text-sm">(Se firmará después de imprimir)</span>
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -268,7 +313,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
             </Button>
             <Button 
               onClick={handleEntregar}
-              disabled={isSubmitting || !firma.trim()}
+              disabled={isSubmitting}
               className="bg-green-600 hover:bg-green-700"
             >
               {isSubmitting ? 'Entregando...' : 'Confirmar Entrega'}

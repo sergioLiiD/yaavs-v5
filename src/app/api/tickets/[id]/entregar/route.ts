@@ -17,9 +17,7 @@ export async function POST(
     const ticketId = parseInt(params.id);
     const { firma } = await request.json();
 
-    if (!firma || !firma.trim()) {
-      return NextResponse.json({ message: 'La firma es requerida' }, { status: 400 });
-    }
+    // La firma ya no es requerida, se hará físicamente después de imprimir
 
     // Obtener el ticket con toda la información necesaria
     const ticket = await prisma.tickets.findUnique({
