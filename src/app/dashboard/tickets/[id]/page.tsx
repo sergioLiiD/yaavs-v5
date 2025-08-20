@@ -13,6 +13,7 @@ import { Ticket } from '@/types/ticket';
 import { PresupuestoSection } from '@/components/presupuesto-section';
 import { PagoSection } from '@/components/pago-section';
 import { ReparacionSection } from '@/components/reparacion-section';
+import { EntregaTab } from '@/components/tickets/EntregaTab';
 
 export default function TicketDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -130,6 +131,15 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
               onUpdate={() => {
                 router.refresh();
               }} 
+            />
+          </TabsContent>
+
+          <TabsContent value="entrega">
+            <EntregaTab 
+              ticket={ticket}
+              presupuesto={ticket.presupuesto}
+              pagos={ticket.pagos || []}
+              saldo={ticket.saldo || 0}
             />
           </TabsContent>
         </Tabs>
