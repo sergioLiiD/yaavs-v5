@@ -109,6 +109,10 @@ export async function GET(
 
     console.log('=== FIN DE LA CONSULTA ===');
     console.log('Ticket completo:', JSON.stringify(ticket, null, 2));
+    console.log('=== DEBUG PRESUPUESTO ===');
+    console.log('Presupuesto del ticket:', ticket?.presupuestos);
+    console.log('Presupuesto total:', ticket?.presupuestos?.total);
+    console.log('Pagos del ticket:', ticket?.pagos);
 
     if (!ticket) {
       console.log('Error al obtener el ticket completo');
