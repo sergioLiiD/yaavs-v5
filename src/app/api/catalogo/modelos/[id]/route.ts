@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
@@ -25,10 +25,10 @@ export async function GET(
       );
     }
 
-    const modelo = await prisma.modelo.findUnique({
+    const modelo = await prisma.modelos.findUnique({
       where: { id },
       include: {
-        marca: {
+        marcas: {
           select: {
             id: true,
             nombre: true
@@ -93,7 +93,7 @@ export async function PUT(
     }
 
     // Verificar si el modelo existe
-    const modeloExistente = await prisma.modelo.findUnique({
+    const modeloExistente = await prisma.modelos.findUnique({
       where: { id }
     });
 
@@ -105,7 +105,7 @@ export async function PUT(
     }
 
     // Verificar si la marca existe
-    const marca = await prisma.marca.findUnique({
+    const marca = await prisma.marcas.findUnique({
       where: { id: Number(body.marcaId) }
     });
 
@@ -117,13 +117,13 @@ export async function PUT(
     }
 
     // Actualizar el modelo
-    const modeloActualizado = await prisma.modelo.update({
+    const modeloActualizado = await prisma.modelos.update({
       where: { id },
       data: {
         nombre: body.nombre,
         descripcion: body.descripcion || null,
-        marcaId: Number(body.marcaId),
-        activo: body.activo !== undefined ? body.activo : true
+        marca_id: Number(body.marcaId),
+        updated_at: new Date()
       }
     });
 
@@ -166,7 +166,7 @@ export async function DELETE(
     console.log('DELETE /api/catalogo/modelos/[id] - ID:', id);
 
     // Verificar que el modelo existe
-    const modelo = await prisma.modelo.findUnique({
+    const modelo = await prisma.modelos.findUnique({
       where: { id },
       include: {
         tickets: true,
@@ -200,7 +200,7 @@ export async function DELETE(
     }
 
     // Eliminar el modelo
-    await prisma.modelo.delete({
+    await prisma.modelos.delete({
       where: { id }
     });
 
