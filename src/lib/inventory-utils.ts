@@ -258,24 +258,52 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
       for (const piezaRep of piezasReparacion) {
         const producto = piezaRep.productos;
         
+        console.log(`🔍 Procesando pieza: ${producto.nombre} (cantidad: ${piezaRep.cantidad})`);
+        
         // Lista de conceptos que no requieren descuento de stock (servicios)
         const conceptosSinStock = ['Mano de Obra', 'Diagnostico', 'Diagnóstico', 'Servicio'];
         
         // Verificar si es un servicio que no requiere stock
         const esServicio = conceptosSinStock.some(concepto => 
-          producto.nombre?.includes(concepto)
+          producto.nombre?.toLowerCase().includes(concepto.toLowerCase())
         );
         
+        if (esServicio) {
+          console.log(`⏭️  Saltando servicio: ${producto.nombre}`);
+          continue;
+        }
+        
         // Solo procesar descuento de stock para productos físicos, no para servicios
-        if (!esServicio) {
-          // Verificar stock nuevamente (por si cambió desde la validación)
-          if (producto.stock < piezaRep.cantidad) {
-            throw new Error(
-              `Stock insuficiente para ${producto.nombre}: necesitas ${piezaRep.cantidad}, tienes ${producto.stock}`
-            );
-          }
+        console.log(`📦 Procesando producto físico: ${producto.nombre} (stock actual: ${producto.stock})`);
+        
+        // Verificar stock nuevamente (por si cambió desde la validación)
+        if (producto.stock < piezaRep.cantidad) {
+          const error = `Stock insuficiente para ${producto.nombre}: necesitas ${piezaRep.cantidad}, tienes ${producto.stock}`;
+          console.error(`❌ ${error}`);
+          throw new Error(error);
+        }
 
-          // Crear salida de almacén
+        // Verificar si ya existe una salida para este producto en este ticket
+        const salidaExistente = await tx.salidas_almacen.findFirst({
+          where: {
+            referencia: `Ticket-${ticketId}`,
+            producto_id: producto.id,
+            tipo: 'REPARACION'
+          }
+        });
+
+        if (salidaExistente) {
+          console.log(`⚠️  Salida ya existe para ${producto.nombre}, actualizando cantidad...`);
+          await tx.salidas_almacen.update({
+            where: { id: salidaExistente.id },
+            data: {
+              cantidad: salidaExistente.cantidad + piezaRep.cantidad,
+              updated_at: new Date()
+            }
+          });
+        } else {
+          // Crear nueva salida de almacén
+          console.log(`📤 Creando salida de almacén para ${producto.nombre}...`);
           const salida = await tx.salidas_almacen.create({
             data: {
               producto_id: producto.id,
@@ -289,25 +317,29 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
               updated_at: new Date()
             }
           });
-
-          // Actualizar stock del producto
-          await tx.productos.update({
-            where: { id: producto.id },
-            data: {
-              stock: {
-                decrement: piezaRep.cantidad
-              },
-              updated_at: new Date()
-            }
-          });
-
-          salidas.push({
-            productoId: producto.id,
-            cantidad: piezaRep.cantidad,
-            razon: `Reparación completada - Ticket #${ticketId}`,
-            referencia: `Ticket-${ticketId}`
-          });
+          console.log(`✅ Salida creada con ID: ${salida.id}`);
         }
+
+        // Actualizar stock del producto
+        console.log(`📉 Actualizando stock de ${producto.nombre} de ${producto.stock} a ${producto.stock - piezaRep.cantidad}...`);
+        await tx.productos.update({
+          where: { id: producto.id },
+          data: {
+            stock: {
+              decrement: piezaRep.cantidad
+            },
+            updated_at: new Date()
+          }
+        });
+
+        salidas.push({
+          productoId: producto.id,
+          cantidad: piezaRep.cantidad,
+          razon: `Reparación completada - Ticket #${ticketId}`,
+          referencia: `Ticket-${ticketId}`
+        });
+        
+        console.log(`✅ Pieza procesada exitosamente: ${producto.nombre}`);
       }
     });
 
@@ -382,33 +414,106 @@ export async function convertirConceptosAPiezas(ticketId: number, reparacionId: 
 
     // Para cada concepto, buscar el producto correspondiente
     for (const concepto of conceptos) {
-      // Buscar producto por nombre (aproximado)
-      const producto = await prisma.productos.findFirst({
+      console.log(`🔍 Buscando producto para concepto: "${concepto.descripcion}"`);
+      
+      // Lista de conceptos que no requieren conversión (servicios)
+      const conceptosSinStock = ['Mano de Obra', 'Diagnostico', 'Diagnóstico', 'Servicio'];
+      
+      // Verificar si es un servicio que no requiere stock
+      const esServicio = conceptosSinStock.some(conceptoServicio => 
+        concepto.descripcion.toLowerCase().includes(conceptoServicio.toLowerCase())
+      );
+      
+      if (esServicio) {
+        console.log(`⏭️  Saltando servicio: "${concepto.descripcion}"`);
+        continue;
+      }
+      
+      // Buscar producto por nombre (más preciso)
+      let producto = await prisma.productos.findFirst({
         where: {
           nombre: {
-            contains: concepto.descripcion,
+            equals: concepto.descripcion.trim(),
             mode: 'insensitive'
-          }
+          },
+          tipo: 'PRODUCTO'
         }
       });
+      
+      // Si no se encuentra con búsqueda exacta, intentar búsqueda parcial
+      if (!producto) {
+        console.log(`🔍 Búsqueda exacta falló, intentando búsqueda parcial...`);
+        producto = await prisma.productos.findFirst({
+          where: {
+            nombre: {
+              contains: concepto.descripcion.trim(),
+              mode: 'insensitive'
+            },
+            tipo: 'PRODUCTO'
+          }
+        });
+      }
+      
+      // Si aún no se encuentra, intentar búsqueda más flexible
+      if (!producto) {
+        console.log(`🔍 Búsqueda parcial falló, intentando búsqueda flexible...`);
+        const palabrasClave = concepto.descripcion.trim().split(' ').filter(p => p.length > 2);
+        
+        for (const palabra of palabrasClave) {
+          producto = await prisma.productos.findFirst({
+            where: {
+              nombre: {
+                contains: palabra,
+                mode: 'insensitive'
+              },
+              tipo: 'PRODUCTO'
+            }
+          });
+          
+          if (producto) {
+            console.log(`✅ Producto encontrado usando palabra clave "${palabra}"`);
+            break;
+          }
+        }
+      }
 
       if (producto) {
-        console.log(`✅ Producto encontrado para "${concepto.descripcion}": ${producto.nombre}`);
+        console.log(`✅ Producto encontrado para "${concepto.descripcion}": ${producto.nombre} (ID: ${producto.id})`);
         
-        // Crear pieza de reparación
-        await prisma.piezas_reparacion_productos.create({
-          data: {
+        // Verificar si ya existe una pieza para este producto en esta reparación
+        const piezaExistente = await prisma.piezas_reparacion_productos.findFirst({
+          where: {
             reparacion_id: reparacionId,
-            producto_id: producto.id,
-            cantidad: concepto.cantidad,
-            precio: concepto.precio_unitario,
-            total: concepto.total,
-            created_at: new Date(),
-            updated_at: new Date()
+            producto_id: producto.id
           }
         });
         
-        console.log(`✅ Pieza de reparación creada para ${producto.nombre}`);
+        if (piezaExistente) {
+          console.log(`⚠️  Pieza ya existe para ${producto.nombre}, actualizando cantidad...`);
+          await prisma.piezas_reparacion_productos.update({
+            where: { id: piezaExistente.id },
+            data: {
+              cantidad: piezaExistente.cantidad + concepto.cantidad,
+              total: (piezaExistente.cantidad + concepto.cantidad) * concepto.precio_unitario,
+              updated_at: new Date()
+            }
+          });
+        } else {
+          // Crear nueva pieza de reparación
+          await prisma.piezas_reparacion_productos.create({
+            data: {
+              reparacion_id: reparacionId,
+              producto_id: producto.id,
+              cantidad: concepto.cantidad,
+              precio: concepto.precio_unitario,
+              total: concepto.total,
+              created_at: new Date(),
+              updated_at: new Date()
+            }
+          });
+        }
+        
+        console.log(`✅ Pieza de reparación creada/actualizada para ${producto.nombre}`);
       } else {
         console.log(`❌ No se encontró producto para "${concepto.descripcion}"`);
       }
