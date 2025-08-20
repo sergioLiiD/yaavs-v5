@@ -52,7 +52,7 @@ export default function DetalleIngresos({ filtros }: DetalleIngresosProps) {
       case 'venta_producto':
         return 'Venta de Producto';
       case 'servicio_reparacion':
-        return 'Servicio de Reparación';
+        return 'Pago de Reparación';
       default:
         return tipo;
     }

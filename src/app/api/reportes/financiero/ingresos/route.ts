@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Obtener servicios de reparación (presupuestos)
-    const serviciosReparacion = await prisma.presupuestos.findMany({
+    // Obtener pagos de servicios de reparación (pagos reales recibidos)
+    const pagosReparacion = await prisma.pagos.findMany({
       where: {
         created_at: {
           gte: fechaInicioDate,
@@ -88,19 +88,19 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    // Transformar servicios de reparación
-    const ingresosServicios = serviciosReparacion.map(presupuesto => {
-      const nombreCliente = `${presupuesto.tickets?.clientes?.nombre || ''} ${presupuesto.tickets?.clientes?.apellido_paterno || ''} ${presupuesto.tickets?.clientes?.apellido_materno || ''}`.trim();
+    // Transformar pagos de servicios de reparación
+    const ingresosServicios = pagosReparacion.map(pago => {
+      const nombreCliente = `${pago.tickets?.clientes?.nombre || ''} ${pago.tickets?.clientes?.apellido_paterno || ''} ${pago.tickets?.clientes?.apellido_materno || ''}`.trim();
       
       return {
-        id: presupuesto.id,
-        fecha: presupuesto.created_at.toISOString(),
+        id: pago.id,
+        fecha: pago.created_at.toISOString(),
         tipo: 'servicio_reparacion' as const,
         cliente: nombreCliente || 'Cliente no especificado',
-        monto: presupuesto.total_final || 0,
-        metodoPago: 'Efectivo', // Por defecto
-        referencia: `Presupuesto #${presupuesto.id}`,
-        detalles: presupuesto.tickets?.numero_ticket ? [`Ticket #${presupuesto.tickets.numero_ticket}`] : []
+        monto: pago.monto,
+        metodoPago: pago.metodo,
+        referencia: pago.referencia || `Pago #${pago.id}`,
+        detalles: pago.tickets?.numero_ticket ? [`Ticket #${pago.tickets.numero_ticket}`] : []
       };
     });
 

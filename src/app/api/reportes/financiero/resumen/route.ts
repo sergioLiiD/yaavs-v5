@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     fechaFinDate.setHours(23, 59, 59, 999); // Incluir todo el día
 
     // Obtener datos del período actual
-    const [ventasProductos, serviciosReparacion, comprasInsumos] = await Promise.all([
+    const [ventasProductos, pagosReparacion, comprasInsumos] = await Promise.all([
       // Ventas de productos
       prisma.ventas.aggregate({
         where: {
@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
         }
       }),
 
-      // Servicios de reparación (presupuestos con total_final)
-      prisma.presupuestos.aggregate({
+      // Pagos de servicios de reparación (pagos reales recibidos)
+      prisma.pagos.aggregate({
         where: {
           created_at: {
             gte: fechaInicioDate,
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
           }
         },
         _sum: {
-          total_final: true
+          monto: true
         }
       }),
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     // Calcular totales - manejar casos donde _sum puede ser null
     const ingresosVentasProductos = ventasProductos._sum?.total || 0;
-    const ingresosServiciosReparacion = serviciosReparacion._sum?.total_final || 0;
+    const ingresosServiciosReparacion = pagosReparacion._sum?.monto || 0;
     const egresosComprasInsumos = comprasInsumos.reduce((total, entrada) => 
       total + (entrada.precio_compra * entrada.cantidad), 0
     );
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     const mesAnteriorFin = new Date(fechaFinDate);
     mesAnteriorFin.setMonth(mesAnteriorFin.getMonth() - 1);
 
-    const [ventasProductosAnterior, serviciosReparacionAnterior, comprasInsumosAnterior] = await Promise.all([
+    const [ventasProductosAnterior, pagosReparacionAnterior, comprasInsumosAnterior] = await Promise.all([
       prisma.ventas.aggregate({
         where: {
           created_at: {
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         }
       }),
 
-      prisma.presupuestos.aggregate({
+      prisma.pagos.aggregate({
         where: {
           created_at: {
             gte: mesAnteriorInicio,
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
           }
         },
         _sum: {
-          total_final: true
+          monto: true
         }
       }),
 
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       })
     ]);
 
-    const ingresosAnterior = (ventasProductosAnterior._sum?.total || 0) + (serviciosReparacionAnterior._sum?.total_final || 0);
+    const ingresosAnterior = (ventasProductosAnterior._sum?.total || 0) + (pagosReparacionAnterior._sum?.monto || 0);
     const egresosAnterior = comprasInsumosAnterior.reduce((total, entrada) => 
       total + (entrada.precio_compra * entrada.cantidad), 0
     );
