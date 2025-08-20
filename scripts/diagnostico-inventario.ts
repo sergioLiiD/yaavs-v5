@@ -1,6 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL || 'postgresql://postgres:0soNv75*@postgres:5432/yaavs_db'
+    }
+  }
+});
 
 async function diagnosticarInventario() {
   try {
