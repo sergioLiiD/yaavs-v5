@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +18,7 @@ interface EntregaTabProps {
 
 export function EntregaTab({ ticket, presupuesto, pagos, saldo }: EntregaTabProps) {
   const [showModal, setShowModal] = useState(false);
+  const { data: session } = useSession();
 
   const canDeliver = ticket.estatus_reparacion?.nombre === 'Reparado' && saldo === 0;
 
@@ -149,7 +151,7 @@ export function EntregaTab({ ticket, presupuesto, pagos, saldo }: EntregaTabProp
               <div>
                 <h4 className="font-semibold text-sm text-gray-600">Entregado por</h4>
                 <p className="text-lg">
-                  {ticket.usuarios_tickets_entregado_porTousuarios?.nombre} {ticket.usuarios_tickets_entregado_porTousuarios?.apellido_paterno}
+                  {session?.user?.name || 'Usuario del sistema'}
                 </p>
               </div>
             </div>

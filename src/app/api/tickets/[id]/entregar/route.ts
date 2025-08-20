@@ -79,7 +79,6 @@ export async function POST(
       data: {
         entregado: true,
         fecha_entrega: new Date(),
-        entregado_por: usuario.id,
         updated_at: new Date()
       },
       include: {
@@ -88,8 +87,7 @@ export async function POST(
           include: {
             marcas: true
           }
-        },
-        usuarios_tickets_entregado_porTousuarios: true
+        }
       }
     });
 

@@ -517,7 +517,6 @@ model tickets {
   punto_recoleccion_id                           Int?
   recogida                                       Boolean             @default(false)
   fecha_entrega                                  DateTime?
-  entregado_por                                  Int?
   entregado                                      Boolean             @default(false)
   cancelado                                      Boolean             @default(false)
   motivo_cancelacion                             String?
@@ -551,7 +550,6 @@ model tickets {
   modelos                                        modelos             @relation(fields: [modelo_id], references: [id])
   puntos_recoleccion                             puntos_recoleccion? @relation(fields: [punto_recoleccion_id], references: [id])
   usuarios_tickets_tecnico_asignado_idTousuarios usuarios?           @relation("tickets_tecnico_asignado_idTousuarios", fields: [tecnico_asignado_id], references: [id])
-  usuarios_tickets_entregado_porTousuarios       usuarios?           @relation("tickets_entregado_porTousuarios", fields: [entregado_por], references: [id])
   tipos_servicio                                 tipos_servicio      @relation(fields: [tipo_servicio_id], references: [id])
 }
 
@@ -582,7 +580,6 @@ model usuarios {
   salidas_almacen                               salidas_almacen[]
   tickets_tickets_creador_idTousuarios          tickets[]                     @relation("tickets_creador_idTousuarios")
   tickets_tickets_tecnico_asignado_idTousuarios tickets[]                     @relation("tickets_tecnico_asignado_idTousuarios")
-  tickets_tickets_entregado_porTousuarios       tickets[]                     @relation("tickets_entregado_porTousuarios")
   usuarios_puntos_recoleccion                   usuarios_puntos_recoleccion[]
   usuarios_roles                                usuarios_roles[]
   ventas                                        ventas[]

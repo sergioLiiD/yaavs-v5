@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
   const [firma, setFirma] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
 
   const entregarMutation = useMutation({
     mutationFn: async () => {
@@ -214,6 +216,9 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                   Yo, <strong>{ticket.clientes?.nombre} {ticket.clientes?.apellido_paterno} {ticket.clientes?.apellido_materno}</strong>, 
                   recibo el equipo <strong>{ticket.modelos?.marcas?.nombre} {ticket.modelos?.nombre}</strong> 
                   el día <strong>{fechaActual}</strong>.
+                </p>
+                <p className="text-sm text-gray-600 mt-2">
+                  Entregado por: <strong>{session?.user?.name || 'Usuario del sistema'}</strong>
                 </p>
               </div>
 
