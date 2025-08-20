@@ -52,34 +52,71 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
           <html>
             <head>
               <title>Acta de Entrega - ${ticket.numero_ticket}</title>
+              <script src="https://cdn.tailwindcss.com"></script>
               <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                .header { text-align: center; margin-bottom: 30px; }
-                .header img { height: 60px; }
-                .section { margin-bottom: 20px; }
-                .section h3 { color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-                .info-item { margin-bottom: 10px; }
-                .info-label { font-weight: bold; color: #666; font-size: 14px; }
-                .info-value { font-size: 16px; }
-                .financial-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 20px 0; }
-                .financial-item { text-align: center; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
-                .financial-label { font-weight: bold; color: #666; font-size: 14px; }
-                .financial-value { font-size: 24px; font-weight: bold; margin-top: 5px; }
-                .receipt { background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0; }
-                .signature-space { border: 1px solid #ccc; height: 100px; margin: 20px 0; display: flex; align-items: center; justify-content: center; color: #666; }
-                .warranty { font-size: 12px; color: #666; }
-                .warranty h4 { color: #d32f2f; margin-bottom: 10px; }
-                .warranty ul { margin: 10px 0; padding-left: 20px; }
-                .warranty li { margin-bottom: 5px; }
                 @media print {
-                  body { margin: 0; }
+                  body { margin: 0; padding: 20px; }
                   .no-print { display: none; }
+                  .print-page { page-break-inside: avoid; }
                 }
+                body { font-family: system-ui, -apple-system, sans-serif; }
+                .card { border: 1px solid #e5e7eb; border-radius: 0.5rem; background: white; }
+                .card-header { padding: 1.5rem; border-bottom: 1px solid #e5e7eb; }
+                .card-title { font-size: 1.25rem; font-weight: 600; color: #111827; }
+                .card-content { padding: 1.5rem; }
+                .grid { display: grid; }
+                .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                .gap-4 { gap: 1rem; }
+                .space-y-4 > * + * { margin-top: 1rem; }
+                .space-y-6 > * + * { margin-top: 1.5rem; }
+                .font-semibold { font-weight: 600; }
+                .text-sm { font-size: 0.875rem; }
+                .text-lg { font-size: 1.125rem; }
+                .text-gray-600 { color: #4b5563; }
+                .text-blue-600 { color: #2563eb; }
+                .text-green-600 { color: #16a34a; }
+                .text-red-600 { color: #dc2626; }
+                .text-2xl { font-size: 1.5rem; }
+                .font-bold { font-weight: 700; }
+                .text-center { text-align: center; }
+                .p-4 { padding: 1rem; }
+                .bg-blue-50 { background-color: #eff6ff; }
+                .bg-green-50 { background-color: #f0fdf4; }
+                .bg-red-50 { background-color: #fef2f2; }
+                .bg-gray-50 { background-color: #f9fafb; }
+                .rounded-lg { border-radius: 0.5rem; }
+                .border-2 { border-width: 2px; }
+                .border-dashed { border-style: dashed; }
+                .border-gray-300 { border-color: #d1d5db; }
+                .flex { display: flex; }
+                .items-center { align-items: center; }
+                .justify-center { justify-content: center; }
+                .min-h-\\[100px\\] { min-height: 6.25rem; }
+                .text-gray-500 { color: #6b7280; }
+                .text-center { text-align: center; }
+                .list-disc { list-style-type: disc; }
+                .list-inside { list-style-position: inside; }
+                .space-y-2 > * + * { margin-top: 0.5rem; }
+                .space-y-3 > * + * { margin-top: 0.75rem; }
+                .mt-4 { margin-top: 1rem; }
+                .font-semibold { font-weight: 600; }
+                .text-red-600 { color: #dc2626; }
+                .space-y-2 > * + * { margin-top: 0.5rem; }
+                .list-disc { list-style-type: disc; }
+                .list-inside { list-style-position: inside; }
+                .mt-4 { margin-top: 1rem; }
+                .font-semibold { font-weight: 600; }
+                .text-red-600 { color: #dc2626; }
+                .font-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace; }
+                .separator { height: 1px; background-color: #e5e7eb; margin: 1.5rem 0; }
+                .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+                .badge-outline { border: 1px solid #e5e7eb; background-color: transparent; color: #374151; }
               </style>
             </head>
-            <body>
-              ${printContent.innerHTML}
+            <body class="bg-gray-50">
+              <div class="max-w-4xl mx-auto bg-white shadow-sm">
+                ${printContent.innerHTML}
+              </div>
             </body>
           </html>
         `);

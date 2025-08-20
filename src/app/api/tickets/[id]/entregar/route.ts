@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(
   request: NextRequest,
@@ -25,10 +25,7 @@ export async function POST(
       include: {
         estatus_reparacion: true,
         presupuestos: true,
-        pagos: true,
-        usuarios: {
-          where: { email: session.user.email }
-        }
+        pagos: true
       }
     });
 
