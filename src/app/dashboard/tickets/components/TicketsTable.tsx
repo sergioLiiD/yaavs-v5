@@ -101,6 +101,8 @@ interface Ticket {
     }[];
     saldo: number;
   };
+  entregado?: boolean;
+  fecha_entrega?: string;
   pagos?: {
     id: number;
     monto: number;
@@ -342,7 +344,11 @@ export function TicketsTable({
                 </TableCell>
                 <TableCell>
                   <TicketStatusBadge 
-                    status={ticket.estatus_reparacion?.nombre || ticket.estatusReparacion?.nombre || ''} 
+                    status={
+                      ticket.entregado 
+                        ? 'Entregado' 
+                        : (ticket.estatus_reparacion?.nombre || ticket.estatusReparacion?.nombre || '')
+                    } 
                   />
                 </TableCell>
                 <TableCell>

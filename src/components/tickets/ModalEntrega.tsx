@@ -111,10 +111,21 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 .separator { height: 1px; background-color: #e5e7eb; margin: 1.5rem 0; }
                 .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
                 .badge-outline { border: 1px solid #e5e7eb; background-color: transparent; color: #374151; }
+                .logo { height: 3rem; width: auto; }
               </style>
             </head>
             <body class="bg-gray-50">
               <div class="max-w-4xl mx-auto bg-white shadow-sm">
+                <!-- Header con logo -->
+                <div class="p-6 border-b">
+                  <div class="flex items-center space-x-4">
+                    <img src="/logo.png" alt="Logo" class="logo" />
+                    <div>
+                      <h2 class="text-2xl font-bold">Acta de Entrega</h2>
+                      <p class="text-gray-600">Ticket: ${ticket.numero_ticket}</p>
+                    </div>
+                  </div>
+                </div>
                 ${printContent.innerHTML}
               </div>
             </body>
