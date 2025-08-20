@@ -145,7 +145,7 @@ export interface Ticket {
     apellidoPaterno: string;
     apellidoMaterno: string | null;
   };
-  presupuesto: {
+  presupuestos: {
     id: number;
     ticketId: number;
     manoDeObra: number;

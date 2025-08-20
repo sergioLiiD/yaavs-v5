@@ -137,7 +137,7 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
           <TabsContent value="entrega">
             <EntregaTab 
               ticket={ticket}
-              presupuesto={ticket.presupuesto}
+              presupuesto={ticket.presupuestos}
               pagos={ticket.pagos || []}
               saldo={ticket.saldo || 0}
             />
