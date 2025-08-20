@@ -8,7 +8,7 @@ const prisma = new PrismaClient({
   }
 });
 
-async function diagnosticarInventario() {
+async function diagnosticoInventario() {
   try {
     console.log('🔍 Iniciando diagnóstico de inventario...\n');
 
