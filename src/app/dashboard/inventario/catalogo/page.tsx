@@ -98,6 +98,13 @@ export default function CatalogoPage() {
   const [modelos, setModelos] = useState<{ id: number; nombre: string; }[]>([]);
   const [marcaSeleccionada, setMarcaSeleccionada] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
+  
+  // Estados para búsqueda y paginación
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [formData, setFormData] = useState<FormData>({
     nombre: '',
@@ -128,7 +135,18 @@ export default function CatalogoPage() {
   // Cargar datos cuando se monta el componente
   useEffect(() => {
     cargarDatosIniciales();
-  }, []);
+  }, [currentPage, searchTerm]);
+
+  // Función para manejar búsqueda
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Resetear a la primera página cuando se busca
+  };
+
+  // Función para manejar cambio de página
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   // Cargar modelos cuando cambia la marca seleccionada
   useEffect(() => {
@@ -169,10 +187,11 @@ export default function CatalogoPage() {
 
   const cargarDatosIniciales = async () => {
     try {
+      setIsLoading(true);
       const [tiposServicioRes, marcasRes, productosRes] = await Promise.all([
         fetch('/api/catalogo/tipos-servicio'),
         fetch('/api/catalogo/marcas'),
-        fetch('/api/inventario/productos')
+        fetch(`/api/inventario/productos?search=${encodeURIComponent(searchTerm)}&page=${currentPage}&limit=20`)
       ]);
 
       // Verificar cada respuesta individualmente
@@ -191,7 +210,7 @@ export default function CatalogoPage() {
       }
 
       // Intentar obtener los datos de cada respuesta
-      const [tiposServicio, marcas, productos] = await Promise.all([
+      const [tiposServicio, marcas, productosData] = await Promise.all([
         tiposServicioRes.json(),
         marcasRes.json(),
         productosRes.json()
@@ -204,14 +223,19 @@ export default function CatalogoPage() {
       if (!Array.isArray(marcas)) {
         throw new Error('El formato de marcas no es válido');
       }
-      if (!Array.isArray(productos)) {
+
+      // Validar y extraer datos de productos con paginación
+      if (productosData && productosData.productos && Array.isArray(productosData.productos)) {
+        setProductos(productosData.productos);
+        setTotalPages(productosData.pagination?.totalPages || 1);
+        setTotalProducts(productosData.pagination?.total || 0);
+      } else {
         throw new Error('El formato de productos no es válido');
       }
 
       // Actualizar el estado con los datos validados
       setTiposServicio(tiposServicio);
       setMarcas(marcas);
-      setProductos(productos);
     } catch (error) {
       console.error('Error al cargar datos iniciales:', error);
       if (error instanceof Error) {
@@ -219,6 +243,8 @@ export default function CatalogoPage() {
       } else {
         alert('Error al cargar los datos iniciales. Por favor, intente nuevamente.');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -427,8 +453,8 @@ export default function CatalogoPage() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Error al eliminar el producto');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al eliminar el producto');
       }
 
       await cargarDatosIniciales();
@@ -456,6 +482,42 @@ export default function CatalogoPage() {
           <HiPlus className="mr-2" />
           Nuevo Producto
         </button>
+      </div>
+
+      {/* Buscador */}
+      <div className="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg p-6 mb-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="flex-1 max-w-md">
+            <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+              Buscar productos
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                id="search"
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="Buscar por nombre, SKU, marca, modelo..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#FEBF19] focus:border-[#FEBF19] focus:outline-none"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => handleSearch('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <HiX className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="text-sm text-gray-600">
+            {isLoading ? (
+              <span>Cargando...</span>
+            ) : (
+              <span>Mostrando {productos.length} de {totalProducts} productos</span>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
@@ -573,6 +635,92 @@ export default function CatalogoPage() {
             </tbody>
           </table>
         </div>
+        
+        {/* Paginador */}
+        {totalPages > 1 && (
+          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Siguiente
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Mostrando <span className="font-medium">{((currentPage - 1) * 20) + 1}</span> a{' '}
+                  <span className="font-medium">
+                    {Math.min(currentPage * 20, totalProducts)}
+                  </span>{' '}
+                  de <span className="font-medium">{totalProducts}</span> resultados
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Anterior</span>
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  
+                  {/* Números de página */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          pageNum === currentPage
+                            ? 'z-10 bg-[#FEBF19] border-[#FEBF19] text-gray-900'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Siguiente</span>
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de Producto */}

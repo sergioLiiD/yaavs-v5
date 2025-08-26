@@ -134,8 +134,24 @@ export async function DELETE(
     
     // Si hay error de restricción de clave foránea
     if (error.code === 'P2003') {
+      // Determinar qué tipo de relación está causando el problema
+      const fieldName = error.meta?.field_name || '';
+      let mensaje = 'No se puede eliminar el producto porque tiene registros relacionados';
+      
+      if (fieldName.includes('entradas_almacen')) {
+        mensaje = 'No se puede eliminar el producto porque tiene entradas de almacén registradas';
+      } else if (fieldName.includes('fotos_producto')) {
+        mensaje = 'No se puede eliminar el producto porque tiene fotos asociadas';
+      } else if (fieldName.includes('precios_venta')) {
+        mensaje = 'No se puede eliminar el producto porque tiene precios de venta configurados';
+      } else if (fieldName.includes('salidas_almacen')) {
+        mensaje = 'No se puede eliminar el producto porque tiene salidas de almacén registradas';
+      } else if (fieldName.includes('detalle_ventas')) {
+        mensaje = 'No se puede eliminar el producto porque está asociado a ventas';
+      }
+      
       return NextResponse.json(
-        { error: 'No se puede eliminar el producto porque tiene registros relacionados' },
+        { error: mensaje },
         { status: 400 }
       );
     }

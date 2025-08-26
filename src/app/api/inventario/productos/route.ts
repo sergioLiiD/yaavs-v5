@@ -16,7 +16,7 @@ interface User {
   nivel?: string;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     console.log('GET /api/inventario/productos - Session:', session?.user?.email);
@@ -29,19 +29,59 @@ export async function GET() {
       );
     }
 
-    const productos = await prisma.productos.findMany({
-      include: {
-        marcas: true,
-        modelos: true,
-        categorias: true,
-        fotos_producto: true,
-      },
-      orderBy: {
-        nombre: 'asc'
+    // Obtener parámetros de la URL
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const skip = (page - 1) * limit;
+
+    // Construir condiciones de búsqueda
+    const whereConditions: Prisma.productosWhereInput = {};
+    
+    if (search) {
+      whereConditions.OR = [
+        { nombre: { contains: search, mode: 'insensitive' } },
+        { sku: { contains: search, mode: 'insensitive' } },
+        { descripcion: { contains: search, mode: 'insensitive' } },
+        { marcas: { nombre: { contains: search, mode: 'insensitive' } } },
+        { modelos: { nombre: { contains: search, mode: 'insensitive' } } },
+        { categorias: { nombre: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    // Obtener productos con paginación y búsqueda
+    const [productos, total] = await Promise.all([
+      prisma.productos.findMany({
+        where: whereConditions,
+        include: {
+          marcas: true,
+          modelos: true,
+          categorias: true,
+          fotos_producto: true,
+        },
+        orderBy: {
+          nombre: 'asc'
+        },
+        skip,
+        take: limit
+      }),
+      prisma.productos.count({
+        where: whereConditions
+      })
+    ]);
+
+    return NextResponse.json({
+      productos,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
       }
     });
-
-    return NextResponse.json(productos);
   } catch (error) {
     console.error('Error al obtener productos:', error);
     return NextResponse.json(
