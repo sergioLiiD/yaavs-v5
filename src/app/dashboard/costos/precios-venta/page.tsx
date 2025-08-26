@@ -96,6 +96,12 @@ export default function PreciosVentaPage() {
   // Estados para el modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPrecio, setCurrentPrecio] = useState<PrecioVenta | null>(null);
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage] = useState(20);
 
   // Cargar los precios al montar el componente
   const fetchData = useCallback(async () => {
@@ -296,6 +302,40 @@ export default function PreciosVentaPage() {
     );
   }, [allItems, searchTerm]);
 
+  // Calcular items paginados
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredItems.slice(startIndex, endIndex);
+  }, [filteredItems, currentPage, itemsPerPage]);
+
+  // Calcular información de paginación
+  const paginationInfo = useMemo(() => {
+    const total = filteredItems.length;
+    const totalPages = Math.ceil(total / itemsPerPage);
+    const startItem = (currentPage - 1) * itemsPerPage + 1;
+    const endItem = Math.min(currentPage * itemsPerPage, total);
+    
+    return {
+      total,
+      totalPages,
+      startItem,
+      endItem,
+      hasNext: currentPage < totalPages,
+      hasPrev: currentPage > 1
+    };
+  }, [filteredItems.length, currentPage, itemsPerPage]);
+
+  // Función para cambiar de página
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Resetear a la primera página cuando cambia la búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   const toggleDetalles = (id: string) => {
     setDetallesVisibles(prev => ({
       ...prev,
@@ -367,14 +407,14 @@ export default function PreciosVentaPage() {
                         Cargando...
                       </TableCell>
                     </TableRow>
-                  ) : filteredItems.length === 0 ? (
+                  ) : paginatedItems.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-4">
                         No hay precios de venta registrados
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredItems.map((item) => (
+                    paginatedItems.map((item) => (
                       <TableRow key={`${item.id}-${item.precio_id}`}>
                         <TableCell>{item.nombre}</TableCell>
                         <TableCell>{item.tipo}</TableCell>
@@ -400,6 +440,90 @@ export default function PreciosVentaPage() {
             </div>
           </div>
         </div>
+        
+        {/* Paginador */}
+        {paginationInfo.totalPages > 1 && (
+          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={!paginationInfo.hasPrev}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={!paginationInfo.hasNext}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Siguiente
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Mostrando <span className="font-medium">{paginationInfo.startItem}</span> a{' '}
+                  <span className="font-medium">{paginationInfo.endItem}</span>{' '}
+                  de <span className="font-medium">{paginationInfo.total}</span> resultados
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={!paginationInfo.hasPrev}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Anterior</span>
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  
+                  {/* Números de página */}
+                  {Array.from({ length: Math.min(5, paginationInfo.totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (paginationInfo.totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= paginationInfo.totalPages - 2) {
+                      pageNum = paginationInfo.totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          pageNum === currentPage
+                            ? 'z-10 bg-[#FEBF19] border-[#FEBF19] text-gray-900'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={!paginationInfo.hasNext}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Siguiente</span>
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
