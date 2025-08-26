@@ -18,14 +18,14 @@ export async function GET(
       );
     }
 
-    const producto = await prisma.producto.findUnique({
+    const producto = await prisma.productos.findUnique({
       where: { id: parseInt(params.id) },
       include: {
-        categoria: true,
-        marca: true,
-        modelo: true,
-        proveedor: true,
-        fotos: true,
+        categorias: true,
+        marcas: true,
+        modelos: true,
+        proveedores: true,
+        fotos_producto: true,
       },
     });
 
@@ -78,7 +78,7 @@ export async function PUT(
       proveedorId: data.proveedorId ? parseInt(data.proveedorId) : undefined,
     };
 
-    const producto = await prisma.producto.update({
+    const producto = await prisma.productos.update({
       where: {
         id: parseInt(params.id),
       },
@@ -109,15 +109,37 @@ export async function DELETE(
       );
     }
 
-    await prisma.producto.delete({
-      where: {
-        id: parseInt(params.id),
-      },
+    const productoId = parseInt(params.id);
+
+    // Verificar que el producto existe
+    const producto = await prisma.productos.findUnique({
+      where: { id: productoId },
     });
 
-    return NextResponse.json({ message: 'Producto eliminado' });
-  } catch (error) {
+    if (!producto) {
+      return NextResponse.json(
+        { error: 'Producto no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Intentar eliminar el producto
+    await prisma.productos.delete({
+      where: { id: productoId },
+    });
+
+    return NextResponse.json({ message: 'Producto eliminado correctamente' });
+  } catch (error: any) {
     console.error('Error al eliminar producto:', error);
+    
+    // Si hay error de restricción de clave foránea
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { error: 'No se puede eliminar el producto porque tiene registros relacionados' },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Error al eliminar el producto' },
       { status: 500 }
