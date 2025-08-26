@@ -99,14 +99,17 @@ export default function StockPage() {
       if (!response.ok) throw new Error('Error al cargar productos');
       const data = await response.json();
       
+      // Manejar la nueva estructura de respuesta con paginación
+      const productosData = data.productos || data;
+      
       // Filtrar solo productos físicos
-      const productosFisicos = data.filter((producto: Producto) => {
+      const productosFisicos = productosData.filter((producto: Producto) => {
         const esProducto = producto.tipo === 'PRODUCTO';
         console.log(`Producto: ${producto.nombre}, Tipo: ${producto.tipo}, Es producto físico: ${esProducto}`);
         return esProducto;
       });
       
-      console.log('Total de productos:', data.length);
+      console.log('Total de productos:', productosData.length);
       console.log('Productos filtrados:', productosFisicos.length);
       setProductos(productosFisicos);
     } catch (error) {

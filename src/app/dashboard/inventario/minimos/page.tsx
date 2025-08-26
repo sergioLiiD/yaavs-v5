@@ -43,7 +43,9 @@ export default function InventariosMinimosPage() {
       }
       const data = await response.json();
       console.log('Datos cargados:', data);
-      return data;
+      
+      // Manejar la nueva estructura de respuesta con paginación
+      return data.productos || data;
     },
     staleTime: 0,
     refetchOnWindowFocus: true,

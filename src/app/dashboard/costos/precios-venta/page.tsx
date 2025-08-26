@@ -109,11 +109,14 @@ export default function PreciosVentaPage() {
         fetch('/api/inventario/stock/precios-promedio')
       ]);
 
-      const [productosData, preciosData, preciosPromedioData] = await Promise.all([
+      const [productosResponseData, preciosData, preciosPromedioData] = await Promise.all([
         productosResponse.json(),
         preciosResponse.json(),
         preciosPromedioResponse.json()
       ]);
+
+      // Manejar la nueva estructura de respuesta con paginación
+      const productosData = productosResponseData.productos || productosResponseData;
 
       console.log('Datos recibidos:', {
         productos: productosData.length,

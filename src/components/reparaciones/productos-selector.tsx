@@ -74,7 +74,9 @@ export function ProductosSelector({ productos = [], onProductosChange }: Product
       }
       const data = await response.json();
       console.log('Productos cargados:', data);
-      return data;
+      
+      // Manejar la nueva estructura de respuesta con paginación
+      return data.productos || data;
     },
   });
 
