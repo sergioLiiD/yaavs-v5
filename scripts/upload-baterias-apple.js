@@ -50,6 +50,7 @@ async function uploadBateriasApple() {
               nombre: `Batería Apple iPhone ${bateria.nombre}`,
               categoria: 'BATERIAS',
               marca: 'APPLE',
+              tipo: 'PRODUCTO',
               updated_at: new Date()
             }
           });
@@ -64,6 +65,7 @@ async function uploadBateriasApple() {
               categoria: 'BATERIAS',
               marca: 'APPLE',
               precio_promedio: 0,
+              tipo: 'PRODUCTO',
               created_at: new Date(),
               updated_at: new Date()
             }
