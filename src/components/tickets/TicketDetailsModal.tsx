@@ -8,6 +8,7 @@ import {
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatDate } from "@/lib/utils";
+import { TicketLabelPrint } from "./TicketLabelPrint";
 
 // Función para formatear fecha de pago con fallback
 const formatPagoDate = (pago: any) => {
@@ -101,10 +102,15 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle>Detalles del Ticket #{ticket.numeroTicket}</DialogTitle>
-          <DialogDescription>
-            Información completa del ticket de reparación
-          </DialogDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <DialogTitle>Detalles del Ticket #{ticket.numeroTicket}</DialogTitle>
+              <DialogDescription>
+                Información completa del ticket de reparación
+              </DialogDescription>
+            </div>
+            <TicketLabelPrint ticket={ticket} />
+          </div>
         </DialogHeader>
 
         <div className="space-y-6 overflow-y-auto flex-1 pr-2 pb-4">
