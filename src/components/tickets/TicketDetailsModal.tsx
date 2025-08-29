@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatDate } from "@/lib/utils";
 import { TicketLabelPrint } from "./TicketLabelPrint";
+import { TicketFullPrint } from "./TicketFullPrint";
 
 // Función para formatear fecha de pago con fallback
 const formatPagoDate = (pago: any) => {
@@ -109,7 +110,10 @@ export function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps)
                 Información completa del ticket de reparación
               </DialogDescription>
             </div>
-            <TicketLabelPrint ticket={ticket} />
+            <div className="flex space-x-2">
+              <TicketLabelPrint ticket={ticket} />
+              <TicketFullPrint ticket={ticket} />
+            </div>
           </div>
         </DialogHeader>
 
