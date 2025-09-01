@@ -51,6 +51,7 @@ export default function StockPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
+  const [modalSearchTerm, setModalSearchTerm] = useState(''); // Estado separado para el modal
   const [formData, setFormData] = useState({
     cantidad: 0,
     precioCompra: 0,
@@ -72,6 +73,16 @@ export default function StockPage() {
   });
   const [historial, setHistorial] = useState<any[]>([]);
   const [proveedores, setProveedores] = useState<{ id: number; nombre: string; }[]>([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,11 +102,31 @@ export default function StockPage() {
     };
 
     fetchData();
-  }, []);
+  }, [currentPage, searchTerm]); // Agregar searchTerm como dependencia
+
+  // Resetear a la primera página cuando cambia la búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Función para cambiar de página
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const loadProductos = async () => {
     try {
-      const response = await fetch('/api/inventario/productos');
+      // Construir parámetros de búsqueda y paginación
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString()
+      });
+      
+      if (searchTerm.trim()) {
+        params.append('search', searchTerm);
+      }
+      
+      const response = await fetch(`/api/inventario/productos?${params.toString()}`);
       if (!response.ok) throw new Error('Error al cargar productos');
       const data = await response.json();
       
@@ -112,6 +143,11 @@ export default function StockPage() {
       console.log('Total de productos:', productosData.length);
       console.log('Productos filtrados:', productosFisicos.length);
       setProductos(productosFisicos);
+      
+      // Actualizar estado de paginación si la respuesta incluye paginación
+      if (data.pagination) {
+        setPagination(data.pagination);
+      }
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al cargar productos');
@@ -247,6 +283,7 @@ export default function StockPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setProductoSeleccionado(null);
+    setModalSearchTerm(''); // Limpiar búsqueda del modal
     setFormData({
       cantidad: 0,
       precioCompra: 0,
@@ -576,6 +613,61 @@ export default function StockPage() {
         </div>
       )}
 
+      {/* Paginación */}
+      {pagination.totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Mostrando {productos.length} de {pagination.total} productos
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={!pagination.hasPrev}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                let pageNum;
+                if (pagination.totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (pagination.page <= 3) {
+                  pageNum = i + 1;
+                } else if (pagination.page >= pagination.totalPages - 2) {
+                  pageNum = pagination.totalPages - 4 + i;
+                } else {
+                  pageNum = pagination.page - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`px-3 py-2 text-sm font-medium rounded-md ${
+                      pageNum === pagination.page 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <button
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={!pagination.hasNext}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Entrada */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -610,20 +702,43 @@ export default function StockPage() {
               {!productoSeleccionado && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-900">Producto *</label>
-                  <select
-                    name="productoId"
-                    value={formData.productoId}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-700"
-                    required
-                  >
-                    <option value="" className="text-gray-700">Selecciona un producto</option>
-                    {productos.map((producto) => (
-                      <option key={producto.id} value={producto.id} className="text-gray-700">
-                        {producto.nombre}
-                      </option>
-                    ))}
-                  </select>
+                  
+                  {/* Buscador de productos */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Buscar producto..."
+                      value={modalSearchTerm}
+                      onChange={(e) => setModalSearchTerm(e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-700"
+                    />
+                    <HiSearch className="absolute right-3 top-2.5 text-gray-400" />
+                  </div>
+                  
+                  {/* Lista de productos con scroll */}
+                  <div className="mt-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md">
+                    {productos
+                      .filter(producto => 
+                        producto.nombre.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
+                        producto.marcas?.nombre?.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
+                        producto.modelos?.nombre?.toLowerCase().includes(modalSearchTerm.toLowerCase())
+                      )
+                      .map((producto) => (
+                        <div
+                          key={producto.id}
+                          onClick={() => {
+                            setProductoSeleccionado(producto);
+                            setFormData(prev => ({ ...prev, productoId: producto.id }));
+                          }}
+                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200 last:border-b-0"
+                        >
+                          <div className="font-medium text-gray-900">{producto.nombre}</div>
+                          <div className="text-sm text-gray-500">
+                            {producto.marcas?.nombre || 'Sin marca'} - {producto.modelos?.nombre || 'Sin modelo'}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 </div>
               )}
               <div className="space-y-4">
