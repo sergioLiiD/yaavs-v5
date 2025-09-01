@@ -101,7 +101,14 @@ export default function PreciosVentaPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [itemsPerPage] = useState(20);
+  const [itemsPerPage] = useState(50);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  });
 
   // Cargar los precios al montar el componente
   const fetchData = useCallback(async () => {
@@ -110,7 +117,7 @@ export default function PreciosVentaPage() {
       console.log('Iniciando fetchData...');
       
       const [productosResponse, preciosResponse, preciosPromedioResponse] = await Promise.all([
-        fetch('/api/inventario/productos?limit=1000'),
+        fetch(`/api/inventario/productos?page=${currentPage}&limit=${itemsPerPage}`),
         fetch('/api/precios-venta'),
         fetch('/api/inventario/stock/precios-promedio')
       ]);
@@ -138,13 +145,20 @@ export default function PreciosVentaPage() {
       setProductos(productosData);
       setPrecios(preciosData);
       setPreciosPromedio(preciosPromedioData);
+      
+      // Actualizar estado de paginación si la respuesta incluye paginación
+      if (productosResponseData.pagination) {
+        setPagination(productosResponseData.pagination);
+        setTotalPages(productosResponseData.pagination.totalPages);
+        setTotalItems(productosResponseData.pagination.total);
+      }
     } catch (error) {
       console.error('Error al cargar los datos:', error);
       setError('Error al cargar los datos');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentPage, itemsPerPage]);
 
   useEffect(() => {
     fetchData();
@@ -336,6 +350,11 @@ export default function PreciosVentaPage() {
     setCurrentPage(1);
   }, [searchTerm]);
 
+  // Resetear a la primera página cuando cambia la búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   const toggleDetalles = (id: string) => {
     setDetallesVisibles(prev => ({
       ...prev,
@@ -442,19 +461,19 @@ export default function PreciosVentaPage() {
         </div>
         
         {/* Paginador */}
-        {paginationInfo.totalPages > 1 && (
+        {pagination.totalPages > 1 && (
           <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={!paginationInfo.hasPrev}
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={!pagination.hasPrev}
                 className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Anterior
               </button>
               <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={!paginationInfo.hasNext}
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={!pagination.hasNext}
                 className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Siguiente
@@ -463,16 +482,16 @@ export default function PreciosVentaPage() {
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Mostrando <span className="font-medium">{paginationInfo.startItem}</span> a{' '}
-                  <span className="font-medium">{paginationInfo.endItem}</span>{' '}
-                  de <span className="font-medium">{paginationInfo.total}</span> resultados
+                  Mostrando <span className="font-medium">{((pagination.page - 1) * itemsPerPage) + 1}</span> a{' '}
+                  <span className="font-medium">{Math.min(pagination.page * itemsPerPage, pagination.total)}</span>{' '}
+                  de <span className="font-medium">{pagination.total}</span> resultados
                 </p>
               </div>
               <div>
                 <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                   <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={!paginationInfo.hasPrev}
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={!pagination.hasPrev}
                     className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="sr-only">Anterior</span>
@@ -482,16 +501,16 @@ export default function PreciosVentaPage() {
                   </button>
                   
                   {/* Números de página */}
-                  {Array.from({ length: Math.min(5, paginationInfo.totalPages) }, (_, i) => {
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                     let pageNum;
-                    if (paginationInfo.totalPages <= 5) {
+                    if (pagination.totalPages <= 5) {
                       pageNum = i + 1;
-                    } else if (currentPage <= 3) {
+                    } else if (pagination.page <= 3) {
                       pageNum = i + 1;
-                    } else if (currentPage >= paginationInfo.totalPages - 2) {
-                      pageNum = paginationInfo.totalPages - 4 + i;
+                    } else if (pagination.page >= pagination.totalPages - 2) {
+                      pageNum = pagination.totalPages - 4 + i;
                     } else {
-                      pageNum = currentPage - 2 + i;
+                      pageNum = pagination.page - 2 + i;
                     }
                     
                     return (
@@ -499,7 +518,7 @@ export default function PreciosVentaPage() {
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
                         className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          pageNum === currentPage
+                          pageNum === pagination.page
                             ? 'z-10 bg-[#FEBF19] border-[#FEBF19] text-gray-900'
                             : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                         }`}
@@ -510,8 +529,8 @@ export default function PreciosVentaPage() {
                   })}
                   
                   <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={!paginationInfo.hasNext}
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={!pagination.hasNext}
                     className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="sr-only">Siguiente</span>
