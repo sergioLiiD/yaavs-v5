@@ -52,6 +52,7 @@ export default function StockPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [modalSearchTerm, setModalSearchTerm] = useState(''); // Estado separado para el modal
+  const [productosModal, setProductosModal] = useState<Producto[]>([]); // Productos para el modal (sin paginación)
   const [formData, setFormData] = useState({
     cantidad: 0,
     precioCompra: 0,
@@ -181,6 +182,25 @@ export default function StockPage() {
     }
   };
 
+  // Función para cargar productos para el modal (sin paginación)
+  const loadProductosParaModal = async () => {
+    try {
+      const response = await fetch('/api/productos');
+      if (!response.ok) throw new Error('Error al cargar productos para el modal');
+      const data = await response.json();
+      
+      // Filtrar solo productos físicos
+      const productosFisicos = data.filter((producto: Producto) => {
+        return producto.tipo === 'PRODUCTO';
+      });
+      
+      setProductosModal(productosFisicos);
+    } catch (error) {
+      console.error('Error al cargar productos para el modal:', error);
+      toast.error('Error al cargar productos para el modal');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!productoSeleccionado) return;
@@ -284,6 +304,7 @@ export default function StockPage() {
     setIsModalOpen(false);
     setProductoSeleccionado(null);
     setModalSearchTerm(''); // Limpiar búsqueda del modal
+    setProductosModal([]); // Limpiar productos del modal
     setFormData({
       cantidad: 0,
       precioCompra: 0,
@@ -496,6 +517,7 @@ export default function StockPage() {
             onClick={() => {
               setProductoSeleccionado(null);
               setIsModalOpen(true);
+              loadProductosParaModal(); // Cargar productos para el modal
             }}
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#22C55E] hover:bg-[#22C55E]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22C55E]"
           >
@@ -595,6 +617,7 @@ export default function StockPage() {
                         onClick={() => {
                           setProductoSeleccionado(producto);
                           setIsModalOpen(true);
+                          loadProductosParaModal(); // Cargar productos para el modal
                         }}
                         className="bg-[#FEBF19] text-gray-900 px-4 py-2 rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
                         title="Registrar entrada"
@@ -717,7 +740,7 @@ export default function StockPage() {
                   
                   {/* Lista de productos con scroll */}
                   <div className="mt-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md">
-                    {productos
+                    {productosModal
                       .filter(producto => 
                         producto.nombre.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
                         producto.marcas?.nombre?.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
