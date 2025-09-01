@@ -53,6 +53,7 @@ export default function StockPage() {
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [modalSearchTerm, setModalSearchTerm] = useState(''); // Estado separado para el modal
   const [productosModal, setProductosModal] = useState<Producto[]>([]); // Productos para el modal (sin paginación)
+  const [isModalLoading, setIsModalLoading] = useState(false); // Estado de carga del modal
   const [formData, setFormData] = useState({
     cantidad: 0,
     precioCompra: 0,
@@ -185,6 +186,7 @@ export default function StockPage() {
   // Función para cargar productos para el modal (sin paginación)
   const loadProductosParaModal = async () => {
     try {
+      setIsModalLoading(true);
       const response = await fetch('/api/productos');
       if (!response.ok) throw new Error('Error al cargar productos para el modal');
       const data = await response.json();
@@ -198,6 +200,8 @@ export default function StockPage() {
     } catch (error) {
       console.error('Error al cargar productos para el modal:', error);
       toast.error('Error al cargar productos para el modal');
+    } finally {
+      setIsModalLoading(false);
     }
   };
 
@@ -305,6 +309,7 @@ export default function StockPage() {
     setProductoSeleccionado(null);
     setModalSearchTerm(''); // Limpiar búsqueda del modal
     setProductosModal([]); // Limpiar productos del modal
+    setIsModalLoading(false); // Limpiar estado de carga
     setFormData({
       cantidad: 0,
       precioCompra: 0,
@@ -694,7 +699,7 @@ export default function StockPage() {
       {/* Modal de Entrada */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
             <h2 className="text-xl font-semibold mb-4 text-gray-900">
               {productoSeleccionado ? 'Nueva Entrada de Almacén' : 'Seleccionar Producto'}
             </h2>
@@ -739,8 +744,13 @@ export default function StockPage() {
                   </div>
                   
                   {/* Lista de productos con scroll */}
-                  <div className="mt-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md">
-                    {productosModal
+                  <div className="mt-2 max-h-64 overflow-y-auto border border-gray-300 rounded-md">
+                    {isModalLoading ? (
+                      <div className="flex justify-center items-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span className="ml-2 text-gray-600">Cargando productos...</span>
+                      </div>
+                    ) : productosModal
                       .filter(producto => 
                         producto.nombre.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
                         producto.marcas?.nombre?.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
