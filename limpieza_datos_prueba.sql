@@ -1,5 +1,5 @@
 -- ===========================================
--- SCRIPT DE LIMPIEZA V2 - INTEGRIDAD REFERENCIAL COMPLETA
+-- SCRIPT DE LIMPIEZA V3 - INTEGRIDAD REFERENCIAL COMPLETA
 -- FECHA: 2025-09-02
 -- OBJETIVO: Eliminar datos de prueba anteriores al 31/08/2025
 -- ===========================================
@@ -18,6 +18,8 @@ SELECT 'Pagos totales', COUNT(*) FROM pagos
 UNION ALL
 SELECT 'Presupuestos totales', COUNT(*) FROM presupuestos
 UNION ALL
+SELECT 'Conceptos Presupuesto totales', COUNT(*) FROM conceptos_presupuesto
+UNION ALL
 SELECT 'Reparaciones totales', COUNT(*) FROM reparaciones;
 
 -- ===========================================
@@ -27,22 +29,25 @@ SELECT 'Reparaciones totales', COUNT(*) FROM reparaciones;
 -- PASO 1: Limpiar usos_cupon (SET NULL)
 UPDATE usos_cupon SET ticket_id = NULL WHERE ticket_id IN (SELECT id FROM tickets WHERE created_at < '2025-08-31');
 
--- PASO 2: Eliminar dispositivos asociados a tickets antiguos
+-- PASO 2: Eliminar conceptos_presupuesto asociados a presupuestos antiguos
+DELETE FROM conceptos_presupuesto WHERE presupuesto_id IN (SELECT id FROM presupuestos WHERE ticket_id IN (SELECT id FROM tickets WHERE created_at < '2025-08-31'));
+
+-- PASO 3: Eliminar dispositivos asociados a tickets antiguos
 DELETE FROM dispositivos WHERE ticket_id IN (SELECT id FROM tickets WHERE created_at < '2025-08-31');
 
--- PASO 3: Eliminar pagos asociados a tickets antiguos
+-- PASO 4: Eliminar pagos asociados a tickets antiguos
 DELETE FROM pagos WHERE ticket_id IN (SELECT id FROM tickets WHERE created_at < '2025-08-31');
 
--- PASO 4: Eliminar presupuestos asociados a tickets antiguos
+-- PASO 5: Eliminar presupuestos asociados a tickets antiguos
 DELETE FROM presupuestos WHERE ticket_id IN (SELECT id FROM tickets WHERE created_at < '2025-08-31');
 
--- PASO 5: Eliminar reparaciones asociadas a tickets antiguos
+-- PASO 6: Eliminar reparaciones asociadas a tickets antiguos
 DELETE FROM reparaciones WHERE ticket_id IN (SELECT id FROM tickets WHERE created_at < '2025-08-31');
 
--- PASO 6: Eliminar tickets anteriores al 31/08/2025
+-- PASO 7: Eliminar tickets anteriores al 31/08/2025
 DELETE FROM tickets WHERE created_at < '2025-08-31';
 
--- PASO 7: Eliminar clientes anteriores al 31/08/2025
+-- PASO 8: Eliminar clientes anteriores al 31/08/2025
 DELETE FROM clientes WHERE created_at < '2025-08-31';
 
 -- Mostrar estado DESPUÉS de la limpieza
@@ -56,6 +61,8 @@ UNION ALL
 SELECT 'Pagos restantes', COUNT(*) FROM pagos
 UNION ALL
 SELECT 'Presupuestos restantes', COUNT(*) FROM presupuestos
+UNION ALL
+SELECT 'Conceptos Presupuesto restantes', COUNT(*) FROM conceptos_presupuesto
 UNION ALL
 SELECT 'Reparaciones restantes', COUNT(*) FROM reparaciones;
 
