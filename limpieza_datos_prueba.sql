@@ -1,5 +1,5 @@
 -- ===========================================
--- SCRIPT DE LIMPIEZA V5 - INTEGRIDAD REFERENCIAL COMPLETA
+-- SCRIPT DE LIMPIEZA V6 - INTEGRIDAD REFERENCIAL COMPLETA
 -- FECHA: 2025-09-02
 -- OBJETIVO: Eliminar datos de prueba anteriores al 31/08/2025
 -- ===========================================
@@ -24,7 +24,9 @@ SELECT 'Reparaciones totales', COUNT(*) FROM reparaciones
 UNION ALL
 SELECT 'Checklist Diagnostico totales', COUNT(*) FROM checklist_diagnostico
 UNION ALL
-SELECT 'Checklist Respuesta totales', COUNT(*) FROM checklist_respuesta_diagnostico;
+SELECT 'Checklist Respuesta totales', COUNT(*) FROM checklist_respuesta_diagnostico
+UNION ALL
+SELECT 'Checklist Reparacion totales', COUNT(*) FROM checklist_reparacion;
 
 -- ===========================================
 -- LIMPIEZA EN ORDEN CORRECTO DE REFERENCIAS
@@ -42,22 +44,25 @@ DELETE FROM checklist_respuesta_diagnostico WHERE checklist_diagnostico_id IN (S
 -- PASO 4: Eliminar checklist_diagnostico asociados a reparaciones antiguas
 DELETE FROM checklist_diagnostico WHERE reparacion_id IN (SELECT id FROM reparaciones WHERE ticket_id IN (SELECT id FROM tickets WHERE created_at < '2025-08-31'));
 
--- PASO 5: Eliminar dispositivos asociados a tickets antiguos
+-- PASO 5: Eliminar checklist_reparacion asociados a reparaciones antiguas
+DELETE FROM checklist_reparacion WHERE reparacion_id IN (SELECT id FROM reparaciones WHERE ticket_id IN (SELECT id FROM tickets WHERE created_at < '2025-08-31'));
+
+-- PASO 6: Eliminar dispositivos asociados a tickets antiguos
 DELETE FROM dispositivos WHERE ticket_id IN (SELECT id FROM tickets WHERE created_at < '2025-08-31');
 
--- PASO 6: Eliminar pagos asociados a tickets antiguos
+-- PASO 7: Eliminar pagos asociados a tickets antiguos
 DELETE FROM pagos WHERE ticket_id IN (SELECT id FROM tickets WHERE created_at < '2025-08-31');
 
--- PASO 7: Eliminar presupuestos asociados a tickets antiguos
+-- PASO 8: Eliminar presupuestos asociados a tickets antiguos
 DELETE FROM presupuestos WHERE ticket_id IN (SELECT id FROM tickets WHERE created_at < '2025-08-31');
 
--- PASO 8: Eliminar reparaciones asociadas a tickets antiguos
+-- PASO 9: Eliminar reparaciones asociadas a tickets antiguos
 DELETE FROM reparaciones WHERE ticket_id IN (SELECT id FROM tickets WHERE created_at < '2025-08-31');
 
--- PASO 9: Eliminar tickets anteriores al 31/08/2025
+-- PASO 10: Eliminar tickets anteriores al 31/08/2025
 DELETE FROM tickets WHERE created_at < '2025-08-31';
 
--- PASO 10: Eliminar clientes anteriores al 31/08/2025
+-- PASO 11: Eliminar clientes anteriores al 31/08/2025
 DELETE FROM clientes WHERE created_at < '2025-08-31';
 
 -- Mostrar estado DESPUÉS de la limpieza
@@ -78,7 +83,9 @@ SELECT 'Reparaciones restantes', COUNT(*) FROM reparaciones
 UNION ALL
 SELECT 'Checklist Diagnostico restantes', COUNT(*) FROM checklist_diagnostico
 UNION ALL
-SELECT 'Checklist Respuesta restantes', COUNT(*) FROM checklist_respuesta_diagnostico;
+SELECT 'Checklist Respuesta restantes', COUNT(*) FROM checklist_respuesta_diagnostico
+UNION ALL
+SELECT 'Checklist Reparacion restantes', COUNT(*) FROM checklist_reparacion;
 
 -- Confirmar transacción
 COMMIT;
