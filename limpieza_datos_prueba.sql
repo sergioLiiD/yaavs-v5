@@ -1,5 +1,5 @@
 -- ===========================================
--- SCRIPT DE LIMPIEZA V8 - INTEGRIDAD REFERENCIAL COMPLETA
+-- SCRIPT DE LIMPIEZA V9 - INTEGRIDAD REFERENCIAL COMPLETA
 -- FECHA: 2025-09-02
 -- OBJETIVO: Eliminar datos de prueba anteriores al 31/08/2025
 -- ===========================================
@@ -30,7 +30,9 @@ SELECT 'Checklist Reparacion totales', COUNT(*) FROM checklist_reparacion
 UNION ALL
 SELECT 'Checklist Respuesta Reparacion totales', COUNT(*) FROM checklist_respuesta_reparacion
 UNION ALL
-SELECT 'Piezas Reparacion Productos totales', COUNT(*) FROM piezas_reparacion_productos;
+SELECT 'Piezas Reparacion Productos totales', COUNT(*) FROM piezas_reparacion_productos
+UNION ALL
+SELECT 'Ventas totales', COUNT(*) FROM ventas;
 
 -- ===========================================
 -- LIMPIEZA EN ORDEN CORRECTO DE REFERENCIAS
@@ -72,7 +74,10 @@ DELETE FROM reparaciones WHERE ticket_id IN (SELECT id FROM tickets WHERE create
 -- PASO 12: Eliminar tickets anteriores al 31/08/2025
 DELETE FROM tickets WHERE created_at < '2025-08-31';
 
--- PASO 13: Eliminar clientes anteriores al 31/08/2025
+-- PASO 13: Eliminar ventas asociadas a clientes antiguos
+DELETE FROM ventas WHERE cliente_id IN (SELECT id FROM clientes WHERE created_at < '2025-08-31');
+
+-- PASO 14: Eliminar clientes anteriores al 31/08/2025
 DELETE FROM clientes WHERE created_at < '2025-08-31';
 
 -- Mostrar estado DESPUÉS de la limpieza
@@ -99,7 +104,9 @@ SELECT 'Checklist Reparacion restantes', COUNT(*) FROM checklist_reparacion
 UNION ALL
 SELECT 'Checklist Respuesta Reparacion restantes', COUNT(*) FROM checklist_respuesta_reparacion
 UNION ALL
-SELECT 'Piezas Reparacion Productos restantes', COUNT(*) FROM piezas_reparacion_productos;
+SELECT 'Piezas Reparacion Productos restantes', COUNT(*) FROM piezas_reparacion_productos
+UNION ALL
+SELECT 'Ventas restantes', COUNT(*) FROM ventas;
 
 -- Confirmar transacción
 COMMIT;
