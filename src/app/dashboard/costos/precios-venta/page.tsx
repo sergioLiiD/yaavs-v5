@@ -98,9 +98,6 @@ export default function PreciosVentaPage() {
   const [currentPrecio, setCurrentPrecio] = useState<PrecioVenta | null>(null);
   
   // Estados para paginación
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const [itemsPerPage] = useState(50);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -117,7 +114,7 @@ export default function PreciosVentaPage() {
       console.log('Iniciando fetchData...');
       
       const [productosResponse, preciosResponse, preciosPromedioResponse] = await Promise.all([
-        fetch(`/api/inventario/productos?page=${currentPage}&limit=${itemsPerPage}`),
+        fetch(`/api/inventario/productos?page=${pagination.page}&limit=${itemsPerPage}`),
         fetch('/api/precios-venta'),
         fetch('/api/inventario/stock/precios-promedio')
       ]);
@@ -149,8 +146,6 @@ export default function PreciosVentaPage() {
       // Actualizar estado de paginación si la respuesta incluye paginación
       if (productosResponseData.pagination) {
         setPagination(productosResponseData.pagination);
-        setTotalPages(productosResponseData.pagination.totalPages);
-        setTotalItems(productosResponseData.pagination.total);
       }
     } catch (error) {
       console.error('Error al cargar los datos:', error);
@@ -158,7 +153,7 @@ export default function PreciosVentaPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, itemsPerPage]);
+  }, [pagination.page, itemsPerPage]);
 
   useEffect(() => {
     fetchData();
@@ -309,50 +304,24 @@ export default function PreciosVentaPage() {
     });
   }, [productos, precios, preciosPromedio]);
 
-  // Filtrar items según el término de búsqueda
+  // Filtrar items según el término de búsqueda (solo para búsqueda local)
   const filteredItems = useMemo(() => {
+    if (!searchTerm) {
+      return allItems; // Si no hay búsqueda, mostrar todos los items de la página actual
+    }
     return allItems.filter(item => 
       item.nombre.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [allItems, searchTerm]);
 
-  // Calcular items paginados
-  const paginatedItems = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredItems.slice(startIndex, endIndex);
-  }, [filteredItems, currentPage, itemsPerPage]);
-
-  // Calcular información de paginación
-  const paginationInfo = useMemo(() => {
-    const total = filteredItems.length;
-    const totalPages = Math.ceil(total / itemsPerPage);
-    const startItem = (currentPage - 1) * itemsPerPage + 1;
-    const endItem = Math.min(currentPage * itemsPerPage, total);
-    
-    return {
-      total,
-      totalPages,
-      startItem,
-      endItem,
-      hasNext: currentPage < totalPages,
-      hasPrev: currentPage > 1
-    };
-  }, [filteredItems.length, currentPage, itemsPerPage]);
-
   // Función para cambiar de página
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    setPagination(prev => ({ ...prev, page }));
   };
 
   // Resetear a la primera página cuando cambia la búsqueda
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
-
-  // Resetear a la primera página cuando cambia la búsqueda
-  useEffect(() => {
-    setCurrentPage(1);
+    setPagination(prev => ({ ...prev, page: 1 }));
   }, [searchTerm]);
 
   const toggleDetalles = (id: string) => {
@@ -426,14 +395,14 @@ export default function PreciosVentaPage() {
                         Cargando...
                       </TableCell>
                     </TableRow>
-                  ) : paginatedItems.length === 0 ? (
+                  ) : filteredItems.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-4">
                         No hay precios de venta registrados
                       </TableCell>
                     </TableRow>
                   ) : (
-                    paginatedItems.map((item) => (
+                    filteredItems.map((item) => (
                       <TableRow key={`${item.id}-${item.precio_id}`}>
                         <TableCell>{item.nombre}</TableCell>
                         <TableCell>{item.tipo}</TableCell>
