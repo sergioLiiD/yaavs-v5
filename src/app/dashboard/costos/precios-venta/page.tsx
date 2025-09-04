@@ -113,8 +113,18 @@ export default function PreciosVentaPage() {
       setIsLoading(true);
       console.log('Iniciando fetchData...');
       
+      // Construir parámetros de búsqueda y paginación
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: itemsPerPage.toString()
+      });
+      
+      if (searchTerm.trim()) {
+        params.append('search', searchTerm);
+      }
+      
       const [productosResponse, preciosResponse, preciosPromedioResponse] = await Promise.all([
-        fetch(`/api/inventario/productos?page=${pagination.page}&limit=${itemsPerPage}`),
+        fetch(`/api/inventario/productos?${params.toString()}`),
         fetch('/api/precios-venta'),
         fetch('/api/inventario/stock/precios-promedio')
       ]);
@@ -153,7 +163,7 @@ export default function PreciosVentaPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [pagination.page, itemsPerPage]);
+  }, [pagination.page, itemsPerPage, searchTerm]);
 
   useEffect(() => {
     fetchData();
@@ -304,15 +314,8 @@ export default function PreciosVentaPage() {
     });
   }, [productos, precios, preciosPromedio]);
 
-  // Filtrar items según el término de búsqueda (solo para búsqueda local)
-  const filteredItems = useMemo(() => {
-    if (!searchTerm) {
-      return allItems; // Si no hay búsqueda, mostrar todos los items de la página actual
-    }
-    return allItems.filter(item => 
-      item.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [allItems, searchTerm]);
+  // Los datos ya vienen filtrados del servidor, no necesitamos filtro local
+  const filteredItems = allItems;
 
   // Función para cambiar de página
   const handlePageChange = (page: number) => {
