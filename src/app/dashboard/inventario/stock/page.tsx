@@ -697,160 +697,157 @@ export default function StockPage() {
       )}
 
       {/* Modal de Entrada */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">
-              {productoSeleccionado ? 'Nueva Entrada de Almacén' : 'Seleccionar Producto'}
-            </h2>
-            {productoSeleccionado && (
-              <>
-                <p className="text-sm text-gray-600 mb-2">
-                  Producto: {productoSeleccionado.nombre}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title={productoSeleccionado ? 'Nueva Entrada de Almacén' : 'Seleccionar Producto'}
+      >
+        {productoSeleccionado && (
+          <>
+            <p className="text-sm text-gray-600 mb-2">
+              Producto: {productoSeleccionado.nombre}
+            </p>
+            <p className="text-sm text-gray-600 mb-2">
+              Stock actual: {productoSeleccionado.stock}
+            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              Precio promedio: ${(productoSeleccionado.precio_promedio || 0).toFixed(2)}
+            </p>
+            {productoSeleccionado.entradas && productoSeleccionado.entradas.length > 0 && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                <p className="text-sm font-medium text-gray-900 mb-1">Última entrada:</p>
+                <p className="text-sm text-gray-600">
+                  {new Date(productoSeleccionado.entradas[0].fecha).toLocaleDateString()} - 
+                  {productoSeleccionado.entradas[0].cantidad} unidades a 
+                  ${productoSeleccionado.entradas[0].precioCompra.toFixed(2)}
                 </p>
-                <p className="text-sm text-gray-600 mb-2">
-                  Stock actual: {productoSeleccionado.stock}
-                </p>
-                <p className="text-sm text-gray-600 mb-4">
-                  Precio promedio: ${(productoSeleccionado.precio_promedio || 0).toFixed(2)}
-                </p>
-                {productoSeleccionado.entradas && productoSeleccionado.entradas.length > 0 && (
-                  <div className="mb-4 p-3 bg-gray-50 rounded-md">
-                    <p className="text-sm font-medium text-gray-900 mb-1">Última entrada:</p>
-                    <p className="text-sm text-gray-600">
-                      {new Date(productoSeleccionado.entradas[0].fecha).toLocaleDateString()} - 
-                      {productoSeleccionado.entradas[0].cantidad} unidades a 
-                      ${productoSeleccionado.entradas[0].precioCompra.toFixed(2)}
-                    </p>
-                  </div>
-                )}
-              </>
+              </div>
             )}
-            <form onSubmit={handleSubmit}>
-              {!productoSeleccionado && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-900">Producto *</label>
-                  
-                  {/* Buscador de productos */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Buscar producto..."
-                      value={modalSearchTerm}
-                      onChange={(e) => setModalSearchTerm(e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-700"
-                    />
-                    <HiSearch className="absolute right-3 top-2.5 text-gray-400" />
+          </>
+        )}
+        <form onSubmit={handleSubmit}>
+          {!productoSeleccionado && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-900">Producto *</label>
+              
+              {/* Buscador de productos */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Buscar producto..."
+                  value={modalSearchTerm}
+                  onChange={(e) => setModalSearchTerm(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-700"
+                />
+                <HiSearch className="absolute right-3 top-2.5 text-gray-400" />
+              </div>
+              
+              {/* Lista de productos con scroll */}
+              <div className="mt-2 max-h-64 overflow-y-auto border border-gray-300 rounded-md">
+                {isModalLoading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-gray-600">Cargando productos...</span>
                   </div>
-                  
-                  {/* Lista de productos con scroll */}
-                  <div className="mt-2 max-h-64 overflow-y-auto border border-gray-300 rounded-md">
-                    {isModalLoading ? (
-                      <div className="flex justify-center items-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span className="ml-2 text-gray-600">Cargando productos...</span>
+                ) : productosModal
+                  .filter(producto => 
+                    producto.nombre.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
+                    producto.marcas?.nombre?.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
+                    producto.modelos?.nombre?.toLowerCase().includes(modalSearchTerm.toLowerCase())
+                  )
+                  .map((producto) => (
+                    <div
+                      key={producto.id}
+                      onClick={() => {
+                        setProductoSeleccionado(producto);
+                        setFormData(prev => ({ ...prev, productoId: producto.id }));
+                      }}
+                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200 last:border-b-0"
+                    >
+                      <div className="font-medium text-gray-900">{producto.nombre}</div>
+                      <div className="text-sm text-gray-500">
+                        {producto.marcas?.nombre || 'Sin marca'} - {producto.modelos?.nombre || 'Sin modelo'}
                       </div>
-                    ) : productosModal
-                      .filter(producto => 
-                        producto.nombre.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
-                        producto.marcas?.nombre?.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
-                        producto.modelos?.nombre?.toLowerCase().includes(modalSearchTerm.toLowerCase())
-                      )
-                      .map((producto) => (
-                        <div
-                          key={producto.id}
-                          onClick={() => {
-                            setProductoSeleccionado(producto);
-                            setFormData(prev => ({ ...prev, productoId: producto.id }));
-                          }}
-                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200 last:border-b-0"
-                        >
-                          <div className="font-medium text-gray-900">{producto.nombre}</div>
-                          <div className="text-sm text-gray-500">
-                            {producto.marcas?.nombre || 'Sin marca'} - {producto.modelos?.nombre || 'Sin modelo'}
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-900">Cantidad *</label>
-                  <input
-                    type="number"
-                    name="cantidad"
-                    value={formData.cantidad}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 [&::placeholder]:text-gray-700 text-gray-900"
-                    required
-                    min="0"
-                    step="1"
-                    placeholder="Ingresa la cantidad"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-900">Precio de Compra *</label>
-                  <input
-                    type="number"
-                    name="precioCompra"
-                    value={formData.precioCompra}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 [&::placeholder]:text-gray-700 text-gray-900"
-                    required
-                    min="0"
-                    step="0.01"
-                    placeholder="Ingresa el precio de compra"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-900">Proveedor *</label>
-                  <select
-                    name="proveedorId"
-                    value={formData.proveedorId}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-700"
-                    required
-                  >
-                    <option value="">Selecciona un proveedor</option>
-                    {proveedores?.map((proveedor) => (
-                      <option key={proveedor.id} value={proveedor.id}>
-                        {proveedor.nombre}
-                      </option>
-                    )) || []}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-900">Notas</label>
-                  <textarea
-                    name="notas"
-                    value={formData.notas}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 placeholder-gray-700"
-                    rows={3}
-                    placeholder="Agrega notas sobre la entrada"
-                  />
-                </div>
+                    </div>
+                  ))}
               </div>
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-gray-900 bg-[#FEBF19] rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
-                >
-                  Registrar Entrada
-                </button>
-              </div>
-            </form>
+            </div>
+          )}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-900">Cantidad *</label>
+              <input
+                type="number"
+                name="cantidad"
+                value={formData.cantidad}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 [&::placeholder]:text-gray-700 text-gray-900"
+                required
+                min="0"
+                step="1"
+                placeholder="Ingresa la cantidad"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-900">Precio de Compra *</label>
+              <input
+                type="number"
+                name="precioCompra"
+                value={formData.precioCompra}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 [&::placeholder]:text-gray-700 text-gray-900"
+                required
+                min="0"
+                step="0.01"
+                placeholder="Ingresa el precio de compra"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-900">Proveedor *</label>
+              <select
+                name="proveedorId"
+                value={formData.proveedorId}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-gray-700"
+                required
+              >
+                <option value="">Selecciona un proveedor</option>
+                {proveedores?.map((proveedor) => (
+                  <option key={proveedor.id} value={proveedor.id}>
+                    {proveedor.nombre}
+                  </option>
+                )) || []}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-900">Notas</label>
+              <textarea
+                name="notas"
+                value={formData.notas}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 placeholder-gray-700"
+                rows={3}
+                placeholder="Agrega notas sobre la entrada"
+              />
+            </div>
           </div>
-        </div>
-      )}
+          <div className="mt-6 flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={handleCloseModal}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-gray-900 bg-[#FEBF19] rounded-md hover:bg-[#FEBF19]/90 focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:ring-offset-2"
+            >
+              Registrar Entrada
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Modal de Salida */}
       <Modal
