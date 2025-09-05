@@ -95,6 +95,39 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
   const [isLoading, setIsLoading] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   const [searchValue, setSearchValue] = useState('');
+  const [searchResults, setSearchResults] = useState<Producto[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Función para buscar productos en el servidor
+  const searchProductos = async (query: string) => {
+    if (!query || query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/inventario/productos?search=${encodeURIComponent(query)}&limit=20`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.productos || data);
+      }
+    } catch (error) {
+      console.error('Error al buscar productos:', error);
+      toast.error('Error al buscar productos');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounce para la búsqueda
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchProductos(searchValue);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchValue]);
 
   const { data: catalogoProductos } = useQuery({
     queryKey: ['catalogoProductos'],
@@ -539,12 +572,14 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
                                 value={searchValue}
                                 onValueChange={setSearchValue}
                               />
-                              <CommandEmpty>No se encontraron productos.</CommandEmpty>
-                              <CommandGroup>
-                                {catalogoProductos?.map((prod: Producto) => (
+                              <CommandEmpty>
+                                {isSearching ? "Buscando..." : "No se encontraron productos."}
+                              </CommandEmpty>
+                              <CommandGroup className="max-h-64 overflow-y-auto">
+                                {searchResults.map((prod: Producto) => (
                                   <CommandItem
                                     key={prod.id}
-                                    value={prod.nombre}
+                                    value={`${prod.nombre} ${prod.sku}`}
                                     onSelect={() => handleProductoSelect(producto.id, prod)}
                                   >
                                     <Check
@@ -553,7 +588,11 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
                                         prod.id === producto.productoId ? "opacity-100" : "opacity-0"
                                       )}
                                     />
-                                    {prod.nombre}
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{prod.nombre}</span>
+                                      <span className="text-sm text-gray-500">SKU: {prod.sku}</span>
+                                      {prod.marca && <span className="text-sm text-gray-500">Marca: {prod.marca.nombre}</span>}
+                                    </div>
                                   </CommandItem>
                                 ))}
                               </CommandGroup>

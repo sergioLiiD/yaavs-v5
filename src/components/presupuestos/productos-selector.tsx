@@ -7,6 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { HiPlus, HiTrash, HiX } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Producto {
   id: number;
@@ -53,6 +57,40 @@ interface PrecioVenta {
 export function ProductosSelector({ productos, selectedProductos, onProductosChange }: ProductosSelectorProps) {
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<Producto[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchOpen, setSearchOpen] = useState<Record<string, boolean>>({});
+
+  // Función para buscar productos en el servidor
+  const searchProductos = async (query: string) => {
+    if (!query || query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/inventario/productos?search=${encodeURIComponent(query)}&limit=20`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.productos || data);
+      }
+    } catch (error) {
+      console.error('Error al buscar productos:', error);
+      toast.error('Error al buscar productos');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounce para la búsqueda
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchProductos(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   const toggleProducto = (producto: Producto) => {
     const isSelected = selectedProductos.some((p) => p.productoId === producto.id);
@@ -193,21 +231,62 @@ export function ProductosSelector({ productos, selectedProductos, onProductosCha
           <Card key={producto.id} className="p-4">
             <CardContent className="p-0">
               <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
-                {/* Selector de producto */}
+                {/* Selector de producto con búsqueda */}
                 <div className="md:col-span-2">
                   <Label className="text-sm font-medium">Producto</Label>
-                  <select
-                    value={producto.productoId}
-                    onChange={(e) => handleProductoChange(producto.id, 'productoId', parseInt(e.target.value))}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                  >
-                    <option value={0}>Seleccionar producto...</option>
-                    {productos.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nombre} - {p.sku}
-                      </option>
-                    ))}
-                  </select>
+                  <Popover open={searchOpen[producto.id]} onOpenChange={(open) => setSearchOpen(prev => ({ ...prev, [producto.id]: open }))}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={searchOpen[producto.id]}
+                        className="w-full justify-between"
+                      >
+                        {producto.productoId > 0 
+                          ? productos.find((p) => p.id === producto.productoId)?.nombre || "Seleccionar producto..."
+                          : "Seleccionar producto..."
+                        }
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput 
+                          placeholder="Buscar producto..." 
+                          value={searchTerm}
+                          onValueChange={setSearchTerm}
+                        />
+                        <CommandEmpty>
+                          {isSearching ? "Buscando..." : "No se encontraron productos."}
+                        </CommandEmpty>
+                        <CommandGroup className="max-h-64 overflow-y-auto">
+                          {searchResults.map((p) => (
+                            <CommandItem
+                              key={p.id}
+                              value={`${p.nombre} ${p.sku}`}
+                              onSelect={() => {
+                                handleProductoChange(producto.id, 'productoId', p.id);
+                                setSearchOpen(prev => ({ ...prev, [producto.id]: false }));
+                                setSearchTerm('');
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  producto.productoId === p.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span className="font-medium">{p.nombre}</span>
+                                <span className="text-sm text-gray-500">SKU: {p.sku}</span>
+                                {p.marca && <span className="text-sm text-gray-500">Marca: {p.marca.nombre}</span>}
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 {/* Cantidad */}
