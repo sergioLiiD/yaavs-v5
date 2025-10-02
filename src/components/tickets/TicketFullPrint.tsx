@@ -82,127 +82,133 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
           <title>Ticket Completo #${ticket.numeroTicket}</title>
           <style>
             @page {
-              size: A4;
-              margin: 1cm;
+              size: 100mm auto;
+              margin: 2mm;
             }
             
             body {
-              font-family: Arial, sans-serif;
+              font-family: 'Courier New', monospace;
               margin: 0;
               padding: 0;
-              font-size: 12px;
-              line-height: 1.4;
-              color: #333;
+              font-size: 8px;
+              line-height: 1.2;
+              color: #000000;
+              background: white;
             }
             
             .ticket-container {
-              max-width: 800px;
+              max-width: 96mm;
               margin: 0 auto;
               background: white;
             }
             
             .header {
               text-align: center;
-              border-bottom: 3px solid #2563eb;
-              padding-bottom: 20px;
-              margin-bottom: 30px;
+              border-bottom: 1px solid #000;
+              padding-bottom: 3mm;
+              margin-bottom: 3mm;
             }
             
             .logo {
-              height: 60px;
+              height: 15mm;
               width: auto;
-              margin-bottom: 10px;
+              margin-bottom: 2mm;
             }
             
             .ticket-title {
-              font-size: 28px;
+              font-size: 10px;
               font-weight: bold;
-              color: #2563eb;
-              margin-bottom: 5px;
+              color: #000;
+              margin-bottom: 1mm;
+              text-transform: uppercase;
             }
             
             .ticket-subtitle {
-              font-size: 16px;
-              color: #666;
-              margin-bottom: 10px;
+              font-size: 7px;
+              color: #000;
+              margin-bottom: 2mm;
             }
             
             .ticket-number {
-              font-size: 20px;
+              font-size: 9px;
               font-weight: bold;
-              color: #333;
-              background: #f3f4f6;
-              padding: 10px 20px;
-              border-radius: 8px;
+              color: #000;
+              border: 1px solid #000;
+              padding: 2mm 4mm;
               display: inline-block;
             }
             
             .section {
-              margin-bottom: 25px;
+              margin-bottom: 3mm;
               page-break-inside: avoid;
             }
             
             .section-title {
-              font-size: 18px;
+              font-size: 8px;
               font-weight: bold;
-              color: #1f2937;
-              border-bottom: 2px solid #e5e7eb;
-              padding-bottom: 8px;
-              margin-bottom: 15px;
+              color: #000;
+              border-bottom: 1px solid #000;
+              padding-bottom: 1mm;
+              margin-bottom: 2mm;
+              text-transform: uppercase;
             }
             
             .info-grid {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 15px;
+              display: block;
             }
             
             .info-item {
-              margin-bottom: 12px;
+              margin-bottom: 1mm;
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
             }
             
             .info-label {
-              font-size: 11px;
-              color: #6b7280;
+              font-size: 6px;
+              color: #000;
               text-transform: uppercase;
               font-weight: bold;
-              margin-bottom: 4px;
+              margin-right: 2mm;
+              flex-shrink: 0;
+              width: 25mm;
             }
             
             .info-value {
-              font-size: 14px;
-              font-weight: 600;
-              color: #111827;
+              font-size: 7px;
+              font-weight: normal;
+              color: #000;
+              flex: 1;
+              word-break: break-word;
             }
             
             .problem-description {
-              background: #f9fafb;
-              padding: 15px;
-              border-radius: 8px;
-              border-left: 4px solid #2563eb;
-              font-size: 14px;
-              line-height: 1.6;
+              border: 1px solid #000;
+              padding: 2mm;
+              font-size: 7px;
+              line-height: 1.3;
+              margin-top: 1mm;
             }
             
             .conceptos-table {
               width: 100%;
               border-collapse: collapse;
-              margin-top: 15px;
+              margin-top: 2mm;
+              font-size: 6px;
             }
             
             .conceptos-table th {
-              background: #f3f4f6;
-              padding: 12px 8px;
+              border: 1px solid #000;
+              padding: 1mm;
               text-align: left;
               font-weight: bold;
-              font-size: 12px;
-              border-bottom: 2px solid #d1d5db;
+              background: white;
             }
             
             .conceptos-table td {
-              padding: 10px 8px;
-              border-bottom: 1px solid #e5e7eb;
-              font-size: 12px;
+              border: 1px solid #000;
+              padding: 1mm;
+              border-top: none;
             }
             
             .conceptos-table .text-right {
@@ -210,17 +216,17 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             }
             
             .pagos-list {
-              background: #f9fafb;
-              padding: 15px;
-              border-radius: 8px;
+              border: 1px solid #000;
+              padding: 2mm;
             }
             
             .pago-item {
               display: flex;
               justify-content: space-between;
               align-items: center;
-              padding: 8px 0;
-              border-bottom: 1px solid #e5e7eb;
+              padding: 1mm 0;
+              border-bottom: 1px solid #000;
+              font-size: 7px;
             }
             
             .pago-item:last-child {
@@ -228,35 +234,40 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             }
             
             .total-section {
-              background: #f0f9ff;
-              padding: 20px;
-              border-radius: 8px;
-              border: 2px solid #0ea5e9;
-              margin-top: 20px;
+              border: 2px solid #000;
+              padding: 2mm;
+              margin-top: 2mm;
             }
             
             .total-row {
               display: flex;
               justify-content: space-between;
               align-items: center;
-              margin-bottom: 10px;
+              margin-bottom: 1mm;
+              font-size: 7px;
             }
             
             .total-final {
-              font-size: 20px;
+              font-size: 9px;
               font-weight: bold;
-              color: #0c4a6e;
-              border-top: 2px solid #0ea5e9;
-              padding-top: 10px;
+              color: #000;
+              border-top: 1px solid #000;
+              padding-top: 1mm;
+              margin-top: 1mm;
             }
             
             .footer {
-              margin-top: 40px;
+              margin-top: 3mm;
               text-align: center;
-              font-size: 11px;
-              color: #6b7280;
-              border-top: 1px solid #e5e7eb;
-              padding-top: 20px;
+              font-size: 6px;
+              color: #000;
+              border-top: 1px solid #000;
+              padding-top: 2mm;
+            }
+            
+            .separator {
+              border-top: 1px solid #000;
+              margin: 2mm 0;
             }
             
             @media print {
@@ -281,119 +292,109 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             </div>
             
             <div class="section">
-              <div class="section-title">📱 Información del Dispositivo</div>
-              <div class="info-grid">
-                <div class="info-item">
-                  <div class="info-label">Marca</div>
-                  <div class="info-value">${ticket.modelo?.marca.nombre || 'No disponible'}</div>
-                </div>
-                <div class="info-item">
-                  <div class="info-label">Modelo</div>
-                  <div class="info-value">${ticket.modelo?.nombre || 'No disponible'}</div>
-                </div>
-                <div class="info-item">
-                  <div class="info-label">IMEI</div>
-                  <div class="info-value">${ticket.imei || 'No disponible'}</div>
-                </div>
-                <div class="info-item">
-                  <div class="info-label">Tipo de Servicio</div>
-                  <div class="info-value">${ticket.tipoServicio?.nombre || 'No disponible'}</div>
-                </div>
+              <div class="section-title">DISPOSITIVO</div>
+              <div class="info-item">
+                <div class="info-label">Marca:</div>
+                <div class="info-value">${ticket.modelo?.marca.nombre || 'N/A'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Modelo:</div>
+                <div class="info-value">${ticket.modelo?.nombre || 'N/A'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">IMEI:</div>
+                <div class="info-value">${ticket.imei || 'N/A'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Servicio:</div>
+                <div class="info-value">${ticket.tipoServicio?.nombre || 'N/A'}</div>
               </div>
             </div>
             
             <div class="section">
-              <div class="section-title">👤 Información del Cliente</div>
-              <div class="info-grid">
-                <div class="info-item">
-                  <div class="info-label">Nombre Completo</div>
-                  <div class="info-value">
-                    ${ticket.cliente ? `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno} ${ticket.cliente.apellidoMaterno || ''}` : 'No disponible'}
-                  </div>
-                </div>
-                <div class="info-item">
-                  <div class="info-label">Teléfono</div>
-                  <div class="info-value">${ticket.cliente?.telefonoCelular || 'No disponible'}</div>
-                </div>
-                <div class="info-item">
-                  <div class="info-label">Email</div>
-                  <div class="info-value">${ticket.cliente?.email || 'No disponible'}</div>
-                </div>
-                <div class="info-item">
-                  <div class="info-label">Fecha de Recepción</div>
-                  <div class="info-value">${new Date(ticket.fechaRecepcion).toLocaleDateString('es-MX', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}</div>
-                </div>
+              <div class="section-title">CLIENTE</div>
+              <div class="info-item">
+                <div class="info-label">Nombre:</div>
+                <div class="info-value">${ticket.cliente ? `${ticket.cliente.nombre} ${ticket.cliente.apellidoPaterno} ${ticket.cliente.apellidoMaterno || ''}` : 'N/A'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Telefono:</div>
+                <div class="info-value">${ticket.cliente?.telefonoCelular || 'N/A'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Email:</div>
+                <div class="info-value">${ticket.cliente?.email || 'N/A'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Fecha:</div>
+                <div class="info-value">${new Date(ticket.fechaRecepcion).toLocaleDateString('es-MX', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</div>
               </div>
             </div>
             
             <div class="section">
-              <div class="section-title">🔧 Descripción del Problema</div>
+              <div class="section-title">PROBLEMA</div>
               <div class="problem-description">
-                ${ticket.descripcionProblema || 'No disponible'}
+                ${ticket.descripcionProblema || 'N/A'}
               </div>
             </div>
             
             <div class="section">
-              <div class="section-title">👨‍🔧 Información del Servicio</div>
-              <div class="info-grid">
-                <div class="info-item">
-                  <div class="info-label">Estado Actual</div>
-                  <div class="info-value">${ticket.estatusReparacion?.nombre || 'No disponible'}</div>
-                </div>
-                <div class="info-item">
-                  <div class="info-label">Técnico Asignado</div>
-                  <div class="info-value">
-                    ${ticket.tecnicoAsignado ? 
-                      `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno} ${ticket.tecnicoAsignado.apellidoMaterno || ''}` : 
-                      'No asignado'}
-                  </div>
+              <div class="section-title">SERVICIO</div>
+              <div class="info-item">
+                <div class="info-label">Estado:</div>
+                <div class="info-value">${ticket.estatusReparacion?.nombre || 'N/A'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Tecnico:</div>
+                <div class="info-value">
+                  ${ticket.tecnicoAsignado ? 
+                    `${ticket.tecnicoAsignado.nombre} ${ticket.tecnicoAsignado.apellidoPaterno} ${ticket.tecnicoAsignado.apellidoMaterno || ''}` : 
+                    'No asignado'}
                 </div>
               </div>
             </div>
             
             ${ticket.presupuesto ? `
               <div class="section">
-                <div class="section-title">💰 Presupuesto</div>
-                <div class="info-grid">
-                  <div class="info-item">
-                    <div class="info-label">Estado</div>
-                    <div class="info-value">${ticket.presupuesto.aprobado ? '✅ Aprobado' : '⏳ Pendiente'}</div>
-                  </div>
-                  ${ticket.presupuesto.fechaAprobacion ? `
-                    <div class="info-item">
-                      <div class="info-label">Fecha de Aprobación</div>
-                      <div class="info-value">${new Date(ticket.presupuesto.fechaAprobacion).toLocaleDateString('es-MX', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}</div>
-                    </div>
-                  ` : ''}
+                <div class="section-title">PRESUPUESTO</div>
+                <div class="info-item">
+                  <div class="info-label">Estado:</div>
+                  <div class="info-value">${ticket.presupuesto.aprobado ? 'APROBADO' : 'PENDIENTE'}</div>
                 </div>
+                ${ticket.presupuesto.fechaAprobacion ? `
+                  <div class="info-item">
+                    <div class="info-label">Fecha Aprob.:</div>
+                    <div class="info-value">${new Date(ticket.presupuesto.fechaAprobacion).toLocaleDateString('es-MX', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}</div>
+                  </div>
+                ` : ''}
                 
                 ${ticket.presupuesto.conceptos.length > 0 ? `
                   <table class="conceptos-table">
                     <thead>
                       <tr>
                         <th>Concepto</th>
-                        <th class="text-right">Cantidad</th>
-                        <th class="text-right">Precio Unit.</th>
+                        <th class="text-right">Cant.</th>
+                        <th class="text-right">P.Unit.</th>
                         <th class="text-right">Total</th>
                       </tr>
                     </thead>
                     <tbody>
                       ${ticket.presupuesto.conceptos.map(concepto => `
                         <tr>
-                          <td>${concepto.descripcion}</td>
+                          <td>${concepto.descripcion.length > 20 ? concepto.descripcion.substring(0, 20) + '...' : concepto.descripcion}</td>
                           <td class="text-right">${concepto.cantidad}</td>
-                          <td class="text-right">$${concepto.precioUnitario.toFixed(2)}</td>
-                          <td class="text-right">$${concepto.total.toFixed(2)}</td>
+                          <td class="text-right">$${concepto.precioUnitario.toFixed(0)}</td>
+                          <td class="text-right">$${concepto.total.toFixed(0)}</td>
                         </tr>
                       `).join('')}
                     </tbody>
@@ -402,15 +403,15 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
                   <div class="total-section">
                     <div class="total-row">
                       <span>Subtotal:</span>
-                      <span>$${ticket.presupuesto.total.toFixed(2)}</span>
+                      <span>$${ticket.presupuesto.total.toFixed(0)}</span>
                     </div>
                     <div class="total-row">
                       <span>Descuento:</span>
-                      <span>$${ticket.presupuesto.descuento.toFixed(2)}</span>
+                      <span>$${ticket.presupuesto.descuento.toFixed(0)}</span>
                     </div>
                     <div class="total-row total-final">
-                      <span>TOTAL FINAL:</span>
-                      <span>$${ticket.presupuesto.totalFinal.toFixed(2)}</span>
+                      <span>TOTAL:</span>
+                      <span>$${ticket.presupuesto.totalFinal.toFixed(0)}</span>
                     </div>
                   </div>
                 ` : ''}
@@ -419,21 +420,21 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             
             ${ticket.pagos && ticket.pagos.length > 0 ? `
               <div class="section">
-                <div class="section-title">💳 Pagos Realizados</div>
+                <div class="section-title">PAGOS</div>
                 <div class="pagos-list">
                   ${ticket.pagos.map(pago => `
                     <div class="pago-item">
                       <div>
-                        <div style="font-weight: bold;">${new Date(pago.fecha).toLocaleDateString('es-MX', {
+                        <div>${new Date(pago.fecha).toLocaleDateString('es-MX', {
                           year: 'numeric',
-                          month: 'long',
+                          month: 'short',
                           day: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit'
                         })}</div>
-                        <div style="font-size: 11px; color: #6b7280;">${pago.metodoPago}</div>
+                        <div>${pago.metodoPago}</div>
                       </div>
-                      <div style="font-weight: bold; color: #059669;">$${pago.monto.toFixed(2)}</div>
+                      <div>$${pago.monto.toFixed(0)}</div>
                     </div>
                   `).join('')}
                 </div>
@@ -441,10 +442,10 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             ` : ''}
             
             <div class="footer">
-              <p>Este documento fue generado automáticamente por el sistema de Arregla.mx</p>
-              <p>Fecha de impresión: ${new Date().toLocaleDateString('es-MX', {
+              <p>Generado por Arregla.mx</p>
+              <p>${new Date().toLocaleDateString('es-MX', {
                 year: 'numeric',
-                month: 'long',
+                month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'

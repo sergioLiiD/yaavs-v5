@@ -52,79 +52,222 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
           <html>
             <head>
               <title>Acta de Entrega - ${ticket.numero_ticket}</title>
-              <script src="https://cdn.tailwindcss.com"></script>
               <style>
-                @media print {
-                  body { margin: 0; padding: 20px; }
-                  .no-print { display: none; }
-                  .print-page { page-break-inside: avoid; }
+                @page {
+                  size: 100mm auto;
+                  margin: 2mm;
                 }
-                body { font-family: system-ui, -apple-system, sans-serif; }
-                .card { border: 1px solid #e5e7eb; border-radius: 0.5rem; background: white; }
-                .card-header { padding: 1.5rem; border-bottom: 1px solid #e5e7eb; }
-                .card-title { font-size: 1.25rem; font-weight: 600; color: #111827; }
-                .card-content { padding: 1.5rem; }
-                .grid { display: grid; }
-                .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-                .gap-4 { gap: 1rem; }
-                .space-y-4 > * + * { margin-top: 1rem; }
-                .space-y-6 > * + * { margin-top: 1.5rem; }
-                .font-semibold { font-weight: 600; }
-                .text-sm { font-size: 0.875rem; }
-                .text-lg { font-size: 1.125rem; }
-                .text-gray-600 { color: #4b5563; }
-                .text-blue-600 { color: #2563eb; }
-                .text-green-600 { color: #16a34a; }
-                .text-red-600 { color: #dc2626; }
-                .text-2xl { font-size: 1.5rem; }
-                .font-bold { font-weight: 700; }
-                .text-center { text-align: center; }
-                .p-4 { padding: 1rem; }
-                .bg-blue-50 { background-color: #eff6ff; }
-                .bg-green-50 { background-color: #f0fdf4; }
-                .bg-red-50 { background-color: #fef2f2; }
-                .bg-gray-50 { background-color: #f9fafb; }
-                .rounded-lg { border-radius: 0.5rem; }
-                .border-2 { border-width: 2px; }
-                .border-dashed { border-style: dashed; }
-                .border-gray-300 { border-color: #d1d5db; }
-                .flex { display: flex; }
-                .items-center { align-items: center; }
-                .justify-center { justify-content: center; }
-                .min-h-\\[100px\\] { min-height: 6.25rem; }
-                .text-gray-500 { color: #6b7280; }
-                .text-center { text-align: center; }
-                .list-disc { list-style-type: disc; }
-                .list-inside { list-style-position: inside; }
-                .space-y-2 > * + * { margin-top: 0.5rem; }
-                .space-y-3 > * + * { margin-top: 0.75rem; }
-                .mt-4 { margin-top: 1rem; }
-                .font-semibold { font-weight: 600; }
-                .text-red-600 { color: #dc2626; }
-                .space-y-2 > * + * { margin-top: 0.5rem; }
-                .list-disc { list-style-type: disc; }
-                .list-inside { list-style-position: inside; }
-                .mt-4 { margin-top: 1rem; }
-                .font-semibold { font-weight: 600; }
-                .text-red-600 { color: #dc2626; }
-                .font-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace; }
-                .separator { height: 1px; background-color: #e5e7eb; margin: 1.5rem 0; }
-                .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
-                .badge-outline { border: 1px solid #e5e7eb; background-color: transparent; color: #374151; }
-                .logo { height: 3rem; width: auto; }
+                
+                body {
+                  font-family: 'Courier New', monospace;
+                  margin: 0;
+                  padding: 0;
+                  font-size: 8px;
+                  line-height: 1.2;
+                  color: #000000;
+                  background: white;
+                }
+                
+                .ticket-container {
+                  max-width: 96mm;
+                  margin: 0 auto;
+                  background: white;
+                }
+                
+                .header {
+                  text-align: center;
+                  border-bottom: 1px solid #000;
+                  padding-bottom: 3mm;
+                  margin-bottom: 3mm;
+                }
+                
+                .logo {
+                  height: 15mm;
+                  width: auto;
+                  margin-bottom: 2mm;
+                }
+                
+                .ticket-title {
+                  font-size: 10px;
+                  font-weight: bold;
+                  color: #000;
+                  margin-bottom: 1mm;
+                  text-transform: uppercase;
+                }
+                
+                .ticket-subtitle {
+                  font-size: 7px;
+                  color: #000;
+                  margin-bottom: 2mm;
+                }
+                
+                .ticket-number {
+                  font-size: 9px;
+                  font-weight: bold;
+                  color: #000;
+                  border: 1px solid #000;
+                  padding: 2mm 4mm;
+                  display: inline-block;
+                }
+                
+                .section {
+                  margin-bottom: 2mm;
+                  page-break-inside: avoid;
+                }
+                
+                .section-title {
+                  font-size: 8px;
+                  font-weight: bold;
+                  color: #000;
+                  border-bottom: 1px solid #000;
+                  padding-bottom: 1mm;
+                  margin-bottom: 1mm;
+                  text-transform: uppercase;
+                }
+                
+                .info-item {
+                  margin-bottom: 1mm;
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: flex-start;
+                }
+                
+                .info-label {
+                  font-size: 6px;
+                  color: #000;
+                  text-transform: uppercase;
+                  font-weight: bold;
+                  margin-right: 2mm;
+                  flex-shrink: 0;
+                  width: 25mm;
+                }
+                
+                .info-value {
+                  font-size: 7px;
+                  font-weight: normal;
+                  color: #000;
+                  flex: 1;
+                  word-break: break-word;
+                }
+                
+                .financial-grid {
+                  display: grid;
+                  grid-template-columns: 1fr 1fr 1fr;
+                  gap: 1mm;
+                  margin: 2mm 0;
+                }
+                
+                .financial-item {
+                  border: 1px solid #000;
+                  padding: 1mm;
+                  text-align: center;
+                }
+                
+                .financial-label {
+                  font-size: 6px;
+                  font-weight: bold;
+                  color: #000;
+                  text-transform: uppercase;
+                }
+                
+                .financial-value {
+                  font-size: 8px;
+                  font-weight: bold;
+                  color: #000;
+                  margin-top: 1mm;
+                }
+                
+                .pagos-list {
+                  border: 1px solid #000;
+                  padding: 1mm;
+                  margin: 1mm 0;
+                }
+                
+                .pago-item {
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  padding: 0.5mm 0;
+                  border-bottom: 1px solid #000;
+                  font-size: 6px;
+                }
+                
+                .pago-item:last-child {
+                  border-bottom: none;
+                }
+                
+                .receipt-section {
+                  border: 1px solid #000;
+                  padding: 2mm;
+                  margin: 2mm 0;
+                }
+                
+                .signature-space {
+                  border: 1px solid #000;
+                  padding: 2mm;
+                  margin: 1mm 0;
+                  min-height: 15mm;
+                  text-align: center;
+                }
+                
+                .signature-text {
+                  font-size: 6px;
+                  color: #000;
+                }
+                
+                .warranty-section {
+                  border: 1px solid #000;
+                  padding: 1mm;
+                  margin: 1mm 0;
+                }
+                
+                .warranty-title {
+                  font-size: 7px;
+                  font-weight: bold;
+                  color: #000;
+                  text-transform: uppercase;
+                  margin-bottom: 1mm;
+                }
+                
+                .warranty-text {
+                  font-size: 5px;
+                  color: #000;
+                  line-height: 1.3;
+                }
+                
+                .footer {
+                  margin-top: 2mm;
+                  text-align: center;
+                  font-size: 6px;
+                  color: #000;
+                  border-top: 1px solid #000;
+                  padding-top: 1mm;
+                }
+                
+                .separator {
+                  border-top: 1px solid #000;
+                  margin: 1mm 0;
+                }
+                
+                @media print {
+                  body {
+                    -webkit-print-color-adjust: exact;
+                    color-adjust: exact;
+                  }
+                  
+                  .ticket-container {
+                    max-width: none;
+                  }
+                }
               </style>
             </head>
-            <body class="bg-gray-50">
-              <div class="max-w-4xl mx-auto bg-white shadow-sm">
-                <!-- Header con logo -->
-                <div class="p-6 border-b">
-                  <div class="flex items-center space-x-4">
-                    <img src="/logo.png" alt="Logo" class="logo" />
-                    <div>
-                      <h2 class="text-2xl font-bold">Acta de Entrega</h2>
-                      <p class="text-gray-600">Ticket: ${ticket.numero_ticket}</p>
-                    </div>
-                  </div>
+            <body>
+              <div class="ticket-container">
+                <div class="header">
+                  <img src="/logo.png" alt="Arregla.mx" class="logo" onerror="this.style.display='none'">
+                  <div class="ticket-title">ACTA DE ENTREGA</div>
+                  <div class="ticket-subtitle">Arregla.mx - Plaza Ecatepec local D1 y D2</div>
+                  <div class="ticket-number">Ticket #${ticket.numero_ticket}</div>
                 </div>
                 ${printContent.innerHTML}
               </div>
@@ -177,180 +320,113 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
         </div>
 
         {/* Contenido imprimible */}
-        <div id="print-content" className="p-6 space-y-6">
-          {/* Información del ticket */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Información del Equipo</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-600">Cliente</h4>
-                  <p className="text-lg">
-                    {ticket.clientes?.nombre} {ticket.clientes?.apellido_paterno} {ticket.clientes?.apellido_materno}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-600">Equipo</h4>
-                  <p className="text-lg">
-                    {ticket.modelos?.marcas?.nombre} {ticket.modelos?.nombre}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-600">IMEI</h4>
-                  <p className="text-lg font-mono">{ticket.imei || 'No registrado'}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-600">Color</h4>
-                  <p className="text-lg">{ticket.color || 'No especificado'}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-600">Capacidad</h4>
-                  <p className="text-lg">{ticket.capacidad || 'No especificada'}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-600">Fecha de Recepción</h4>
-                  <p className="text-lg">
-                    {new Date(ticket.fecha_recepcion).toLocaleDateString('es-MX')}
-                  </p>
-                </div>
+        <div id="print-content">
+          {/* Información del equipo */}
+          <div className="section">
+            <div className="section-title">EQUIPO</div>
+            <div className="info-item">
+              <div className="info-label">Cliente:</div>
+              <div className="info-value">{ticket.clientes?.nombre} {ticket.clientes?.apellido_paterno} {ticket.clientes?.apellido_materno}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">Equipo:</div>
+              <div className="info-value">{ticket.modelos?.marcas?.nombre} {ticket.modelos?.nombre}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">IMEI:</div>
+              <div className="info-value">{ticket.imei || 'N/A'}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">Color:</div>
+              <div className="info-value">{ticket.color || 'N/A'}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">Fecha:</div>
+              <div className="info-value">{new Date(ticket.fecha_recepcion).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+            </div>
+            {ticket.descripcion_problema && (
+              <div className="info-item">
+                <div className="info-label">Problema:</div>
+                <div className="info-value">{ticket.descripcion_problema.length > 30 ? ticket.descripcion_problema.substring(0, 30) + '...' : ticket.descripcion_problema}</div>
               </div>
+            )}
+          </div>
 
-              {ticket.descripcion_problema && (
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-600">Descripción del Problema</h4>
-                  <p className="text-lg">{ticket.descripcion_problema}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Información de reparación */}
-          {ticket.reparaciones && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Información de Reparación</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {ticket.reparaciones.diagnostico && (
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-600">Diagnóstico</h4>
-                    <p className="text-lg">{ticket.reparaciones.diagnostico}</p>
+          {/* Información financiera compacta */}
+          <div className="section">
+            <div className="section-title">FINANCIERO</div>
+            <div className="financial-grid">
+              <div className="financial-item">
+                <div className="financial-label">Presupuesto</div>
+                <div className="financial-value">${(presupuesto?.total || 0).toFixed(0)}</div>
+              </div>
+              <div className="financial-item">
+                <div className="financial-label">Pagado</div>
+                <div className="financial-value">${pagos.reduce((sum, pago) => sum + pago.monto, 0).toFixed(0)}</div>
+              </div>
+              <div className="financial-item">
+                <div className="financial-label">Saldo</div>
+                <div className="financial-value">$0</div>
+              </div>
+            </div>
+            
+            {pagos.length > 0 && (
+              <div className="pagos-list">
+                {pagos.map((pago, index) => (
+                  <div key={index} className="pago-item">
+                    <span>{pago.metodo} - {pago.referencia}</span>
+                    <span>${pago.monto.toFixed(0)}</span>
                   </div>
-                )}
-                {ticket.reparaciones.solucion && (
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-600">Solución Aplicada</h4>
-                    <p className="text-lg">{ticket.reparaciones.solucion}</p>
-                  </div>
-                )}
-                {ticket.reparaciones.observaciones && (
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-600">Observaciones</h4>
-                    <p className="text-lg">{ticket.reparaciones.observaciones}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Información financiera */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Información Financiera</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-semibold text-sm text-gray-600">Presupuesto</h4>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(presupuesto?.total || 0)}
-                  </p>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <h4 className="font-semibold text-sm text-gray-600">Pagos Realizados</h4>
-                  <p className="text-2xl font-bold text-green-600">
-                    {formatCurrency(pagos.reduce((sum, pago) => sum + pago.monto, 0))}
-                  </p>
-                </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <h4 className="font-semibold text-sm text-gray-600">Saldo</h4>
-                  <p className="text-2xl font-bold text-red-600">
-                    {formatCurrency(0)}
-                  </p>
-                </div>
+                ))}
               </div>
+            )}
+          </div>
 
-              {/* Detalle de pagos */}
-              {pagos.length > 0 && (
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-600 mb-2">Detalle de Pagos</h4>
-                  <div className="space-y-2">
-                    {pagos.map((pago, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <span>{pago.metodo} - {pago.referencia}</span>
-                        <span className="font-semibold">{formatCurrency(pago.monto)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Recibo con firma */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recibo de Entrega</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-lg">
-                  Yo, <strong>{ticket.clientes?.nombre} {ticket.clientes?.apellido_paterno} {ticket.clientes?.apellido_materno}</strong>, 
-                  recibo el equipo <strong>{ticket.modelos?.marcas?.nombre} {ticket.modelos?.nombre}</strong> 
-                  el día <strong>{fechaActual}</strong>.
-                </p>
-                <p className="text-sm text-gray-600 mt-2">
-                  Entregado por: <strong>{session?.user?.name || 'Usuario del sistema'}</strong>
-                </p>
+          {/* Recibo de entrega */}
+          <div className="section">
+            <div className="section-title">RECIBO</div>
+            <div className="receipt-section">
+              <div className="info-item">
+                <div className="info-label">Recibe:</div>
+                <div className="info-value">{ticket.clientes?.nombre} {ticket.clientes?.apellido_paterno}</div>
               </div>
-
-              <div>
-                <Label htmlFor="firma">Espacio para Firma del Cliente</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px] flex items-center justify-center bg-gray-50">
-                  <p className="text-gray-500 text-center">
-                    Espacio reservado para firma física del cliente<br/>
-                    <span className="text-sm">(Se firmará después de imprimir)</span>
-                  </p>
-                </div>
+              <div className="info-item">
+                <div className="info-label">Equipo:</div>
+                <div className="info-value">{ticket.modelos?.marcas?.nombre} {ticket.modelos?.nombre}</div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Políticas de garantía */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Políticas de Garantía</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-sm">
-                <p className="font-semibold text-red-600">IMPORTANTE: No se hará válida la garantía en los siguientes casos:</p>
-                <ul className="space-y-2 list-disc list-inside">
-                  <li><strong>Teléfonos intervenidos:</strong> Sello de seguridad roto</li>
-                  <li><strong>Display:</strong> Mojado, roto, manchado, o en rayas de colores</li>
-                  <li><strong>Centro de carga:</strong> Roto o mojado</li>
-                  <li><strong>Batería:</strong> Baterías infladas</li>
-                  <li><strong>Tapas:</strong> Rotas</li>
-                  <li><strong>Periféricos:</strong> Cámaras, flexores, bocinas, etc. rotos o mojados</li>
-                  <li><strong>Equipos mojados:</strong> Prendidos o apagados, corren el riesgo de no encender debido a electrólisis</li>
-                </ul>
-                <p className="font-semibold text-red-600 mt-4">
-                  No aplica garantía a ningún equipo que presente rastros de humedad, en cualquier servicio que se haya realizado.
-                </p>
+              <div className="info-item">
+                <div className="info-label">Fecha:</div>
+                <div className="info-value">{fechaActual}</div>
               </div>
-            </CardContent>
-          </Card>
+              <div className="info-item">
+                <div className="info-label">Entregado por:</div>
+                <div className="info-value">{session?.user?.name || 'Sistema'}</div>
+              </div>
+            </div>
+            
+            <div className="signature-space">
+              <div className="signature-text">
+                FIRMA DEL CLIENTE<br/>
+                <span style={{fontSize: '4px'}}>(Firmar después de imprimir)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Garantía compacta */}
+          <div className="section">
+            <div className="warranty-section">
+              <div className="warranty-title">GARANTIA</div>
+              <div className="warranty-text">
+                NO APLICA: Equipos mojados, intervenidos, display roto, bateria inflada, perifericos rotos. 
+                No garantia por humedad en cualquier servicio.
+              </div>
+            </div>
+          </div>
+
+          <div className="footer">
+            <p>Generado por Arregla.mx</p>
+            <p>{new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+          </div>
         </div>
 
         {/* Footer con botones */}
