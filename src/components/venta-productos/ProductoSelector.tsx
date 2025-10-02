@@ -13,6 +13,16 @@ export default function ProductoSelector({ onProductoSeleccionado }: ProductoSel
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
+  // Función helper para obtener el precio de venta correcto
+  const obtenerPrecioVenta = (producto: Producto): number => {
+    // Si hay precios_venta configurados, usar el más reciente
+    if (producto.precios_venta && producto.precios_venta.length > 0) {
+      return producto.precios_venta[0].precio_venta;
+    }
+    // Si no hay precio de venta configurado, usar el precio promedio como fallback
+    return producto.precio_promedio || 0;
+  };
+
   const buscarProductos = async (termino: string) => {
     if (termino.length < 2) {
       setProductos([]);
@@ -75,7 +85,7 @@ export default function ProductoSelector({ onProductoSeleccionado }: ProductoSel
               >
                 <div className="font-medium">{producto.nombre}</div>
                 <div className="text-sm text-gray-600">
-                  SKU: {producto.sku} • Stock: {producto.stock} • Precio: ${producto.precio_promedio}
+                  SKU: {producto.sku} • Stock: {producto.stock} • Precio: ${obtenerPrecioVenta(producto)}
                 </div>
                 {producto.stock <= 5 && (
                   <div className="text-xs text-orange-600 font-medium">

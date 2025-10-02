@@ -58,6 +58,16 @@ export async function GET(request: Request) {
             nombre: true,
           },
         },
+        precios_venta: {
+          select: {
+            precio_venta: true,
+            created_at: true,
+          },
+          orderBy: {
+            created_at: 'desc',
+          },
+          take: 1,
+        },
       },
       orderBy: {
         nombre: 'asc',

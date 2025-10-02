@@ -37,8 +37,19 @@ export default function VentaProductosForm() {
   const [loading, setLoading] = useState(false);
   const [showReciboModal, setShowReciboModal] = useState(false);
 
+  // Función helper para obtener el precio de venta correcto
+  const obtenerPrecioVenta = (producto: any): number => {
+    // Si hay precios_venta configurados, usar el más reciente
+    if (producto.precios_venta && producto.precios_venta.length > 0) {
+      return producto.precios_venta[0].precio_venta;
+    }
+    // Si no hay precio de venta configurado, usar el precio promedio como fallback
+    return producto.precio_promedio || 0;
+  };
+
   const agregarProducto = (producto: any) => {
     const productoExistente = productosSeleccionados.find(p => p.id === producto.id);
+    const precioVenta = obtenerPrecioVenta(producto);
     
     if (productoExistente) {
       // Si ya existe, aumentar cantidad
@@ -55,10 +66,10 @@ export default function VentaProductosForm() {
         id: producto.id,
         nombre: producto.nombre,
         sku: producto.sku,
-        precio: producto.precio_promedio || 0,
+        precio: precioVenta,
         stock: producto.stock,
         cantidad: 1,
-        subtotal: producto.precio_promedio || 0
+        subtotal: precioVenta
       };
       setProductosSeleccionados(prev => [...prev, nuevoProducto]);
     }

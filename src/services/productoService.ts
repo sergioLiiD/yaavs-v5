@@ -6,6 +6,7 @@ export interface Producto {
   nombre: string;
   descripcion?: string;
   precio_promedio: number;
+  precio_venta?: number;
   stock: number;
   tipo: 'PRODUCTO' | 'SERVICIO';
   categoria_id?: number;
@@ -13,6 +14,10 @@ export interface Producto {
   modelo_id?: number;
   created_at: string;
   updated_at: string;
+  precios_venta?: Array<{
+    precio_venta: number;
+    created_at: string;
+  }>;
 }
 
 export class ProductoService {
