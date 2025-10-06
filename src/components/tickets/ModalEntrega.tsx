@@ -62,7 +62,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                   font-family: 'Courier New', monospace;
                   margin: 0;
                   padding: 0;
-                  font-size: 8px;
+                  font-size: 10px;
                   line-height: 1.2;
                   color: #000000;
                   background: white;
@@ -88,7 +88,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 }
                 
                 .ticket-title {
-                  font-size: 10px;
+                  font-size: 12px;
                   font-weight: bold;
                   color: #000;
                   margin-bottom: 1mm;
@@ -96,13 +96,13 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 }
                 
                 .ticket-subtitle {
-                  font-size: 7px;
+                  font-size: 9px;
                   color: #000;
                   margin-bottom: 2mm;
                 }
                 
                 .ticket-number {
-                  font-size: 9px;
+                  font-size: 11px;
                   font-weight: bold;
                   color: #000;
                   border: 1px solid #000;
@@ -116,7 +116,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 }
                 
                 .section-title {
-                  font-size: 8px;
+                  font-size: 10px;
                   font-weight: bold;
                   color: #000;
                   border-bottom: 1px solid #000;
@@ -133,7 +133,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 }
                 
                 .info-label {
-                  font-size: 6px;
+                  font-size: 8px;
                   color: #000;
                   text-transform: uppercase;
                   font-weight: bold;
@@ -143,7 +143,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 }
                 
                 .info-value {
-                  font-size: 7px;
+                  font-size: 9px;
                   font-weight: bold;
                   color: #000;
                   flex: 1;
@@ -164,14 +164,14 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 }
                 
                 .financial-label {
-                  font-size: 6px;
+                  font-size: 8px;
                   font-weight: bold;
                   color: #000;
                   text-transform: uppercase;
                 }
                 
                 .financial-value {
-                  font-size: 8px;
+                  font-size: 10px;
                   font-weight: bold;
                   color: #000;
                   margin-top: 1mm;
@@ -189,7 +189,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                   align-items: center;
                   padding: 0.5mm 0;
                   border-bottom: 1px solid #000;
-                  font-size: 6px;
+                  font-size: 8px;
                   font-weight: bold;
                 }
                 
@@ -212,7 +212,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 }
                 
                 .signature-text {
-                  font-size: 6px;
+                  font-size: 8px;
                   font-weight: bold;
                   color: #000;
                 }
@@ -224,7 +224,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 }
                 
                 .warranty-title {
-                  font-size: 7px;
+                  font-size: 9px;
                   font-weight: bold;
                   color: #000;
                   text-transform: uppercase;
@@ -232,7 +232,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 }
                 
                 .warranty-text {
-                  font-size: 5px;
+                  font-size: 7px;
                   font-weight: bold;
                   color: #000;
                   line-height: 1.3;
@@ -241,7 +241,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 .footer {
                   margin-top: 2mm;
                   text-align: center;
-                  font-size: 6px;
+                  font-size: 8px;
                   font-weight: bold;
                   color: #000;
                   border-top: 1px solid #000;

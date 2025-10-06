@@ -90,7 +90,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
               font-family: 'Courier New', monospace;
               margin: 0;
               padding: 0;
-              font-size: 8px;
+              font-size: 10px;
               line-height: 1.2;
               color: #000000;
               background: white;
@@ -116,7 +116,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             }
             
             .ticket-title {
-              font-size: 10px;
+              font-size: 12px;
               font-weight: bold;
               color: #000;
               margin-bottom: 1mm;
@@ -124,13 +124,13 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             }
             
             .ticket-subtitle {
-              font-size: 7px;
+              font-size: 9px;
               color: #000;
               margin-bottom: 2mm;
             }
             
             .ticket-number {
-              font-size: 9px;
+              font-size: 11px;
               font-weight: bold;
               color: #000;
               border: 1px solid #000;
@@ -144,7 +144,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             }
             
             .section-title {
-              font-size: 8px;
+              font-size: 10px;
               font-weight: bold;
               color: #000;
               border-bottom: 1px solid #000;
@@ -165,7 +165,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             }
             
             .info-label {
-              font-size: 6px;
+              font-size: 8px;
               color: #000;
               text-transform: uppercase;
               font-weight: bold;
@@ -175,7 +175,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             }
             
             .info-value {
-              font-size: 7px;
+              font-size: 9px;
               font-weight: bold;
               color: #000;
               flex: 1;
@@ -185,7 +185,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             .problem-description {
               border: 1px solid #000;
               padding: 2mm;
-              font-size: 7px;
+              font-size: 9px;
               font-weight: bold;
               line-height: 1.3;
               margin-top: 1mm;
@@ -195,7 +195,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
               width: 100%;
               border-collapse: collapse;
               margin-top: 2mm;
-              font-size: 6px;
+              font-size: 8px;
             }
             
             .conceptos-table th {
@@ -228,7 +228,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
               align-items: center;
               padding: 1mm 0;
               border-bottom: 1px solid #000;
-              font-size: 7px;
+              font-size: 9px;
               font-weight: bold;
             }
             
@@ -247,12 +247,12 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
               justify-content: space-between;
               align-items: center;
               margin-bottom: 1mm;
-              font-size: 7px;
+              font-size: 9px;
               font-weight: bold;
             }
             
             .total-final {
-              font-size: 9px;
+              font-size: 11px;
               font-weight: bold;
               color: #000;
               border-top: 1px solid #000;
@@ -263,7 +263,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             .footer {
               margin-top: 3mm;
               text-align: center;
-              font-size: 6px;
+              font-size: 8px;
               font-weight: bold;
               color: #000;
               border-top: 1px solid #000;

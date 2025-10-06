@@ -39,11 +39,12 @@ export function TicketLabelPrint({ ticket }: TicketLabelPrintProps) {
             }
             
             body {
-              font-family: Arial, sans-serif;
+              font-family: 'Courier New', monospace;
               margin: 0;
               padding: 0;
-              font-size: 8px;
+              font-size: 10px;
               line-height: 1.2;
+              color: #000000;
             }
             
             .label-container {
@@ -71,9 +72,9 @@ export function TicketLabelPrint({ ticket }: TicketLabelPrintProps) {
             }
             
             .ticket-number {
-              font-size: 10px;
+              font-size: 12px;
               font-weight: bold;
-              color: #2563eb;
+              color: #000;
             }
             
             .info-section {
@@ -88,15 +89,15 @@ export function TicketLabelPrint({ ticket }: TicketLabelPrintProps) {
             }
             
             .info-label {
-              font-size: 6px;
+              font-size: 8px;
               font-weight: bold;
-              color: #666;
+              color: #000;
               text-transform: uppercase;
               margin-bottom: 0.5mm;
             }
             
             .info-value {
-              font-size: 7px;
+              font-size: 9px;
               font-weight: bold;
               word-break: break-word;
             }
@@ -109,7 +110,8 @@ export function TicketLabelPrint({ ticket }: TicketLabelPrintProps) {
             }
             
             .problem-description {
-              font-size: 6px;
+              font-size: 8px;
+              font-weight: bold;
               line-height: 1.3;
               max-height: 8mm;
               overflow: hidden;
