@@ -144,7 +144,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 
                 .info-value {
                   font-size: 7px;
-                  font-weight: normal;
+                  font-weight: bold;
                   color: #000;
                   flex: 1;
                   word-break: break-word;
@@ -190,6 +190,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                   padding: 0.5mm 0;
                   border-bottom: 1px solid #000;
                   font-size: 6px;
+                  font-weight: bold;
                 }
                 
                 .pago-item:last-child {
@@ -212,6 +213,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 
                 .signature-text {
                   font-size: 6px;
+                  font-weight: bold;
                   color: #000;
                 }
                 
@@ -231,6 +233,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                 
                 .warranty-text {
                   font-size: 5px;
+                  font-weight: bold;
                   color: #000;
                   line-height: 1.3;
                 }
@@ -239,6 +242,7 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
                   margin-top: 2mm;
                   text-align: center;
                   font-size: 6px;
+                  font-weight: bold;
                   color: #000;
                   border-top: 1px solid #000;
                   padding-top: 1mm;

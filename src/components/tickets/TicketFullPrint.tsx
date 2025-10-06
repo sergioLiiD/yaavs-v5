@@ -176,7 +176,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
             
             .info-value {
               font-size: 7px;
-              font-weight: normal;
+              font-weight: bold;
               color: #000;
               flex: 1;
               word-break: break-word;
@@ -186,6 +186,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
               border: 1px solid #000;
               padding: 2mm;
               font-size: 7px;
+              font-weight: bold;
               line-height: 1.3;
               margin-top: 1mm;
             }
@@ -209,6 +210,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
               border: 1px solid #000;
               padding: 1mm;
               border-top: none;
+              font-weight: bold;
             }
             
             .conceptos-table .text-right {
@@ -227,6 +229,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
               padding: 1mm 0;
               border-bottom: 1px solid #000;
               font-size: 7px;
+              font-weight: bold;
             }
             
             .pago-item:last-child {
@@ -245,6 +248,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
               align-items: center;
               margin-bottom: 1mm;
               font-size: 7px;
+              font-weight: bold;
             }
             
             .total-final {
@@ -260,6 +264,7 @@ export function TicketFullPrint({ ticket }: TicketFullPrintProps) {
               margin-top: 3mm;
               text-align: center;
               font-size: 6px;
+              font-weight: bold;
               color: #000;
               border-top: 1px solid #000;
               padding-top: 2mm;
