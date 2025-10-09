@@ -155,6 +155,8 @@ export function NewTicketForm() {
   const [valueMarca, setValueMarca] = useState("");
   const [valueModelo, setValueModelo] = useState("");
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [searchCliente, setSearchCliente] = useState("");
+  const [loadingClientes, setLoadingClientes] = useState(false);
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [modelosFiltrados, setModelosFiltrados] = useState<Modelo[]>([]);
@@ -183,24 +185,62 @@ export function NewTicketForm() {
     }
   });
 
+  // Cargar datos iniciales (tecnicos, marcas, tipos de servicio, modelos)
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [clientesRes, tecnicosRes, marcasRes] = await Promise.all([
-          fetch('/api/clientes?format=simple'),
+        const [tecnicosRes, marcasRes] = await Promise.all([
           fetch('/api/usuarios/tecnicos'),
           fetch('/api/catalogo/marcas'),
         ]);
 
-        if (!clientesRes.ok || !tecnicosRes.ok || !marcasRes.ok) {
+        if (!tecnicosRes.ok || !marcasRes.ok) {
           throw new Error('Error al cargar los datos');
         }
 
-        const [clientesData, tecnicosData, marcasData] = await Promise.all([
-          clientesRes.json(),
+        const [tecnicosData, marcasData] = await Promise.all([
           tecnicosRes.json(),
           marcasRes.json(),
         ]);
+
+        setTecnicos(tecnicosData);
+        setMarcas(marcasData);
+
+        // Cargar tipos de servicio
+        const tiposServicioResponse = await fetch('/api/catalogo/tipos-servicio');
+        if (tiposServicioResponse.ok) {
+          const tiposServicioData = await tiposServicioResponse.json();
+          setTiposServicio(tiposServicioData);
+        }
+
+        // Cargar modelos
+        const modelosResponse = await fetch('/api/catalogo/modelos');
+        if (modelosResponse.ok) {
+          const modelosData = await modelosResponse.json();
+          setModelos(modelosData);
+        }
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+        toast.error('Error al cargar los datos necesarios');
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Búsqueda dinámica de clientes con debounce
+  useEffect(() => {
+    const buscarClientes = async () => {
+      try {
+        setLoadingClientes(true);
+        const searchParam = searchCliente ? `&search=${encodeURIComponent(searchCliente)}` : '';
+        const response = await fetch(`/api/clientes?format=simple&limit=50${searchParam}`);
+        
+        if (!response.ok) {
+          throw new Error('Error al buscar clientes');
+        }
+
+        const clientesData = await response.json();
 
         // Mapear los datos de clientes de snake_case a camelCase
         const clientesMapeados = clientesData.map((cliente: any) => ({
@@ -229,30 +269,21 @@ export function NewTicketForm() {
         }));
 
         setClientes(clientesMapeados);
-        setTecnicos(tecnicosData);
-        setMarcas(marcasData);
-
-        // Cargar tipos de servicio
-        const tiposServicioResponse = await fetch('/api/catalogo/tipos-servicio');
-        if (tiposServicioResponse.ok) {
-          const tiposServicioData = await tiposServicioResponse.json();
-          setTiposServicio(tiposServicioData);
-        }
-
-        // Cargar modelos
-        const modelosResponse = await fetch('/api/catalogo/modelos');
-        if (modelosResponse.ok) {
-          const modelosData = await modelosResponse.json();
-          setModelos(modelosData);
-        }
       } catch (error) {
-        console.error('Error al cargar datos:', error);
-        toast.error('Error al cargar los datos necesarios');
+        console.error('Error al buscar clientes:', error);
+        toast.error('Error al buscar clientes');
+      } finally {
+        setLoadingClientes(false);
       }
     };
 
-    fetchData();
-  }, []);
+    // Debounce: esperar 300ms después de que el usuario deje de escribir
+    const timeoutId = setTimeout(() => {
+      buscarClientes();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchCliente]);
 
   // Filtrar modelos cuando cambia la marca seleccionada
   useEffect(() => {
@@ -313,36 +344,42 @@ export function NewTicketForm() {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-full p-0">
-              <Command filter={(value, search) => {
-                if (!search) return 1;
-                const cliente = clientes.find(c => c.id.toString() === value);
-                if (!cliente) return 0;
-                const searchLower = search.toLowerCase();
-                const fullName = `${cliente.nombre} ${cliente.apellidoPaterno} ${cliente.apellidoMaterno}`.toLowerCase();
-                return fullName.includes(searchLower) ? 1 : 0;
-              }}>
-                <CommandInput placeholder="Buscar cliente..." />
-                <CommandEmpty>No se encontró ningún cliente.</CommandEmpty>
+              <Command shouldFilter={false}>
+                <CommandInput 
+                  placeholder="Buscar cliente..." 
+                  value={searchCliente}
+                  onValueChange={setSearchCliente}
+                />
+                <CommandEmpty>
+                  {loadingClientes ? "Buscando clientes..." : "No se encontró ningún cliente."}
+                </CommandEmpty>
                 <CommandGroup>
-                  {clientes?.map((cliente) => (
-                    <CommandItem
-                      key={cliente.id}
-                      value={cliente.id.toString()}
-                      onSelect={(currentValue) => {
-                        setValueCliente(currentValue === valueCliente ? "" : currentValue);
-                        form.setValue('clienteId', parseInt(currentValue));
-                        setOpenCliente(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          valueCliente === cliente.id.toString() ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {cliente.nombre} {cliente.apellidoPaterno} {cliente.apellidoMaterno}
-                    </CommandItem>
-                  ))}
+                  {loadingClientes ? (
+                    <div className="py-6 text-center text-sm">
+                      <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                      <span className="ml-2">Buscando...</span>
+                    </div>
+                  ) : (
+                    clientes?.map((cliente) => (
+                      <CommandItem
+                        key={cliente.id}
+                        value={cliente.id.toString()}
+                        onSelect={(currentValue) => {
+                          setValueCliente(currentValue === valueCliente ? "" : currentValue);
+                          form.setValue('clienteId', parseInt(currentValue));
+                          setOpenCliente(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            valueCliente === cliente.id.toString() ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {cliente.nombre} {cliente.apellidoPaterno} {cliente.apellidoMaterno}
+                      </CommandItem>
+                    ))
+                  )}
                 </CommandGroup>
               </Command>
             </PopoverContent>

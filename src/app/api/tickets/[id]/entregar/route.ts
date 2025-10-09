@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { procesarDescuentoInventario } from '@/lib/inventory-utils';
 
 export async function POST(
   request: NextRequest,
@@ -66,6 +67,20 @@ export async function POST(
 
     if (!usuario) {
       return NextResponse.json({ message: 'Usuario no encontrado' }, { status: 404 });
+    }
+
+    // Procesar descuento de inventario (red de seguridad)
+    // La función ya verifica si existe una salida previa para evitar duplicados
+    try {
+      console.log('🔄 Procesando descuento de inventario en entrega (ticket:', ticketId, ')');
+      await procesarDescuentoInventario(ticketId, usuario.id);
+      console.log('✅ Descuento de inventario verificado/procesado exitosamente');
+    } catch (error) {
+      console.error('❌ Error al procesar descuento de inventario:', error);
+      // Si falla el descuento de inventario, no entregar el equipo
+      return NextResponse.json({ 
+        message: `Error al procesar el descuento de inventario: ${error instanceof Error ? error.message : 'Error desconocido'}` 
+      }, { status: 500 });
     }
 
     // Actualizar el ticket como entregado
