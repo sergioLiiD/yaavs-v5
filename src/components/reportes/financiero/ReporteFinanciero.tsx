@@ -7,6 +7,7 @@ import DetalleIngresos from './DetalleIngresos';
 import DetalleEgresos from './DetalleEgresos';
 import GraficosReporte from './GraficosReporte';
 import ExportarReporte from './ExportarReporte';
+import CorteCaja from './CorteCaja';
 import { ReporteService, FiltrosReporte as IFiltrosReporte, ResumenFinanciero as IResumenFinanciero } from '@/services/reporteService';
 import { Download, RefreshCw } from 'lucide-react';
 
@@ -132,6 +133,9 @@ export default function ReporteFinanciero() {
             <DetalleIngresos filtros={filtros} />
             <DetalleEgresos filtros={filtros} />
           </div>
+
+          {/* Corte de Caja */}
+          <CorteCaja filtros={filtros} />
         </div>
       )}
     </div>

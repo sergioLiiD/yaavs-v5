@@ -58,6 +58,37 @@ export interface DatosGrafico {
   }[];
 }
 
+export interface TransaccionCorteCaja {
+  id: number;
+  fecha: string;
+  cliente: string;
+  monto: number;
+  metodo: 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
+  numeroTicket: string;
+  referencia?: string | null;
+}
+
+export interface CorteCaja {
+  totales: {
+    efectivo: number;
+    transferencia: number;
+    tarjeta: number;
+    total: number;
+  };
+  transacciones: TransaccionCorteCaja[];
+  transaccionesAgrupadas: {
+    EFECTIVO: TransaccionCorteCaja[];
+    TRANSFERENCIA: TransaccionCorteCaja[];
+    TARJETA: TransaccionCorteCaja[];
+  };
+  resumen: {
+    totalTransacciones: number;
+    cantidadEfectivo: number;
+    cantidadTransferencia: number;
+    cantidadTarjeta: number;
+  };
+}
+
 export class ReporteService {
   static async obtenerResumenFinanciero(filtros: FiltrosReporte): Promise<ResumenFinanciero> {
     try {
@@ -96,6 +127,16 @@ export class ReporteService {
     } catch (error: any) {
       console.error('Error al obtener datos del gráfico:', error);
       throw new Error(error.response?.data?.error || 'Error al obtener los datos del gráfico');
+    }
+  }
+
+  static async obtenerCorteCaja(filtros: FiltrosReporte): Promise<CorteCaja> {
+    try {
+      const response = await axios.post('/api/reportes/financiero/corte-caja', filtros);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error al obtener corte de caja:', error);
+      throw new Error(error.response?.data?.error || 'Error al obtener el corte de caja');
     }
   }
 
