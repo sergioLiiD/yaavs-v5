@@ -59,72 +59,252 @@ export default function ReciboModal({ venta, isOpen, onClose, onNuevaVenta }: Re
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Recibo de Venta #${venta.id}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-            .recibo { max-width: 800px; margin: 0 auto; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .logo { height: 60px; margin-bottom: 10px; }
-            .title { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
-            .subtitle { font-size: 14px; color: #666; }
-            .info { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-            .info-item { margin-bottom: 10px; }
-            .info-label { font-size: 12px; color: #666; margin-bottom: 5px; }
-            .info-value { font-size: 16px; font-weight: bold; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-            th { text-align: left; padding: 10px; border-bottom: 2px solid #333; font-weight: bold; }
-            td { padding: 10px; border-bottom: 1px solid #ddd; }
-            .text-right { text-align: right; }
-            .text-center { text-align: center; }
-            .total { border-top: 2px solid #333; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; }
-            .total-label { font-size: 20px; font-weight: bold; }
-            .total-value { font-size: 24px; font-weight: bold; color: #2563eb; }
-            .garantia { background: #f9fafb; padding: 15px; border-radius: 8px; margin-top: 30px; }
-            .garantia-title { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
-            .garantia-text { font-size: 14px; color: #666; }
-            @media print {
-              body { margin: 0; }
-              .recibo { max-width: none; }
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Recibo de Venta #${venta.id}</title>
+        <meta charset="UTF-8">
+        <style>
+          @page {
+            size: 100mm auto;
+            margin: 2mm;
+          }
+          
+          body {
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            font-size: 10px;
+            line-height: 1.2;
+            color: #000000;
+            background: white;
+          }
+          
+          .ticket-container {
+            max-width: 96mm;
+            margin: 0 auto;
+            background: white;
+          }
+          
+          .header {
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 3mm;
+            margin-bottom: 3mm;
+          }
+          
+          .logo {
+            height: 15mm;
+            width: auto;
+            margin-bottom: 2mm;
+          }
+          
+          .ticket-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 1mm;
+            text-transform: uppercase;
+          }
+          
+          .ticket-subtitle {
+            font-size: 9px;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 2mm;
+          }
+          
+          .ticket-number {
+            font-size: 11px;
+            font-weight: bold;
+            color: #000;
+            border: 1px solid #000;
+            padding: 2mm 4mm;
+            display: inline-block;
+          }
+          
+          .section {
+            margin-bottom: 3mm;
+            page-break-inside: avoid;
+          }
+          
+          .section-title {
+            font-size: 10px;
+            font-weight: bold;
+            color: #000;
+            border-bottom: 1px solid #000;
+            padding-bottom: 1mm;
+            margin-bottom: 2mm;
+            text-transform: uppercase;
+          }
+          
+          .info-item {
+            margin-bottom: 1mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+          }
+          
+          .info-label {
+            font-size: 8px;
+            color: #000;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-right: 2mm;
+            flex-shrink: 0;
+          }
+          
+          .info-value {
+            font-size: 9px;
+            font-weight: bold;
+            color: #000;
+            flex: 1;
+            text-align: right;
+            word-break: break-word;
+          }
+          
+          .productos-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2mm 0;
+            font-size: 8px;
+          }
+          
+          .productos-table th {
+            border: 1px solid #000;
+            padding: 1mm;
+            text-align: left;
+            font-weight: bold;
+            background: white;
+            color: #000;
+          }
+          
+          .productos-table td {
+            border: 1px solid #000;
+            padding: 1mm;
+            font-weight: bold;
+            color: #000;
+          }
+          
+          .productos-table .text-right {
+            text-align: right;
+          }
+          
+          .productos-table .text-center {
+            text-align: center;
+          }
+          
+          .total-section {
+            border: 2px solid #000;
+            padding: 2mm;
+            margin-top: 3mm;
+            text-align: center;
+          }
+          
+          .total-label {
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #000;
+            margin-bottom: 1mm;
+          }
+          
+          .total-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #000;
+          }
+          
+          .garantia-section {
+            border: 1px solid #000;
+            padding: 2mm;
+            margin: 2mm 0;
+          }
+          
+          .garantia-title {
+            font-size: 9px;
+            font-weight: bold;
+            color: #000;
+            text-transform: uppercase;
+            margin-bottom: 1mm;
+          }
+          
+          .garantia-text {
+            font-size: 8px;
+            font-weight: bold;
+            color: #000;
+            line-height: 1.3;
+          }
+          
+          .footer {
+            margin-top: 3mm;
+            text-align: center;
+            font-size: 8px;
+            font-weight: bold;
+            color: #000;
+            border-top: 1px solid #000;
+            padding-top: 2mm;
+          }
+          
+          .separator {
+            border-top: 1px solid #000;
+            margin: 2mm 0;
+          }
+          
+          @media print {
+            body {
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
             }
-          </style>
-        </head>
-        <body>
-          <div class="recibo">
-                         <div class="header">
-               <img src="/logo.png" alt="Arregla.mx" class="logo" />
-              <div class="title">RECIBO DE VENTA</div>
-              <div class="subtitle">Arregla.mx, Plaza Ecatepec local D1 y D2, tel. 56-3814-3944</div>
-            </div>
             
-            <div class="info">
-              <div class="info-item">
-                <div class="info-label">Número de Venta:</div>
-                <div class="info-value">#${venta.id}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Fecha y Hora:</div>
-                <div class="info-value">${formatDate(venta.created_at)}</div>
-              </div>
+            .ticket-container {
+              max-width: none;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="ticket-container">
+          <!-- Header -->
+          <div class="header">
+            <img src="/logo.png" alt="Arregla.mx" class="logo" onerror="this.style.display='none'">
+            <div class="ticket-title">RECIBO DE VENTA</div>
+            <div class="ticket-subtitle">Arregla.mx - Plaza Ecatepec local D1 y D2</div>
+            <div class="ticket-number">Venta #${venta.id}</div>
+          </div>
+          
+          <!-- Información de la venta -->
+          <div class="section">
+            <div class="section-title">INFORMACIÓN</div>
+            <div class="info-item">
+              <div class="info-label">Número de Venta:</div>
+              <div class="info-value">#${venta.id}</div>
             </div>
-            
-            <table>
+            <div class="info-item">
+              <div class="info-label">Fecha:</div>
+              <div class="info-value">${formatDate(venta.created_at)}</div>
+            </div>
+          </div>
+          
+          <!-- Productos -->
+          <div class="section">
+            <div class="section-title">PRODUCTOS</div>
+            <table class="productos-table">
               <thead>
                 <tr>
                   <th>Producto</th>
-                  <th class="text-center">Cantidad</th>
-                  <th class="text-right">Precio Unit.</th>
-                  <th class="text-right">Subtotal</th>
+                  <th class="text-center">Cant.</th>
+                  <th class="text-right">P.U.</th>
+                  <th class="text-right">Total</th>
                 </tr>
               </thead>
               <tbody>
                 ${venta.detalle_ventas.map(detalle => `
                   <tr>
-                    <td>Producto #${detalle.producto_id}</td>
+                    <td>${detalle.productos?.nombre || `Producto #${detalle.producto_id}`}</td>
                     <td class="text-center">${detalle.cantidad}</td>
                     <td class="text-right">${formatPrice(detalle.precio_unitario)}</td>
                     <td class="text-right">${formatPrice(detalle.subtotal)}</td>
@@ -132,23 +312,45 @@ export default function ReciboModal({ venta, isOpen, onClose, onNuevaVenta }: Re
                 `).join('')}
               </tbody>
             </table>
-            
-            <div class="total">
-              <span class="total-label">TOTAL:</span>
-              <span class="total-value">${formatPrice(venta.total)}</span>
-            </div>
-            
-            <div class="garantia">
-              <div class="garantia-title">Garantía:</div>
-              <div class="garantia-text">Garantía válida por 30 días</div>
+          </div>
+          
+          <!-- Total -->
+          <div class="total-section">
+            <div class="total-label">TOTAL</div>
+            <div class="total-value">${formatPrice(venta.total)} MXN</div>
+          </div>
+          
+          <!-- Garantía -->
+          <div class="garantia-section">
+            <div class="garantia-title">GARANTÍA</div>
+            <div class="garantia-text">
+              Los productos cuentan con garantía de 30 días a partir de la fecha de compra.
+              Conserve este ticket para hacer válida su garantía.
             </div>
           </div>
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
+          
+          <!-- Footer -->
+          <div class="footer">
+            <div>Arregla.mx</div>
+            <div>Plaza Ecatepec local D1 y D2</div>
+            <div>Tel: 56-3814-3944</div>
+            <div style="margin-top: 2mm; font-size: 7px;">
+              ¡Gracias por su compra!
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    
+    // Imprimir después de que se cargue el contenido
+    setTimeout(() => {
       printWindow.print();
-    }
+      printWindow.close();
+    }, 250);
   };
 
   if (!isOpen) return null;

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { procesarDescuentoInventario } from '@/lib/inventory-utils';
+import { procesarDescuentoInventario, convertirConceptosAPiezas } from '@/lib/inventory-utils';
 
 export async function POST(
   request: NextRequest,
@@ -69,17 +69,83 @@ export async function POST(
       return NextResponse.json({ message: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    // Procesar descuento de inventario (red de seguridad)
-    // La función ya verifica si existe una salida previa para evitar duplicados
+    // ============================================
+    // GARANTIZAR DESCUENTO DE INVENTARIO
+    // ============================================
+    console.log('🔄 [ENTREGA] Iniciando proceso de descuento de inventario para ticket:', ticketId);
+    
     try {
-      console.log('🔄 Procesando descuento de inventario en entrega (ticket:', ticketId, ')');
-      await procesarDescuentoInventario(ticketId, usuario.id);
-      console.log('✅ Descuento de inventario verificado/procesado exitosamente');
+      // PASO 1: Verificar/crear reparación
+      console.log('🔍 [ENTREGA] Verificando si existe reparación...');
+      let reparacion = await prisma.reparaciones.findFirst({
+        where: { ticket_id: ticketId }
+      });
+
+      if (!reparacion) {
+        console.log('⚠️  [ENTREGA] No existe reparación, creándola...');
+        reparacion = await prisma.reparaciones.create({
+          data: {
+            ticket_id: ticketId,
+            observaciones: 'Reparación creada automáticamente en entrega',
+            fecha_inicio: new Date(),
+            fecha_fin: new Date(),
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
+        console.log('✅ [ENTREGA] Reparación creada:', reparacion.id);
+      } else {
+        console.log('✅ [ENTREGA] Reparación ya existe:', reparacion.id);
+      }
+
+      // PASO 2: Verificar si hay piezas de reparación
+      console.log('🔍 [ENTREGA] Verificando si existen piezas de reparación...');
+      const piezasExistentes = await prisma.piezas_reparacion_productos.count({
+        where: { reparacion_id: reparacion.id }
+      });
+
+      console.log(`📊 [ENTREGA] Piezas encontradas en tabla nueva: ${piezasExistentes}`);
+
+      // Si no hay piezas en tabla nueva, verificar tabla antigua
+      let piezasAntiguasCount = 0;
+      if (piezasExistentes === 0) {
+        piezasAntiguasCount = await prisma.piezas_reparacion.count({
+          where: { reparacion_id: reparacion.id }
+        });
+        console.log(`📊 [ENTREGA] Piezas encontradas en tabla antigua: ${piezasAntiguasCount}`);
+      }
+
+      // PASO 3: Si no hay piezas, convertir conceptos del presupuesto
+      if (piezasExistentes === 0 && piezasAntiguasCount === 0) {
+        console.log('⚠️  [ENTREGA] No hay piezas registradas, convirtiendo conceptos del presupuesto...');
+        try {
+          await convertirConceptosAPiezas(ticketId, reparacion.id);
+          console.log('✅ [ENTREGA] Conceptos convertidos a piezas exitosamente');
+        } catch (conversionError) {
+          console.error('❌ [ENTREGA] Error al convertir conceptos:', conversionError);
+          // Continuar - puede que el presupuesto no tenga productos físicos
+          console.log('⚠️  [ENTREGA] Continuando sin conversión de conceptos (puede ser solo servicios)');
+        }
+      } else {
+        console.log('✅ [ENTREGA] Ya existen piezas de reparación registradas');
+      }
+
+      // PASO 4: Procesar descuento de inventario
+      console.log('🔄 [ENTREGA] Procesando descuento de inventario...');
+      const resultadoDescuento = await procesarDescuentoInventario(ticketId, usuario.id);
+      console.log('✅ [ENTREGA] Descuento procesado:', resultadoDescuento);
+      
+      if (resultadoDescuento.salidas.length === 0) {
+        console.log('⚠️  [ENTREGA] No se descontaron productos (puede ser solo servicios o sin piezas físicas)');
+      } else {
+        console.log(`✅ [ENTREGA] Se descontaron ${resultadoDescuento.salidas.length} productos del inventario`);
+      }
+
     } catch (error) {
-      console.error('❌ Error al procesar descuento de inventario:', error);
+      console.error('❌ [ENTREGA] Error al procesar descuento de inventario:', error);
       // Si falla el descuento de inventario, no entregar el equipo
       return NextResponse.json({ 
-        message: `Error al procesar el descuento de inventario: ${error instanceof Error ? error.message : 'Error desconocido'}` 
+        message: `Error al procesar el descuento de inventario: ${error instanceof Error ? error.message : 'Error desconocido'}. Por favor, revise el inventario y los productos del presupuesto.` 
       }, { status: 500 });
     }
 
