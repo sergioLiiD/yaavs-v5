@@ -337,62 +337,64 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose, onUpdate }: 
         </div>
 
         {/* Contenido imprimible */}
-        <div id="print-content">
+        <div id="print-content" className="p-6">
           {/* Información del equipo */}
-          <div className="section">
-            <div className="section-title">EQUIPO</div>
-            <div className="info-item">
-              <div className="info-label">Cliente:</div>
-              <div className="info-value">{ticket.clientes?.nombre} {ticket.clientes?.apellido_paterno} {ticket.clientes?.apellido_materno}</div>
-            </div>
-            <div className="info-item">
-              <div className="info-label">Equipo:</div>
-              <div className="info-value">{ticket.modelos?.marcas?.nombre} {ticket.modelos?.nombre}</div>
-            </div>
-            <div className="info-item">
-              <div className="info-label">IMEI:</div>
-              <div className="info-value">{ticket.imei || 'N/A'}</div>
-            </div>
-            <div className="info-item">
-              <div className="info-label">Color:</div>
-              <div className="info-value">{ticket.color || 'N/A'}</div>
-            </div>
-            <div className="info-item">
-              <div className="info-label">Fecha:</div>
-              <div className="info-value">{new Date(ticket.fecha_recepcion).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
-            </div>
-            {ticket.descripcion_problema && (
-              <div className="info-item">
-                <div className="info-label">Problema:</div>
-                <div className="info-value">{ticket.descripcion_problema.length > 30 ? ticket.descripcion_problema.substring(0, 30) + '...' : ticket.descripcion_problema}</div>
+          <div className="section mb-6">
+            <div className="section-title font-bold text-lg mb-3 pb-2 border-b-2 border-gray-800">EQUIPO</div>
+            <div className="space-y-2">
+              <div className="info-item flex justify-between">
+                <div className="info-label font-semibold text-sm text-gray-700">Cliente:</div>
+                <div className="info-value text-sm text-right">{ticket.clientes?.nombre} {ticket.clientes?.apellido_paterno} {ticket.clientes?.apellido_materno}</div>
               </div>
-            )}
+              <div className="info-item flex justify-between">
+                <div className="info-label font-semibold text-sm text-gray-700">Equipo:</div>
+                <div className="info-value text-sm text-right">{ticket.modelos?.marcas?.nombre} {ticket.modelos?.nombre}</div>
+              </div>
+              <div className="info-item flex justify-between">
+                <div className="info-label font-semibold text-sm text-gray-700">IMEI:</div>
+                <div className="info-value text-sm text-right">{ticket.imei || 'N/A'}</div>
+              </div>
+              <div className="info-item flex justify-between">
+                <div className="info-label font-semibold text-sm text-gray-700">Color:</div>
+                <div className="info-value text-sm text-right">{ticket.color || 'N/A'}</div>
+              </div>
+              <div className="info-item flex justify-between">
+                <div className="info-label font-semibold text-sm text-gray-700">Fecha:</div>
+                <div className="info-value text-sm text-right">{new Date(ticket.fecha_recepcion).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+              </div>
+              {ticket.descripcion_problema && (
+                <div className="info-item flex justify-between">
+                  <div className="info-label font-semibold text-sm text-gray-700">Problema:</div>
+                  <div className="info-value text-sm text-right">{ticket.descripcion_problema.length > 30 ? ticket.descripcion_problema.substring(0, 30) + '...' : ticket.descripcion_problema}</div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Información financiera compacta */}
-          <div className="section">
-            <div className="section-title">FINANCIERO</div>
-            <div className="financial-grid">
-              <div className="financial-item">
-                <div className="financial-label">Presupuesto</div>
-                <div className="financial-value">${(presupuesto?.total || 0).toFixed(0)}</div>
+          <div className="section mb-6">
+            <div className="section-title font-bold text-lg mb-3 pb-2 border-b-2 border-gray-800">FINANCIERO</div>
+            <div className="financial-grid grid grid-cols-3 gap-4 mb-4">
+              <div className="financial-item border-2 border-gray-800 p-3 text-center">
+                <div className="financial-label text-xs font-bold text-gray-700 uppercase">Presupuesto</div>
+                <div className="financial-value text-xl font-bold mt-2">${(presupuesto?.total || 0).toFixed(0)}</div>
               </div>
-              <div className="financial-item">
-                <div className="financial-label">Pagado</div>
-                <div className="financial-value">${pagos.reduce((sum, pago) => sum + pago.monto, 0).toFixed(0)}</div>
+              <div className="financial-item border-2 border-gray-800 p-3 text-center">
+                <div className="financial-label text-xs font-bold text-gray-700 uppercase">Pagado</div>
+                <div className="financial-value text-xl font-bold mt-2">${pagos.reduce((sum, pago) => sum + pago.monto, 0).toFixed(0)}</div>
               </div>
-              <div className="financial-item">
-                <div className="financial-label">Saldo</div>
-                <div className="financial-value">$0</div>
+              <div className="financial-item border-2 border-gray-800 p-3 text-center">
+                <div className="financial-label text-xs font-bold text-gray-700 uppercase">Saldo</div>
+                <div className="financial-value text-xl font-bold mt-2">$0</div>
               </div>
             </div>
             
             {pagos.length > 0 && (
-              <div className="pagos-list">
+              <div className="pagos-list border-2 border-gray-800 p-2">
                 {pagos.map((pago, index) => (
-                  <div key={index} className="pago-item">
-                    <span>{pago.metodo} - {pago.referencia}</span>
-                    <span>${pago.monto.toFixed(0)}</span>
+                  <div key={index} className="pago-item flex justify-between py-1 border-b border-gray-800 last:border-b-0">
+                    <span className="text-sm font-semibold">{pago.metodo} - {pago.referencia}</span>
+                    <span className="text-sm font-bold">${pago.monto.toFixed(0)}</span>
                   </div>
                 ))}
               </div>
@@ -400,47 +402,49 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose, onUpdate }: 
           </div>
 
           {/* Recibo de entrega */}
-          <div className="section">
-            <div className="section-title">RECIBO</div>
-            <div className="receipt-section">
-              <div className="info-item">
-                <div className="info-label">Recibe:</div>
-                <div className="info-value">{ticket.clientes?.nombre} {ticket.clientes?.apellido_paterno}</div>
-              </div>
-              <div className="info-item">
-                <div className="info-label">Equipo:</div>
-                <div className="info-value">{ticket.modelos?.marcas?.nombre} {ticket.modelos?.nombre}</div>
-              </div>
-              <div className="info-item">
-                <div className="info-label">Fecha:</div>
-                <div className="info-value">{fechaActual}</div>
-              </div>
-              <div className="info-item">
-                <div className="info-label">Entregado por:</div>
-                <div className="info-value">{session?.user?.name || 'Sistema'}</div>
+          <div className="section mb-6">
+            <div className="section-title font-bold text-lg mb-3 pb-2 border-b-2 border-gray-800">RECIBO</div>
+            <div className="receipt-section border-2 border-gray-800 p-4 mb-3">
+              <div className="space-y-2">
+                <div className="info-item flex justify-between">
+                  <div className="info-label font-semibold text-sm text-gray-700">Recibe:</div>
+                  <div className="info-value text-sm text-right">{ticket.clientes?.nombre} {ticket.clientes?.apellido_paterno}</div>
+                </div>
+                <div className="info-item flex justify-between">
+                  <div className="info-label font-semibold text-sm text-gray-700">Equipo:</div>
+                  <div className="info-value text-sm text-right">{ticket.modelos?.marcas?.nombre} {ticket.modelos?.nombre}</div>
+                </div>
+                <div className="info-item flex justify-between">
+                  <div className="info-label font-semibold text-sm text-gray-700">Fecha:</div>
+                  <div className="info-value text-sm text-right">{fechaActual}</div>
+                </div>
+                <div className="info-item flex justify-between">
+                  <div className="info-label font-semibold text-sm text-gray-700">Entregado por:</div>
+                  <div className="info-value text-sm text-right">{session?.user?.name || 'Sistema'}</div>
+                </div>
               </div>
             </div>
             
-            <div className="signature-space">
-              <div className="signature-text">
+            <div className="signature-space border-2 border-gray-800 p-6 text-center min-h-[80px]">
+              <div className="signature-text text-sm font-bold">
                 FIRMA DEL CLIENTE<br/>
-                <span style={{fontSize: '4px'}}>(Firmar después de imprimir)</span>
+                <span className="text-xs text-gray-500">(Firmar después de imprimir)</span>
               </div>
             </div>
           </div>
 
           {/* Garantía compacta */}
-          <div className="section">
-            <div className="warranty-section">
-              <div className="warranty-title">GARANTIA</div>
-              <div className="warranty-text">
+          <div className="section mb-6">
+            <div className="warranty-section border-2 border-gray-800 p-3">
+              <div className="warranty-title text-sm font-bold mb-2 uppercase">GARANTIA</div>
+              <div className="warranty-text text-xs font-semibold leading-relaxed">
                 NO APLICA: Equipos mojados, intervenidos, display roto, bateria inflada, perifericos rotos. 
                 No garantia por humedad en cualquier servicio.
               </div>
             </div>
           </div>
 
-          <div className="footer">
+          <div className="footer text-center text-xs font-semibold text-gray-600 border-t-2 border-gray-800 pt-3">
             <p>Generado por Arregla.mx</p>
             <p>{new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
           </div>
