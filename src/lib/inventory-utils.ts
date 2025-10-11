@@ -293,34 +293,31 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
         });
 
         if (salidaExistente) {
-          console.log(`⚠️  Salida ya existe para ${producto.nombre}, actualizando cantidad...`);
-          await tx.salidas_almacen.update({
-            where: { id: salidaExistente.id },
-            data: {
-              cantidad: salidaExistente.cantidad + piezaRep.cantidad,
-              updated_at: new Date()
-            }
-          });
-        } else {
-          // Crear nueva salida de almacén
-          console.log(`📤 Creando salida de almacén para ${producto.nombre}...`);
-          const salida = await tx.salidas_almacen.create({
-            data: {
-              producto_id: producto.id,
-              cantidad: piezaRep.cantidad,
-              tipo: 'REPARACION',
-              razon: `Reparación completada - Ticket #${ticketId}`,
-              referencia: `Ticket-${ticketId}`,
-              usuario_id: usuarioId,
-              fecha: new Date(),
-              created_at: new Date(),
-              updated_at: new Date()
-            }
-          });
-          console.log(`✅ Salida creada con ID: ${salida.id}`);
+          console.log(`⚠️  Salida ya existe para ${producto.nombre} (ID: ${salidaExistente.id})`);
+          console.log(`⚠️  NO se creará nueva salida ni se descontará stock (ya fue descontado)`);
+          // NO actualizar la cantidad ni el stock porque ya fue procesado
+          // Simplemente continuar con el siguiente producto
+          continue;
         }
+        
+        // Crear nueva salida de almacén solo si NO existe
+        console.log(`📤 Creando salida de almacén para ${producto.nombre}...`);
+        const salida = await tx.salidas_almacen.create({
+          data: {
+            producto_id: producto.id,
+            cantidad: piezaRep.cantidad,
+            tipo: 'REPARACION',
+            razon: `Reparación completada - Ticket #${ticketId}`,
+            referencia: `Ticket-${ticketId}`,
+            usuario_id: usuarioId,
+            fecha: new Date(),
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
+        console.log(`✅ Salida creada con ID: ${salida.id}`);
 
-        // Actualizar stock del producto
+        // Actualizar stock del producto (solo si se creó nueva salida)
         console.log(`📉 Actualizando stock de ${producto.nombre} de ${producto.stock} a ${producto.stock - piezaRep.cantidad}...`);
         await tx.productos.update({
           where: { id: producto.id },

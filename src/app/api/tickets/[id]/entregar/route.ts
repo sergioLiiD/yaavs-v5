@@ -92,12 +92,21 @@ export async function POST(
       });
     }
     
-    const inventarioYaDescontado = salidasExistentes.length > 0;
+    // Verificar si el ticket ya estaba en estado "Reparado"
+    const yaEstabaReparado = ticket.estatus_reparacion?.nombre === 'Reparado';
+    console.log(`🔍 [ENTREGA] Ticket ya estaba en estado "Reparado": ${yaEstabaReparado}`);
+    
+    // Si ya tiene salidas O ya estaba reparado, considerar que el inventario ya fue procesado
+    const inventarioYaDescontado = salidasExistentes.length > 0 || yaEstabaReparado;
     
     if (inventarioYaDescontado) {
-      console.log('✅ [ENTREGA] El inventario ya fue descontado previamente (probablemente al completar reparación), omitiendo descuento...');
+      if (salidasExistentes.length > 0) {
+        console.log('✅ [ENTREGA] El inventario ya fue descontado (hay salidas registradas), omitiendo descuento...');
+      } else {
+        console.log('✅ [ENTREGA] El ticket ya estaba "Reparado" (inventario ya procesado), omitiendo descuento...');
+      }
     } else {
-      console.log('⚠️  [ENTREGA] No hay salidas previas, se procederá a descontar inventario...');
+      console.log('⚠️  [ENTREGA] No hay salidas previas y ticket no estaba reparado, se procederá a descontar inventario...');
     }
     
     try {
