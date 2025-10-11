@@ -29,21 +29,29 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose, onUpdate }: 
 
   const entregarMutation = useMutation({
     mutationFn: async () => {
+      console.log('🚀 [ENTREGA] Iniciando petición de entrega para ticket:', ticket.id);
       const response = await axiosInstance.post(`/api/tickets/${ticket.id}/entregar`, {
         firma
       });
+      console.log('✅ [ENTREGA] Respuesta recibida:', response.data);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ [ENTREGA] Entrega exitosa, datos:', data);
       toast.success('Equipo entregado exitosamente');
       queryClient.invalidateQueries({ queryKey: ['ticket', ticket.id] });
+      console.log('🔄 [ENTREGA] Cerrando modal...');
       onClose();
       // Llamar al callback onUpdate para refrescar la página padre
+      console.log('🔄 [ENTREGA] onUpdate disponible?', !!onUpdate);
       if (onUpdate) {
+        console.log('🔄 [ENTREGA] Llamando onUpdate para refrescar página...');
         onUpdate();
       }
     },
     onError: (error: any) => {
+      console.error('❌ [ENTREGA] Error al entregar:', error);
+      console.error('❌ [ENTREGA] Detalles del error:', error.response?.data);
       toast.error(error.response?.data?.message || 'Error al entregar el equipo');
     }
   });

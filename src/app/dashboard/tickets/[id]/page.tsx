@@ -26,15 +26,22 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
 
   const fetchTicket = async () => {
     try {
+      console.log('🔄 [TICKET] Recargando datos del ticket:', params.id);
       setLoading(true);
       const response = await fetch(`/api/tickets/${params.id}`);
       if (!response.ok) {
         throw new Error('Error al cargar el ticket');
       }
       const data = await response.json();
+      console.log('✅ [TICKET] Datos recargados:', {
+        id: data.id,
+        numero_ticket: data.numero_ticket,
+        entregado: data.entregado,
+        estado: data.estatus_reparacion?.nombre
+      });
       setTicket(data);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ [TICKET] Error al cargar ticket:', error);
       toast.error('Error al cargar el ticket');
     } finally {
       setLoading(false);

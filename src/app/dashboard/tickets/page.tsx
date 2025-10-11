@@ -99,6 +99,13 @@ export default function TicketsPage() {
       console.log('Número de tickets:', data.tickets.length);
       console.log('Total de tickets:', data.total);
       console.log('Páginas totales:', data.totalPages);
+      
+      // Debug: Mostrar estados de tickets
+      console.log('📊 Estados de tickets cargados:');
+      data.tickets.forEach((ticket: any) => {
+        console.log(`  Ticket ${ticket.numeroTicket}: Estado=${ticket.estatusReparacion?.nombre}, Entregado=${ticket.entregado}`);
+      });
+      
       console.log('=== FIN DE FETCH TICKETS ===');
       
       setTickets(data.tickets);
