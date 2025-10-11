@@ -11,17 +11,30 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('🔄 Iniciando endpoint de actualización de reparación (Punto de Reparación)...');
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
+      console.log('No hay sesión de usuario');
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
     }
 
+    console.log('Usuario autenticado:', session.user);
     const ticketId = parseInt(params.id);
-    const { observaciones, checklist, fotos, videos, completar } = await request.json();
+    const body = await request.json();
+    console.log('📋 Datos recibidos:', JSON.stringify(body, null, 2));
+    const { observaciones, checklist, fotos, videos, completar } = body;
+
+    console.log('🔍 Parámetros extraídos:', {
+      observaciones,
+      checklistLength: checklist?.length,
+      fotosLength: fotos?.length,
+      videosLength: videos?.length,
+      completar
+    });
 
     // Obtener el punto de reparación del usuario
     const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
@@ -57,14 +70,29 @@ export async function POST(
 
     // Si se está completando la reparación, validar stock primero
     if (completar) {
-      const validacionStock = await validarStockReparacion(ticketId);
-      
-      if (!validacionStock.success) {
+      console.log('🔍 Validando stock para ticket:', ticketId);
+      try {
+        const validacionStock = await validarStockReparacion(ticketId);
+        console.log('📊 Resultado de validación:', JSON.stringify(validacionStock, null, 2));
+        
+        if (!validacionStock.success) {
+          console.log('❌ Validación de stock falló:', validacionStock.errors);
+          return NextResponse.json(
+            { 
+              error: 'No se puede completar la reparación por falta de stock',
+              detalles: validacionStock.errors,
+              stockFaltante: validacionStock.missingStock
+            },
+            { status: 400 }
+          );
+        }
+        console.log('✅ Validación de stock exitosa');
+      } catch (validacionError) {
+        console.error('❌ Error durante validación de stock:', validacionError);
         return NextResponse.json(
           { 
-            error: 'No se puede completar la reparación por falta de stock',
-            detalles: validacionStock.errors,
-            stockFaltante: validacionStock.missingStock
+            error: 'Error al validar stock',
+            mensaje: validacionError instanceof Error ? validacionError.message : 'Error desconocido'
           },
           { status: 400 }
         );

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Ticket } from '@/types/ticket';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface ReparacionModalProps {
   open: boolean;
@@ -35,13 +36,35 @@ export const ReparacionModal: React.FC<ReparacionModalProps> = ({ open, onClose,
       });
 
       if (!response.ok) {
-        throw new Error('Error al actualizar la reparación');
+        const errorData = await response.json().catch(() => ({}));
+        
+        // Manejar errores de stock insuficiente
+        if (response.status === 400 && errorData.stockFaltante && errorData.stockFaltante.length > 0) {
+          const productos = errorData.stockFaltante.map((item: any) => 
+            `• ${item.piezaNombre}: necesitas ${item.cantidadNecesaria}, disponibles ${item.stockDisponible}`
+          ).join('\n');
+          
+          toast.error(
+            <div className="space-y-2">
+              <p className="font-bold">⚠️ Stock insuficiente</p>
+              <p className="text-sm">No se puede completar la reparación por falta de stock:</p>
+              <pre className="text-xs whitespace-pre-wrap">{productos}</pre>
+              <p className="text-xs mt-2">Por favor, verifica el inventario antes de continuar.</p>
+            </div>,
+            { duration: 8000 }
+          );
+          return;
+        }
+        
+        throw new Error(errorData.error || 'Error al actualizar la reparación');
       }
 
+      toast.success('Reparación actualizada correctamente');
       router.refresh();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
+      toast.error(error.message || 'Error al actualizar la reparación');
     } finally {
       setIsLoading(false);
     }

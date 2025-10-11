@@ -235,9 +235,38 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
         }
         router.refresh();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al guardar la reparación:', error);
-      toast.error('Error al guardar la reparación');
+      
+      // Manejar errores de stock insuficiente
+      if (error.response?.status === 400 && error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Error de stock insuficiente
+        if (errorData.stockFaltante && errorData.stockFaltante.length > 0) {
+          const productos = errorData.stockFaltante.map((item: any) => 
+            `• ${item.piezaNombre}: necesitas ${item.cantidadNecesaria}, disponibles ${item.stockDisponible}`
+          ).join('\n');
+          
+          toast.error(
+            <div className="space-y-2">
+              <p className="font-bold">⚠️ Stock insuficiente</p>
+              <p className="text-sm">No se puede completar la reparación por falta de stock:</p>
+              <pre className="text-xs whitespace-pre-wrap">{productos}</pre>
+              <p className="text-xs mt-2">Por favor, verifica el inventario antes de continuar.</p>
+            </div>,
+            { duration: 8000 }
+          );
+        } else if (errorData.error) {
+          // Otros errores 400
+          toast.error(errorData.error);
+        } else {
+          toast.error('Error al guardar la reparación');
+        }
+      } else {
+        // Otros errores
+        toast.error('Error al guardar la reparación. Por favor, intenta nuevamente.');
+      }
     } finally {
       setIsLoading(false);
     }
