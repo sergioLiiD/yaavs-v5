@@ -149,12 +149,24 @@ export async function POST(
       }, { status: 500 });
     }
 
+    // Buscar el estado "Entregado"
+    const estatusEntregado = await prisma.estatus_reparacion.findFirst({
+      where: { nombre: 'Entregado' }
+    });
+
+    if (!estatusEntregado) {
+      return NextResponse.json({ 
+        message: 'No se encontró el estado "Entregado" en la base de datos' 
+      }, { status: 500 });
+    }
+
     // Actualizar el ticket como entregado
     const ticketActualizado = await prisma.tickets.update({
       where: { id: ticketId },
       data: {
         entregado: true,
         fecha_entrega: new Date(),
+        estatus_reparacion_id: estatusEntregado.id,
         updated_at: new Date()
       },
       include: {
@@ -163,7 +175,8 @@ export async function POST(
           include: {
             marcas: true
           }
-        }
+        },
+        estatus_reparacion: true
       }
     });
 
