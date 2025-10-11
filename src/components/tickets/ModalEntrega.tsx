@@ -18,9 +18,10 @@ interface ModalEntregaProps {
   presupuesto: any;
   pagos: any[];
   onClose: () => void;
+  onUpdate?: () => void;
 }
 
-export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntregaProps) {
+export function ModalEntrega({ ticket, presupuesto, pagos, onClose, onUpdate }: ModalEntregaProps) {
   const [firma, setFirma] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
@@ -37,6 +38,10 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose }: ModalEntre
       toast.success('Equipo entregado exitosamente');
       queryClient.invalidateQueries({ queryKey: ['ticket', ticket.id] });
       onClose();
+      // Llamar al callback onUpdate para refrescar la página padre
+      if (onUpdate) {
+        onUpdate();
+      }
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Error al entregar el equipo');

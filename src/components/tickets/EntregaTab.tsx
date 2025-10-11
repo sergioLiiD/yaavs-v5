@@ -14,9 +14,10 @@ interface EntregaTabProps {
   presupuesto: any;
   pagos: any[];
   saldo: number;
+  onUpdate?: () => void;
 }
 
-export function EntregaTab({ ticket, presupuesto, pagos, saldo }: EntregaTabProps) {
+export function EntregaTab({ ticket, presupuesto, pagos, saldo, onUpdate }: EntregaTabProps) {
   const [showModal, setShowModal] = useState(false);
   const { data: session } = useSession();
 
@@ -172,6 +173,7 @@ export function EntregaTab({ ticket, presupuesto, pagos, saldo }: EntregaTabProp
           presupuesto={presupuesto}
           pagos={pagos}
           onClose={() => setShowModal(false)}
+          onUpdate={onUpdate}
         />
       )}
     </div>

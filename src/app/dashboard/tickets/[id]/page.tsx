@@ -24,23 +24,24 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
   const defaultTab = searchParams.get('tab') || 'diagnostico';
   const [activeTab, setActiveTab] = useState(defaultTab);
 
-  useEffect(() => {
-    const fetchTicket = async () => {
-      try {
-        const response = await fetch(`/api/tickets/${params.id}`);
-        if (!response.ok) {
-          throw new Error('Error al cargar el ticket');
-        }
-        const data = await response.json();
-        setTicket(data);
-      } catch (error) {
-        console.error('Error:', error);
-        toast.error('Error al cargar el ticket');
-      } finally {
-        setLoading(false);
+  const fetchTicket = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/tickets/${params.id}`);
+      if (!response.ok) {
+        throw new Error('Error al cargar el ticket');
       }
-    };
+      const data = await response.json();
+      setTicket(data);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al cargar el ticket');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchTicket();
   }, [params.id]);
 
@@ -140,6 +141,7 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
               presupuesto={ticket.presupuestos}
               pagos={ticket.pagos || []}
               saldo={ticket.saldo || 0}
+              onUpdate={fetchTicket}
             />
           </TabsContent>
         </Tabs>
