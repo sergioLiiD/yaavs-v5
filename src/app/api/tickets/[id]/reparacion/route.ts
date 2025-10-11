@@ -41,26 +41,46 @@ export async function POST(
     console.log('Ticket encontrado:', ticket);
 
     const body = await request.json();
-    console.log('📋 Datos recibidos:', body);
+    console.log('📋 Datos recibidos:', JSON.stringify(body, null, 2));
     const { observaciones, checklist, fotos, videos, completar } = body;
+
+    console.log('🔍 Parámetros extraídos:', {
+      observaciones,
+      checklistLength: checklist?.length,
+      fotosLength: fotos?.length,
+      videosLength: videos?.length,
+      completar
+    });
 
     // Si se está completando la reparación, validar stock primero
     if (completar) {
       console.log('🔍 Validando stock para ticket:', ticketId);
-      const validacionStock = await validarStockReparacion(ticketId);
-      
-      if (!validacionStock.success) {
-        console.log('❌ Validación de stock falló:', validacionStock.errors);
+      try {
+        const validacionStock = await validarStockReparacion(ticketId);
+        console.log('📊 Resultado de validación:', JSON.stringify(validacionStock, null, 2));
+        
+        if (!validacionStock.success) {
+          console.log('❌ Validación de stock falló:', validacionStock.errors);
+          return NextResponse.json(
+            { 
+              error: 'No se puede completar la reparación por falta de stock',
+              detalles: validacionStock.errors,
+              stockFaltante: validacionStock.missingStock
+            },
+            { status: 400 }
+          );
+        }
+        console.log('✅ Validación de stock exitosa');
+      } catch (validacionError) {
+        console.error('❌ Error durante validación de stock:', validacionError);
         return NextResponse.json(
           { 
-            error: 'No se puede completar la reparación por falta de stock',
-            detalles: validacionStock.errors,
-            stockFaltante: validacionStock.missingStock
+            error: 'Error al validar stock',
+            mensaje: validacionError instanceof Error ? validacionError.message : 'Error desconocido'
           },
           { status: 400 }
         );
       }
-      console.log('✅ Validación de stock exitosa');
     }
 
     // Procesar en transacción si se está completando

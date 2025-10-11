@@ -27,14 +27,18 @@ export interface InventoryTransaction {
  */
 export async function validarStockReparacion(ticketId: number): Promise<StockValidationResult> {
   try {
+    console.log('🔍 [validarStockReparacion] Iniciando validación para ticket:', ticketId);
+    
     // Obtener la reparación del ticket
     const reparacion = await prisma.reparaciones.findFirst({
       where: { ticket_id: ticketId }
     });
 
+    console.log('🔍 [validarStockReparacion] Reparación encontrada:', reparacion?.id || 'ninguna');
+
     if (!reparacion) {
       // Si no hay reparación, no hay piezas que validar, por lo que retornamos éxito
-      console.log('No se encontró la reparación para este ticket, pero esto es normal para reparaciones nuevas');
+      console.log('ℹ️  [validarStockReparacion] No se encontró la reparación para este ticket, pero esto es normal para reparaciones nuevas');
       return {
         success: true,
         errors: [],
@@ -44,6 +48,7 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
 
     // Obtener las piezas de la reparación (solo productos, no servicios)
     // Primero intentar en la tabla nueva
+    console.log('🔍 [validarStockReparacion] Buscando piezas en tabla nueva (piezas_reparacion_productos)...');
     let piezasReparacion = await prisma.piezas_reparacion_productos.findMany({
       where: { reparacion_id: reparacion.id },
       include: {
@@ -56,9 +61,11 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
       }
     });
 
+    console.log('🔍 [validarStockReparacion] Piezas encontradas en tabla nueva:', piezasReparacion.length);
+
     // Si no hay datos en la tabla nueva, buscar en la tabla antigua
     if (piezasReparacion.length === 0) {
-      console.log('No se encontraron piezas en tabla nueva, buscando en tabla antigua...');
+      console.log('🔍 [validarStockReparacion] No se encontraron piezas en tabla nueva, buscando en tabla antigua...');
       const piezasAntiguas = await prisma.piezas_reparacion.findMany({
         where: { reparacion_id: reparacion.id },
         include: {
@@ -109,13 +116,15 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
 
     // Si no hay piezas de reparación, no hay stock que validar
     if (piezasReparacion.length === 0) {
-      console.log('No hay piezas de reparación para validar stock');
+      console.log('ℹ️  [validarStockReparacion] No hay piezas de reparación para validar stock');
       return {
         success: true,
         errors: [],
         missingStock: []
       };
     }
+
+    console.log(`🔍 [validarStockReparacion] Validando stock para ${piezasReparacion.length} piezas...`);
 
     const errors: string[] = [];
     const missingStock: Array<{
@@ -129,6 +138,8 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
     for (const piezaRep of piezasReparacion) {
       const producto = piezaRep.productos;
       
+      console.log(`🔍 [validarStockReparacion] Verificando pieza: ${producto.nombre} (cantidad: ${piezaRep.cantidad}, stock: ${producto.stock})`);
+      
       // Lista de conceptos que no requieren validación de stock (servicios)
       const conceptosSinStock = ['Mano de Obra', 'Diagnostico', 'Diagnóstico', 'Servicio'];
       
@@ -137,11 +148,18 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
         producto.nombre?.includes(concepto)
       );
       
+      if (esServicio) {
+        console.log(`⏭️  [validarStockReparacion] Saltando servicio: ${producto.nombre}`);
+        continue;
+      }
+      
       // Solo validar stock para productos físicos, no para servicios
-      if (!esServicio && producto.stock < piezaRep.cantidad) {
+      if (producto.stock < piezaRep.cantidad) {
         const marcaNombre = producto.marcas?.nombre || 'N/A';
         const modeloNombre = producto.modelos?.nombre || 'N/A';
         const productoNombre = `${producto.nombre} (${marcaNombre} ${modeloNombre})`;
+        
+        console.log(`❌ [validarStockReparacion] Stock insuficiente para ${productoNombre}: necesitas ${piezaRep.cantidad}, tienes ${producto.stock}`);
         
         missingStock.push({
           piezaId: producto.id,
@@ -153,16 +171,20 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
         errors.push(
           `Stock insuficiente para ${productoNombre}: necesitas ${piezaRep.cantidad}, tienes ${producto.stock}`
         );
+      } else {
+        console.log(`✅ [validarStockReparacion] Stock suficiente para ${producto.nombre}`);
       }
     }
 
+    console.log(`📊 [validarStockReparacion] Validación completada. Éxito: ${errors.length === 0}, Errores: ${errors.length}`);
+    
     return {
       success: errors.length === 0,
       errors,
       missingStock
     };
   } catch (error) {
-    console.error('Error al validar stock de reparación:', error);
+    console.error('❌ [validarStockReparacion] Error al validar stock de reparación:', error);
     return {
       success: false,
       errors: ['Error interno al validar stock'],
