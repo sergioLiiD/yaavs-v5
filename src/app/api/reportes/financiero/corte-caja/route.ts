@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const fechaFinDate = new Date(fechaFin);
     fechaFinDate.setHours(23, 59, 59, 999);
 
-    // Obtener todos los pagos del período
+    // Obtener todos los pagos del período (tanto de tickets como de ventas)
     const pagos = await prisma.pagos.findMany({
       where: {
         created_at: {
@@ -21,6 +21,17 @@ export async function POST(request: NextRequest) {
       },
       include: {
         tickets: {
+          include: {
+            clientes: {
+              select: {
+                nombre: true,
+                apellido_paterno: true,
+                apellido_materno: true
+              }
+            }
+          }
+        },
+        ventas: {
           include: {
             clientes: {
               select: {
@@ -51,9 +62,24 @@ export async function POST(request: NextRequest) {
     };
 
     const transacciones = pagos.map(pago => {
-      const nombreCliente = pago.tickets?.clientes 
-        ? `${pago.tickets.clientes.nombre} ${pago.tickets.clientes.apellido_paterno} ${pago.tickets.clientes.apellido_materno || ''}`.trim()
-        : 'Cliente no especificado';
+      // Determinar si es pago de ticket o de venta
+      const esPagoTicket = pago.ticket_id !== null;
+      const esPagoVenta = pago.venta_id !== null;
+
+      // Obtener información del cliente
+      let nombreCliente = 'Cliente no especificado';
+      let numeroReferencia = 'N/A';
+      let tipoTransaccion = '';
+
+      if (esPagoTicket && pago.tickets?.clientes) {
+        nombreCliente = `${pago.tickets.clientes.nombre} ${pago.tickets.clientes.apellido_paterno} ${pago.tickets.clientes.apellido_materno || ''}`.trim();
+        numeroReferencia = pago.tickets.numero_ticket || 'N/A';
+        tipoTransaccion = 'Ticket';
+      } else if (esPagoVenta && pago.ventas?.clientes) {
+        nombreCliente = `${pago.ventas.clientes.nombre} ${pago.ventas.clientes.apellido_paterno} ${pago.ventas.clientes.apellido_materno || ''}`.trim();
+        numeroReferencia = `Venta #${pago.venta_id}`;
+        tipoTransaccion = 'Venta';
+      }
 
       // Sumar al total correspondiente
       switch (pago.metodo) {
@@ -75,7 +101,8 @@ export async function POST(request: NextRequest) {
         cliente: nombreCliente,
         monto: pago.monto,
         metodo: pago.metodo,
-        numeroTicket: pago.tickets?.numero_ticket || 'N/A',
+        numeroTicket: numeroReferencia,
+        tipoTransaccion,
         referencia: pago.referencia || null
       };
     });

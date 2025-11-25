@@ -68,12 +68,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { cliente_id, usuario_id, total, productos } = body;
+    const { cliente_id, usuario_id, total, productos, metodo_pago, referencia } = body;
 
     // Validaciones
     if (!cliente_id || !usuario_id || !total || !productos || !Array.isArray(productos)) {
       return NextResponse.json(
         { error: 'Datos incompletos o inválidos' },
+        { status: 400 }
+      );
+    }
+
+    // Validar método de pago
+    if (!metodo_pago || !['EFECTIVO', 'TARJETA', 'TRANSFERENCIA'].includes(metodo_pago)) {
+      return NextResponse.json(
+        { error: 'Método de pago es requerido y debe ser: EFECTIVO, TARJETA o TRANSFERENCIA' },
         { status: 400 }
       );
     }
@@ -164,10 +172,22 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // Crear registro de pago asociado a la venta
+      await tx.pagos.create({
+        data: {
+          venta_id: nuevaVenta.id,
+          monto: total,
+          metodo: metodo_pago as 'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA',
+          referencia: referencia || null,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      });
+
       return nuevaVenta;
     });
 
-    // Obtener la venta completa con detalles
+    // Obtener la venta completa con detalles y pago
     const ventaCompleta = await prisma.ventas.findUnique({
       where: { id: venta.id },
       include: {
@@ -198,6 +218,12 @@ export async function POST(request: NextRequest) {
               }
             }
           }
+        },
+        pagos: {
+          orderBy: {
+            created_at: 'desc'
+          },
+          take: 1
         }
       }
     });

@@ -65,6 +65,7 @@ export interface TransaccionCorteCaja {
   monto: number;
   metodo: 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
   numeroTicket: string;
+  tipoTransaccion?: string;
   referencia?: string | null;
 }
 

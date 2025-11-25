@@ -36,6 +36,8 @@ export default function VentaProductosForm() {
   const [ventaData, setVentaData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showReciboModal, setShowReciboModal] = useState(false);
+  const [metodoPago, setMetodoPago] = useState<'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA'>('EFECTIVO');
+  const [referencia, setReferencia] = useState('');
 
   // Función helper para obtener el precio de venta correcto
   const obtenerPrecioVenta = (producto: any): number => {
@@ -117,7 +119,9 @@ export default function VentaProductosForm() {
           cantidad: p.cantidad,
           precio_unitario: p.precio,
           subtotal: p.subtotal
-        }))
+        })),
+        metodo_pago: metodoPago,
+        referencia: metodoPago === 'TRANSFERENCIA' ? referencia : undefined
       };
 
       const resultado = await VentaService.crearVenta(ventaData);
@@ -128,6 +132,8 @@ export default function VentaProductosForm() {
       // Limpiar formulario
       setClienteSeleccionado(null);
       setProductosSeleccionados([]);
+      setMetodoPago('EFECTIVO');
+      setReferencia('');
     } catch (error) {
       console.error('Error al finalizar la venta:', error);
       alert('Error al finalizar la venta');
@@ -202,6 +208,10 @@ export default function VentaProductosForm() {
           cliente={clienteSeleccionado}
           productos={productosSeleccionados}
           total={calcularTotal()}
+          metodoPago={metodoPago}
+          referencia={referencia}
+          onMetodoPagoChange={setMetodoPago}
+          onReferenciaChange={setReferencia}
           onFinalizarVenta={finalizarVenta}
           loading={loading}
         />

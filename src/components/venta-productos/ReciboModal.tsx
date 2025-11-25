@@ -3,6 +3,13 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
+interface Pago {
+  id: number;
+  metodo: 'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA';
+  referencia?: string | null;
+  monto: number;
+}
+
 interface Venta {
   id: number;
   cliente_id: number;
@@ -13,6 +20,7 @@ interface Venta {
   created_at: string;
   updated_at: string;
   detalle_ventas: DetalleVenta[];
+  pagos?: Pago[];
 }
 
 interface DetalleVenta {
@@ -320,6 +328,17 @@ export default function ReciboModal({ venta, isOpen, onClose, onNuevaVenta }: Re
             <div class="total-value">${formatPrice(venta.total)} MXN</div>
           </div>
           
+          ${venta.pagos && venta.pagos.length > 0 ? `
+          <!-- Método de Pago -->
+          <div class="section">
+            <div class="section-title">MÉTODO DE PAGO</div>
+            <div class="info-item">
+              <div class="info-label">Forma de pago:</div>
+              <div class="info-value">${venta.pagos[0].metodo === 'EFECTIVO' ? 'EFECTIVO' : venta.pagos[0].metodo === 'TARJETA' ? 'TARJETA' : 'TRANSFERENCIA'}${venta.pagos[0].referencia ? ' (Ref: ' + venta.pagos[0].referencia + ')' : ''}</div>
+            </div>
+          </div>
+          ` : ''}
+          
           <!-- Garantía -->
           <div class="garantia-section">
             <div class="garantia-title">GARANTÍA</div>
@@ -430,12 +449,31 @@ export default function ReciboModal({ venta, isOpen, onClose, onNuevaVenta }: Re
             </div>
 
             {/* Total */}
-            <div className="border-t-2 border-gray-300 pt-4 mb-6">
+            <div className="border-t-2 border-gray-300 pt-4 mb-4">
               <div className="flex justify-between items-center">
                 <span className="text-xl font-bold text-gray-900">TOTAL:</span>
                 <span className="text-2xl font-bold text-blue-600">{formatPrice(venta.total)}</span>
               </div>
             </div>
+
+            {/* Método de Pago */}
+            {venta.pagos && venta.pagos.length > 0 && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="text-sm font-medium text-gray-700 mb-1">Método de Pago:</div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg font-semibold text-gray-900">
+                    {venta.pagos[0].metodo === 'EFECTIVO' && '💵 Efectivo'}
+                    {venta.pagos[0].metodo === 'TARJETA' && '💳 Tarjeta'}
+                    {venta.pagos[0].metodo === 'TRANSFERENCIA' && '🏦 Transferencia'}
+                  </span>
+                  {venta.pagos[0].referencia && (
+                    <span className="text-sm text-gray-600">
+                      (Ref: {venta.pagos[0].referencia})
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Garantía */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">

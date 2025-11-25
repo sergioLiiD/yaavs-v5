@@ -17,6 +17,10 @@ interface ResumenVentaProps {
   cliente: Cliente | null;
   productos: ProductoSeleccionado[];
   total: number;
+  metodoPago: 'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA';
+  referencia: string;
+  onMetodoPagoChange: (metodo: 'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA') => void;
+  onReferenciaChange: (referencia: string) => void;
   onFinalizarVenta: () => void;
   loading: boolean;
 }
@@ -25,6 +29,10 @@ export default function ResumenVenta({
   cliente, 
   productos, 
   total, 
+  metodoPago,
+  referencia,
+  onMetodoPagoChange,
+  onReferenciaChange,
   onFinalizarVenta, 
   loading 
 }: ResumenVentaProps) {
@@ -35,7 +43,7 @@ export default function ResumenVenta({
     }).format(price);
   };
 
-  const canFinalizar = cliente && productos.length > 0 && !loading;
+  const canFinalizar = cliente && productos.length > 0 && metodoPago && !loading;
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -75,12 +83,70 @@ export default function ResumenVenta({
       </div>
 
       {/* Total */}
-      <div className="border-t border-gray-200 pt-4">
+      <div className="border-t border-gray-200 pt-4 mb-4">
         <div className="flex justify-between items-center">
           <span className="text-lg font-semibold text-gray-900">Total:</span>
           <span className="text-xl font-bold text-blue-600">{formatPrice(total)}</span>
         </div>
       </div>
+
+      {/* Método de pago */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Método de Pago *
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => onMetodoPagoChange('EFECTIVO')}
+            className={`py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              metodoPago === 'EFECTIVO'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            💵 Efectivo
+          </button>
+          <button
+            type="button"
+            onClick={() => onMetodoPagoChange('TARJETA')}
+            className={`py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              metodoPago === 'TARJETA'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            💳 Tarjeta
+          </button>
+          <button
+            type="button"
+            onClick={() => onMetodoPagoChange('TRANSFERENCIA')}
+            className={`py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              metodoPago === 'TRANSFERENCIA'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            🏦 Transferencia
+          </button>
+        </div>
+      </div>
+
+      {/* Referencia (solo para transferencia) */}
+      {metodoPago === 'TRANSFERENCIA' && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Referencia de Transferencia (Opcional)
+          </label>
+          <input
+            type="text"
+            value={referencia}
+            onChange={(e) => onReferenciaChange(e.target.value)}
+            placeholder="Ej: 1234567890"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      )}
 
       {/* Botón de finalizar */}
       <div className="mt-6">
@@ -114,6 +180,12 @@ export default function ResumenVenta({
       {productos.length === 0 && (
         <div className="mt-3 text-sm text-orange-600">
           ⚠️ Debes agregar al menos un producto
+        </div>
+      )}
+
+      {!metodoPago && (
+        <div className="mt-3 text-sm text-orange-600">
+          ⚠️ Debes seleccionar un método de pago
         </div>
       )}
 

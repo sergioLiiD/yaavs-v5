@@ -12,6 +12,8 @@ export interface VentaData {
   usuario_id: number;
   total: number;
   productos: ItemVenta[];
+  metodo_pago: 'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA';
+  referencia?: string;
 }
 
 export interface Venta {
