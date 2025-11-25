@@ -218,13 +218,15 @@ model modelos {
 
 model pagos {
   id         Int        @id @default(autoincrement())
-  ticket_id  Int
+  ticket_id  Int?
+  venta_id   Int?
   monto      Float
   metodo     MetodoPago
   referencia String?
   created_at DateTime   @default(now())
   updated_at DateTime
-  tickets    tickets    @relation(fields: [ticket_id], references: [id])
+  tickets    tickets?   @relation(fields: [ticket_id], references: [id])
+  ventas     ventas?    @relation(fields: [venta_id], references: [id])
 }
 
 model pasos_reparacion_frecuente {
@@ -649,6 +651,7 @@ model ventas {
   usuarios     usuarios        @relation(fields: [usuario_id], references: [id])
   detalle_ventas detalle_ventas[]
   usos_cupon   usos_cupon[]
+  pagos        pagos[]
 }
 
 model detalle_ventas {
