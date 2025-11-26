@@ -18,11 +18,11 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Instalar dependencias
+# Instalar dependencias (incluyendo Prisma)
 RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
 
-# Generar Prisma Client
-RUN npx prisma generate
+# Generar Prisma Client usando el binario instalado (evita que npx instale otra versión)
+RUN ./node_modules/.bin/prisma generate 2>/dev/null || npx --yes prisma@5.22.0 generate
 
 # Etapa de construcción
 FROM base AS builder
@@ -36,8 +36,8 @@ RUN npm ci --legacy-peer-deps
 # Copiar código fuente
 COPY . .
 
-# Generar Prisma Client nuevamente
-RUN npx prisma generate
+# Generar Prisma Client nuevamente usando el binario instalado
+RUN ./node_modules/.bin/prisma generate 2>/dev/null || npx --yes prisma@5.22.0 generate
 
 # Construir la aplicación
 RUN npm run build
