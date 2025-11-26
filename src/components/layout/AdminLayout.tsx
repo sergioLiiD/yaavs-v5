@@ -26,7 +26,7 @@ import {
   HiLocationMarker,
   HiUserGroup,
   HiKey,
-  HiArrowPath
+  HiRefresh
 } from 'react-icons/hi';
 import Link from 'next/link';
 
@@ -111,7 +111,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
     if (userRole === 'ADMINISTRADOR') {
       additionalLinks.push(
         { href: '/dashboard/reportes', icon: HiClipboardCheck, text: 'Reportes', active: pathname?.includes('/dashboard/reportes') },
-        { href: '/dashboard/devoluciones', icon: HiArrowPath, text: 'Devoluciones', active: pathname?.includes('/dashboard/devoluciones') },
+        { href: '/dashboard/devoluciones', icon: HiRefresh, text: 'Devoluciones', active: pathname?.includes('/dashboard/devoluciones') },
         { href: '/dashboard/collection-points', icon: HiLocationMarker, text: 'Puntos de Recolección', active: pathname?.includes('/dashboard/collection-points') }
       );
     }
