@@ -20,12 +20,10 @@ export async function GET(
     
     if (!session?.user) {
       console.log('No hay sesión de usuario');
-      // Temporalmente permitir acceso sin autenticación para debugging
-      console.log('Permitiendo acceso temporal sin autenticación');
-      // return new NextResponse('No autorizado', { status: 401 });
-    } else {
-      console.log('Usuario autenticado:', session.user);
+      return new NextResponse('No autorizado', { status: 401 });
     }
+    
+    console.log('Usuario autenticado:', session.user);
 
     // 1. Verificar el ticket básico
     console.log('1. Verificando ticket básico...');
@@ -151,6 +149,17 @@ export async function PUT(
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    // Validar permisos: ADMINISTRADOR o TICKETS_EDIT
+    const userRole = session.user.role;
+    const userPermissions = session.user.permissions || [];
+    
+    if (userRole !== 'ADMINISTRADOR' && !userPermissions.includes('TICKETS_EDIT')) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para editar tickets' },
+        { status: 403 }
+      );
     }
 
     const data = await req.json();

@@ -15,6 +15,17 @@ export async function POST(
       return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
     }
 
+    // Validar permisos: ADMINISTRADOR o TICKETS_EDIT
+    const userRole = session.user.role;
+    const userPermissions = session.user.permissions || [];
+    
+    if (userRole !== 'ADMINISTRADOR' && !userPermissions.includes('TICKETS_EDIT')) {
+      return NextResponse.json(
+        { message: 'No tienes permisos para entregar equipos' },
+        { status: 403 }
+      );
+    }
+
     const ticketId = parseInt(params.id);
     const { firma } = await request.json();
 

@@ -73,20 +73,48 @@ export async function POST(
     }
 
     const ticketId = parseInt(params.id);
+    
+    // Obtener el ticket para verificar si el usuario es el técnico asignado
+    const ticket = await prisma.tickets.findUnique({
+      where: { id: ticketId },
+      select: { tecnico_asignado_id: true }
+    });
+
+    if (!ticket) {
+      return NextResponse.json(
+        { error: 'Ticket no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Validar permisos: ADMINISTRADOR, REPAIRS_EDIT, o ser el técnico asignado
+    const userRole = session.user.role;
+    const userPermissions = session.user.permissions || [];
+    const isAssignedTechnician = ticket.tecnico_asignado_id === session.user.id;
+    
+    if (userRole !== 'ADMINISTRADOR' && 
+        !userPermissions.includes('REPAIRS_EDIT') && 
+        !isAssignedTechnician) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para modificar el diagnóstico' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     console.log('POST /diagnostico - Datos recibidos:', body);
     
     const { diagnostico, versionSO, saludBateria } = body;
 
-    // Obtener el ticket con su reparación
-    const ticket = await prisma.tickets.findUnique({
+    // Obtener el ticket con su reparación (ya lo tenemos arriba, pero necesitamos los datos completos)
+    const ticketFull = await prisma.tickets.findUnique({
       where: { id: ticketId },
       include: {
         reparaciones: true
       }
     });
 
-    if (!ticket) {
+    if (!ticketFull) {
       console.log('POST /diagnostico - Ticket no encontrado:', ticketId);
       return NextResponse.json(
         { error: 'Ticket no encontrado' },
@@ -95,7 +123,7 @@ export async function POST(
     }
 
     // En POST
-    let reparacion = Array.isArray(ticket.reparaciones) ? ticket.reparaciones[0] : ticket.reparaciones;
+    let reparacion = Array.isArray(ticketFull.reparaciones) ? ticketFull.reparaciones[0] : ticketFull.reparaciones;
     console.log('POST /diagnostico - Reparación actual:', reparacion);
 
     // Si no existe la reparación, crearla

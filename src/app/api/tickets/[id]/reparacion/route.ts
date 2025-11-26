@@ -38,6 +38,20 @@ export async function POST(
       return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
     }
 
+    // Validar permisos: ADMINISTRADOR, REPAIRS_EDIT, o ser el técnico asignado
+    const userRole = session.user.role;
+    const userPermissions = session.user.permissions || [];
+    const isAssignedTechnician = ticket.tecnico_asignado_id === session.user.id;
+    
+    if (userRole !== 'ADMINISTRADOR' && 
+        !userPermissions.includes('REPAIRS_EDIT') && 
+        !isAssignedTechnician) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para modificar reparaciones' },
+        { status: 403 }
+      );
+    }
+
     console.log('Ticket encontrado:', ticket);
 
     const body = await request.json();

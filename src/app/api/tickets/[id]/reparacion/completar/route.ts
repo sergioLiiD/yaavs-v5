@@ -25,7 +25,7 @@ export async function POST(
     console.log('📋 Ticket ID:', params.id);
     
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
@@ -33,6 +33,34 @@ export async function POST(
     }
 
     const { id } = params;
+    
+    // Obtener el ticket para verificar si el usuario es el técnico asignado
+    const ticketCheck = await prisma.tickets.findUnique({
+      where: { id: Number(id) },
+      select: { tecnico_asignado_id: true }
+    });
+
+    if (!ticketCheck) {
+      return NextResponse.json(
+        { error: 'Ticket no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Validar permisos: ADMINISTRADOR, REPAIRS_EDIT, o ser el técnico asignado
+    const userRole = session.user.role;
+    const userPermissions = session.user.permissions || [];
+    const isAssignedTechnician = ticketCheck.tecnico_asignado_id === session.user.id;
+    
+    if (userRole !== 'ADMINISTRADOR' && 
+        !userPermissions.includes('REPAIRS_EDIT') && 
+        !isAssignedTechnician) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para completar reparaciones' },
+        { status: 403 }
+      );
+    }
+
     const { observaciones, checklist, tiempoTranscurrido } = await request.json();
 
     console.log('📋 Datos recibidos:', { observaciones, checklist: checklist?.length, tiempoTranscurrido });

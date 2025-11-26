@@ -50,8 +50,21 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user) {
       return new NextResponse('No autorizado', { status: 401 });
+    }
+
+    // Validar permisos: ADMINISTRADOR o TICKETS_EDIT o REPAIRS_EDIT
+    const userRole = session.user.role;
+    const userPermissions = session.user.permissions || [];
+    
+    if (userRole !== 'ADMINISTRADOR' && 
+        !userPermissions.includes('TICKETS_EDIT') && 
+        !userPermissions.includes('REPAIRS_EDIT')) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para crear o modificar presupuestos' },
+        { status: 403 }
+      );
     }
 
     const ticketId = parseInt(params.id);

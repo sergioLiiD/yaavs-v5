@@ -82,6 +82,34 @@ export async function POST(
     }
 
     const ticketId = parseInt(params.id);
+    
+    // Obtener el ticket para verificar si el usuario es el técnico asignado
+    const ticketCheck = await prisma.tickets.findUnique({
+      where: { id: ticketId },
+      select: { tecnico_asignado_id: true }
+    });
+
+    if (!ticketCheck) {
+      return NextResponse.json(
+        { error: 'Ticket no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Validar permisos: ADMINISTRADOR, REPAIRS_EDIT, o ser el técnico asignado
+    const userRole = session.user.role;
+    const userPermissions = session.user.permissions || [];
+    const isAssignedTechnician = ticketCheck.tecnico_asignado_id === session.user.id;
+    
+    if (userRole !== 'ADMINISTRADOR' && 
+        !userPermissions.includes('REPAIRS_EDIT') && 
+        !isAssignedTechnician) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para modificar el checklist de reparación' },
+        { status: 403 }
+      );
+    }
+
     const { checklist } = await request.json() as { checklist: ChecklistItem[] };
 
     // Obtener el ticket con su reparación

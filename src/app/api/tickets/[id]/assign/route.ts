@@ -13,9 +13,20 @@ export async function POST(
     console.log('Iniciando asignación de técnico...');
     const session = await getServerSession(authOptions);
 
-    if (!session) {
+    if (!session?.user) {
       console.log('No hay sesión de usuario');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    // Validar permisos: ADMINISTRADOR o TICKETS_EDIT
+    const userRole = session.user.role;
+    const userPermissions = session.user.permissions || [];
+    
+    if (userRole !== 'ADMINISTRADOR' && !userPermissions.includes('TICKETS_EDIT')) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para asignar técnicos' },
+        { status: 403 }
+      );
     }
 
     const { tecnicoId } = await request.json();

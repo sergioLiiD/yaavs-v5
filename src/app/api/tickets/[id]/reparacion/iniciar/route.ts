@@ -36,6 +36,17 @@ export async function POST(
       return new NextResponse('Ticket no encontrado', { status: 404 });
     }
 
+    // Validar permisos: ADMINISTRADOR o REPAIRS_EDIT
+    const userRole = session.user.role;
+    const userPermissions = session.user.permissions || [];
+    
+    if (userRole !== 'ADMINISTRADOR' && !userPermissions.includes('REPAIRS_EDIT')) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para iniciar reparaciones' },
+        { status: 403 }
+      );
+    }
+
     console.log('Ticket encontrado:', ticket);
 
     // Verificar si hay pagos realizados

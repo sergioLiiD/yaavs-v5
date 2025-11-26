@@ -11,8 +11,19 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user) {
       return new NextResponse('No autorizado', { status: 401 });
+    }
+
+    // Validar permisos: ADMINISTRADOR o TICKETS_EDIT
+    const userRole = session.user.role;
+    const userPermissions = session.user.permissions || [];
+    
+    if (userRole !== 'ADMINISTRADOR' && !userPermissions.includes('TICKETS_EDIT')) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para modificar pagos' },
+        { status: 403 }
+      );
     }
 
     const ticketId = parseInt(params.id);
@@ -76,8 +87,19 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user) {
       return new NextResponse('No autorizado', { status: 401 });
+    }
+
+    // Validar permisos: ADMINISTRADOR o TICKETS_EDIT
+    const userRole = session.user.role;
+    const userPermissions = session.user.permissions || [];
+    
+    if (userRole !== 'ADMINISTRADOR' && !userPermissions.includes('TICKETS_EDIT')) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para eliminar pagos' },
+        { status: 403 }
+      );
     }
 
     const ticketId = parseInt(params.id);
