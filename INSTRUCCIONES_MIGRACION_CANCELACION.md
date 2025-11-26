@@ -17,40 +17,108 @@ Este documento describe los pasos necesarios para implementar el sistema de canc
 
 **Ejecutar en el servidor:**
 
-```bash
-# Conectarse a PostgreSQL
-psql -U tu_usuario -d nombre_base_datos
+### Opción A: Backup en directorio específico (RECOMENDADO)
 
-# Crear backup
-pg_dump -U tu_usuario nombre_base_datos > backup_antes_migracion_$(date +%Y%m%d_%H%M%S).sql
+```bash
+# Navegar al directorio del proyecto
+cd /opt/yaavs-v5
+
+# Crear directorio de backups si no existe
+mkdir -p backups
+
+# Crear backup con ruta absoluta
+sudo -u postgres pg_dump yaavs_db > /opt/yaavs-v5/backups/backup_antes_migracion_$(date +%Y%m%d_%H%M%S).sql
+
+# Verificar que se creó el archivo
+ls -lh /opt/yaavs-v5/backups/backup_antes_migracion_*.sql
 ```
 
-O si usas un cliente gráfico como pgAdmin, crear un backup manual antes de continuar.
+### Opción B: Backup con verificación de errores
+
+```bash
+cd /opt/yaavs-v5
+mkdir -p backups
+
+# Crear backup y capturar errores
+sudo -u postgres pg_dump yaavs_db > /opt/yaavs-v5/backups/backup_antes_migracion_$(date +%Y%m%d_%H%M%S).sql 2>&1
+
+# Verificar tamaño del archivo (debe ser mayor a 0)
+ls -lh /opt/yaavs-v5/backups/backup_antes_migracion_*.sql
+
+# Verificar que el archivo no está vacío
+head -20 /opt/yaavs-v5/backups/backup_antes_migracion_*.sql
+```
+
+### Opción C: Si el archivo se creó en el home de postgres
+
+```bash
+# Verificar en el home de postgres
+sudo ls -lh /var/lib/postgresql/backup_antes_migracion_*.sql
+
+# Si está ahí, moverlo a tu directorio
+sudo mv /var/lib/postgresql/backup_antes_migracion_*.sql /opt/yaavs-v5/backups/
+sudo chown administrador:administrador /opt/yaavs-v5/backups/backup_antes_migracion_*.sql
+```
+
+### Opción D: Con contraseña explícita
+
+```bash
+cd /opt/yaavs-v5
+mkdir -p backups
+
+PGPASSWORD=postgres pg_dump -U postgres -h localhost yaavs_db > backups/backup_antes_migracion_$(date +%Y%m%d_%H%M%S).sql
+
+# Verificar
+ls -lh backups/backup_antes_migracion_*.sql
+```
 
 ---
 
 ## 📝 Paso 2: Ejecutar Script SQL de Migración
 
-**Ubicación del script:** `migrations/001_add_cancelacion_devoluciones.sql`
+**Ubicación del script:** `/opt/yaavs-v5/migrations/001_add_cancelacion_devoluciones.sql`
 
-**Opción A: Desde línea de comandos (recomendado)**
+### Opción A: Usando sudo con usuario postgres (recomendado)
+
+```bash
+# Navegar al directorio del proyecto
+cd /opt/yaavs-v5
+
+# Verificar que el archivo existe
+ls -lh migrations/001_add_cancelacion_devoluciones.sql
+
+# Ejecutar el script usando usuario postgres
+sudo -u postgres psql -d yaavs_db -f migrations/001_add_cancelacion_devoluciones.sql
+
+# Verificar que no hubo errores (debe mostrar mensajes de éxito)
+```
+
+### Opción B: Con contraseña explícita
+
+```bash
+cd /opt/yaavs-v5
+
+# Ejecutar con contraseña en variable de entorno
+PGPASSWORD=postgres psql -U postgres -h localhost -d yaavs_db -f migrations/001_add_cancelacion_devoluciones.sql
+```
+
+### Opción C: Ejecutar línea por línea desde psql
 
 ```bash
 # Conectarse a PostgreSQL
-psql -U tu_usuario -d nombre_base_datos
+sudo -u postgres psql -d yaavs_db
 
-# Ejecutar el script
-\i migrations/001_add_cancelacion_devoluciones.sql
+# Dentro de psql, ejecutar:
+\i /opt/yaavs-v5/migrations/001_add_cancelacion_devoluciones.sql
 
-# O directamente desde bash:
-psql -U tu_usuario -d nombre_base_datos -f migrations/001_add_cancelacion_devoluciones.sql
+# O copiar y pegar el contenido del archivo directamente
 ```
 
-**Opción B: Desde pgAdmin o cliente gráfico**
+### Opción D: Desde pgAdmin o cliente gráfico
 
 1. Abrir pgAdmin o tu cliente de PostgreSQL
-2. Conectarse a la base de datos
-3. Abrir el archivo `migrations/001_add_cancelacion_devoluciones.sql`
+2. Conectarse a la base de datos `yaavs_db`
+3. Abrir el archivo `/opt/yaavs-v5/migrations/001_add_cancelacion_devoluciones.sql`
 4. Ejecutar el script completo
 
 ---
@@ -58,6 +126,13 @@ psql -U tu_usuario -d nombre_base_datos -f migrations/001_add_cancelacion_devolu
 ## 📝 Paso 3: Verificar que la Migración se Ejecutó Correctamente
 
 **Ejecutar estos queries para verificar:**
+
+```bash
+# Conectarse a PostgreSQL
+sudo -u postgres psql -d yaavs_db
+```
+
+Dentro de psql, ejecutar:
 
 ```sql
 -- 1. Verificar que el campo 'estado' se agregó a pagos
@@ -87,6 +162,9 @@ FROM pagos
 GROUP BY estado;
 
 -- Debe mostrar solo: ACTIVO | [número de pagos]
+
+-- Salir de psql
+\q
 ```
 
 ---
@@ -102,6 +180,7 @@ El archivo `prisma/schema.prisma` ya fue actualizado con:
 
 ```bash
 # En el servidor o máquina de desarrollo
+cd /opt/yaavs-v5
 npx prisma generate
 ```
 
@@ -112,11 +191,28 @@ npx prisma generate
 Después de ejecutar la migración SQL:
 
 1. **Detener la aplicación** (si está corriendo)
+   ```bash
+   # Si usas PM2
+   pm2 stop yaavs-v5
+   
+   # O si usas systemd
+   sudo systemctl stop yaavs-v5
+   ```
+
 2. **Regenerar el cliente de Prisma** (si es necesario):
    ```bash
+   cd /opt/yaavs-v5
    npx prisma generate
    ```
+
 3. **Reiniciar la aplicación**
+   ```bash
+   # Si usas PM2
+   pm2 restart yaavs-v5
+   
+   # O si usas systemd
+   sudo systemctl restart yaavs-v5
+   ```
 
 ---
 
@@ -170,6 +266,16 @@ SELECT * FROM pagos WHERE estado IS NULL;
 UPDATE pagos SET estado = 'ACTIVO' WHERE estado IS NULL;
 ```
 
+### El backup no aparece en el directorio actual
+**Solución:** El archivo puede haberse creado en el directorio home de postgres. Verificar:
+```bash
+# Buscar el archivo
+sudo find / -name "backup_antes_migracion_*.sql" 2>/dev/null
+
+# O verificar en el home de postgres
+sudo ls -lh /var/lib/postgresql/backup_antes_migracion_*.sql
+```
+
 ---
 
 ## 📊 Estructura de Datos Creada
@@ -198,7 +304,7 @@ UPDATE pagos SET estado = 'ACTIVO' WHERE estado IS NULL;
 
 ## ✅ Checklist de Verificación
 
-- [ ] Backup de base de datos creado
+- [ ] Backup de base de datos creado y verificado
 - [ ] Script SQL ejecutado sin errores
 - [ ] Campo `estado` existe en tabla `pagos`
 - [ ] Campo `cancelado_por_id` existe en tabla `tickets`
@@ -236,4 +342,3 @@ Después de que todo funcione correctamente, puedes:
 
 **Fecha de creación:** 2025-01-XX
 **Versión:** 1.0
-
