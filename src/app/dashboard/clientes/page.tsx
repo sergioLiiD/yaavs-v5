@@ -7,6 +7,7 @@ import { HiPlus, HiPencilAlt, HiTrash, HiSearch } from 'react-icons/hi';
 import axios from 'axios';
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { toast, Toaster } from 'sonner';
 
 interface Cliente {
   id: number;
@@ -196,6 +197,15 @@ export default function ClientesPage() {
         await axios.post('/api/clientes', currentCliente);
       }
       
+      // Mostrar mensaje de éxito
+      toast.success(
+        isEditing ? 'Cliente actualizado correctamente' : 'Cliente creado correctamente',
+        {
+          duration: 3000,
+          position: 'top-center',
+        }
+      );
+      
       closeModal();
       // Recargar la página actual después de crear/editar
       fetchClientes(currentPage, searchTerm);
@@ -204,6 +214,7 @@ export default function ClientesPage() {
       
       // Extraer el mensaje de error específico de la respuesta de la API
       let errorMessage = 'Error al guardar los datos. Por favor, intente nuevamente.';
+      let errorTitle = 'Error';
       
       if (err?.response?.data) {
         const errorData = err.response.data;
@@ -214,8 +225,26 @@ export default function ClientesPage() {
         } else if (errorData.error) {
           errorMessage = errorData.error;
         }
+        
+        // Usar el título del error si está disponible
+        if (errorData.error) {
+          errorTitle = errorData.error;
+        }
       }
       
+      // Mostrar toast con el error específico
+      toast.error(
+        <div className="space-y-1">
+          <p className="font-semibold">{errorTitle}</p>
+          <p className="text-sm">{errorMessage}</p>
+        </div>,
+        {
+          duration: 5000,
+          position: 'top-center',
+        }
+      );
+      
+      // También mantener el error en el estado para mostrarlo en el modal si es necesario
       setError(errorMessage);
     }
   };
@@ -748,6 +777,8 @@ export default function ClientesPage() {
           </div>
         </div>
       )}
+      
+      <Toaster position="top-center" richColors />
     </div>
   );
 } 
