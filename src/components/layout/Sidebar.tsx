@@ -160,6 +160,11 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
+    title: 'Devoluciones',
+    path: '/dashboard/devoluciones',
+    requiredPermissions: ['ADMINISTRADOR'] // Solo administradores
+  },
+  {
     title: 'Puntos de Recolección',
     path: '/dashboard/puntos-recoleccion',
     requiredPermissions: ['COLLECTION_POINTS_VIEW']
