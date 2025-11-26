@@ -243,28 +243,66 @@ export async function POST(request: Request) {
       }
     }
 
+    // Normalizar email y teléfono
+    const emailNormalizado = validatedData.email.toLowerCase().trim();
+    const telefonoNormalizado = validatedData.telefonoCelular.trim().replace(/\s+/g, '');
+
     // Verificar si el email ya existe
-    const existingClient = await prisma.clientes.findUnique({
-      where: { email: validatedData.email.toLowerCase().trim() },
+    const existingClientByEmail = await prisma.clientes.findUnique({
+      where: { email: emailNormalizado },
       select: {
         id: true,
         nombre: true,
         apellido_paterno: true,
-        email: true
+        email: true,
+        telefono_celular: true
       }
     });
 
-    if (existingClient) {
-      const nombreCompleto = `${existingClient.nombre} ${existingClient.apellido_paterno}`.trim();
+    if (existingClientByEmail) {
+      const nombreCompleto = `${existingClientByEmail.nombre} ${existingClientByEmail.apellido_paterno}`.trim();
       return NextResponse.json(
         { 
           error: 'El correo electrónico ya está registrado',
           message: `Ya existe un cliente registrado con el correo electrónico "${validatedData.email}". Cliente: ${nombreCompleto}`,
           field: 'email',
           existingClient: {
-            id: existingClient.id,
+            id: existingClientByEmail.id,
             nombre: nombreCompleto,
-            email: existingClient.email
+            email: existingClientByEmail.email,
+            telefono: existingClientByEmail.telefono_celular
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    // Verificar si el teléfono ya existe (normalizar teléfonos en la búsqueda)
+    const existingClientByPhone = await prisma.clientes.findFirst({
+      where: { 
+        telefono_celular: telefonoNormalizado
+      },
+      select: {
+        id: true,
+        nombre: true,
+        apellido_paterno: true,
+        email: true,
+        telefono_celular: true
+      }
+    });
+
+    if (existingClientByPhone) {
+      const nombreCompleto = `${existingClientByPhone.nombre} ${existingClientByPhone.apellido_paterno}`.trim();
+      return NextResponse.json(
+        { 
+          error: 'El número de teléfono ya está registrado',
+          message: `Ya existe un cliente registrado con el número de teléfono "${validatedData.telefonoCelular}". Cliente: ${nombreCompleto}`,
+          field: 'telefonoCelular',
+          existingClient: {
+            id: existingClientByPhone.id,
+            nombre: nombreCompleto,
+            email: existingClientByPhone.email,
+            telefono: existingClientByPhone.telefono_celular
           }
         },
         { status: 400 }
@@ -275,7 +313,8 @@ export async function POST(request: Request) {
     const { password, ...clienteData } = validatedData;
     const dataToSave = cleanClienteData({
       ...clienteData,
-      email: validatedData.email.toLowerCase().trim(), // Normalizar email
+      email: emailNormalizado, // Usar email normalizado
+      telefonoCelular: telefonoNormalizado, // Usar teléfono normalizado
       creadoPorId: session.user.id,
       tipoRegistro: userPointId ? 'PUNTO_RECOLECCION' : 'SISTEMA_CENTRAL',
       puntoRecoleccionId: puntoRecoleccionIdToUse
