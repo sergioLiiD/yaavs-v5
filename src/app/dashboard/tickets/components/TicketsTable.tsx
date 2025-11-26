@@ -296,7 +296,7 @@ export function TicketsTable({
                     )}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-black">
                   <div>
                     <div className="font-medium">
                       {(() => {
@@ -319,7 +319,7 @@ export function TicketsTable({
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-black">
                   <div>
                     <div className="font-medium">
                       {(() => {
@@ -351,10 +351,10 @@ export function TicketsTable({
                     } 
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-black">
                   {formatDate(ticket.fecha_recepcion || ticket.fechaRecepcion || '')}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-black">
                   {ticket.tecnicoAsignado && ticket.tecnicoAsignado.nombre ? (
                     <div>
                       <div className="font-medium">
