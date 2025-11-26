@@ -380,14 +380,17 @@ export async function GET(request: Request) {
           },
           dispositivos: true,
           usuarios_tickets_creador_idTousuarios: {
-            include: {
-              usuarios_roles: {
-                include: {
-                  roles: true
-                }
-              }
+            select: {
+              id: true,
+              nombre: true,
+              apellido_paterno: true,
+              apellido_materno: true,
+              email: true,
+              created_at: true,
+              updated_at: true
             }
           },
+          usuarios_tickets_cancelado_por_idTousuarios: true,
           presupuestos: {
             include: {
               conceptos_presupuesto: true
@@ -559,11 +562,15 @@ export async function GET(request: Request) {
           nombre: ticket.usuarios_tickets_creador_idTousuarios.nombre,
           apellidoPaterno: ticket.usuarios_tickets_creador_idTousuarios.apellido_paterno,
           apellidoMaterno: ticket.usuarios_tickets_creador_idTousuarios.apellido_materno,
-          usuarioRoles: ticket.usuarios_tickets_creador_idTousuarios.usuarios_roles?.map((ur: any) => ({
-            rol: {
-              nombre: ur.roles.nombre
-            }
-          })) || []
+          email: ticket.usuarios_tickets_creador_idTousuarios.email
+        } : null,
+        // Información de quién canceló el ticket
+        canceladoPor: ticket.usuarios_tickets_cancelado_por_idTousuarios ? {
+          id: ticket.usuarios_tickets_cancelado_por_idTousuarios.id,
+          nombre: ticket.usuarios_tickets_cancelado_por_idTousuarios.nombre,
+          apellidoPaterno: ticket.usuarios_tickets_cancelado_por_idTousuarios.apellido_paterno,
+          apellidoMaterno: ticket.usuarios_tickets_cancelado_por_idTousuarios.apellido_materno,
+          email: ticket.usuarios_tickets_cancelado_por_idTousuarios.email
         } : null,
         // Información del punto de recolección para determinar el origen
         puntoRecoleccion: ticket.puntos_recoleccion ? {
@@ -583,9 +590,43 @@ export async function GET(request: Request) {
       hasPrevPage: page > 1
     });
   } catch (error) {
-    console.error('Error al obtener tickets:', error);
+    console.error('=== ERROR AL OBTENER TICKETS ===');
+    console.error('Error completo:', error);
+    
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error('Error de Prisma:', {
+        code: error.code,
+        message: error.message,
+        meta: error.meta
+      });
+      return NextResponse.json(
+        { 
+          error: 'Error de base de datos',
+          detalles: error.message,
+          codigo: error.code
+        },
+        { status: 500 }
+      );
+    }
+    
+    if (error instanceof Error) {
+      console.error('Error tipo Error:', error.message);
+      console.error('Stack:', error.stack);
+      return NextResponse.json(
+        { 
+          error: 'Error al obtener tickets',
+          detalles: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Error al obtener tickets' },
+      { 
+        error: 'Error al obtener tickets',
+        detalles: 'Error desconocido'
+      },
       { status: 500 }
     );
   }
