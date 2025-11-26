@@ -146,11 +146,13 @@ export default function ClientesPage() {
   }, [session, status]);
 
   const openModal = () => {
+    setError(''); // Limpiar errores anteriores al abrir el modal
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
+    setError(''); // Limpiar errores al cerrar el modal
     setCurrentCliente({
       nombre: '',
       apellidoPaterno: '',
@@ -197,9 +199,24 @@ export default function ClientesPage() {
       closeModal();
       // Recargar la página actual después de crear/editar
       fetchClientes(currentPage, searchTerm);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error al guardar cliente:', err);
-      setError('Error al guardar los datos. Por favor, intente nuevamente.');
+      
+      // Extraer el mensaje de error específico de la respuesta de la API
+      let errorMessage = 'Error al guardar los datos. Por favor, intente nuevamente.';
+      
+      if (err?.response?.data) {
+        const errorData = err.response.data;
+        
+        // Priorizar el mensaje específico si está disponible
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -511,6 +528,13 @@ export default function ClientesPage() {
                   <h3 className="text-lg font-medium text-gray-900 mb-4">
                     {isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}
                   </h3>
+                  
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                      <span className="block sm:inline">{error}</span>
+                    </div>
+                  )}
+                  
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
