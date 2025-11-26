@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { validarStockReparacion, procesarDescuentoInventario } from '@/lib/inventory-utils';
+import { validarStockReparacion, procesarDescuentoInventario, convertirConceptosAPiezas } from '@/lib/inventory-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,6 +101,17 @@ export async function POST(
       });
       console.log('✅ Ticket actualizado a estado "Reparado"');
 
+      // Convertir conceptos del presupuesto a piezas de reparación
+      console.log('🔄 Convirtiendo conceptos del presupuesto...');
+      try {
+        await convertirConceptosAPiezas(Number(id), reparacion.id);
+        console.log('✅ Conceptos convertidos exitosamente');
+      } catch (error) {
+        console.error('❌ Error al convertir conceptos:', error);
+        // Si falla la conversión, no continuar con el descuento para evitar inconsistencias
+        throw new Error(`Error al convertir conceptos del presupuesto a piezas: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      }
+
       // Procesar descuento de inventario
       console.log('🔄 Procesando descuento de inventario...');
       const descuentoInventario = await procesarDescuentoInventario(Number(id), Number(session.user.id));
@@ -122,8 +133,41 @@ export async function POST(
     });
   } catch (error) {
     console.error('❌ Error en la transacción:', error);
+    
+    // Detectar errores específicos y devolver mensajes más descriptivos
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    
+    // Error al convertir conceptos a piezas
+    if (errorMessage.includes('convertir conceptos') || errorMessage.includes('piezas registradas')) {
+      return NextResponse.json(
+        { 
+          error: 'No se pueden procesar los productos del inventario',
+          mensaje: 'No se encontraron piezas en el inventario para los productos del presupuesto. Por favor, verifica que los productos del presupuesto existan en el inventario y tengan el nombre correcto.',
+          detalles: errorMessage
+        },
+        { status: 400 }
+      );
+    }
+    
+    // Error al procesar descuento de inventario
+    if (errorMessage.includes('Stock insuficiente') || errorMessage.includes('stock')) {
+      return NextResponse.json(
+        { 
+          error: 'Stock insuficiente',
+          mensaje: 'No hay suficiente stock en el inventario para completar la reparación.',
+          detalles: errorMessage
+        },
+        { status: 400 }
+      );
+    }
+    
+    // Error genérico
     return NextResponse.json(
-      { error: 'Error al completar la reparación' },
+      { 
+        error: 'Error al completar la reparación',
+        mensaje: errorMessage,
+        detalles: errorMessage
+      },
       { status: 500 }
     );
   }

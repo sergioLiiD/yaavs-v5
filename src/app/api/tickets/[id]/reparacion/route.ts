@@ -142,7 +142,23 @@ export async function POST(
             console.log('✅ Conceptos convertidos exitosamente');
           } catch (error) {
             console.error('❌ Error al convertir conceptos:', error);
-            // No lanzar error, solo logear para no fallar todo el proceso
+            // Verificar si ya existen piezas de reparación antes de fallar
+            const piezasExistentes = await tx.piezas_reparacion_productos.count({
+              where: { reparacion_id: reparacion.id }
+            });
+            
+            // Si no hay piezas existentes y falló la conversión, lanzar error
+            if (piezasExistentes === 0) {
+              const piezasAntiguas = await tx.piezas_reparacion.count({
+                where: { reparacion_id: reparacion.id }
+              });
+              
+              if (piezasAntiguas === 0) {
+                throw new Error(`Error al convertir conceptos del presupuesto a piezas: ${error instanceof Error ? error.message : 'Error desconocido'}. No se pueden procesar descuentos sin piezas registradas.`);
+              }
+            }
+            // Si ya hay piezas, solo registrar el error y continuar
+            console.log('⚠️  Error en conversión pero ya existen piezas registradas, continuando...');
           }
 
           // Procesar descuento de inventario
@@ -152,7 +168,25 @@ export async function POST(
             console.log('✅ Descuento de inventario procesado exitosamente');
           } catch (error) {
             console.error('❌ Error al procesar descuento de inventario:', error);
-            // No lanzar error, solo logear para no fallar todo el proceso
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+            
+            // Verificar si hay piezas antes de fallar
+            const piezasExistentes = await tx.piezas_reparacion_productos.count({
+              where: { reparacion_id: reparacion.id }
+            });
+            
+            if (piezasExistentes === 0) {
+              const piezasAntiguas = await tx.piezas_reparacion.count({
+                where: { reparacion_id: reparacion.id }
+              });
+              
+              if (piezasAntiguas === 0) {
+                throw new Error(`No se encontraron piezas registradas para procesar el descuento de inventario. Por favor, verifica que los productos del presupuesto existan en el inventario. Detalles: ${errorMessage}`);
+              }
+            }
+            
+            // Si hay piezas pero falló el descuento, lanzar error específico
+            throw new Error(`Error al procesar descuento de inventario: ${errorMessage}`);
           }
         });
         console.log('✅ Transacción completada exitosamente (Sistema Central)');
@@ -245,8 +279,41 @@ export async function POST(
     });
   } catch (error) {
     console.error('❌ Error al actualizar la reparación:', error);
+    
+    // Detectar errores específicos y devolver mensajes más descriptivos
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    
+    // Error al convertir conceptos a piezas
+    if (errorMessage.includes('convertir conceptos') || errorMessage.includes('piezas registradas') || errorMessage.includes('No se encontraron piezas')) {
+      return NextResponse.json(
+        { 
+          error: 'No se pueden procesar los productos del inventario',
+          mensaje: 'No se encontraron piezas en el inventario para los productos del presupuesto. Por favor, verifica que los productos del presupuesto existan en el inventario y tengan el nombre correcto.',
+          detalles: errorMessage
+        },
+        { status: 400 }
+      );
+    }
+    
+    // Error al procesar descuento de inventario
+    if (errorMessage.includes('Stock insuficiente') || errorMessage.includes('stock') || errorMessage.includes('descuento de inventario')) {
+      return NextResponse.json(
+        { 
+          error: 'Error al procesar inventario',
+          mensaje: errorMessage,
+          detalles: errorMessage
+        },
+        { status: 400 }
+      );
+    }
+    
+    // Error genérico
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { 
+        error: 'Error interno del servidor',
+        mensaje: errorMessage,
+        detalles: errorMessage
+      },
       { status: 500 }
     );
   }

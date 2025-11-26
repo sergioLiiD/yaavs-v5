@@ -238,7 +238,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
     } catch (error: any) {
       console.error('Error al guardar la reparación:', error);
       
-      // Manejar errores de stock insuficiente
+      // Manejar errores de stock insuficiente y otros errores
       if (error.response?.status === 400 && error.response?.data) {
         const errorData = error.response.data;
         
@@ -257,11 +257,36 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
             </div>,
             { duration: 8000 }
           );
+        } else if (errorData.mensaje) {
+          // Error con mensaje descriptivo del backend
+          toast.error(
+            <div className="space-y-2">
+              <p className="font-bold">⚠️ {errorData.error || 'Error'}</p>
+              <p className="text-sm">{errorData.mensaje}</p>
+              {errorData.detalles && (
+                <p className="text-xs text-gray-500 mt-1">{errorData.detalles}</p>
+              )}
+            </div>,
+            { duration: 8000 }
+          );
         } else if (errorData.error) {
           // Otros errores 400
           toast.error(errorData.error);
         } else {
           toast.error('Error al guardar la reparación');
+        }
+      } else if (error.response?.status === 500 && error.response?.data) {
+        const errorData = error.response.data;
+        if (errorData.mensaje) {
+          toast.error(
+            <div className="space-y-2">
+              <p className="font-bold">❌ {errorData.error || 'Error'}</p>
+              <p className="text-sm">{errorData.mensaje}</p>
+            </div>,
+            { duration: 8000 }
+          );
+        } else {
+          toast.error('Error al guardar la reparación. Por favor, intenta nuevamente.');
         }
       } else {
         // Otros errores

@@ -56,6 +56,21 @@ export const ReparacionModal: React.FC<ReparacionModalProps> = ({ open, onClose,
           return;
         }
         
+        // Manejar errores con mensaje descriptivo del backend
+        if (errorData.mensaje) {
+          toast.error(
+            <div className="space-y-2">
+              <p className="font-bold">⚠️ {errorData.error || 'Error'}</p>
+              <p className="text-sm">{errorData.mensaje}</p>
+              {errorData.detalles && (
+                <p className="text-xs text-gray-500 mt-1">{errorData.detalles}</p>
+              )}
+            </div>,
+            { duration: 8000 }
+          );
+          return;
+        }
+        
         throw new Error(errorData.error || 'Error al actualizar la reparación');
       }
 
