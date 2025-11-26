@@ -407,13 +407,13 @@ export default function PreciosVentaPage() {
                   ) : (
                     filteredItems.map((item) => (
                       <TableRow key={`${item.id}-${item.precio_id}`}>
-                        <TableCell>{item.nombre}</TableCell>
-                        <TableCell>{item.tipo}</TableCell>
-                        <TableCell>{item.marca}</TableCell>
-                        <TableCell>{item.modelo}</TableCell>
-                        <TableCell>${item.precio_compra?.toFixed(2) || '0.00'}</TableCell>
-                        <TableCell className="font-bold text-lg">${item.precio?.toFixed(2) || '0.00'}</TableCell>
-                        <TableCell>
+                        <TableCell className="font-bold dark:text-gray-100 text-gray-900">{item.nombre}</TableCell>
+                        <TableCell className="font-bold dark:text-gray-100 text-gray-900">{item.tipo}</TableCell>
+                        <TableCell className="font-bold dark:text-gray-100 text-gray-900">{item.marca}</TableCell>
+                        <TableCell className="font-bold dark:text-gray-100 text-gray-900">{item.modelo}</TableCell>
+                        <TableCell className="font-bold dark:text-gray-100 text-gray-900">${item.precio_compra?.toFixed(2) || '0.00'}</TableCell>
+                        <TableCell className="font-bold text-lg dark:text-gray-100 text-gray-900">${item.precio?.toFixed(2) || '0.00'}</TableCell>
+                        <TableCell className="font-bold">
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleEdit(item)}
