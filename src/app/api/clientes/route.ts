@@ -210,6 +210,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  let validatedData: z.infer<typeof clienteSchema> | null = null;
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
@@ -219,7 +221,7 @@ export async function POST(request: Request) {
     const data = await request.json();
     console.log('Datos recibidos en POST /api/clientes:', data);
     
-    const validatedData = clienteSchema.parse(data);
+    validatedData = clienteSchema.parse(data);
     console.log('Datos validados:', validatedData);
 
     const userRole = session.user.role;
@@ -243,12 +245,28 @@ export async function POST(request: Request) {
 
     // Verificar si el email ya existe
     const existingClient = await prisma.clientes.findUnique({
-      where: { email: validatedData.email }
+      where: { email: validatedData.email.toLowerCase().trim() },
+      select: {
+        id: true,
+        nombre: true,
+        apellido_paterno: true,
+        email: true
+      }
     });
 
     if (existingClient) {
+      const nombreCompleto = `${existingClient.nombre} ${existingClient.apellido_paterno}`.trim();
       return NextResponse.json(
-        { error: 'Ya existe un cliente con este email' },
+        { 
+          error: 'El correo electrónico ya está registrado',
+          message: `Ya existe un cliente registrado con el correo electrónico "${validatedData.email}". Cliente: ${nombreCompleto}`,
+          field: 'email',
+          existingClient: {
+            id: existingClient.id,
+            nombre: nombreCompleto,
+            email: existingClient.email
+          }
+        },
         { status: 400 }
       );
     }
@@ -257,6 +275,7 @@ export async function POST(request: Request) {
     const { password, ...clienteData } = validatedData;
     const dataToSave = cleanClienteData({
       ...clienteData,
+      email: validatedData.email.toLowerCase().trim(), // Normalizar email
       creadoPorId: session.user.id,
       tipoRegistro: userPointId ? 'PUNTO_RECOLECCION' : 'SISTEMA_CENTRAL',
       puntoRecoleccionId: puntoRecoleccionIdToUse
@@ -279,14 +298,36 @@ export async function POST(request: Request) {
     return NextResponse.json(cliente);
   } catch (error) {
     console.error('Error al crear cliente:', error);
+    
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Datos inválidos', details: error.errors },
         { status: 400 }
       );
     }
+    
+    // Manejar error de Prisma cuando el email ya existe (violación de constraint único)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        const target = error.meta?.target as string[] | undefined;
+        if (target && target.includes('email')) {
+          return NextResponse.json(
+            { 
+              error: 'El correo electrónico ya está registrado',
+              message: `El correo electrónico "${validatedData?.email || 'proporcionado'}" ya está en uso. Por favor, utiliza otro correo electrónico.`,
+              field: 'email'
+            },
+            { status: 400 }
+          );
+        }
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Error al crear el cliente' },
+      { 
+        error: 'Error al crear el cliente',
+        message: 'Ocurrió un error inesperado al intentar registrar el cliente. Por favor, intenta nuevamente.'
+      },
       { status: 500 }
     );
   }

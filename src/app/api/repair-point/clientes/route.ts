@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,12 +21,48 @@ export async function POST(request: Request) {
     if (session.user.role === 'ADMINISTRADOR') {
       const body = await request.json();
       
+      // Verificar si el email ya existe
+      const emailNormalizado = body.email?.toLowerCase().trim();
+      if (!emailNormalizado) {
+        return NextResponse.json(
+          { error: 'El correo electrónico es requerido' },
+          { status: 400 }
+        );
+      }
+      
+      const existingClient = await prisma.clientes.findUnique({
+        where: { email: emailNormalizado },
+        select: {
+          id: true,
+          nombre: true,
+          apellido_paterno: true,
+          email: true
+        }
+      });
+
+      if (existingClient) {
+        const nombreCompleto = `${existingClient.nombre} ${existingClient.apellido_paterno}`.trim();
+        return NextResponse.json(
+          { 
+            error: 'El correo electrónico ya está registrado',
+            message: `Ya existe un cliente registrado con el correo electrónico "${body.email}". Cliente: ${nombreCompleto}`,
+            field: 'email',
+            existingClient: {
+              id: existingClient.id,
+              nombre: nombreCompleto,
+              email: existingClient.email
+            }
+          },
+          { status: 400 }
+        );
+      }
+      
       const cliente = await prisma.clientes.create({
         data: {
           nombre: body.nombre,
           apellido_paterno: body.apellidoPaterno,
           apellido_materno: body.apellidoMaterno || null,
-          email: body.email,
+          email: emailNormalizado, // Usar email normalizado
           telefono_celular: body.telefono,
           telefono_contacto: body.telefonoContacto || null,
           punto_recoleccion_id: body.puntoRecoleccionId || null,
@@ -63,13 +100,49 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
+    // Verificar si el email ya existe
+    const emailNormalizado = body.email?.toLowerCase().trim();
+    if (!emailNormalizado) {
+      return NextResponse.json(
+        { error: 'El correo electrónico es requerido' },
+        { status: 400 }
+      );
+    }
+    
+    const existingClient = await prisma.clientes.findUnique({
+      where: { email: emailNormalizado },
+      select: {
+        id: true,
+        nombre: true,
+        apellido_paterno: true,
+        email: true
+      }
+    });
+
+    if (existingClient) {
+      const nombreCompleto = `${existingClient.nombre} ${existingClient.apellido_paterno}`.trim();
+      return NextResponse.json(
+        { 
+          error: 'El correo electrónico ya está registrado',
+          message: `Ya existe un cliente registrado con el correo electrónico "${body.email}". Cliente: ${nombreCompleto}`,
+          field: 'email',
+          existingClient: {
+            id: existingClient.id,
+            nombre: nombreCompleto,
+            email: existingClient.email
+          }
+        },
+        { status: 400 }
+      );
+    }
+
     // Crear el cliente
     const cliente = await prisma.clientes.create({
       data: {
         nombre: body.nombre,
         apellido_paterno: body.apellidoPaterno,
         apellido_materno: body.apellidoMaterno || null,
-        email: body.email,
+        email: emailNormalizado, // Usar email normalizado
         telefono_celular: body.telefono,
         telefono_contacto: body.telefonoContacto || null,
         punto_recoleccion_id: userPointId,
@@ -95,8 +168,29 @@ export async function POST(request: Request) {
     return NextResponse.json(clienteMapeado);
   } catch (error) {
     console.error('Error al crear cliente:', error);
+    
+    // Manejar error de Prisma cuando el email ya existe (violación de constraint único)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        const target = error.meta?.target as string[] | undefined;
+        if (target && target.includes('email')) {
+          return NextResponse.json(
+            { 
+              error: 'El correo electrónico ya está registrado',
+              message: 'El correo electrónico proporcionado ya está en uso. Por favor, utiliza otro correo electrónico.',
+              field: 'email'
+            },
+            { status: 400 }
+          );
+        }
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Error al crear cliente' },
+      { 
+        error: 'Error al crear cliente',
+        message: 'Ocurrió un error inesperado al intentar registrar el cliente. Por favor, intenta nuevamente.'
+      },
       { status: 500 }
     );
   }

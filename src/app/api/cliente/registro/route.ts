@@ -43,14 +43,31 @@ export async function POST(request: Request) {
     console.log('Datos validados correctamente');
 
     // Verificar si el email ya existe
+    const emailNormalizado = validatedData.email.toLowerCase().trim();
     const existingCliente = await prisma.clientes.findUnique({
-      where: { email: validatedData.email },
+      where: { email: emailNormalizado },
+      select: {
+        id: true,
+        nombre: true,
+        apellido_paterno: true,
+        email: true
+      }
     });
 
     if (existingCliente) {
-      console.log('Email ya registrado:', validatedData.email);
+      console.log('Email ya registrado:', emailNormalizado);
+      const nombreCompleto = `${existingCliente.nombre} ${existingCliente.apellido_paterno}`.trim();
       return NextResponse.json(
-        { error: 'El email ya está registrado' },
+        { 
+          error: 'El correo electrónico ya está registrado',
+          message: `Ya existe una cuenta registrada con el correo electrónico "${validatedData.email}". Cliente: ${nombreCompleto}. Si ya tienes una cuenta, intenta iniciar sesión.`,
+          field: 'email',
+          existingClient: {
+            id: existingCliente.id,
+            nombre: nombreCompleto,
+            email: existingCliente.email
+          }
+        },
         { status: 400 }
       );
     }
@@ -65,7 +82,7 @@ export async function POST(request: Request) {
         apellido_materno: validatedData.apellidoMaterno || null,
         telefono_celular: validatedData.telefonoCelular,
         telefono_contacto: validatedData.telefonoContacto || null,
-        email: validatedData.email,
+        email: emailNormalizado, // Usar email normalizado
         rfc: validatedData.rfc || null,
         calle: validatedData.calle || null,
         numero_exterior: validatedData.numeroExterior || null,
@@ -126,12 +143,19 @@ export async function POST(request: Request) {
       );
     }
     
-    // Si es un error de Prisma
+    // Si es un error de Prisma (violación de constraint único)
     if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'El email ya está registrado' },
-        { status: 400 }
-      );
+      const target = (error as any).meta?.target as string[] | undefined;
+      if (target && target.includes('email')) {
+        return NextResponse.json(
+          { 
+            error: 'El correo electrónico ya está registrado',
+            message: `El correo electrónico "${validatedData?.email || 'proporcionado'}" ya está en uso. Por favor, utiliza otro correo electrónico o intenta iniciar sesión si ya tienes una cuenta.`,
+            field: 'email'
+          },
+          { status: 400 }
+        );
+      }
     }
     
     return NextResponse.json(
