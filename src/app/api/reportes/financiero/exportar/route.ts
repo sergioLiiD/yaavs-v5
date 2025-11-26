@@ -25,7 +25,8 @@ export async function POST(request: NextRequest) {
       }),
       prisma.pagos.aggregate({
         where: {
-          created_at: { gte: fechaInicioDate, lte: fechaFinDate }
+          created_at: { gte: fechaInicioDate, lte: fechaFinDate },
+          estado: 'ACTIVO' // Solo contar pagos activos
         },
         _sum: { monto: true }
       }),
@@ -84,7 +85,8 @@ export async function POST(request: NextRequest) {
 
     const pagosDetalle = await prisma.pagos.findMany({
       where: {
-        created_at: { gte: fechaInicioDate, lte: fechaFinDate }
+        created_at: { gte: fechaInicioDate, lte: fechaFinDate },
+        estado: 'ACTIVO' // Solo incluir pagos activos
       },
       include: {
         tickets: {
@@ -168,7 +170,8 @@ export async function POST(request: NextRequest) {
     // ============================================
     const pagosCorteCaja = await prisma.pagos.findMany({
       where: {
-        created_at: { gte: fechaInicioDate, lte: fechaFinDate }
+        created_at: { gte: fechaInicioDate, lte: fechaFinDate },
+        estado: 'ACTIVO' // Solo incluir pagos activos
       },
       include: {
         tickets: {

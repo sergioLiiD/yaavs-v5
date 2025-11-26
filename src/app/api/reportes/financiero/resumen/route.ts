@@ -27,13 +27,14 @@ export async function POST(request: NextRequest) {
         }
       }),
 
-      // Pagos de servicios de reparación (pagos reales recibidos)
+      // Pagos de servicios de reparación (pagos reales recibidos - solo ACTIVOS)
       prisma.pagos.aggregate({
         where: {
           created_at: {
             gte: fechaInicioDate,
             lte: fechaFinDate
-          }
+          },
+          estado: 'ACTIVO' // Solo contar pagos activos, excluir cancelados/devueltos
         },
         _sum: {
           monto: true
@@ -91,7 +92,8 @@ export async function POST(request: NextRequest) {
           created_at: {
             gte: mesAnteriorInicio,
             lte: mesAnteriorFin
-          }
+          },
+          estado: 'ACTIVO' // Solo contar pagos activos
         },
         _sum: {
           monto: true

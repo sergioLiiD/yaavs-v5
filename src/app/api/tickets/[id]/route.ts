@@ -266,9 +266,22 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       console.log('No hay sesión de usuario');
-      return new NextResponse('No autorizado', { status: 401 });
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
     }
     console.log('Usuario autenticado:', session.user);
+
+    // VALIDACIÓN 1: Verificar que el usuario sea ADMINISTRADOR
+    const userRole = session.user.role;
+    if (userRole !== 'ADMINISTRADOR') {
+      console.log('Usuario no es administrador:', userRole);
+      return NextResponse.json(
+        { error: 'Solo los administradores pueden cancelar tickets' },
+        { status: 403 }
+      );
+    }
 
     // Obtener el cuerpo de la solicitud
     const body = await request.json();
@@ -276,23 +289,43 @@ export async function DELETE(
     
     const { motivoCancelacion } = body;
 
-    if (!motivoCancelacion) {
+    if (!motivoCancelacion || motivoCancelacion.trim() === '') {
       console.log('No se proporcionó motivo de cancelación');
-      return new NextResponse('Se requiere un motivo de cancelación', { status: 400 });
+      return NextResponse.json(
+        { error: 'Se requiere un motivo de cancelación' },
+        { status: 400 }
+      );
     }
 
-    // Verificar si el ticket existe
+    // Verificar si el ticket existe y obtener sus pagos
     const ticket = await prisma.tickets.findUnique({
       where: { id: parseInt(params.id) },
       include: {
         dispositivos: true,
-        reparaciones: true
+        reparaciones: true,
+        pagos: {
+          where: {
+            estado: 'ACTIVO' // Solo procesar pagos activos
+          }
+        }
       }
     });
 
     if (!ticket) {
       console.log('Ticket no encontrado');
-      return new NextResponse('Ticket no encontrado', { status: 404 });
+      return NextResponse.json(
+        { error: 'Ticket no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Verificar si el ticket ya está cancelado
+    if (ticket.cancelado) {
+      console.log('Ticket ya está cancelado');
+      return NextResponse.json(
+        { error: 'El ticket ya está cancelado' },
+        { status: 400 }
+      );
     }
 
     // Obtener el estado de cancelado
@@ -302,37 +335,105 @@ export async function DELETE(
 
     if (!estadoCancelado) {
       console.log('No se encontró el estado de cancelado');
-      return new NextResponse('No se encontró el estado de cancelado', { status: 500 });
+      return NextResponse.json(
+        { error: 'No se encontró el estado de cancelado en la base de datos' },
+        { status: 500 }
+      );
     }
 
     console.log('Estado de cancelado encontrado:', estadoCancelado);
+    console.log('Pagos activos encontrados:', ticket.pagos.length);
 
-    // Actualizar el ticket como cancelado
-    const ticketActualizado = await prisma.tickets.update({
-      where: { id: parseInt(params.id) },
-      data: {
-        cancelado: true,
-        motivo_cancelacion: motivoCancelacion,
-        estatus_reparacion_id: estadoCancelado.id,
-        updated_at: new Date()
-      },
-      include: {
-        clientes: true,
-        tipos_servicio: true,
-        modelos: {
-          include: {
-            marcas: true
-          }
+    // Procesar todo en una transacción
+    const resultado = await prisma.$transaction(async (tx) => {
+      // PASO 1: Actualizar el ticket como cancelado
+      const ticketActualizado = await tx.tickets.update({
+        where: { id: parseInt(params.id) },
+        data: {
+          cancelado: true,
+          motivo_cancelacion: motivoCancelacion.trim(),
+          cancelado_por_id: Number(session.user.id),
+          estatus_reparacion_id: estadoCancelado.id,
+          fecha_cancelacion: new Date(),
+          updated_at: new Date()
         },
-        estatus_reparacion: true,
-        usuarios_tickets_tecnico_asignado_idTousuarios: true
+        include: {
+          clientes: true,
+          tipos_servicio: true,
+          modelos: {
+            include: {
+              marcas: true
+            }
+          },
+          estatus_reparacion: true,
+          usuarios_tickets_tecnico_asignado_idTousuarios: true,
+          usuarios_tickets_cancelado_por_idTousuarios: true
+        }
+      });
+
+      console.log('Ticket actualizado como cancelado');
+
+      // PASO 2: Marcar pagos como CANCELADO y crear registros de devolución
+      const devolucionesCreadas = [];
+      
+      for (const pago of ticket.pagos) {
+        // Marcar pago como cancelado
+        await tx.pagos.update({
+          where: { id: pago.id },
+          data: {
+            estado: 'CANCELADO',
+            updated_at: new Date()
+          }
+        });
+
+        console.log(`Pago ${pago.id} marcado como CANCELADO`);
+
+        // Crear registro de devolución pendiente
+        const devolucion = await tx.devoluciones.create({
+          data: {
+            pago_id: pago.id,
+            ticket_id: ticket.id,
+            monto: pago.monto,
+            motivo: `Cancelación de ticket: ${motivoCancelacion.trim()}`,
+            estado: 'PENDIENTE',
+            usuario_id: Number(session.user.id),
+            observaciones: `Devolución pendiente por cancelación de ticket #${ticket.numero_ticket}`,
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
+
+        devolucionesCreadas.push(devolucion);
+        console.log(`Devolución creada para pago ${pago.id}: ${devolucion.id}`);
       }
+
+      return {
+        ticket: ticketActualizado,
+        devoluciones: devolucionesCreadas,
+        totalDevoluciones: devolucionesCreadas.length,
+        montoTotalDevolucion: devolucionesCreadas.reduce((sum, d) => sum + Number(d.monto), 0)
+      };
     });
 
-    console.log('Ticket actualizado:', ticketActualizado);
     console.log('=== FIN DE CANCELACIÓN DE TICKET ===');
+    console.log('Resultado:', {
+      ticketId: resultado.ticket.id,
+      devolucionesCreadas: resultado.totalDevoluciones,
+      montoTotal: resultado.montoTotalDevolucion
+    });
 
-    return NextResponse.json(ticketActualizado);
+    return NextResponse.json({
+      success: true,
+      ticket: resultado.ticket,
+      devoluciones: {
+        total: resultado.totalDevoluciones,
+        montoTotal: resultado.montoTotalDevolucion,
+        registros: resultado.devoluciones
+      },
+      mensaje: resultado.totalDevoluciones > 0
+        ? `Ticket cancelado exitosamente. Se crearon ${resultado.totalDevoluciones} registro(s) de devolución pendiente por un total de $${resultado.montoTotalDevolucion.toFixed(2)}.`
+        : 'Ticket cancelado exitosamente. No había pagos activos para devolver.'
+    });
   } catch (error) {
     console.error('=== ERROR EN CANCELACIÓN DE TICKET ===');
     console.error('Error completo:', error);
@@ -343,14 +444,20 @@ export async function DELETE(
         message: error.message,
         meta: error.meta
       });
-      return new NextResponse(
-        `Error de base de datos: ${error.message}`,
+      return NextResponse.json(
+        { 
+          error: 'Error de base de datos',
+          detalles: error.message
+        },
         { status: 500 }
       );
     }
     
-    return new NextResponse(
-      `Error interno del servidor: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+    return NextResponse.json(
+      { 
+        error: 'Error interno del servidor',
+        detalles: error instanceof Error ? error.message : 'Error desconocido'
+      },
       { status: 500 }
     );
   }

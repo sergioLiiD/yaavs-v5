@@ -11,13 +11,14 @@ export async function POST(request: NextRequest) {
     const fechaFinDate = new Date(fechaFin);
     fechaFinDate.setHours(23, 59, 59, 999);
 
-    // Obtener todos los pagos del período (tanto de tickets como de ventas)
+    // Obtener todos los pagos del período (tanto de tickets como de ventas) - solo ACTIVOS
     const pagos = await prisma.pagos.findMany({
       where: {
         created_at: {
           gte: fechaInicioDate,
           lte: fechaFinDate
-        }
+        },
+        estado: 'ACTIVO' // Solo incluir pagos activos, excluir cancelados/devueltos
       },
       include: {
         tickets: {

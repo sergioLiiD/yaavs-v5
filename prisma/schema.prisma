@@ -223,10 +223,12 @@ model pagos {
   monto      Float
   metodo     MetodoPago
   referencia String?
+  estado     String     @default("ACTIVO") // ACTIVO, CANCELADO, DEVUELTO
   created_at DateTime   @default(now())
   updated_at DateTime
   tickets    tickets?   @relation(fields: [ticket_id], references: [id])
   ventas     ventas?    @relation(fields: [venta_id], references: [id])
+  devoluciones devoluciones[]
 }
 
 model pasos_reparacion_frecuente {
@@ -522,6 +524,7 @@ model tickets {
   entregado                                      Boolean             @default(false)
   cancelado                                      Boolean             @default(false)
   motivo_cancelacion                             String?
+  cancelado_por_id                               Int?
   fecha_inicio_diagnostico                       DateTime?
   fecha_fin_diagnostico                          DateTime?
   fecha_inicio_reparacion                        DateTime?
@@ -552,7 +555,9 @@ model tickets {
   modelos                                        modelos             @relation(fields: [modelo_id], references: [id])
   puntos_recoleccion                             puntos_recoleccion? @relation(fields: [punto_recoleccion_id], references: [id])
   usuarios_tickets_tecnico_asignado_idTousuarios usuarios?           @relation("tickets_tecnico_asignado_idTousuarios", fields: [tecnico_asignado_id], references: [id])
+  usuarios_tickets_cancelado_por_idTousuarios    usuarios?           @relation("tickets_cancelado_por_idTousuarios", fields: [cancelado_por_id], references: [id])
   tipos_servicio                                 tipos_servicio      @relation(fields: [tipo_servicio_id], references: [id])
+  devoluciones                                   devoluciones[]
 }
 
 model tipos_servicio {
@@ -582,11 +587,13 @@ model usuarios {
   salidas_almacen                               salidas_almacen[]
   tickets_tickets_creador_idTousuarios          tickets[]                     @relation("tickets_creador_idTousuarios")
   tickets_tickets_tecnico_asignado_idTousuarios tickets[]                     @relation("tickets_tecnico_asignado_idTousuarios")
+  tickets_tickets_cancelado_por_idTousuarios   tickets[]                     @relation("tickets_cancelado_por_idTousuarios")
   usuarios_puntos_recoleccion                   usuarios_puntos_recoleccion[]
   usuarios_roles                                usuarios_roles[]
   ventas                                        ventas[]
   presupuestos_independientes                   presupuestos_independientes[]
   usos_cupon                                    usos_cupon[]
+  devoluciones                                  devoluciones[]
 }
 
 model presupuestos_independientes {
@@ -699,6 +706,23 @@ model usos_cupon {
   tickets    tickets?  @relation(fields: [ticket_id], references: [id])
   ventas     ventas?   @relation(fields: [venta_id], references: [id])
   usuarios   usuarios  @relation(fields: [usuario_id], references: [id])
+}
+
+model devoluciones {
+  id                Int       @id @default(autoincrement())
+  pago_id           Int
+  ticket_id         Int
+  monto             Float
+  motivo            String?
+  estado            String    @default("PENDIENTE") // PENDIENTE, COMPLETADA, CANCELADA
+  fecha_devolucion  DateTime?
+  usuario_id        Int
+  observaciones     String?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  pagos             pagos     @relation(fields: [pago_id], references: [id])
+  tickets           tickets   @relation(fields: [ticket_id], references: [id])
+  usuarios          usuarios  @relation(fields: [usuario_id], references: [id])
 }
 
 enum MetodoPago {

@@ -16,8 +16,10 @@ import { formatDate } from "@/lib/utils";
 import { TicketDetailsModal } from "@/components/tickets/TicketDetailsModal";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
 import { TicketOriginBadge } from "@/components/tickets/TicketOriginBadge";
+import { CancelTicketModal } from "@/components/tickets/CancelTicketModal";
 import { Pencil, UserPlus, Wrench, Trash2, Search, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 interface Ticket {
   id: number;
@@ -154,9 +156,15 @@ export function TicketsTable({
   onSearch, 
   currentSearch = '' 
 }: TicketsTableProps) {
+  const { data: session } = useSession();
   const [searchTerm, setSearchTerm] = useState(currentSearch);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [cancelTicketId, setCancelTicketId] = useState<number | null>(null);
+  const [cancelTicketNumber, setCancelTicketNumber] = useState<string>('');
   const router = useRouter();
+  
+  // Verificar si el usuario es administrador
+  const isAdmin = session?.user?.role === 'ADMINISTRADOR';
 
   const handleViewDetails = (ticket: Ticket) => {
     setSelectedTicket(ticket);
@@ -166,32 +174,25 @@ export function TicketsTable({
     router.push(`/dashboard/tickets/${ticketId}/edit`);
   };
 
-  const handleDelete = async (ticketId: number) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este ticket?')) {
+  const handleCancel = (ticket: Ticket) => {
+    if (!isAdmin) {
+      toast.error('Solo los administradores pueden cancelar tickets');
       return;
     }
-
-    try {
-      const response = await fetch(`/api/tickets/${ticketId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          motivoCancelacion: 'Eliminado por el usuario'
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar el ticket');
-      }
-
-      toast.success('Ticket eliminado exitosamente');
-      router.refresh();
-    } catch (error) {
-      console.error('Error al eliminar el ticket:', error);
-      toast.error('Error al eliminar el ticket');
+    
+    if (ticket.cancelado) {
+      toast.error('Este ticket ya está cancelado');
+      return;
     }
+    
+    setCancelTicketId(ticket.id);
+    setCancelTicketNumber(ticket.numero_ticket || ticket.numeroTicket || '');
+  };
+
+  const handleCancelSuccess = () => {
+    setCancelTicketId(null);
+    setCancelTicketNumber('');
+    router.refresh();
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -428,15 +429,17 @@ export function TicketsTable({
                     >
                       <Wrench className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(ticket.id)}
-                      className="text-red-600 hover:text-red-700"
-                      title="Eliminar ticket"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {isAdmin && !ticket.cancelado && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCancel(ticket)}
+                        className="text-red-600 hover:text-red-700"
+                        title="Cancelar ticket"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -507,6 +510,19 @@ export function TicketsTable({
         <TicketDetailsModal
           ticket={selectedTicket as any}
           onClose={() => setSelectedTicket(null)}
+        />
+      )}
+
+      {cancelTicketId && (
+        <CancelTicketModal
+          isOpen={!!cancelTicketId}
+          onClose={() => {
+            setCancelTicketId(null);
+            setCancelTicketNumber('');
+          }}
+          ticketId={cancelTicketId}
+          ticketNumber={cancelTicketNumber}
+          onSuccess={handleCancelSuccess}
         />
       )}
     </div>

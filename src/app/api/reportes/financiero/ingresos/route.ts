@@ -43,13 +43,14 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Obtener pagos de servicios de reparación (pagos reales recibidos)
+    // Obtener pagos de servicios de reparación (pagos reales recibidos - solo ACTIVOS)
     const pagosReparacion = await prisma.pagos.findMany({
       where: {
         created_at: {
           gte: fechaInicioDate,
           lte: fechaFinDate
-        }
+        },
+        estado: 'ACTIVO' // Solo incluir pagos activos, excluir cancelados/devueltos
       },
       include: {
         tickets: {
