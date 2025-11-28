@@ -178,7 +178,7 @@ export async function POST(
           // Procesar descuento de inventario
           console.log('🔄 Iniciando procesamiento de descuento de inventario para ticket:', ticketId);
           try {
-            await procesarDescuentoInventario(ticketId, Number(session.user.id));
+            await procesarDescuentoInventario(ticketId, Number(session.user.id), tx, reparacion.id);
             console.log('✅ Descuento de inventario procesado exitosamente');
           } catch (error) {
             console.error('❌ Error al procesar descuento de inventario:', error);

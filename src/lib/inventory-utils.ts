@@ -319,14 +319,28 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
 /**
  * Procesa el descuento de inventario para una reparación completada
  */
-export async function procesarDescuentoInventario(ticketId: number, usuarioId: number): Promise<InventoryTransaction> {
+export async function procesarDescuentoInventario(
+  ticketId: number, 
+  usuarioId: number, 
+  prismaClient?: PrismaClient,
+  reparacionId?: number
+): Promise<InventoryTransaction> {
+  const db = prismaClient || prisma;
+  
   try {
     console.log('🔍 Procesando descuento de inventario para ticket:', ticketId);
     
-    // Obtener la reparación del ticket
-    const reparacion = await prisma.reparaciones.findFirst({
-      where: { ticket_id: ticketId }
-    });
+    // Obtener la reparación del ticket (usar reparacionId si se proporciona)
+    let reparacion;
+    if (reparacionId) {
+      reparacion = await db.reparaciones.findUnique({
+        where: { id: reparacionId }
+      });
+    } else {
+      reparacion = await db.reparaciones.findFirst({
+        where: { ticket_id: ticketId }
+      });
+    }
 
     if (!reparacion) {
       throw new Error('No se encontró la reparación para este ticket');
@@ -334,72 +348,72 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
     
     console.log('✅ Reparación encontrada:', reparacion.id);
 
-    // Obtener las piezas de la reparación
-    // Primero intentar en la tabla nueva
-    let piezasReparacion = await prisma.piezas_reparacion_productos.findMany({
-      where: { reparacion_id: reparacion.id },
-      include: {
-        productos: true
-      }
-    });
-
-    // Si no hay datos en la tabla nueva, buscar en la tabla antigua
-    if (piezasReparacion.length === 0) {
-      console.log('Procesando descuento: No se encontraron piezas en tabla nueva, buscando en tabla antigua...');
-      const piezasAntiguas = await prisma.piezas_reparacion.findMany({
+    // Si ya estamos dentro de una transacción (prismaClient proporcionado), usar ese cliente directamente
+    // Si no, crear una nueva transacción
+    const procesarPiezas = async (tx: PrismaClient) => {
+      // Obtener las piezas de la reparación dentro de la transacción
+      // Primero intentar en la tabla nueva
+      let piezasReparacion = await tx.piezas_reparacion_productos.findMany({
         where: { reparacion_id: reparacion.id },
         include: {
-          piezas: true
+          productos: true
         }
       });
 
-      console.log('Piezas encontradas en tabla antigua:', piezasAntiguas.length);
+      // Si no hay datos en la tabla nueva, buscar en la tabla antigua
+      if (piezasReparacion.length === 0) {
+        console.log('Procesando descuento: No se encontraron piezas en tabla nueva, buscando en tabla antigua...');
+        const piezasAntiguas = await tx.piezas_reparacion.findMany({
+          where: { reparacion_id: reparacion.id },
+          include: {
+            piezas: true
+          }
+        });
 
-      // Convertir datos de la tabla antigua al formato nuevo
-      piezasReparacion = piezasAntiguas.map(pa => ({
-        id: pa.id,
-        reparacion_id: pa.reparacion_id,
-        producto_id: pa.pieza_id,
-        cantidad: pa.cantidad,
-        precio: pa.precio,
-        total: pa.total,
-        created_at: pa.created_at,
-        updated_at: pa.updated_at,
-        productos: {
-          id: pa.piezas.id,
-          created_at: pa.piezas.created_at,
-          updated_at: pa.piezas.updated_at,
-          nombre: pa.piezas.nombre,
-          marca_id: pa.piezas.marca_id,
-          modelo_id: pa.piezas.modelo_id,
-          stock: pa.piezas.stock,
-          sku: pa.piezas.nombre, // Usar nombre como SKU para piezas antiguas
-          descripcion: null,
-          notas_internas: null,
-          garantia_valor: null,
-          garantia_unidad: null,
-          categoria_id: null,
-          proveedor_id: null,
-          precio_promedio: pa.piezas.precio,
-          stock_maximo: null,
-          stock_minimo: null,
-          tipo_servicio_id: null,
-          tipo: 'PRODUCTO' as const
-        }
-      }));
-    }
-    
-    console.log('Total de piezas a procesar:', piezasReparacion.length);
+        console.log('Piezas encontradas en tabla antigua:', piezasAntiguas.length);
 
-    const salidas: Array<{
-      productoId: number;
-      cantidad: number;
-      razon: string;
-      referencia: string;
-    }> = [];
+        // Convertir datos de la tabla antigua al formato nuevo
+        piezasReparacion = piezasAntiguas.map(pa => ({
+          id: pa.id,
+          reparacion_id: pa.reparacion_id,
+          producto_id: pa.pieza_id,
+          cantidad: pa.cantidad,
+          precio: pa.precio,
+          total: pa.total,
+          created_at: pa.created_at,
+          updated_at: pa.updated_at,
+          productos: {
+            id: pa.piezas.id,
+            created_at: pa.piezas.created_at,
+            updated_at: pa.piezas.updated_at,
+            nombre: pa.piezas.nombre,
+            marca_id: pa.piezas.marca_id,
+            modelo_id: pa.piezas.modelo_id,
+            stock: pa.piezas.stock,
+            sku: pa.piezas.nombre, // Usar nombre como SKU para piezas antiguas
+            descripcion: null,
+            notas_internas: null,
+            garantia_valor: null,
+            garantia_unidad: null,
+            categoria_id: null,
+            proveedor_id: null,
+            precio_promedio: pa.piezas.precio,
+            stock_maximo: null,
+            stock_minimo: null,
+            tipo_servicio_id: null,
+            tipo: 'PRODUCTO' as const
+          }
+        }));
+      }
+      
+      console.log('Total de piezas a procesar:', piezasReparacion.length);
 
-    // Procesar cada pieza en una transacción
-    await prisma.$transaction(async (tx) => {
+      const salidas: Array<{
+        productoId: number;
+        cantidad: number;
+        razon: string;
+        referencia: string;
+      }> = [];
       for (const piezaRep of piezasReparacion) {
         const producto = piezaRep.productos;
         
@@ -489,7 +503,28 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
         
         console.log(`✅ Pieza procesada exitosamente: ${producto.nombre}`);
       }
-    });
+      
+      return salidas;
+    };
+
+    // Si ya estamos dentro de una transacción, usar el cliente directamente
+    // Si no, crear una nueva transacción
+    let salidas: Array<{
+      productoId: number;
+      cantidad: number;
+      razon: string;
+      referencia: string;
+    }>;
+    
+    if (prismaClient) {
+      // Ya estamos dentro de una transacción, usar el cliente directamente
+      salidas = await procesarPiezas(db);
+    } else {
+      // Crear una nueva transacción
+      salidas = await prisma.$transaction(async (tx) => {
+        return await procesarPiezas(tx);
+      });
+    }
 
     return {
       ticketId,

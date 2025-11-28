@@ -142,7 +142,7 @@ export async function POST(
 
       // Procesar descuento de inventario
       console.log('🔄 Procesando descuento de inventario...');
-      const descuentoInventario = await procesarDescuentoInventario(Number(id), Number(session.user.id));
+      const descuentoInventario = await procesarDescuentoInventario(Number(id), Number(session.user.id), tx, reparacion.id);
       console.log('✅ Descuento de inventario procesado:', descuentoInventario);
 
       return {
