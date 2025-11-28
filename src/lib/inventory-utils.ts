@@ -87,7 +87,7 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
           continue;
         }
 
-        // Buscar producto por nombre
+        // Buscar producto por nombre (usar la misma lógica que convertirConceptosAPiezas)
         let producto = await prisma.productos.findFirst({
           where: {
             nombre: {
@@ -117,6 +117,32 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
               modelos: true
             }
           });
+        }
+        
+        // Si aún no se encuentra, intentar búsqueda más flexible (igual que convertirConceptosAPiezas)
+        if (!producto) {
+          const palabrasClave = concepto.descripcion.trim().split(' ').filter(p => p.length > 2);
+          
+          for (const palabra of palabrasClave) {
+            producto = await prisma.productos.findFirst({
+              where: {
+                nombre: {
+                  contains: palabra,
+                  mode: 'insensitive'
+                },
+                tipo: 'PRODUCTO'
+              },
+              include: {
+                marcas: true,
+                modelos: true
+              }
+            });
+            
+            if (producto) {
+              console.log(`✅ [validarStockReparacion] Producto encontrado usando palabra clave "${palabra}"`);
+              break;
+            }
+          }
         }
 
         if (producto) {
