@@ -37,12 +37,123 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
     console.log('🔍 [validarStockReparacion] Reparación encontrada:', reparacion?.id || 'ninguna');
 
     if (!reparacion) {
-      // Si no hay reparación, no hay piezas que validar, por lo que retornamos éxito
-      console.log('ℹ️  [validarStockReparacion] No se encontró la reparación para este ticket, pero esto es normal para reparaciones nuevas');
+      // Si no hay reparación, validar stock basándose en los conceptos del presupuesto
+      console.log('ℹ️  [validarStockReparacion] No se encontró la reparación, validando stock basado en conceptos del presupuesto...');
+      
+      // Obtener conceptos del presupuesto
+      const conceptos = await prisma.conceptos_presupuesto.findMany({
+        where: {
+          presupuestos: {
+            ticket_id: ticketId
+          }
+        },
+        include: {
+          presupuestos: true
+        }
+      });
+
+      console.log('🔍 [validarStockReparacion] Conceptos encontrados:', conceptos.length);
+
+      if (conceptos.length === 0) {
+        // Si no hay conceptos, no hay stock que validar
+        console.log('ℹ️  [validarStockReparacion] No hay conceptos en el presupuesto');
+        return {
+          success: true,
+          errors: [],
+          missingStock: []
+        };
+      }
+
+      // Validar stock para cada concepto
+      const errors: string[] = [];
+      const missingStock: Array<{
+        piezaId: number;
+        piezaNombre: string;
+        cantidadNecesaria: number;
+        stockDisponible: number;
+      }> = [];
+
+      // Lista de conceptos que no requieren validación de stock (servicios)
+      const conceptosSinStock = ['Mano de Obra', 'Diagnostico', 'Diagnóstico', 'Servicio'];
+
+      for (const concepto of conceptos) {
+        // Verificar si es un servicio que no requiere stock
+        const esServicio = conceptosSinStock.some(conceptoServicio => 
+          concepto.descripcion.toLowerCase().includes(conceptoServicio.toLowerCase())
+        );
+        
+        if (esServicio) {
+          console.log(`⏭️  [validarStockReparacion] Saltando servicio: "${concepto.descripcion}"`);
+          continue;
+        }
+
+        // Buscar producto por nombre
+        let producto = await prisma.productos.findFirst({
+          where: {
+            nombre: {
+              equals: concepto.descripcion.trim(),
+              mode: 'insensitive'
+            },
+            tipo: 'PRODUCTO'
+          },
+          include: {
+            marcas: true,
+            modelos: true
+          }
+        });
+        
+        // Si no se encuentra con búsqueda exacta, intentar búsqueda parcial
+        if (!producto) {
+          producto = await prisma.productos.findFirst({
+            where: {
+              nombre: {
+                contains: concepto.descripcion.trim(),
+                mode: 'insensitive'
+              },
+              tipo: 'PRODUCTO'
+            },
+            include: {
+              marcas: true,
+              modelos: true
+            }
+          });
+        }
+
+        if (producto) {
+          console.log(`🔍 [validarStockReparacion] Verificando concepto: ${producto.nombre} (cantidad: ${concepto.cantidad}, stock: ${producto.stock})`);
+          
+          if (producto.stock < concepto.cantidad) {
+            const marcaNombre = producto.marcas?.nombre || 'N/A';
+            const modeloNombre = producto.modelos?.nombre || 'N/A';
+            const productoNombre = `${producto.nombre} (${marcaNombre} ${modeloNombre})`;
+            
+            console.log(`❌ [validarStockReparacion] Stock insuficiente para ${productoNombre}: necesitas ${concepto.cantidad}, tienes ${producto.stock}`);
+            
+            missingStock.push({
+              piezaId: producto.id,
+              piezaNombre: productoNombre,
+              cantidadNecesaria: concepto.cantidad,
+              stockDisponible: producto.stock
+            });
+            
+            errors.push(
+              `Stock insuficiente para ${productoNombre}: necesitas ${concepto.cantidad}, tienes ${producto.stock}`
+            );
+          } else {
+            console.log(`✅ [validarStockReparacion] Stock suficiente para ${producto.nombre}`);
+          }
+        } else {
+          console.log(`⚠️  [validarStockReparacion] No se encontró producto para concepto: "${concepto.descripcion}" - se asume que es un servicio o producto no inventariable`);
+          // No agregar error si no se encuentra el producto, puede ser un servicio o producto no inventariable
+        }
+      }
+
+      console.log(`📊 [validarStockReparacion] Validación de conceptos completada. Éxito: ${errors.length === 0}, Errores: ${errors.length}`);
+      
       return {
-        success: true,
-        errors: [],
-        missingStock: []
+        success: errors.length === 0,
+        errors,
+        missingStock
       };
     }
 
