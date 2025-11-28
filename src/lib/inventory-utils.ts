@@ -120,6 +120,12 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
         }
 
         if (producto) {
+          // Verificar que el producto sea de tipo PRODUCTO, no SERVICIO
+          if (producto.tipo === 'SERVICIO') {
+            console.log(`⏭️  [validarStockReparacion] Saltando servicio encontrado en productos: "${producto.nombre}" (tipo: SERVICIO)`);
+            continue;
+          }
+          
           console.log(`🔍 [validarStockReparacion] Verificando concepto: ${producto.nombre} (cantidad: ${concepto.cantidad}, stock: ${producto.stock})`);
           
           if (producto.stock < concepto.cantidad) {
@@ -249,18 +255,24 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
     for (const piezaRep of piezasReparacion) {
       const producto = piezaRep.productos;
       
-      console.log(`🔍 [validarStockReparacion] Verificando pieza: ${producto.nombre} (cantidad: ${piezaRep.cantidad}, stock: ${producto.stock})`);
+      console.log(`🔍 [validarStockReparacion] Verificando pieza: ${producto.nombre} (cantidad: ${piezaRep.cantidad}, stock: ${producto.stock}, tipo: ${producto.tipo})`);
+      
+      // Verificar primero si es un servicio por tipo
+      if (producto.tipo === 'SERVICIO') {
+        console.log(`⏭️  [validarStockReparacion] Saltando servicio por tipo: ${producto.nombre} (tipo: SERVICIO)`);
+        continue;
+      }
       
       // Lista de conceptos que no requieren validación de stock (servicios)
       const conceptosSinStock = ['Mano de Obra', 'Diagnostico', 'Diagnóstico', 'Servicio'];
       
-      // Verificar si es un servicio que no requiere stock
+      // Verificar si es un servicio que no requiere stock (por nombre)
       const esServicio = conceptosSinStock.some(concepto => 
         producto.nombre?.includes(concepto)
       );
       
       if (esServicio) {
-        console.log(`⏭️  [validarStockReparacion] Saltando servicio: ${producto.nombre}`);
+        console.log(`⏭️  [validarStockReparacion] Saltando servicio por nombre: ${producto.nombre}`);
         continue;
       }
       
@@ -391,18 +403,24 @@ export async function procesarDescuentoInventario(ticketId: number, usuarioId: n
       for (const piezaRep of piezasReparacion) {
         const producto = piezaRep.productos;
         
-        console.log(`🔍 Procesando pieza: ${producto.nombre} (cantidad: ${piezaRep.cantidad})`);
+        console.log(`🔍 Procesando pieza: ${producto.nombre} (cantidad: ${piezaRep.cantidad}, tipo: ${producto.tipo})`);
+        
+        // Verificar primero si es un servicio por tipo
+        if (producto.tipo === 'SERVICIO') {
+          console.log(`⏭️  Saltando servicio por tipo: ${producto.nombre} (tipo: SERVICIO)`);
+          continue;
+        }
         
         // Lista de conceptos que no requieren descuento de stock (servicios)
         const conceptosSinStock = ['Mano de Obra', 'Diagnostico', 'Diagnóstico', 'Servicio'];
         
-        // Verificar si es un servicio que no requiere stock
+        // Verificar si es un servicio que no requiere stock (por nombre)
         const esServicio = conceptosSinStock.some(concepto => 
           producto.nombre?.toLowerCase().includes(concepto.toLowerCase())
         );
         
         if (esServicio) {
-          console.log(`⏭️  Saltando servicio: ${producto.nombre}`);
+          console.log(`⏭️  Saltando servicio por nombre: ${producto.nombre}`);
           continue;
         }
         
@@ -608,6 +626,12 @@ export async function convertirConceptosAPiezas(ticketId: number, reparacionId: 
       }
 
       if (producto) {
+        // Verificar que el producto sea de tipo PRODUCTO, no SERVICIO
+        if (producto.tipo === 'SERVICIO') {
+          console.log(`⏭️  Saltando servicio encontrado: "${producto.nombre}" (tipo: SERVICIO)`);
+          continue;
+        }
+        
         console.log(`✅ Producto encontrado para "${concepto.descripcion}": ${producto.nombre} (ID: ${producto.id})`);
         
         // Verificar si ya existe una pieza para este producto en esta reparación
