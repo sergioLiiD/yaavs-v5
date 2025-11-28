@@ -132,7 +132,7 @@ export async function POST(
       // Convertir conceptos del presupuesto a piezas de reparación
       console.log('🔄 Convirtiendo conceptos del presupuesto...');
       try {
-        await convertirConceptosAPiezas(Number(id), reparacion.id);
+        await convertirConceptosAPiezas(Number(id), reparacion.id, tx);
         console.log('✅ Conceptos convertidos exitosamente');
       } catch (error) {
         console.error('❌ Error al convertir conceptos:', error);

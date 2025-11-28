@@ -542,12 +542,18 @@ export async function obtenerResumenDescuentos(ticketId: number) {
 /**
  * Convierte conceptos del presupuesto en piezas de reparación
  */
-export async function convertirConceptosAPiezas(ticketId: number, reparacionId: number) {
+export async function convertirConceptosAPiezas(
+  ticketId: number, 
+  reparacionId: number, 
+  prismaClient?: PrismaClient
+) {
+  const db = prismaClient || prisma;
+  
   try {
     console.log('🔄 Convirtiendo conceptos del presupuesto a piezas de reparación...');
     
     // Obtener conceptos del presupuesto
-    const conceptos = await prisma.conceptos_presupuesto.findMany({
+    const conceptos = await db.conceptos_presupuesto.findMany({
       where: {
         presupuestos: {
           ticket_id: ticketId
@@ -578,7 +584,7 @@ export async function convertirConceptosAPiezas(ticketId: number, reparacionId: 
       }
       
       // Buscar producto por nombre (más preciso)
-      let producto = await prisma.productos.findFirst({
+      let producto = await db.productos.findFirst({
         where: {
           nombre: {
             equals: concepto.descripcion.trim(),
@@ -591,7 +597,7 @@ export async function convertirConceptosAPiezas(ticketId: number, reparacionId: 
       // Si no se encuentra con búsqueda exacta, intentar búsqueda parcial
       if (!producto) {
         console.log(`🔍 Búsqueda exacta falló, intentando búsqueda parcial...`);
-        producto = await prisma.productos.findFirst({
+        producto = await db.productos.findFirst({
           where: {
             nombre: {
               contains: concepto.descripcion.trim(),
@@ -608,7 +614,7 @@ export async function convertirConceptosAPiezas(ticketId: number, reparacionId: 
         const palabrasClave = concepto.descripcion.trim().split(' ').filter(p => p.length > 2);
         
         for (const palabra of palabrasClave) {
-          producto = await prisma.productos.findFirst({
+          producto = await db.productos.findFirst({
             where: {
               nombre: {
                 contains: palabra,
@@ -635,7 +641,7 @@ export async function convertirConceptosAPiezas(ticketId: number, reparacionId: 
         console.log(`✅ Producto encontrado para "${concepto.descripcion}": ${producto.nombre} (ID: ${producto.id})`);
         
         // Verificar si ya existe una pieza para este producto en esta reparación
-        const piezaExistente = await prisma.piezas_reparacion_productos.findFirst({
+        const piezaExistente = await db.piezas_reparacion_productos.findFirst({
           where: {
             reparacion_id: reparacionId,
             producto_id: producto.id
@@ -644,7 +650,7 @@ export async function convertirConceptosAPiezas(ticketId: number, reparacionId: 
         
         if (piezaExistente) {
           console.log(`⚠️  Pieza ya existe para ${producto.nombre}, actualizando cantidad...`);
-          await prisma.piezas_reparacion_productos.update({
+          await db.piezas_reparacion_productos.update({
             where: { id: piezaExistente.id },
             data: {
               cantidad: piezaExistente.cantidad + concepto.cantidad,
@@ -654,7 +660,7 @@ export async function convertirConceptosAPiezas(ticketId: number, reparacionId: 
           });
         } else {
           // Crear nueva pieza de reparación
-          await prisma.piezas_reparacion_productos.create({
+          await db.piezas_reparacion_productos.create({
             data: {
               reparacion_id: reparacionId,
               producto_id: producto.id,
