@@ -73,28 +73,14 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
         stockDisponible: number;
       }> = [];
 
-      // Lista de conceptos que no requieren validación de stock (servicios)
-      const conceptosSinStock = ['Mano de Obra', 'Diagnostico', 'Diagnóstico', 'Servicio'];
-
       for (const concepto of conceptos) {
-        // Verificar si es un servicio que no requiere stock
-        const esServicio = conceptosSinStock.some(conceptoServicio => 
-          concepto.descripcion.toLowerCase().includes(conceptoServicio.toLowerCase())
-        );
-        
-        if (esServicio) {
-          console.log(`⏭️  [validarStockReparacion] Saltando servicio: "${concepto.descripcion}"`);
-          continue;
-        }
-
-        // Buscar producto por nombre (usar la misma lógica que convertirConceptosAPiezas)
+        // Buscar producto por nombre - primero buscar sin filtrar por tipo para ver si existe
         let producto = await prisma.productos.findFirst({
           where: {
             nombre: {
               equals: concepto.descripcion.trim(),
               mode: 'insensitive'
-            },
-            tipo: 'PRODUCTO'
+            }
           },
           include: {
             marcas: true,
@@ -103,14 +89,13 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
         });
         
         // Si no se encuentra con búsqueda exacta, intentar búsqueda parcial
-        if (!producto) {
+        if (!producto && concepto.descripcion.trim().length >= 5) {
           producto = await prisma.productos.findFirst({
             where: {
               nombre: {
                 contains: concepto.descripcion.trim(),
                 mode: 'insensitive'
-              },
-              tipo: 'PRODUCTO'
+              }
             },
             include: {
               marcas: true,
@@ -118,39 +103,15 @@ export async function validarStockReparacion(ticketId: number): Promise<StockVal
             }
           });
         }
-        
-        // Si aún no se encuentra, intentar búsqueda más flexible (igual que convertirConceptosAPiezas)
-        if (!producto) {
-          const palabrasClave = concepto.descripcion.trim().split(' ').filter(p => p.length > 2);
-          
-          for (const palabra of palabrasClave) {
-            producto = await prisma.productos.findFirst({
-              where: {
-                nombre: {
-                  contains: palabra,
-                  mode: 'insensitive'
-                },
-                tipo: 'PRODUCTO'
-              },
-              include: {
-                marcas: true,
-                modelos: true
-              }
-            });
-            
-            if (producto) {
-              console.log(`✅ [validarStockReparacion] Producto encontrado usando palabra clave "${palabra}"`);
-              break;
-            }
-          }
-        }
 
-        if (producto) {
-          // Verificar que el producto sea de tipo PRODUCTO, no SERVICIO
-          if (producto.tipo === 'SERVICIO') {
-            console.log(`⏭️  [validarStockReparacion] Saltando servicio encontrado en productos: "${producto.nombre}" (tipo: SERVICIO)`);
-            continue;
-          }
+        // Si encontramos un producto y es de tipo SERVICIO, saltarlo directamente
+        if (producto && producto.tipo === 'SERVICIO') {
+          console.log(`⏭️  [validarStockReparacion] Saltando servicio: "${concepto.descripcion}" → "${producto.nombre}" (tipo: SERVICIO)`);
+          continue;
+        }
+        
+        // Si encontramos un producto y es de tipo PRODUCTO, validar stock
+        if (producto && producto.tipo === 'PRODUCTO') {
           
           console.log(`🔍 [validarStockReparacion] Verificando concepto: ${producto.nombre} (cantidad: ${concepto.cantidad}, stock: ${producto.stock})`);
           
@@ -631,73 +592,37 @@ export async function convertirConceptosAPiezas(
     for (const concepto of conceptos) {
       console.log(`🔍 Buscando producto para concepto: "${concepto.descripcion}"`);
       
-      // Lista de conceptos que no requieren conversión (servicios)
-      const conceptosSinStock = ['Mano de Obra', 'Diagnostico', 'Diagnóstico', 'Servicio'];
-      
-      // Verificar si es un servicio que no requiere stock
-      const esServicio = conceptosSinStock.some(conceptoServicio => 
-        concepto.descripcion.toLowerCase().includes(conceptoServicio.toLowerCase())
-      );
-      
-      if (esServicio) {
-        console.log(`⏭️  Saltando servicio: "${concepto.descripcion}"`);
-        continue;
-      }
-      
-      // Buscar producto por nombre (más preciso)
+      // Buscar producto por nombre - primero buscar sin filtrar por tipo para ver si existe
       let producto = await db.productos.findFirst({
         where: {
           nombre: {
             equals: concepto.descripcion.trim(),
             mode: 'insensitive'
-          },
-          tipo: 'PRODUCTO'
+          }
         }
       });
       
       // Si no se encuentra con búsqueda exacta, intentar búsqueda parcial
-      if (!producto) {
+      if (!producto && concepto.descripcion.trim().length >= 5) {
         console.log(`🔍 Búsqueda exacta falló, intentando búsqueda parcial...`);
         producto = await db.productos.findFirst({
           where: {
             nombre: {
               contains: concepto.descripcion.trim(),
               mode: 'insensitive'
-            },
-            tipo: 'PRODUCTO'
+            }
           }
         });
       }
       
-      // Si aún no se encuentra, intentar búsqueda más flexible
-      if (!producto) {
-        console.log(`🔍 Búsqueda parcial falló, intentando búsqueda flexible...`);
-        const palabrasClave = concepto.descripcion.trim().split(' ').filter(p => p.length > 2);
-        
-        for (const palabra of palabrasClave) {
-          producto = await db.productos.findFirst({
-            where: {
-              nombre: {
-                contains: palabra,
-                mode: 'insensitive'
-              },
-              tipo: 'PRODUCTO'
-            }
-          });
-          
-          if (producto) {
-            console.log(`✅ Producto encontrado usando palabra clave "${palabra}"`);
-            break;
-          }
-        }
+      // Si encontramos un producto y es de tipo SERVICIO, saltarlo directamente
+      if (producto && producto.tipo === 'SERVICIO') {
+        console.log(`⏭️  Saltando servicio: "${concepto.descripcion}" → "${producto.nombre}" (tipo: SERVICIO)`);
+        continue;
       }
-
-      if (producto) {
-        // Verificar que el producto sea de tipo PRODUCTO, no SERVICIO
-        if (producto.tipo === 'SERVICIO') {
-          console.log(`⏭️  Saltando servicio encontrado: "${producto.nombre}" (tipo: SERVICIO)`);
-          continue;
-        }
+      
+      // Si encontramos un producto y es de tipo PRODUCTO, crear la pieza
+      if (producto && producto.tipo === 'PRODUCTO') {
         
         console.log(`✅ Producto encontrado para "${concepto.descripcion}": ${producto.nombre} (ID: ${producto.id})`);
         
