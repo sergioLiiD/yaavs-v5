@@ -250,7 +250,18 @@ export function ProductosSelector({ productos, selectedProductos, onProductosCha
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0">
-                      <Command>
+                      <Command
+                        shouldFilter={false}
+                        filter={(value, search) => {
+                          // Filtrado manual para evitar problemas con caracteres especiales
+                          if (!search) return 1;
+                          const searchLower = search.toLowerCase();
+                          const item = searchResults.find(prod => `producto-${prod.id}` === value);
+                          if (!item) return 0;
+                          const searchableText = `${item.nombre} ${item.sku} ${item.marca?.nombre || ''} ${item.modelo?.nombre || ''}`.toLowerCase();
+                          return searchableText.includes(searchLower) ? 1 : 0;
+                        }}
+                      >
                         <CommandInput 
                           placeholder="Buscar producto..." 
                           value={searchTerm}
@@ -260,29 +271,33 @@ export function ProductosSelector({ productos, selectedProductos, onProductosCha
                           {isSearching ? "Buscando..." : "No se encontraron productos."}
                         </CommandEmpty>
                         <CommandGroup className="max-h-64 overflow-y-auto">
-                          {searchResults.map((p) => (
-                            <CommandItem
-                              key={p.id}
-                              value={`${p.nombre} ${p.sku}`}
-                              onSelect={() => {
-                                handleProductoChange(producto.id, 'productoId', p.id);
-                                setSearchOpen(prev => ({ ...prev, [producto.id]: false }));
-                                setSearchTerm('');
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  producto.productoId === p.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <div className="flex flex-col">
-                                <span className="font-medium">{p.nombre}</span>
-                                <span className="text-sm text-gray-500">SKU: {p.sku}</span>
-                                {p.marca && <span className="text-sm text-gray-500">Marca: {p.marca.nombre}</span>}
-                              </div>
-                            </CommandItem>
-                          ))}
+                          {searchResults.map((p) => {
+                            // Usar ID como value para evitar problemas con caracteres especiales en el nombre
+                            const safeValue = `producto-${p.id}`;
+                            return (
+                              <CommandItem
+                                key={p.id}
+                                value={safeValue}
+                                onSelect={() => {
+                                  handleProductoChange(producto.id, 'productoId', p.id);
+                                  setSearchOpen(prev => ({ ...prev, [producto.id]: false }));
+                                  setSearchTerm('');
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    producto.productoId === p.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{p.nombre}</span>
+                                  <span className="text-sm text-gray-500">SKU: {p.sku}</span>
+                                  {p.marca && <span className="text-sm text-gray-500">Marca: {p.marca.nombre}</span>}
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
                         </CommandGroup>
                       </Command>
                     </PopoverContent>
