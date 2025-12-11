@@ -38,8 +38,9 @@ export async function GET(
     });
 
     if (!reparacion) {
-      console.log('Reparación no encontrada');
-      return new NextResponse('Reparación no encontrada', { status: 404 });
+      console.log('Reparación no encontrada para el ticket, devolviendo array vacío');
+      // No es un error si no hay reparación todavía, devolver array vacío
+      return NextResponse.json([]);
     }
 
     console.log('Reparación encontrada:', reparacion);

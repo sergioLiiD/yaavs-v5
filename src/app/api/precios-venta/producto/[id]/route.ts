@@ -16,10 +16,39 @@ export async function GET(
     }
 
     const id = parseInt(params.id);
-    if (isNaN(id)) {
+    if (isNaN(id) || id <= 0) {
+      console.log('❌ ID inválido recibido:', params.id);
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
+    console.log('🔍 Buscando precio de venta para producto ID:', id);
+
+    // Primero verificar que el producto existe
+    const producto = await prisma.productos.findUnique({
+      where: { id: id },
+      select: { 
+        id: true,
+        nombre: true, 
+        precio_promedio: true,
+        tipo: true,
+        stock: true
+      }
+    });
+
+    if (!producto) {
+      console.log('❌ Producto no encontrado con ID:', id);
+      return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 });
+    }
+
+    console.log('✅ Producto encontrado:', {
+      id: producto.id,
+      nombre: producto.nombre,
+      tipo: producto.tipo,
+      precio_promedio: producto.precio_promedio,
+      stock: producto.stock
+    });
+
+    // Buscar precio específico en precios_venta
     const precio = await prisma.$queryRaw`
       SELECT 
         pv.id,
@@ -42,39 +71,38 @@ export async function GET(
       LIMIT 1
     `;
 
-    if (!precio || (Array.isArray(precio) && precio.length === 0)) {
-      // Si no hay precio específico, obtener el producto y usar su precio promedio
-      const producto = await prisma.productos.findUnique({
-        where: { id: id },
-        select: { precio_promedio: true, nombre: true }
-      });
-      
-      if (producto) {
-        return NextResponse.json({
-          id: null,
-          tipo: 'PRODUCTO',
-          nombre: producto.nombre,
-          marca: '',
-          modelo: '',
-          precioCompraPromedio: producto.precio_promedio,
-          precioVenta: producto.precio_promedio,
-          productoId: id,
-          servicioId: null,
-          createdBy: 'system',
-          updatedBy: 'system',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
-      }
-      
-      return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 });
+    const precioArray = Array.isArray(precio) ? precio : [precio];
+    
+    if (precioArray.length > 0 && precioArray[0]) {
+      console.log('✅ Precio de venta específico encontrado:', precioArray[0]);
+      return NextResponse.json(precioArray[0]);
     }
 
-    return NextResponse.json(Array.isArray(precio) ? precio[0] : precio);
+    // Si no hay precio específico, usar el precio promedio del producto
+    console.log('⚠️ No se encontró precio específico, usando precio promedio:', producto.precio_promedio);
+    return NextResponse.json({
+      id: null,
+      tipo: 'PRODUCTO',
+      nombre: producto.nombre,
+      marca: '',
+      modelo: '',
+      precioCompraPromedio: producto.precio_promedio || 0,
+      precioVenta: producto.precio_promedio || 0,
+      productoId: id,
+      servicioId: null,
+      createdBy: 'system',
+      updatedBy: 'system',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
   } catch (error) {
-    console.error('Error al obtener precio:', error);
+    console.error('❌ Error al obtener precio:', error);
+    if (error instanceof Error) {
+      console.error('Detalles del error:', error.message);
+      console.error('Stack:', error.stack);
+    }
     return NextResponse.json(
-      { error: 'Error al obtener el precio' },
+      { error: 'Error al obtener el precio', details: error instanceof Error ? error.message : 'Error desconocido' },
       { status: 500 }
     );
   }

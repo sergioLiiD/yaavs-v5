@@ -98,6 +98,21 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
   const [searchResults, setSearchResults] = useState<Producto[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Función para normalizar productos del API (convertir snake_case a camelCase)
+  const normalizarProducto = (producto: any): Producto => {
+    return {
+      id: producto.id,
+      nombre: producto.nombre || '',
+      precioPromedio: producto.precioPromedio || producto.precio_promedio || 0,
+      tipo: producto.tipo || 'PRODUCTO',
+      sku: producto.sku || '',
+      stock: producto.stock || 0,
+      marca: producto.marca || producto.marcas,
+      modelo: producto.modelo || producto.modelos,
+      tipo_servicio_id: producto.tipo_servicio_id || producto.tipoServicioId
+    };
+  };
+
   // Función para buscar productos en el servidor
   const searchProductos = async (query: string) => {
     if (!query || query.length < 2) {
@@ -110,7 +125,13 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
       const response = await fetch(`/api/inventario/productos?search=${encodeURIComponent(query)}&limit=20`);
       if (response.ok) {
         const data = await response.json();
-        setSearchResults(data.productos || data);
+        const productosRaw = data.productos || data;
+        // Normalizar los productos para asegurar formato consistente
+        const productosNormalizados = Array.isArray(productosRaw) 
+          ? productosRaw.map(normalizarProducto)
+          : [];
+        console.log('🔍 Productos encontrados (normalizados):', productosNormalizados);
+        setSearchResults(productosNormalizados);
       }
     } catch (error) {
       console.error('Error al buscar productos:', error);
@@ -140,8 +161,13 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
         throw new Error('Error al cargar piezas');
       }
       const data = await response.json();
-      console.log('Piezas cargadas:', data);
-      return data;
+      console.log('Piezas cargadas (raw):', data);
+      // Normalizar los productos del catálogo
+      const productosNormalizados = Array.isArray(data) 
+        ? data.map(normalizarProducto)
+        : [];
+      console.log('Piezas cargadas (normalizadas):', productosNormalizados);
+      return productosNormalizados;
     },
   });
 
@@ -249,9 +275,43 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
 
   const handleProductoChange = async (id: string, field: keyof ProductoSeleccionado, value: any) => {
     // Si se cambia el producto, obtener el precio de venta primero
-    if (field === 'productoId' && catalogoProductos) {
-      const productoSeleccionado = catalogoProductos.find((prod: Producto) => prod.id === value);
+    if (field === 'productoId') {
+      // Validar que el valor sea un número válido
+      const productoIdNum = typeof value === 'number' ? value : parseInt(value);
+      if (isNaN(productoIdNum) || productoIdNum <= 0) {
+        console.warn('⚠️ ID de producto inválido:', value);
+        return;
+      }
+
+      // Buscar el producto en el catálogo o en los resultados de búsqueda
+      let productoSeleccionado = catalogoProductos?.find((prod: Producto) => prod.id === productoIdNum);
+      
+      // Si no está en el catálogo, buscar en los resultados de búsqueda
+      if (!productoSeleccionado) {
+        productoSeleccionado = searchResults.find((prod: Producto) => prod.id === productoIdNum);
+      }
+
       if (productoSeleccionado) {
+        console.log('✅ Producto seleccionado encontrado:', {
+          id: productoSeleccionado.id,
+          nombre: productoSeleccionado.nombre,
+          tipo: productoSeleccionado.tipo,
+          precioPromedio: productoSeleccionado.precioPromedio
+        });
+        // Actualizar primero el producto seleccionado con el precio promedio como fallback
+        const precioPromedio = Number(productoSeleccionado.precioPromedio) || 0;
+        setProductos(productos.map((p) => {
+          if (p.id === id) {
+            return {
+              ...p,
+              productoId: productoIdNum,
+              nombre: productoSeleccionado.nombre,
+              precioVenta: precioPromedio
+            };
+          }
+          return p;
+        }));
+
         try {
           let endpoint;
           if (productoSeleccionado.tipo === 'SERVICIO') {
@@ -260,30 +320,31 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
             if (tipoServicioId) {
               endpoint = `/api/precios-venta/servicio/${tipoServicioId}`;
             } else {
-              // Si no hay tipo_servicio_id, usar el precio promedio
-              setProductos(productos.map((p) => {
-                if (p.id === id) {
-                  return {
-                    ...p,
-                    productoId: value,
-                    nombre: productoSeleccionado.nombre,
-                    precioVenta: Number(productoSeleccionado.precioPromedio) || 0
-                  };
-                }
-                return p;
-              }));
-              console.log('Servicio sin tipo_servicio_id, usando precio promedio:', productoSeleccionado.precioPromedio);
+              // Si no hay tipo_servicio_id, ya usamos el precio promedio arriba
+              console.log('Servicio sin tipo_servicio_id, usando precio promedio:', precioPromedio);
               return;
             }
           } else {
-            endpoint = `/api/precios-venta/producto/${value}`;
+            endpoint = `/api/precios-venta/producto/${productoIdNum}`;
           }
           
           console.log('🔍 Consultando precio de venta en:', endpoint);
-          const response = await fetch(endpoint);
+          // Crear un AbortController para manejar timeouts
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          let response;
+          try {
+            response = await fetch(endpoint, {
+              signal: controller.signal
+            });
+          } finally {
+            clearTimeout(timeoutId);
+          }
+          
           if (response.ok) {
             const precioData = await response.json();
-            const precioVenta = Number(precioData.precioVenta) || 0;
+            const precioVenta = Number(precioData.precioVenta) || precioPromedio;
             console.log('✅ Precio de venta encontrado:', precioVenta);
             
             // Actualizar el estado con el precio encontrado
@@ -291,48 +352,29 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
               if (p.id === id) {
                 return {
                   ...p,
-                  productoId: value,
+                  productoId: productoIdNum,
                   nombre: productoSeleccionado.nombre,
                   precioVenta: precioVenta
                 };
               }
               return p;
             }));
+          } else if (response.status === 404) {
+            // Si no hay precio específico (404), ya usamos el precio promedio arriba
+            console.log('⚠️ Precio específico no encontrado, usando precio promedio:', precioPromedio);
           } else {
-            // Si no hay precio específico, usar el precio promedio del producto
-            const precioPromedio = Number(productoSeleccionado.precioPromedio) || 0;
-            console.log('⚠️ Usando precio promedio:', precioPromedio);
-            
-            setProductos(productos.map((p) => {
-              if (p.id === id) {
-                return {
-                  ...p,
-                  productoId: value,
-                  nombre: productoSeleccionado.nombre,
-                  precioVenta: precioPromedio
-                };
-              }
-              return p;
-            }));
+            // Otro error HTTP
+            console.warn('⚠️ Error al obtener precio de venta:', response.status, 'usando precio promedio:', precioPromedio);
           }
-        } catch (error) {
-          // En caso de error, usar el precio promedio
-          const precioPromedio = Number(productoSeleccionado.precioPromedio) || 0;
-          console.log('❌ Error al obtener precio, usando promedio:', precioPromedio);
-          
-          setProductos(productos.map((p) => {
-            if (p.id === id) {
-              return {
-                ...p,
-                productoId: value,
-                nombre: productoSeleccionado.nombre,
-                precioVenta: precioPromedio
-              };
-            }
-            return p;
-          }));
+        } catch (error: any) {
+          // En caso de error (incluyendo timeout o abort), ya tenemos el precio promedio
+          if (error.name !== 'AbortError') {
+            console.log('❌ Error al obtener precio, usando promedio:', precioPromedio, error.message);
+          }
         }
         return; // Salir de la función ya que manejamos el estado aquí
+      } else {
+        console.warn('⚠️ Producto no encontrado en catálogo con ID:', productoIdNum);
       }
     }
     
@@ -352,8 +394,126 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
     }));
   };
 
-  const handleProductoSelect = (productoId: string, selectedProducto: Producto) => {
-    handleProductoChange(productoId, 'productoId', selectedProducto.id);
+  const handleProductoSelect = async (productoId: string, selectedProducto: Producto) => {
+    console.log('🎯 Producto seleccionado:', {
+      id: selectedProducto.id,
+      idType: typeof selectedProducto.id,
+      nombre: selectedProducto.nombre,
+      tipo: selectedProducto.tipo,
+      precioPromedio: selectedProducto.precioPromedio,
+      tipo_servicio_id: selectedProducto.tipo_servicio_id,
+      productoCompleto: selectedProducto
+    });
+    
+    // Validar que el ID sea válido
+    const productoIdNum = typeof selectedProducto.id === 'number' 
+      ? selectedProducto.id 
+      : parseInt(String(selectedProducto.id));
+    
+    if (isNaN(productoIdNum) || productoIdNum <= 0) {
+      console.error('❌ ID de producto inválido:', selectedProducto.id);
+      toast.error(`ID de producto inválido: ${selectedProducto.id}`);
+      return;
+    }
+    
+    // Actualizar primero con el precio promedio como fallback
+    const precioPromedio = Number(selectedProducto.precioPromedio) || 0;
+    setProductos(productos.map((p) => {
+      if (p.id === productoId) {
+        return {
+          ...p,
+          productoId: productoIdNum,
+          nombre: selectedProducto.nombre,
+          precioVenta: precioPromedio
+        };
+      }
+      return p;
+    }));
+
+    // Luego intentar obtener el precio de venta específico
+    try {
+      let endpoint;
+      if (selectedProducto.tipo === 'SERVICIO') {
+        const tipoServicioId = selectedProducto.tipo_servicio_id;
+        if (tipoServicioId) {
+          endpoint = `/api/precios-venta/servicio/${tipoServicioId}`;
+        } else {
+          console.log('⚠️ Servicio sin tipo_servicio_id, usando precio promedio:', precioPromedio);
+          setOpenDropdowns(prev => ({ ...prev, [productoId]: false }));
+          return;
+        }
+      } else {
+        endpoint = `/api/precios-venta/producto/${productoIdNum}`;
+      }
+      
+      console.log('🔍 Consultando precio de venta en:', endpoint, 'para producto ID:', productoIdNum);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      let response;
+      try {
+        response = await fetch(endpoint, {
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      
+      console.log('📡 Respuesta del servidor:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        url: response.url
+      });
+      
+      if (response.ok) {
+        const precioData = await response.json();
+        console.log('📦 Datos de precio recibidos:', precioData);
+        const precioVenta = Number(precioData.precioVenta) || precioPromedio;
+        console.log('✅ Precio de venta encontrado:', precioVenta, '(promedio fallback:', precioPromedio, ')');
+        
+        setProductos(productos.map((p) => {
+          if (p.id === productoId) {
+            return {
+              ...p,
+              productoId: productoIdNum,
+              nombre: selectedProducto.nombre,
+              precioVenta: precioVenta
+            };
+          }
+          return p;
+        }));
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Error al obtener precio:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText: errorText,
+          endpoint: endpoint,
+          productoId: productoIdNum
+        });
+        
+        if (response.status === 404) {
+          console.log('⚠️ Precio específico no encontrado (404), usando precio promedio:', precioPromedio);
+          // El precio promedio ya está establecido arriba, solo cerramos el dropdown
+        } else {
+          toast.error(`Error al obtener precio: ${response.status} ${response.statusText}`);
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Excepción al obtener precio:', {
+        error: error,
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        productoId: productoIdNum
+      });
+      
+      if (error.name !== 'AbortError') {
+        toast.error(`Error al obtener precio: ${error.message}`);
+      }
+    }
+    
     setOpenDropdowns(prev => ({
       ...prev,
       [productoId]: false
