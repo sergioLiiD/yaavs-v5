@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,8 @@ export async function GET() {
 
 // POST /api/puntos-recoleccion
 export async function POST(request: Request) {
+  let data: any = null;
+  
   try {
     const session = await getServerSession(authOptions);
 
@@ -41,7 +44,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = await request.json();
+    data = await request.json();
     
     // Validar que si no es sede principal, debe tener un parentId
     if (!data.isHeadquarters && !data.parentId) {
@@ -175,8 +178,39 @@ export async function POST(request: Request) {
     return NextResponse.json(punto);
   } catch (error) {
     console.error('Error al crear punto de recolección:', error);
+    
+    // Manejar error de Prisma cuando el email o url ya existe (violación de constraint único)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        const target = error.meta?.target as string[] | undefined;
+        if (target && target.includes('email')) {
+          return NextResponse.json(
+            { 
+              error: 'El correo electrónico ya está registrado',
+              message: `El correo electrónico "${data.email || 'proporcionado'}" ya está en uso. Por favor, utiliza otro correo electrónico.`,
+              field: 'email'
+            },
+            { status: 400 }
+          );
+        }
+        if (target && target.includes('url')) {
+          return NextResponse.json(
+            { 
+              error: 'La URL ya está registrada',
+              message: `La URL "${data.url || 'proporcionada'}" ya está en uso. Por favor, utiliza otra URL.`,
+              field: 'url'
+            },
+            { status: 400 }
+          );
+        }
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Error al crear punto de recolección' },
+      { 
+        error: 'Error al crear punto de recolección',
+        message: error instanceof Error ? error.message : 'Ocurrió un error inesperado al intentar crear el punto de recolección. Por favor, intenta nuevamente.'
+      },
       { status: 500 }
     );
   }

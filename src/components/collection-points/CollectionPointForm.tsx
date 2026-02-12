@@ -243,8 +243,14 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
         lng: Number(formData.location.lng)
       };
 
-      const data = {
-        ...formData,
+      // Construir el objeto de datos sin campos duplicados
+      const data: any = {
+        nombre: formData.nombre,
+        email: formData.email,
+        phone: formData.phone,
+        url: formData.url,
+        isHeadquarters: formData.isHeadquarters,
+        isRepairPoint: formData.isRepairPoint,
         schedule,
         location,
         parentId: !formData.isHeadquarters ? formData.parentId : undefined
@@ -266,10 +272,15 @@ export default function CollectionPointForm({ collectionPoint, onClose, onSucces
       const responseData = await response.json();
 
       if (!response.ok) {
-        const errorMessage = responseData.error || 'Error al crear punto de recolección';
+        // Usar el mensaje descriptivo si está disponible, sino usar el error
+        const errorMessage = responseData.message || responseData.error || 'Error al crear punto de recolección';
         
         // Manejar errores específicos
-        if (errorMessage.includes('punto principal seleccionado no existe')) {
+        if (errorMessage.includes('correo electrónico ya está registrado') || errorMessage.includes('email')) {
+          throw new Error(`❌ ${errorMessage}`);
+        } else if (errorMessage.includes('URL ya está registrada') || errorMessage.includes('url')) {
+          throw new Error(`❌ ${errorMessage}`);
+        } else if (errorMessage.includes('punto principal seleccionado no existe')) {
           throw new Error('❌ El punto principal seleccionado no existe. Por favor, seleccione un punto válido.');
         } else if (errorMessage.includes('ID del punto principal es inválido')) {
           throw new Error('❌ El ID del punto principal es inválido. Por favor, seleccione un punto válido.');
