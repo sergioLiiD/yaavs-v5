@@ -20,6 +20,8 @@ export interface ResumenFinanciero {
     total: number;
   };
   balance: number;
+  totalTicketsEnPeriodo: number;
+  costoPromedioTicket: number;
   comparativaMesAnterior: {
     ingresos: number;
     egresos: number;

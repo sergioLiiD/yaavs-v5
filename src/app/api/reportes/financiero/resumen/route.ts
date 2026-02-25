@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     fechaFinDate.setHours(23, 59, 59, 999); // Incluir todo el día
 
     // Obtener datos del período actual
-    const [ventasProductos, pagosReparacion, comprasInsumos] = await Promise.all([
+    const [ventasProductos, pagosReparacion, comprasInsumos, countVentas, countPagosReparacion] = await Promise.all([
       // Ventas de productos
       prisma.ventas.aggregate({
         where: {
@@ -53,6 +53,32 @@ export async function POST(request: NextRequest) {
           precio_compra: true,
           cantidad: true
         }
+      }),
+
+      // Conteo de ventas en el periodo (cada venta = 1 ticket/transacción)
+      prisma.ventas.count({
+        where: {
+          created_at: {
+            gte: fechaInicioDate,
+            lte: fechaFinDate
+          },
+          estado: 'COMPLETADA'
+        }
+      }),
+
+      // Conteo de tickets de reparación únicos con pagos en el periodo
+      prisma.tickets.count({
+        where: {
+          pagos: {
+            some: {
+              created_at: {
+                gte: fechaInicioDate,
+                lte: fechaFinDate
+              },
+              estado: 'ACTIVO'
+            }
+          }
+        }
       })
     ]);
 
@@ -66,6 +92,12 @@ export async function POST(request: NextRequest) {
     const ingresosTotales = ingresosVentasProductos + ingresosServiciosReparacion;
     const egresosTotales = egresosComprasInsumos;
     const balance = ingresosTotales - egresosTotales;
+
+    // Total de tickets/transacciones en el periodo (ventas + tickets de reparación con pagos)
+    const totalTicketsEnPeriodo = countVentas + countPagosReparacion;
+    const costoPromedioTicket = totalTicketsEnPeriodo > 0
+      ? ingresosTotales / totalTicketsEnPeriodo
+      : 0;
 
     // Obtener datos del mes anterior para comparativa
     const mesAnteriorInicio = new Date(fechaInicioDate);
@@ -136,6 +168,8 @@ export async function POST(request: NextRequest) {
         total: egresosTotales
       },
       balance,
+      totalTicketsEnPeriodo,
+      costoPromedioTicket,
       comparativaMesAnterior: {
         ingresos: ingresosTotales - ingresosAnterior,
         egresos: egresosTotales - egresosAnterior,

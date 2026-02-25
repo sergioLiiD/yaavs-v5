@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ResumenFinanciero as IResumenFinanciero } from '@/services/reporteService';
-import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight, Ticket, Calculator } from 'lucide-react';
 
 interface ResumenFinancieroProps {
   resumen: IResumenFinanciero;
@@ -21,7 +21,7 @@ export default function ResumenFinanciero({ resumen }: ResumenFinancieroProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
       {/* Ingresos totales */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between">
@@ -136,6 +136,51 @@ export default function ResumenFinanciero({ resumen }: ResumenFinancieroProps) {
           </p>
           <p className="text-sm text-gray-600">
             {formatCurrency(resumen.egresos.total)} egresos
+          </p>
+        </div>
+      </div>
+
+      {/* Total de tickets en el periodo */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">Total de Tickets</p>
+            <p className="text-2xl font-bold text-indigo-600">
+              {resumen.totalTicketsEnPeriodo?.toLocaleString('es-MX') ?? 0}
+            </p>
+          </div>
+          <div className="bg-indigo-100 p-3 rounded-full">
+            <Ticket className="text-indigo-600" size={24} />
+          </div>
+        </div>
+        <div className="mt-4">
+          <p className="text-sm text-gray-600">
+            Ventas + tickets con pagos en el periodo
+          </p>
+        </div>
+      </div>
+
+      {/* Costo promedio de ticket */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">Costo Promedio Ticket</p>
+            <p className={`text-2xl font-bold ${
+              resumen.totalTicketsEnPeriodo > 0 ? 'text-amber-600' : 'text-gray-600'
+            }`}>
+              {resumen.totalTicketsEnPeriodo > 0
+                ? formatCurrency(resumen.costoPromedioTicket ?? 0)
+                : '$0.00'
+              }
+            </p>
+          </div>
+          <div className="bg-amber-100 p-3 rounded-full">
+            <Calculator className="text-amber-600" size={24} />
+          </div>
+        </div>
+        <div className="mt-4">
+          <p className="text-sm text-gray-600">
+            Ingresos totales ÷ tickets del periodo
           </p>
         </div>
       </div>
