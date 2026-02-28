@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
       prisma.pagos.aggregate({
         where: {
           created_at: { gte: fechaInicioDate, lte: fechaFinDate },
-          estado: 'ACTIVO' // Solo contar pagos activos
+          estado: 'ACTIVO',
+          ticket_id: { not: null } // Excluir pagos de ventas de productos
         },
         _sum: { monto: true }
       }),
@@ -86,7 +87,8 @@ export async function POST(request: NextRequest) {
     const pagosDetalle = await prisma.pagos.findMany({
       where: {
         created_at: { gte: fechaInicioDate, lte: fechaFinDate },
-        estado: 'ACTIVO' // Solo incluir pagos activos
+        estado: 'ACTIVO',
+        ticket_id: { not: null } // Solo pagos de reparación, excluir ventas de productos
       },
       include: {
         tickets: {
@@ -171,10 +173,17 @@ export async function POST(request: NextRequest) {
     const pagosCorteCaja = await prisma.pagos.findMany({
       where: {
         created_at: { gte: fechaInicioDate, lte: fechaFinDate },
-        estado: 'ACTIVO' // Solo incluir pagos activos
+        estado: 'ACTIVO' // Corte de caja: todos los pagos (ventas + reparaciones)
       },
       include: {
         tickets: {
+          include: {
+            clientes: {
+              select: { nombre: true, apellido_paterno: true, apellido_materno: true }
+            }
+          }
+        },
+        ventas: {
           include: {
             clientes: {
               select: { nombre: true, apellido_paterno: true, apellido_materno: true }
@@ -223,16 +232,20 @@ export async function POST(request: NextRequest) {
         corteCajaData.push([`=== ${metodo} (${pagosPorMetodo.length} pagos - $${totalesMetodo[metodo as keyof typeof totalesMetodo]}) ===`]);
         
         pagosPorMetodo.forEach(pago => {
-          const nombreCliente = `${pago.tickets?.clientes?.nombre || ''} ${pago.tickets?.clientes?.apellido_paterno || ''} ${pago.tickets?.clientes?.apellido_materno || ''}`.trim();
+          const esPagoVenta = pago.venta_id !== null;
+          const nombreCliente = esPagoVenta
+            ? `${pago.ventas?.clientes?.nombre || ''} ${pago.ventas?.clientes?.apellido_paterno || ''} ${pago.ventas?.clientes?.apellido_materno || ''}`.trim()
+            : `${pago.tickets?.clientes?.nombre || ''} ${pago.tickets?.clientes?.apellido_paterno || ''} ${pago.tickets?.clientes?.apellido_materno || ''}`.trim();
+          const referencia = esPagoVenta ? `Venta #${pago.venta_id}` : (pago.tickets?.numero_ticket || 'N/A');
           const fecha = new Date(pago.created_at);
           
           corteCajaData.push([
             fecha.toLocaleDateString('es-MX'),
             fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
-            nombreCliente,
+            nombreCliente || 'Cliente no especificado',
             pago.monto,
             pago.metodo,
-            pago.tickets?.numero_ticket || 'N/A',
+            referencia,
             pago.referencia || ''
           ]);
         });
