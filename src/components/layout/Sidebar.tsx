@@ -156,6 +156,11 @@ const menuItems: MenuItem[] = [
         title: 'Reporte Financiero',
         path: '/dashboard/reportes/financiero',
         requiredPermissions: ['REPORTS_VIEW']
+      },
+      {
+        title: 'Piezas Usadas',
+        path: '/dashboard/reportes/piezas-usadas',
+        requiredPermissions: ['REPORTS_VIEW']
       }
     ]
   },

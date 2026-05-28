@@ -154,4 +154,74 @@ export class ReporteService {
       throw new Error(error.response?.data?.error || 'Error al exportar el reporte');
     }
   }
+}
+
+export interface ReportePiezasUsadas {
+  periodo: { fechaInicio: string; fechaFin: string };
+  resumen: {
+    totalTickets: number;
+    totalPiezasDistintas: number;
+    totalCantidadUsada: number;
+    totalIngresos: number;
+    totalEgresos: number;
+    margen: number;
+  };
+  porPieza: Array<{
+    productoId: number;
+    sku: string;
+    nombre: string;
+    marca: string | null;
+    modelo: string | null;
+    cantidadUsada: number;
+    numTickets: number;
+    ingresos: number;
+    egresos: number;
+    margen: number;
+  }>;
+  porMes: Array<{
+    mes: string;
+    mesLabel: string;
+    piezas: ReportePiezasUsadas['porPieza'];
+    totalTickets: number;
+    totalIngresos: number;
+    totalEgresos: number;
+  }>;
+  detalle: Array<{
+    ticketId: number;
+    numeroTicket: string;
+    fechaEntrega: string;
+    productoId: number;
+    sku: string;
+    nombreProducto: string;
+    marca: string | null;
+    modelo: string | null;
+    cantidad: number;
+    ingreso: number;
+    egreso: number;
+    margen: number;
+  }>;
+}
+
+export class ReportePiezasUsadasService {
+  static async obtener(filtros: Pick<FiltrosReporte, 'fechaInicio' | 'fechaFin'>): Promise<ReportePiezasUsadas> {
+    try {
+      const response = await axios.post('/api/reportes/piezas-usadas', filtros);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error al obtener reporte de piezas usadas:', error);
+      throw new Error(error.response?.data?.error || 'Error al obtener el reporte de piezas usadas');
+    }
+  }
+
+  static async exportarExcel(filtros: Pick<FiltrosReporte, 'fechaInicio' | 'fechaFin'>): Promise<Blob> {
+    try {
+      const response = await axios.post('/api/reportes/piezas-usadas/exportar', filtros, {
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error al exportar reporte de piezas usadas:', error);
+      throw new Error(error.response?.data?.error || 'Error al exportar el reporte');
+    }
+  }
 } 

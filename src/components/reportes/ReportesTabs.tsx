@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { BarChart3, TrendingUp, Users, Package } from 'lucide-react';
+import { BarChart3, Package } from 'lucide-react';
 
 const tabs = [
   {
@@ -11,6 +11,13 @@ const tabs = [
     icon: BarChart3,
     href: '/dashboard/reportes/financiero',
     description: 'Análisis de ingresos, egresos y balance'
+  },
+  {
+    id: 'piezas-usadas',
+    name: 'Piezas Usadas',
+    icon: Package,
+    href: '/dashboard/reportes/piezas-usadas',
+    description: 'Ingresos y egresos por pieza en tickets entregados'
   },
   // Futuros reportes
   // {
