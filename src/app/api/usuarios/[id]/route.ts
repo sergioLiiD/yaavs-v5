@@ -161,9 +161,14 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     return NextResponse.json({ message: 'Usuario eliminado correctamente' });
   } catch (error) {
     console.error('Error al eliminar usuario:', error);
+    const message =
+      error instanceof Error ? error.message : 'Error al eliminar usuario';
+    const isBusinessRule =
+      error instanceof Error &&
+      message.includes('No se puede eliminar el usuario');
     return NextResponse.json(
-      { error: 'Error al eliminar usuario' },
-      { status: 500 }
+      { error: message },
+      { status: isBusinessRule ? 409 : 500 }
     );
   }
 } 
