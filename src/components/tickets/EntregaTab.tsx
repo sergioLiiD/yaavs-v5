@@ -8,26 +8,38 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ModalEntrega } from './ModalEntrega';
 import { formatCurrency } from '@/lib/utils';
+import { WorkflowBlockedAlert } from '@/components/tickets/WorkflowBlockedAlert';
+import type { WorkflowStatusResponse } from '@/types/workflow';
 
 interface EntregaTabProps {
   ticket: any;
   presupuesto: any;
   pagos: any[];
   saldo: number;
+  workflow?: WorkflowStatusResponse | null;
+  isAdmin?: boolean;
   onUpdate?: () => void;
+  onWorkflowRefresh?: () => void;
 }
 
-export function EntregaTab({ ticket, presupuesto, pagos, saldo, onUpdate }: EntregaTabProps) {
+export function EntregaTab({
+  ticket,
+  presupuesto,
+  pagos,
+  saldo,
+  workflow,
+  isAdmin = false,
+  onUpdate,
+  onWorkflowRefresh,
+}: EntregaTabProps) {
   const [showModal, setShowModal] = useState(false);
   const { data: session } = useSession();
 
-  // Debug logs
-  console.log('EntregaTab - presupuesto:', presupuesto);
-  console.log('EntregaTab - presupuesto?.total:', presupuesto?.total);
-  console.log('EntregaTab - pagos:', pagos);
-  console.log('EntregaTab - saldo:', saldo);
-
-  const canDeliver = ticket.estatus_reparacion?.nombre === 'Reparado' && saldo === 0;
+  const entregaGate = workflow?.gates.ENTREGA;
+  const canDeliver =
+    entregaGate?.allowed || (isAdmin && entregaGate?.canAdminBypass);
+  const isReparado = ticket.estatus_reparacion?.nombre === 'Reparado';
+  const pagoCompleto = workflow?.pagoCompleto ?? saldo === 0;
 
   const handleEntregar = () => {
     setShowModal(true);
@@ -35,6 +47,14 @@ export function EntregaTab({ ticket, presupuesto, pagos, saldo, onUpdate }: Entr
 
   return (
     <div className="space-y-6">
+      {entregaGate && !ticket.entregado && (
+        <WorkflowBlockedAlert
+          gate={entregaGate}
+          isAdmin={isAdmin}
+          onRequestException={() => setShowModal(true)}
+        />
+      )}
+
       {/* Información del ticket */}
       <Card>
         <CardHeader>
@@ -103,11 +123,16 @@ export function EntregaTab({ ticket, presupuesto, pagos, saldo, onUpdate }: Entr
           <Separator />
 
           <div className="text-center">
-            {canDeliver ? (
+            {canDeliver && !ticket.entregado ? (
               <div className="space-y-4">
                 <p className="text-green-600 font-semibold">
                   ✅ El equipo está listo para ser entregado
                 </p>
+                {!pagoCompleto && isAdmin && (
+                  <p className="text-amber-700 text-sm">
+                    Hay saldo pendiente. Como administrador, deberá justificar la entrega.
+                  </p>
+                )}
                 <Button 
                   onClick={handleEntregar}
                   className="bg-green-600 hover:bg-green-700"
@@ -116,13 +141,15 @@ export function EntregaTab({ ticket, presupuesto, pagos, saldo, onUpdate }: Entr
                   ENTREGAR EQUIPO
                 </Button>
               </div>
+            ) : ticket.entregado ? (
+              <p className="text-gray-600">El equipo ya fue entregado.</p>
             ) : (
               <div className="space-y-4">
                 <p className="text-red-600 font-semibold">
                   ❌ El equipo no puede ser entregado
                 </p>
                 <div className="text-sm text-gray-600 space-y-1">
-                  {ticket.estatus_reparacion?.nombre !== 'Reparado' && (
+                  {!isReparado && (
                     <p>• El equipo debe estar reparado</p>
                   )}
                   {saldo > 0 && (
@@ -166,14 +193,19 @@ export function EntregaTab({ ticket, presupuesto, pagos, saldo, onUpdate }: Entr
         </Card>
       )}
 
-      {/* Modal de entrega */}
       {showModal && (
         <ModalEntrega
           ticket={ticket}
           presupuesto={presupuesto}
           pagos={pagos}
+          saldo={saldo}
+          requiresPaymentException={!pagoCompleto && isAdmin}
+          entregaGate={entregaGate}
           onClose={() => setShowModal(false)}
-          onUpdate={onUpdate}
+          onUpdate={() => {
+            onUpdate?.();
+            onWorkflowRefresh?.();
+          }}
         />
       )}
     </div>

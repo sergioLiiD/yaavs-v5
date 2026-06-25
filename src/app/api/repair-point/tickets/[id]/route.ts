@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db/prisma';
+import { isAdmin, registrarExcepcionFlujo } from '@/lib/ticket-workflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -175,6 +176,41 @@ export async function PATCH(
         { error: 'Ticket no encontrado' },
         { status: 404 }
       );
+    }
+
+    const requestedStatusId = body.estatusReparacionId
+      ? parseInt(body.estatusReparacionId)
+      : undefined;
+
+    if (requestedStatusId && requestedStatusId !== ticket.estatus_reparacion_id) {
+      if (!isAdmin(session.user.role)) {
+        return NextResponse.json(
+          { error: 'No tiene permisos para cambiar el estado del ticket manualmente.' },
+          { status: 403 }
+        );
+      }
+
+      if (!body.razonExcepcion?.trim()) {
+        return NextResponse.json(
+          {
+            error: 'Como administrador debe indicar la razón para cambiar el estado manualmente.',
+            requiresException: true,
+            blockedBy: 'CAMBIO_ESTADO_MANUAL',
+          },
+          { status: 422 }
+        );
+      }
+
+      await registrarExcepcionFlujo({
+        ticketId: parseInt(params.id),
+        usuarioId: session.user.id,
+        tipo: 'CAMBIO_ESTADO_MANUAL',
+        razon: body.razonExcepcion,
+        metadata: {
+          estatusAnteriorId: ticket.estatus_reparacion_id,
+          estatusNuevoId: requestedStatusId,
+        },
+      });
     }
 
     // Actualizar el ticket

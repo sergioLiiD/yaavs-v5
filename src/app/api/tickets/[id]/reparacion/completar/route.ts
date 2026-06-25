@@ -3,6 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { validarStockReparacion, procesarDescuentoInventario, convertirConceptosAPiezas } from '@/lib/inventory-utils';
+import {
+  assertWorkflowAllowed,
+  handleWorkflowError,
+  loadTicketWorkflowContext,
+} from '@/lib/ticket-workflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,9 +66,30 @@ export async function POST(
       );
     }
 
-    const { observaciones, checklist, tiempoTranscurrido } = await request.json();
+    const { observaciones, checklist, tiempoTranscurrido, razonExcepcion } = await request.json();
 
     console.log('📋 Datos recibidos:', { observaciones, checklist: checklist?.length, tiempoTranscurrido });
+
+    const ticketWorkflow = await loadTicketWorkflowContext(Number(id));
+    if (!ticketWorkflow) {
+      return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
+    }
+
+    try {
+      await assertWorkflowAllowed({
+        ticket: ticketWorkflow,
+        action: 'REPARACION',
+        userRole: session.user.role,
+        usuarioId: session.user.id,
+        razonExcepcion,
+      });
+    } catch (error) {
+      const handled = handleWorkflowError(error);
+      if (handled) {
+        return NextResponse.json(handled.body, { status: handled.status });
+      }
+      throw error;
+    }
 
     // Validar stock antes de completar la reparación
     console.log('🔍 Validando stock para ticket:', id);

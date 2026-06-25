@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import {
+  assertWorkflowAllowed,
+  handleWorkflowError,
+  loadTicketWorkflowContext,
+} from '@/lib/ticket-workflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,11 +76,33 @@ export async function POST(
     const body = await request.json();
     console.log('Datos recibidos en el servidor:', JSON.stringify(body, null, 2));
 
-    const { conceptos, total } = body;
+    const { conceptos, total, razonExcepcion } = body;
 
     if (!conceptos || !Array.isArray(conceptos)) {
       console.error('Datos de conceptos inválidos:', conceptos);
       return new NextResponse('Datos de conceptos inválidos', { status: 400 });
+    }
+
+    const ticketWorkflow = await loadTicketWorkflowContext(ticketId);
+    if (!ticketWorkflow) {
+      console.error('Ticket no encontrado:', ticketId);
+      return new NextResponse('Ticket no encontrado', { status: 404 });
+    }
+
+    try {
+      await assertWorkflowAllowed({
+        ticket: ticketWorkflow,
+        action: 'PRESUPUESTO',
+        userRole: session.user.role,
+        usuarioId: session.user.id,
+        razonExcepcion,
+      });
+    } catch (error) {
+      const handled = handleWorkflowError(error);
+      if (handled) {
+        return NextResponse.json(handled.body, { status: handled.status });
+      }
+      throw error;
     }
 
     // Verificar que el ticket existe

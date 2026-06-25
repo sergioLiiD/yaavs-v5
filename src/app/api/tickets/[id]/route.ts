@@ -3,6 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
+import {
+  isAdmin,
+  registrarExcepcionFlujo,
+} from '@/lib/ticket-workflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -164,6 +168,53 @@ export async function PUT(
 
     const data = await req.json();
     console.log('Datos recibidos para actualización:', data);
+
+    const existingTicket = await prisma.tickets.findUnique({
+      where: { id: parseInt(params.id) },
+      select: { estatus_reparacion_id: true },
+    });
+
+    if (!existingTicket) {
+      return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
+    }
+
+    const requestedStatusId = data.estatusReparacionId
+      ? parseInt(data.estatusReparacionId)
+      : undefined;
+
+    if (
+      requestedStatusId &&
+      requestedStatusId !== existingTicket.estatus_reparacion_id
+    ) {
+      if (!isAdmin(userRole)) {
+        return NextResponse.json(
+          { error: 'No tiene permisos para cambiar el estado del ticket manualmente.' },
+          { status: 403 }
+        );
+      }
+
+      if (!data.razonExcepcion?.trim()) {
+        return NextResponse.json(
+          {
+            error: 'Como administrador debe indicar la razón para cambiar el estado manualmente.',
+            requiresException: true,
+            blockedBy: 'CAMBIO_ESTADO_MANUAL',
+          },
+          { status: 422 }
+        );
+      }
+
+      await registrarExcepcionFlujo({
+        ticketId: parseInt(params.id),
+        usuarioId: session.user.id,
+        tipo: 'CAMBIO_ESTADO_MANUAL',
+        razon: data.razonExcepcion,
+        metadata: {
+          estatusAnteriorId: existingTicket.estatus_reparacion_id,
+          estatusNuevoId: requestedStatusId,
+        },
+      });
+    }
 
     // Si hay presupuesto, actualizar el estado a "Presupuesto Generado"
     if (data.presupuesto) {

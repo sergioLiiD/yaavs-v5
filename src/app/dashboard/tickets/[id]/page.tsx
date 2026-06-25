@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,10 @@ import { PresupuestoSection } from '@/components/presupuesto-section';
 import { PagoSection } from '@/components/pago-section';
 import { ReparacionSection } from '@/components/reparacion-section';
 import { EntregaTab } from '@/components/tickets/EntregaTab';
+import { WorkflowExceptionsHistory } from '@/components/tickets/WorkflowBlockedAlert';
+import { useTicketWorkflow } from '@/hooks/useWorkflowException';
+import type { WorkflowStatusResponse } from '@/types/workflow';
+import { AlertTriangle } from 'lucide-react';
 
 export default function TicketDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -23,34 +27,34 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'diagnostico';
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const { workflow, loading: workflowLoading, refreshWorkflow } = useTicketWorkflow(parseInt(params.id));
+  const isAdmin = session?.user?.role === 'ADMINISTRADOR';
 
-  const fetchTicket = async () => {
+  const fetchTicket = useCallback(async () => {
     try {
-      console.log('🔄 [TICKET] Recargando datos del ticket:', params.id);
       setLoading(true);
       const response = await fetch(`/api/tickets/${params.id}`);
       if (!response.ok) {
         throw new Error('Error al cargar el ticket');
       }
       const data = await response.json();
-      console.log('✅ [TICKET] Datos recargados:', {
-        id: data.id,
-        numero_ticket: data.numero_ticket,
-        entregado: data.entregado,
-        estado: data.estatus_reparacion?.nombre
-      });
       setTicket(data);
     } catch (error) {
-      console.error('❌ [TICKET] Error al cargar ticket:', error);
+      console.error('Error al cargar ticket:', error);
       toast.error('Error al cargar el ticket');
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([fetchTicket(), refreshWorkflow()]);
+  }, [fetchTicket, refreshWorkflow]);
 
   useEffect(() => {
     fetchTicket();
-  }, [params.id]);
+    refreshWorkflow();
+  }, [fetchTicket, refreshWorkflow]);
 
   useEffect(() => {
     setActiveTab(defaultTab);
@@ -63,7 +67,7 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
     router.replace(url.toString(), { scroll: false });
   };
 
-  if (loading) {
+  if (loading || workflowLoading) {
     return (
       <div className="container mx-auto py-6">
         <div className="text-center">Cargando...</div>
@@ -78,6 +82,9 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
       </div>
     );
   }
+
+  const workflowData = workflow as WorkflowStatusResponse | null;
+  const sinTecnico = !workflowData?.tecnicoAsignado;
 
   return (
     <div className="container mx-auto py-6">
@@ -96,11 +103,25 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
       </div>
 
       <div className="space-y-6">
+        {sinTecnico && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium text-amber-900">Técnico no asignado</p>
+              <p className="text-sm text-amber-800 mt-1">
+                Asigne un técnico responsable en los detalles del ticket antes de iniciar el diagnóstico o generar el presupuesto.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {workflowData && workflowData.excepciones.length > 0 && (
+          <WorkflowExceptionsHistory excepciones={workflowData.excepciones} />
+        )}
+
         <TicketDetailsSection 
           ticket={ticket} 
-          onUpdate={() => {
-            router.refresh();
-          }} 
+          onUpdate={handleRefresh}
         />
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
@@ -114,31 +135,35 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
 
           <TabsContent value="diagnostico">
             <DiagnosticoSection 
-              ticket={ticket} 
-              onUpdate={() => {
-                router.refresh();
-              }} 
+              ticket={ticket}
+              workflow={workflowData}
+              isAdmin={isAdmin}
+              onUpdate={handleRefresh}
+              onWorkflowRefresh={refreshWorkflow}
             />
           </TabsContent>
 
           <TabsContent value="presupuesto">
-            <PresupuestoSection ticketId={ticket.id} onUpdate={() => {
-              router.refresh();
-            }} />
+            <PresupuestoSection
+              ticketId={ticket.id}
+              workflow={workflowData}
+              isAdmin={isAdmin}
+              onUpdate={handleRefresh}
+              onWorkflowRefresh={refreshWorkflow}
+            />
           </TabsContent>
 
           <TabsContent value="pago">
-            <PagoSection ticketId={ticket.id} onUpdate={() => {
-              router.refresh();
-            }} />
+            <PagoSection ticketId={ticket.id} onUpdate={handleRefresh} />
           </TabsContent>
 
           <TabsContent value="reparacion">
             <ReparacionSection 
-              ticket={ticket} 
-              onUpdate={() => {
-                router.refresh();
-              }} 
+              ticket={ticket}
+              workflow={workflowData}
+              isAdmin={isAdmin}
+              onUpdate={handleRefresh}
+              onWorkflowRefresh={refreshWorkflow}
             />
           </TabsContent>
 
@@ -147,8 +172,11 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
               ticket={ticket}
               presupuesto={ticket.presupuestos}
               pagos={ticket.pagos || []}
-              saldo={ticket.saldo || 0}
-              onUpdate={fetchTicket}
+              saldo={workflowData?.saldoPendiente ?? ticket.saldo || 0}
+              workflow={workflowData}
+              isAdmin={isAdmin}
+              onUpdate={handleRefresh}
+              onWorkflowRefresh={refreshWorkflow}
             />
           </TabsContent>
         </Tabs>

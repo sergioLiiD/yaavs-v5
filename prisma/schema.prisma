@@ -507,6 +507,29 @@ model ticket_problemas {
   tickets              tickets              @relation(fields: [ticket_id], references: [id])
 }
 
+enum TipoExcepcionFlujo {
+  SIN_TECNICO_ASIGNADO
+  SIN_DIAGNOSTICO
+  ENTREGA_SIN_PAGO_COMPLETO
+  CAMBIO_ESTADO_MANUAL
+  REPARACION_SIN_REQUISITOS
+}
+
+model excepciones_flujo {
+  id         Int                @id @default(autoincrement())
+  ticket_id  Int
+  usuario_id Int
+  tipo       TipoExcepcionFlujo
+  razon      String
+  metadata   Json?
+  created_at DateTime           @default(now())
+  tickets    tickets            @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+  usuarios   usuarios           @relation(fields: [usuario_id], references: [id])
+
+  @@index([ticket_id])
+  @@index([usuario_id])
+}
+
 model tickets {
   id                                             Int                 @id @default(autoincrement())
   numero_ticket                                  String              @unique
@@ -558,6 +581,7 @@ model tickets {
   usuarios_tickets_cancelado_por_idTousuarios    usuarios?           @relation("tickets_cancelado_por_idTousuarios", fields: [cancelado_por_id], references: [id])
   tipos_servicio                                 tipos_servicio      @relation(fields: [tipo_servicio_id], references: [id])
   devoluciones                                   devoluciones[]
+  excepciones_flujo                              excepciones_flujo[]
 }
 
 model tipos_servicio {
@@ -594,6 +618,7 @@ model usuarios {
   presupuestos_independientes                   presupuestos_independientes[]
   usos_cupon                                    usos_cupon[]
   devoluciones                                  devoluciones[]
+  excepciones_flujo                             excepciones_flujo[]
 }
 
 model presupuestos_independientes {

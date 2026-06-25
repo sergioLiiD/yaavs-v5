@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import {
+  assertWorkflowAllowed,
+  handleWorkflowError,
+  loadTicketWorkflowContext,
+} from '@/lib/ticket-workflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,9 +25,30 @@ export async function POST(
     }
 
     const ticketId = parseInt(params.id);
-    const { diagnostico, saludBateria, versionSO } = await request.json();
+    const { diagnostico, saludBateria, versionSO, razonExcepcion } = await request.json();
 
-    // Obtener el punto de reparación del usuario
+    const ticketWorkflow = await loadTicketWorkflowContext(ticketId);
+    if (!ticketWorkflow) {
+      return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
+    }
+
+    try {
+      await assertWorkflowAllowed({
+        ticket: ticketWorkflow,
+        action: 'DIAGNOSTICO',
+        userRole: session.user.role,
+        usuarioId: session.user.id,
+        razonExcepcion,
+      });
+    } catch (error) {
+      const handled = handleWorkflowError(error);
+      if (handled) {
+        return NextResponse.json(handled.body, { status: handled.status });
+      }
+      throw error;
+    }
+
+    // Obtener el punto de reparaci?n del usuario
     const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
         usuario_id: session.user.id
@@ -34,12 +60,12 @@ export async function POST(
 
     if (!userPoint) {
       return NextResponse.json(
-        { error: 'Usuario no autorizado para punto de reparación' },
+        { error: 'Usuario no autorizado para punto de reparaci?n' },
         { status: 403 }
       );
     }
 
-    // Verificar que el ticket exista y pertenezca al punto de reparación
+    // Verificar que el ticket exista y pertenezca al punto de reparaci?n
     const ticket = await prisma.tickets.findFirst({
       where: {
         id: ticketId,
@@ -54,7 +80,7 @@ export async function POST(
       );
     }
 
-    // Crear o actualizar la reparación
+    // Crear o actualizar la reparaci?n
     const reparacion = await prisma.reparaciones.upsert({
       where: {
         ticket_id: ticketId
@@ -81,8 +107,9 @@ export async function POST(
         id: ticketId
       },
       data: {
-        estatus_reparacion_id: 29, // "En Diagnóstico" - ID correcto según la base de datos
-        fecha_inicio_diagnostico: new Date(),
+        estatus_reparacion_id: 29,
+        fecha_inicio_diagnostico: ticket.fecha_inicio_diagnostico ?? new Date(),
+        fecha_fin_diagnostico: diagnostico?.trim() ? new Date() : undefined,
         updated_at: new Date()
       }
     });
@@ -95,9 +122,9 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Error al guardar el diagnóstico:', error);
+    console.error('Error al guardar el diagn?stico:', error);
     return NextResponse.json(
-      { error: 'Error al guardar el diagnóstico' },
+      { error: 'Error al guardar el diagn?stico' },
       { status: 500 }
     );
   }
@@ -119,7 +146,7 @@ export async function GET(
 
     const ticketId = parseInt(params.id);
 
-    // Obtener el punto de reparación del usuario
+    // Obtener el punto de reparaci?n del usuario
     const userPoint = await prisma.usuarios_puntos_recoleccion.findFirst({
       where: {
         usuario_id: session.user.id
@@ -131,12 +158,12 @@ export async function GET(
 
     if (!userPoint) {
       return NextResponse.json(
-        { error: 'Usuario no autorizado para punto de reparación' },
+        { error: 'Usuario no autorizado para punto de reparaci?n' },
         { status: 403 }
       );
     }
 
-    // Obtener el ticket con su reparación
+    // Obtener el ticket con su reparaci?n
     const ticket = await prisma.tickets.findFirst({
       where: {
         id: ticketId,
@@ -162,9 +189,9 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Error al obtener el diagnóstico:', error);
+    console.error('Error al obtener el diagn?stico:', error);
     return NextResponse.json(
-      { error: 'Error al obtener el diagnóstico' },
+      { error: 'Error al obtener el diagn?stico' },
       { status: 500 }
     );
   }

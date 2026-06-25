@@ -33,7 +33,8 @@ export async function POST(request: Request) {
       imei,
       puntoRecoleccionId,
       marcaId,
-      tipoDesbloqueo
+      tipoDesbloqueo,
+      tecnicoAsignadoId,
     } = data;
 
     // Validar datos requeridos
@@ -130,6 +131,9 @@ export async function POST(request: Request) {
     };
     if (puntoRecoleccionIdToUse) {
       ticketData.punto_recoleccion_id = puntoRecoleccionIdToUse;
+    }
+    if (tecnicoAsignadoId) {
+      ticketData.tecnico_asignado_id = parseInt(String(tecnicoAsignadoId));
     }
 
     console.log('Datos del ticket a crear:', ticketData);

@@ -3,6 +3,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { procesarDescuentoInventario, convertirConceptosAPiezas } from '@/lib/inventory-utils';
+import {
+  assertWorkflowAllowed,
+  calcularSaldo,
+  handleWorkflowError,
+  loadTicketWorkflowContext,
+} from '@/lib/ticket-workflow';
 
 export async function POST(
   request: NextRequest,
@@ -27,7 +33,7 @@ export async function POST(
     }
 
     const ticketId = parseInt(params.id);
-    const { firma } = await request.json();
+    const { firma, razonExcepcion } = await request.json();
 
     // La firma ya no es requerida, se hará físicamente después de imprimir
 
@@ -59,19 +65,6 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Calcular saldo
-    const totalPresupuesto = ticket.presupuestos?.total || 0;
-    const totalPagos = ticket.pagos.reduce((sum, pago) => sum + pago.monto, 0);
-    const saldo = totalPresupuesto - totalPagos;
-
-    // Verificar que el saldo sea 0
-    if (saldo > 0) {
-      return NextResponse.json({ 
-        message: `El equipo no puede ser entregado. Saldo pendiente: $${saldo.toFixed(2)}` 
-      }, { status: 400 });
-    }
-
-    // Obtener el usuario que está realizando la entrega
     const usuario = await prisma.usuarios.findUnique({
       where: { email: session.user.email }
     });
@@ -79,6 +72,35 @@ export async function POST(
     if (!usuario) {
       return NextResponse.json({ message: 'Usuario no encontrado' }, { status: 404 });
     }
+
+    const ticketWorkflow = await loadTicketWorkflowContext(ticketId);
+    if (!ticketWorkflow) {
+      return NextResponse.json({ message: 'Ticket no encontrado' }, { status: 404 });
+    }
+
+    try {
+      await assertWorkflowAllowed({
+        ticket: ticketWorkflow,
+        action: 'ENTREGA',
+        userRole: userRole,
+        usuarioId: usuario.id,
+        razonExcepcion,
+        metadata: { saldoPendiente: calcularSaldo(ticketWorkflow) },
+      });
+    } catch (error) {
+      const handled = handleWorkflowError(error);
+      if (handled) {
+        return NextResponse.json(
+          { message: handled.body.error, ...handled.body },
+          { status: handled.status }
+        );
+      }
+      throw error;
+    }
+
+    const totalPresupuesto = ticket.presupuestos?.total || 0;
+    const totalPagos = ticket.pagos.reduce((sum, pago) => sum + pago.monto, 0);
+    const saldo = totalPresupuesto - totalPagos;
 
     // ============================================
     // GARANTIZAR DESCUENTO DE INVENTARIO

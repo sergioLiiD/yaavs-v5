@@ -12,6 +12,10 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { HiSave, HiClock, HiCamera, HiX } from 'react-icons/hi';
 import { useSession } from 'next-auth/react';
+import { WorkflowBlockedAlert } from '@/components/tickets/WorkflowBlockedAlert';
+import { AdminExceptionDialog } from '@/components/tickets/AdminExceptionDialog';
+import { executeWorkflowRequest } from '@/hooks/useWorkflowException';
+import type { WorkflowStatusResponse } from '@/types/workflow';
 
 // Definición local de ChecklistItem (idéntica a la usada en los tipos de ticket)
 interface ChecklistItem {
@@ -24,10 +28,19 @@ interface ChecklistItem {
 
 interface DiagnosticoSectionProps {
   ticket: Ticket;
+  workflow?: WorkflowStatusResponse | null;
+  isAdmin?: boolean;
   onUpdate?: () => void;
+  onWorkflowRefresh?: () => void;
 }
 
-export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps) {
+export function DiagnosticoSection({
+  ticket,
+  workflow,
+  isAdmin = false,
+  onUpdate,
+  onWorkflowRefresh,
+}: DiagnosticoSectionProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +58,16 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
   }>>([]);
   const [isEditingChecklist, setIsEditingChecklist] = useState(false);
   const [checklistLoaded, setChecklistLoaded] = useState(false);
+  const [exceptionOpen, setExceptionOpen] = useState(false);
+  const [exceptionResolver, setExceptionResolver] = useState<((razon: string) => void) | null>(null);
+
+  const diagnosticoGate = workflow?.gates.DIAGNOSTICO;
+
+  const requestExceptionReason = () =>
+    new Promise<string>((resolve, reject) => {
+      setExceptionResolver(() => resolve);
+      setExceptionOpen(true);
+    });
 
   // Actualizar los estados cuando cambia el ticket
   useEffect(() => {
@@ -86,40 +109,37 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
         ? `/api/repair-point/tickets/${ticket.id}/diagnostico`
         : `/api/tickets/${ticket.id}/diagnostico`;
 
-      console.log('🔍 Enviando datos al servidor:', {
-        diagnostico,
-        saludBateria: Number(saludBateria),
-        versionSO
-      });
+      await executeWorkflowRequest(
+        diagnosticoGate,
+        isAdmin,
+        async (razonExcepcion) => {
+          const response = await axios.post(apiUrl, {
+            diagnostico,
+            saludBateria: Number(saludBateria),
+            versionSO,
+            razonExcepcion,
+          });
 
-      const response = await axios.post(apiUrl, {
-        diagnostico,
-        saludBateria: Number(saludBateria),
-        versionSO
-      });
+          if (response.data.success) {
+            setDiagnostico(response.data.diagnostico || '');
+            setSaludBateria(response.data.saludBateria || 0);
+            setVersionSO(response.data.versionSO || '');
+            toast.success('Diagnóstico guardado correctamente');
 
-      if (response.data.success) {
-        // Actualizar el estado local con los datos devueltos
-        setDiagnostico(response.data.diagnostico || '');
-        setSaludBateria(response.data.saludBateria || 0);
-        setVersionSO(response.data.versionSO || '');
-        
-        console.log('✅ Diagnóstico guardado exitosamente');
-        toast.success('Diagnóstico guardado correctamente');
-        
-        // También guardar el checklist si hay datos
-        if (checklist && checklist.length > 0) {
-          console.log('🔍 Guardando checklist después del diagnóstico...');
-          await handleSaveChecklist();
-        }
-        
-        // No hacer refresh inmediatamente para mantener el estado
-        // if (onUpdate) onUpdate();
-        // router.refresh();
-      }
-    } catch (error) {
+            if (checklist && checklist.length > 0) {
+              await handleSaveChecklist(razonExcepcion);
+            }
+
+            onWorkflowRefresh?.();
+            onUpdate?.();
+          }
+        },
+        requestExceptionReason
+      );
+    } catch (error: any) {
       console.error('❌ Error al guardar diagnóstico:', error);
-      toast.error('Error al guardar el diagnóstico');
+      const msg = error.response?.data?.error || error.message || 'Error al guardar el diagnóstico';
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
@@ -268,25 +288,22 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
   };
 
   // Función para guardar el checklist
-  const handleSaveChecklist = async () => {
+  const handleSaveChecklist = async (razonExcepcion?: string) => {
     try {
       setIsSaving(true);
       const apiUrl = ticket.canEdit 
         ? `/api/repair-point/tickets/${ticket.id}/checklist-diagnostico`
         : `/api/tickets/${ticket.id}/checklist-diagnostico`;
 
-      console.log('🔍 Checklist actual antes de enviar:', checklist);
-      
       const dataToSend = checklist.map(item => ({
         itemId: item.itemId,
         respuesta: item.respuesta,
         observacion: item.observacion
       }));
-      
-      console.log('🔍 Datos que se van a enviar al servidor:', dataToSend);
 
       const response = await axios.post(apiUrl, {
-        checklist: dataToSend
+        checklist: dataToSend,
+        razonExcepcion,
       });
 
       console.log('🔍 Respuesta del servidor:', response.data);
@@ -349,11 +366,14 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
     );
   };
 
+  const canProceedDiagnostico = diagnosticoGate?.allowed || (isAdmin && diagnosticoGate?.canAdminBypass);
+
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Diagnóstico</CardTitle>
-        {!isEditing && canEditDiagnostico && (
+        {!isEditing && canEditDiagnostico && canProceedDiagnostico && (
           <Button
             variant="outline"
             onClick={() => setIsEditing(true)}
@@ -363,6 +383,13 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
         )}
       </CardHeader>
       <CardContent>
+        {diagnosticoGate && (
+          <WorkflowBlockedAlert
+            gate={diagnosticoGate}
+            isAdmin={isAdmin}
+            onRequestException={() => setExceptionOpen(true)}
+          />
+        )}
         {/* Información del Dispositivo */}
         <div className="mb-6 space-y-4">
           <h3 className="text-lg font-semibold">Información del Dispositivo</h3>
@@ -566,5 +593,17 @@ export function DiagnosticoSection({ ticket, onUpdate }: DiagnosticoSectionProps
         )}
       </CardContent>
     </Card>
+    <AdminExceptionDialog
+      open={exceptionOpen}
+      onOpenChange={setExceptionOpen}
+      title="Excepción de flujo — Administrador"
+      description={diagnosticoGate?.message ?? 'Debe justificar por qué omite este requisito.'}
+      onConfirm={(razon) => {
+        exceptionResolver?.(razon);
+        setExceptionResolver(null);
+        setExceptionOpen(false);
+      }}
+    />
+    </>
   );
 } 

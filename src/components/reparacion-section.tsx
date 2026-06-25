@@ -8,9 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Ticket } from '@/types/ticket';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import axios from 'axios';
 import { HiClock, HiCamera, HiVideoCamera, HiSave, HiPause, HiPlay } from 'react-icons/hi';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { WorkflowBlockedAlert } from '@/components/tickets/WorkflowBlockedAlert';
+import { AdminExceptionDialog } from '@/components/tickets/AdminExceptionDialog';
+import { executeWorkflowRequest } from '@/hooks/useWorkflowException';
+import type { WorkflowStatusResponse } from '@/types/workflow';
 
 interface ChecklistItem {
   id: number;
@@ -29,10 +33,29 @@ interface ChecklistRespuesta {
 
 interface ReparacionSectionProps {
   ticket: Ticket;
+  workflow?: WorkflowStatusResponse | null;
+  isAdmin?: boolean;
   onUpdate: () => void;
+  onWorkflowRefresh?: () => void;
 }
 
-export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, onUpdate }) => {
+export const ReparacionSection: React.FC<ReparacionSectionProps> = ({
+  ticket,
+  workflow,
+  isAdmin = false,
+  onUpdate,
+  onWorkflowRefresh,
+}) => {
+  const [exceptionOpen, setExceptionOpen] = useState(false);
+  const [exceptionResolver, setExceptionResolver] = useState<((razon: string) => void) | null>(null);
+  const reparacionGate = workflow?.gates.REPARACION;
+  const canProceedReparacion = reparacionGate?.allowed || (isAdmin && reparacionGate?.canAdminBypass);
+
+  const requestExceptionReason = () =>
+    new Promise<string>((resolve) => {
+      setExceptionResolver(() => resolve);
+      setExceptionOpen(true);
+    });
   const router = useRouter();
   const [observaciones, setObservaciones] = useState(ticket.reparacion?.observaciones || '');
   const [isLoading, setIsLoading] = useState(false);
@@ -213,28 +236,33 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
         ? `/api/repair-point/tickets/${ticket.id}/reparacion`
         : `/api/tickets/${ticket.id}/reparacion`;
 
-      console.log('Enviando datos a:', apiUrl);
+      await executeWorkflowRequest(
+        reparacionGate,
+        isAdmin,
+        async (razonExcepcion) => {
+          const response = await axios.post(apiUrl, {
+            observaciones,
+            checklist,
+            fotos,
+            videos,
+            completar: true,
+            diagnostico: ticket.reparacion?.diagnostico || '',
+            saludBateria: ticket.reparacion?.saludBateria || null,
+            versionSO: ticket.reparacion?.versionSO || '',
+            razonExcepcion,
+          });
 
-      const response = await axios.post(apiUrl, {
-        observaciones,
-        checklist,
-        fotos,
-        videos,
-        completar: true,
-        diagnostico: ticket.reparacion?.diagnostico || '',
-        saludBateria: ticket.reparacion?.saludBateria || null,
-        versionSO: ticket.reparacion?.versionSO || ''
-      });
-
-      console.log('Respuesta del servidor:', response.data);
-
-      if (response.data.success) {
-        toast.success('Reparación completada correctamente');
-        if (onUpdate) {
-          onUpdate();
-        }
-        router.refresh();
-      }
+          if (response.data.success) {
+            toast.success('Reparación completada correctamente');
+            onWorkflowRefresh?.();
+            if (onUpdate) {
+              onUpdate();
+            }
+            router.refresh();
+          }
+        },
+        requestExceptionReason
+      );
     } catch (error: any) {
       console.error('Error al guardar la reparación:', error);
       
@@ -353,11 +381,19 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
   };
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>Reparación</CardTitle>
       </CardHeader>
       <CardContent>
+        {reparacionGate && (
+          <WorkflowBlockedAlert
+            gate={reparacionGate}
+            isAdmin={isAdmin}
+            onRequestException={() => setExceptionOpen(true)}
+          />
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Validación de pago */}
           {!hasValidPayment && (
@@ -422,7 +458,7 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
             <Button
               type="submit"
               className="bg-[#FEBF19] hover:bg-[#FEBF19]/90 text-white"
-              disabled={isLoading}
+              disabled={isLoading || !canProceedReparacion}
             >
               {isLoading ? 'Completando...' : 'Concluir Reparación'}
             </Button>
@@ -556,5 +592,17 @@ export const ReparacionSection: React.FC<ReparacionSectionProps> = ({ ticket, on
         </form>
       </CardContent>
     </Card>
+    <AdminExceptionDialog
+      open={exceptionOpen}
+      onOpenChange={setExceptionOpen}
+      title="Excepción de flujo — Administrador"
+      description={reparacionGate?.message ?? 'Debe justificar por qué omite este requisito.'}
+      onConfirm={(razon) => {
+        exceptionResolver?.(razon);
+        setExceptionResolver(null);
+        setExceptionOpen(false);
+      }}
+    />
+    </>
   );
 }; 

@@ -3,6 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import {
+  assertWorkflowAllowed,
+  handleWorkflowError,
+  loadTicketWorkflowContext,
+} from '@/lib/ticket-workflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +60,31 @@ export async function POST(
       );
     }
 
-    const { checklist } = await request.json() as { checklist: ChecklistItem[] };
+    const { checklist, razonExcepcion } = await request.json() as {
+      checklist: ChecklistItem[];
+      razonExcepcion?: string;
+    };
+
+    const ticketWorkflow = await loadTicketWorkflowContext(ticketId);
+    if (!ticketWorkflow) {
+      return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
+    }
+
+    try {
+      await assertWorkflowAllowed({
+        ticket: ticketWorkflow,
+        action: 'DIAGNOSTICO',
+        userRole: session.user.role,
+        usuarioId: session.user.id,
+        razonExcepcion,
+      });
+    } catch (error) {
+      const handled = handleWorkflowError(error);
+      if (handled) {
+        return NextResponse.json(handled.body, { status: handled.status });
+      }
+      throw error;
+    }
 
     console.log('🔍 POST /checklist-diagnostico - Datos recibidos del frontend:', checklist);
     console.log('🔍 POST /checklist-diagnostico - Tipo de datos:', typeof checklist);

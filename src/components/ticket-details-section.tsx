@@ -128,10 +128,28 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
     setIsLoading(true);
 
     try {
+      const tecnicoChanged =
+        formData.tecnicoAsignadoId &&
+        formData.tecnicoAsignadoId !== (ticket.tecnico_asignado_id?.toString() || '');
+
+      if (tecnicoChanged) {
+        const assignResponse = await fetch(`/api/tickets/${ticket.id}/assign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tecnicoId: parseInt(formData.tecnicoAsignadoId) }),
+        });
+        if (!assignResponse.ok) {
+          const err = await assignResponse.json();
+          throw new Error(err.error || 'Error al asignar técnico');
+        }
+      }
+
+      const { estatusReparacionId: _estatus, tecnicoAsignadoId: _tecnico, ...rest } = formData;
       const dataToSend = {
-        ...formData,
+        ...rest,
+        descripcionProblema: formData.descripcionProblema,
         codigoDesbloqueo: formData.tipoDesbloqueo === 'pin' ? formData.codigoDesbloqueo : null,
-        patronDesbloqueo: formData.tipoDesbloqueo === 'patron' ? formData.patronDesbloqueo : []
+        patronDesbloqueo: formData.tipoDesbloqueo === 'patron' ? formData.patronDesbloqueo : [],
       };
 
       const response = await fetch(`/api/tickets/${ticket.id}`, {
@@ -143,7 +161,8 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
       });
 
       if (!response.ok) {
-        throw new Error('Error al actualizar el ticket');
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'Error al actualizar el ticket');
       }
 
       toast.success('Ticket actualizado correctamente');
@@ -153,7 +172,7 @@ export function TicketDetailsSection({ ticket, onUpdate }: TicketDetailsSectionP
       setIsEditing(false);
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Error al actualizar el ticket');
+      toast.error(error instanceof Error ? error.message : 'Error al actualizar el ticket');
     } finally {
       setIsLoading(false);
     }

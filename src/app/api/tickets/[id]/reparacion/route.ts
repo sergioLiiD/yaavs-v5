@@ -3,6 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { validarStockReparacion, procesarDescuentoInventario, convertirConceptosAPiezas } from '@/lib/inventory-utils';
+import {
+  assertWorkflowAllowed,
+  handleWorkflowError,
+  loadTicketWorkflowContext,
+} from '@/lib/ticket-workflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,7 +61,28 @@ export async function POST(
 
     const body = await request.json();
     console.log('📋 Datos recibidos:', JSON.stringify(body, null, 2));
-    const { observaciones, checklist, fotos, videos, completar } = body;
+    const { observaciones, checklist, fotos, videos, completar, razonExcepcion } = body;
+
+    const ticketWorkflow = await loadTicketWorkflowContext(ticketId);
+    if (!ticketWorkflow) {
+      return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
+    }
+
+    try {
+      await assertWorkflowAllowed({
+        ticket: ticketWorkflow,
+        action: 'REPARACION',
+        userRole: session.user.role,
+        usuarioId: session.user.id,
+        razonExcepcion,
+      });
+    } catch (error) {
+      const handled = handleWorkflowError(error);
+      if (handled) {
+        return NextResponse.json(handled.body, { status: handled.status });
+      }
+      throw error;
+    }
 
     console.log('🔍 Parámetros extraídos:', {
       observaciones,

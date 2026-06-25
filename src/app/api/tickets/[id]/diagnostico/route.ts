@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import {
+  assertWorkflowAllowed,
+  handleWorkflowError,
+  loadTicketWorkflowContext,
+} from '@/lib/ticket-workflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,7 +109,28 @@ export async function POST(
     const body = await request.json();
     console.log('POST /diagnostico - Datos recibidos:', body);
     
-    const { diagnostico, versionSO, saludBateria } = body;
+    const { diagnostico, versionSO, saludBateria, razonExcepcion } = body;
+
+    const ticketWorkflow = await loadTicketWorkflowContext(ticketId);
+    if (!ticketWorkflow) {
+      return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
+    }
+
+    try {
+      await assertWorkflowAllowed({
+        ticket: ticketWorkflow,
+        action: 'DIAGNOSTICO',
+        userRole: session.user.role,
+        usuarioId: session.user.id,
+        razonExcepcion,
+      });
+    } catch (error) {
+      const handled = handleWorkflowError(error);
+      if (handled) {
+        return NextResponse.json(handled.body, { status: handled.status });
+      }
+      throw error;
+    }
 
     // Obtener el ticket con su reparación (ya lo tenemos arriba, pero necesitamos los datos completos)
     const ticketFull = await prisma.tickets.findUnique({
@@ -155,11 +181,13 @@ export async function POST(
     console.log('POST /diagnostico - Reparación guardada:', reparacion);
 
     // Actualizar el estado del ticket a "En Diagnóstico"
+    const diagnosticoCompleto = Boolean(diagnostico?.trim());
     await prisma.tickets.update({
       where: { id: ticketId },
       data: {
         estatus_reparacion_id: 29, // "En Diagnóstico"
-        fecha_inicio_diagnostico: new Date(),
+        fecha_inicio_diagnostico: ticketFull.fecha_inicio_diagnostico ?? new Date(),
+        fecha_fin_diagnostico: diagnosticoCompleto ? new Date() : undefined,
         updated_at: new Date()
       }
     });

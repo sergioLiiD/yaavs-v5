@@ -13,48 +13,78 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { axiosInstance } from '@/lib/axios';
 import { toast } from 'sonner';
 
+import { AdminExceptionDialog } from '@/components/tickets/AdminExceptionDialog';
+import type { WorkflowGateResult } from '@/types/workflow';
+
 interface ModalEntregaProps {
   ticket: any;
   presupuesto: any;
   pagos: any[];
+  saldo?: number;
+  requiresPaymentException?: boolean;
+  entregaGate?: WorkflowGateResult;
   onClose: () => void;
   onUpdate?: () => void;
 }
 
-export function ModalEntrega({ ticket, presupuesto, pagos, onClose, onUpdate }: ModalEntregaProps) {
+export function ModalEntrega({
+  ticket,
+  presupuesto,
+  pagos,
+  saldo = 0,
+  requiresPaymentException = false,
+  entregaGate,
+  onClose,
+  onUpdate,
+}: ModalEntregaProps) {
   const [firma, setFirma] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [exceptionOpen, setExceptionOpen] = useState(false);
+  const [pendingRazon, setPendingRazon] = useState<string | undefined>();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
 
+  const entregarConRazon = async (razonExcepcion?: string) => {
+    const response = await axiosInstance.post(`/api/tickets/${ticket.id}/entregar`, {
+      firma,
+      razonExcepcion,
+    });
+    return response.data;
+  };
+
   const entregarMutation = useMutation({
-    mutationFn: async () => {
-      console.log('🚀 [ENTREGA] Iniciando petición de entrega para ticket:', ticket.id);
-      const response = await axiosInstance.post(`/api/tickets/${ticket.id}/entregar`, {
-        firma
-      });
-      console.log('✅ [ENTREGA] Respuesta recibida:', response.data);
-      return response.data;
-    },
+    mutationFn: entregarConRazon,
     onSuccess: (data) => {
-      console.log('✅ [ENTREGA] Entrega exitosa, datos:', data);
       toast.success('Equipo entregado exitosamente');
       queryClient.invalidateQueries({ queryKey: ['ticket', ticket.id] });
-      console.log('🔄 [ENTREGA] Cerrando modal...');
       onClose();
-      // Llamar al callback onUpdate para refrescar la página padre
-      console.log('🔄 [ENTREGA] onUpdate disponible?', !!onUpdate);
       if (onUpdate) {
-        console.log('🔄 [ENTREGA] Llamando onUpdate para refrescar página...');
         onUpdate();
       }
     },
     onError: (error: any) => {
-      console.error('❌ [ENTREGA] Error al entregar:', error);
-      console.error('❌ [ENTREGA] Detalles del error:', error.response?.data);
-      toast.error(error.response?.data?.message || 'Error al entregar el equipo');
+      const data = error.response?.data;
+      if (data?.requiresException && data?.blockedBy === 'ENTREGA_SIN_PAGO_COMPLETO') {
+        setExceptionOpen(true);
+        return;
+      }
+      toast.error(data?.message || data?.error || 'Error al entregar el equipo');
     }
   });
+
+  const handleConfirmarEntrega = () => {
+    if (requiresPaymentException || (entregaGate && !entregaGate.allowed)) {
+      setExceptionOpen(true);
+      return;
+    }
+    entregarMutation.mutate(undefined);
+  };
+
+  const handleExceptionConfirm = (razon: string) => {
+    setPendingRazon(razon);
+    setExceptionOpen(false);
+    entregarMutation.mutate(razon);
+  };
 
   const handleImprimir = () => {
     const printContent = document.getElementById('print-content');
@@ -300,7 +330,11 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose, onUpdate }: 
   const handleEntregar = async () => {
     setIsSubmitting(true);
     try {
-      await entregarMutation.mutateAsync();
+      if (requiresPaymentException || (entregaGate && !entregaGate.allowed)) {
+        setExceptionOpen(true);
+        return;
+      }
+      await entregarMutation.mutateAsync(undefined);
     } finally {
       setIsSubmitting(false);
     }
@@ -466,6 +500,18 @@ export function ModalEntrega({ ticket, presupuesto, pagos, onClose, onUpdate }: 
           </div>
         </div>
       </div>
+
+      <AdminExceptionDialog
+        open={exceptionOpen}
+        onOpenChange={setExceptionOpen}
+        title="Excepción de entrega — Administrador"
+        description={
+          entregaGate?.message ??
+          `El equipo tiene un saldo pendiente de $${saldo.toFixed(2)}. Debe justificar por qué se entrega sin pago completo.`
+        }
+        onConfirm={handleExceptionConfirm}
+        isLoading={entregarMutation.isPending}
+      />
     </div>
   );
 }

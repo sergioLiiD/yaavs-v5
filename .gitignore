@@ -48,3 +48,6 @@ next-env.d.ts
 dist/
 
 *.tar.gz
+
+# Backups locales del servidor (no subir a git)
+backups/servidor-*/

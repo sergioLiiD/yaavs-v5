@@ -28,6 +28,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HiSave } from "react-icons/hi";
+import { WorkflowBlockedAlert } from '@/components/tickets/WorkflowBlockedAlert';
+import { AdminExceptionDialog } from '@/components/tickets/AdminExceptionDialog';
+import { executeWorkflowRequest } from '@/hooks/useWorkflowException';
+import type { WorkflowStatusResponse } from '@/types/workflow';
 
 interface Producto {
   id: number;
@@ -86,10 +90,29 @@ interface ProductoSeleccionado {
 
 interface PresupuestoSectionProps {
   ticketId: number;
+  workflow?: WorkflowStatusResponse | null;
+  isAdmin?: boolean;
   onUpdate?: () => void;
+  onWorkflowRefresh?: () => void;
 }
 
-export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionProps) {
+export function PresupuestoSection({
+  ticketId,
+  workflow,
+  isAdmin = false,
+  onUpdate,
+  onWorkflowRefresh,
+}: PresupuestoSectionProps) {
+  const [exceptionOpen, setExceptionOpen] = useState(false);
+  const [exceptionResolver, setExceptionResolver] = useState<((razon: string) => void) | null>(null);
+  const presupuestoGate = workflow?.gates.PRESUPUESTO;
+  const canProceedPresupuesto = presupuestoGate?.allowed || (isAdmin && presupuestoGate?.canAdminBypass);
+
+  const requestExceptionReason = () =>
+    new Promise<string>((resolve) => {
+      setExceptionResolver(() => resolve);
+      setExceptionOpen(true);
+    });
   const [productos, setProductos] = useState<ProductoSeleccionado[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -586,6 +609,11 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
   const handleGuardarPresupuesto = async () => {
     try {
       setIsLoading(true);
+
+      await executeWorkflowRequest(
+        presupuestoGate,
+        isAdmin,
+        async (razonExcepcion) => {
       const total = calcularTotal();
       const dataToSend = {
         conceptos: productos.map((p) => {
@@ -632,6 +660,7 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
           };
         }),
         total,
+        razonExcepcion,
       };
       console.log('Enviando datos al servidor:', dataToSend);
       
@@ -649,13 +678,15 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
         throw new Error(`Error al guardar el presupuesto: ${errorData}`);
       }
 
-      // Recargar el presupuesto
       await refetchPresupuesto();
-
       toast.success('Presupuesto guardado correctamente');
+      onWorkflowRefresh?.();
       if (onUpdate) {
         onUpdate();
       }
+        },
+        requestExceptionReason
+      );
     } catch (error) {
       console.error('Error al guardar presupuesto:', error);
       toast.error(error instanceof Error ? error.message : 'Error al guardar el presupuesto');
@@ -671,6 +702,13 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
           <CardTitle>Presupuesto</CardTitle>
         </CardHeader>
         <CardContent>
+          {presupuestoGate && (
+            <WorkflowBlockedAlert
+              gate={presupuestoGate}
+              isAdmin={isAdmin}
+              onRequestException={() => setExceptionOpen(true)}
+            />
+          )}
           <div className="space-y-4">
             {/* Selector de reparación frecuente */}
             <div className="space-y-2">
@@ -823,7 +861,7 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
               <div className="flex justify-end">
                 <Button
                   onClick={handleGuardarPresupuesto}
-                  disabled={isLoading}
+                  disabled={isLoading || !canProceedPresupuesto}
                   className="bg-[#FEBF19] hover:bg-[#FEBF19]/90"
                 >
                   <HiSave className="mr-2 h-5 w-5" />
@@ -834,6 +872,17 @@ export function PresupuestoSection({ ticketId, onUpdate }: PresupuestoSectionPro
           </div>
         </CardContent>
       </Card>
+      <AdminExceptionDialog
+        open={exceptionOpen}
+        onOpenChange={setExceptionOpen}
+        title="Excepción de flujo — Administrador"
+        description={presupuestoGate?.message ?? 'Debe justificar por qué omite este requisito.'}
+        onConfirm={(razon) => {
+          exceptionResolver?.(razon);
+          setExceptionResolver(null);
+          setExceptionOpen(false);
+        }}
+      />
     </div>
   );
 } 
