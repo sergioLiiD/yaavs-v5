@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import { obtenerReportePiezasUsadas } from '@/lib/reportes/piezas-usadas';
+import { formatDateMX } from '@/lib/datetime';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
     for (const d of reporte.detalle) {
       filasDetalle.push([
         d.numeroTicket,
-        d.fechaEntrega.split('T')[0],
+        formatDateMX(d.fechaEntrega),
         d.sku,
         d.nombreProducto,
         d.marca ?? '',

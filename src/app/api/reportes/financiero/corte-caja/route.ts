@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { parseDateRangeMX } from '@/lib/datetime';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,9 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const { fechaInicio, fechaFin } = await request.json();
 
-    const fechaInicioDate = new Date(fechaInicio);
-    const fechaFinDate = new Date(fechaFin);
-    fechaFinDate.setHours(23, 59, 59, 999);
+    const { fechaInicioDate, fechaFinDate } = parseDateRangeMX(fechaInicio, fechaFin);
 
     // Obtener todos los pagos del período (tanto de tickets como de ventas) - solo ACTIVOS
     const pagos = await prisma.pagos.findMany({

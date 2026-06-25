@@ -17,6 +17,7 @@ services:
       POSTGRES_DB: yaavs_db
       # Configuración de codificación
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+      TZ: America/Mexico_City
     volumes:
       # Volumen para datos persistentes de PostgreSQL
       - postgres_data:/var/lib/postgresql/data
@@ -48,6 +49,7 @@ services:
     environment:
       # Entorno de producción
       - NODE_ENV=production
+      - TZ=America/Mexico_City
       # URL de conexión a la base de datos (usar la misma contraseña que arriba)
       - DATABASE_URL=postgresql://postgres:TU_PASSWORD_AQUI_CAMBIAR_OBLIGATORIO@postgres:5432/yaavs_db?schema=public
       # URL de la aplicación (cambiar por tu dominio)

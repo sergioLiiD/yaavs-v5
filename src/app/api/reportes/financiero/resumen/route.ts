@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { parseDateRangeMX, shiftDateStringMonths } from '@/lib/datetime';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,9 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const { fechaInicio, fechaFin } = await request.json();
 
-    const fechaInicioDate = new Date(fechaInicio);
-    const fechaFinDate = new Date(fechaFin);
-    fechaFinDate.setHours(23, 59, 59, 999); // Incluir todo el día
+    const { fechaInicioDate, fechaFinDate } = parseDateRangeMX(fechaInicio, fechaFin);
 
     // Obtener datos del período actual
     const [ventasProductos, pagosReparacion, comprasInsumos, countVentas, countPagosReparacion] = await Promise.all([
@@ -100,11 +99,12 @@ export async function POST(request: NextRequest) {
       ? ingresosTotales / totalTicketsEnPeriodo
       : 0;
 
-    // Obtener datos del mes anterior para comparativa
-    const mesAnteriorInicio = new Date(fechaInicioDate);
-    mesAnteriorInicio.setMonth(mesAnteriorInicio.getMonth() - 1);
-    const mesAnteriorFin = new Date(fechaFinDate);
-    mesAnteriorFin.setMonth(mesAnteriorFin.getMonth() - 1);
+    const mesAnteriorInicioStr = shiftDateStringMonths(fechaInicio, -1);
+    const mesAnteriorFinStr = shiftDateStringMonths(fechaFin, -1);
+    const {
+      fechaInicioDate: mesAnteriorInicio,
+      fechaFinDate: mesAnteriorFin,
+    } = parseDateRangeMX(mesAnteriorInicioStr, mesAnteriorFinStr);
 
     const [ventasProductosAnterior, pagosReparacionAnterior, comprasInsumosAnterior] = await Promise.all([
       prisma.ventas.aggregate({

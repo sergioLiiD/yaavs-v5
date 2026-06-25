@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { mesKeyMX, parseDateRangeMX } from '@/lib/datetime';
 
 export interface FiltrosPiezasUsadas {
   fechaInicio: string;
@@ -63,14 +64,11 @@ const MESES = [
 ];
 
 function parseFechas(filtros: FiltrosPiezasUsadas) {
-  const fechaInicioDate = new Date(filtros.fechaInicio);
-  const fechaFinDate = new Date(filtros.fechaFin);
-  fechaFinDate.setHours(23, 59, 59, 999);
-  return { fechaInicioDate, fechaFinDate };
+  return parseDateRangeMX(filtros.fechaInicio, filtros.fechaFin);
 }
 
 function mesKey(fecha: Date): string {
-  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+  return mesKeyMX(fecha);
 }
 
 function mesLabel(key: string): string {

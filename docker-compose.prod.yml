@@ -11,6 +11,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-yaavs_db}
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+      TZ: America/Mexico_City
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backups:/docker-entrypoint-initdb.d:ro
@@ -45,6 +46,7 @@ services:
         condition: service_healthy
     environment:
       - NODE_ENV=production
+      - TZ=America/Mexico_City
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-yaavs_db}?schema=public
       - NEXTAUTH_URL=${NEXTAUTH_URL}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}

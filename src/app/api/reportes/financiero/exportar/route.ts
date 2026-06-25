@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as XLSX from 'xlsx';
+import { formatDateMX, formatDateTimeMX, formatTimeMX, parseDateRangeMX } from '@/lib/datetime';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,9 +9,7 @@ export async function POST(request: NextRequest) {
   try {
     const { fechaInicio, fechaFin } = await request.json();
 
-    const fechaInicioDate = new Date(fechaInicio);
-    const fechaFinDate = new Date(fechaFin);
-    fechaFinDate.setHours(23, 59, 59, 999);
+    const { fechaInicioDate, fechaFinDate } = parseDateRangeMX(fechaInicio, fechaFin);
 
     // ============================================
     // HOJA 1: RESUMEN FINANCIERO
@@ -111,7 +110,7 @@ export async function POST(request: NextRequest) {
     ventasDetalle.forEach(venta => {
       const nombreCliente = `${venta.clientes?.nombre || ''} ${venta.clientes?.apellido_paterno || ''} ${venta.clientes?.apellido_materno || ''}`.trim();
       ingresosData.push([
-        new Date(venta.created_at).toLocaleString('es-MX'),
+        formatDateTimeMX(venta.created_at),
         'Venta de Producto',
         nombreCliente,
         venta.total,
@@ -124,7 +123,7 @@ export async function POST(request: NextRequest) {
     pagosDetalle.forEach(pago => {
       const nombreCliente = `${pago.tickets?.clientes?.nombre || ''} ${pago.tickets?.clientes?.apellido_paterno || ''} ${pago.tickets?.clientes?.apellido_materno || ''}`.trim();
       ingresosData.push([
-        new Date(pago.created_at).toLocaleString('es-MX'),
+        formatDateTimeMX(pago.created_at),
         'Pago de Reparación',
         nombreCliente,
         pago.monto,
@@ -157,7 +156,7 @@ export async function POST(request: NextRequest) {
       const nombreUsuario = `${entrada.usuarios?.nombre || ''} ${entrada.usuarios?.apellido_paterno || ''}`.trim();
       const total = entrada.precio_compra * entrada.cantidad;
       egresosData.push([
-        new Date(entrada.fecha).toLocaleString('es-MX'),
+        formatDateTimeMX(entrada.fecha),
         entrada.proveedores?.nombre || 'Sin proveedor',
         entrada.productos?.nombre || 'Sin nombre',
         entrada.cantidad,
@@ -237,11 +236,11 @@ export async function POST(request: NextRequest) {
             ? `${pago.ventas?.clientes?.nombre || ''} ${pago.ventas?.clientes?.apellido_paterno || ''} ${pago.ventas?.clientes?.apellido_materno || ''}`.trim()
             : `${pago.tickets?.clientes?.nombre || ''} ${pago.tickets?.clientes?.apellido_paterno || ''} ${pago.tickets?.clientes?.apellido_materno || ''}`.trim();
           const referencia = esPagoVenta ? `Venta #${pago.venta_id}` : (pago.tickets?.numero_ticket || 'N/A');
-          const fecha = new Date(pago.created_at);
-          
+          const fecha = pago.created_at;
+
           corteCajaData.push([
-            fecha.toLocaleDateString('es-MX'),
-            fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+            formatDateMX(fecha),
+            formatTimeMX(fecha),
             nombreCliente || 'Cliente no especificado',
             pago.monto,
             pago.metodo,

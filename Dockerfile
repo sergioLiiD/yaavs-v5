@@ -86,6 +86,7 @@ EXPOSE 3100
 # Variables de entorno por defecto
 ENV NODE_ENV=production
 ENV PORT=3100
+ENV TZ=America/Mexico_City
 
 # Script de inicio
 CMD ["npm", "start"] 
