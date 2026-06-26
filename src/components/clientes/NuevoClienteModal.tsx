@@ -25,11 +25,14 @@ interface ExistingClientConflict {
   telefono?: string | null;
 }
 
+type ClienteApiVariant = 'dashboard' | 'repair-point';
+
 interface NuevoClienteModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: (cliente: ClienteListItem) => void;
   initialSearch?: string;
+  apiVariant?: ClienteApiVariant;
 }
 
 const emptyForm = {
@@ -45,6 +48,7 @@ export function NuevoClienteModal({
   onOpenChange,
   onSuccess,
   initialSearch = '',
+  apiVariant = 'dashboard',
 }: NuevoClienteModalProps) {
   const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
@@ -93,15 +97,22 @@ export function NuevoClienteModal({
 
     try {
       setLoading(true);
-      const payload = {
+      const basePayload = {
         nombre: formData.nombre.trim(),
         apellidoPaterno: formData.apellidoPaterno.trim(),
         apellidoMaterno: formData.apellidoMaterno.trim() || undefined,
-        telefonoCelular: formData.telefonoCelular.trim(),
         email: formData.email.trim() || undefined,
       };
 
-      const response = await fetch('/api/clientes', {
+      const endpoint =
+        apiVariant === 'repair-point' ? '/api/repair-point/clientes' : '/api/clientes';
+
+      const payload =
+        apiVariant === 'repair-point'
+          ? { ...basePayload, telefono: formData.telefonoCelular.trim() }
+          : { ...basePayload, telefonoCelular: formData.telefonoCelular.trim() };
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

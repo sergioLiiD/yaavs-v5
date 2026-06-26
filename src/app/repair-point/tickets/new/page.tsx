@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Check, ChevronsUpDown, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { NuevoClienteModal } from '@/components/clientes/NuevoClienteModal';
+import { ClienteListItem, formatClienteNombre } from '@/lib/cliente-mapper';
 
 interface FormData {
   clienteId: string;
@@ -51,6 +67,11 @@ export default function NewTicketPage() {
 
   const [marcaSeleccionada, setMarcaSeleccionada] = useState<string>('none');
   const [modelosFiltrados, setModelosFiltrados] = useState<any[]>([]);
+  const [clientes, setClientes] = useState<ClienteListItem[]>([]);
+  const [selectedCliente, setSelectedCliente] = useState<ClienteListItem | null>(null);
+  const [openCliente, setOpenCliente] = useState(false);
+  const [openNuevoCliente, setOpenNuevoCliente] = useState(false);
+  const [searchCliente, setSearchCliente] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,8 +81,10 @@ export default function NewTicketPage() {
           throw new Error('Error al cargar datos');
         }
         const data = await response.json();
-        console.log('Datos cargados:', data); // Para depuración
         setData(data);
+        if (data.clientes) {
+          setClientes(data.clientes);
+        }
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -83,6 +106,33 @@ export default function NewTicketPage() {
       setModelosFiltrados([]);
     }
   }, [marcaSeleccionada, data]);
+
+  const clientesFiltrados = useMemo(() => {
+    const query = searchCliente.trim().toLowerCase();
+    if (!query) return clientes;
+
+    return clientes.filter((cliente) => {
+      const nombre = formatClienteNombre(cliente).toLowerCase();
+      const telefono = cliente.telefonoCelular?.toLowerCase() ?? '';
+      const email = cliente.email?.toLowerCase() ?? '';
+      return nombre.includes(query) || telefono.includes(query) || email.includes(query);
+    });
+  }, [clientes, searchCliente]);
+
+  const handleOpenNuevoCliente = () => {
+    setOpenCliente(false);
+    setOpenNuevoCliente(true);
+  };
+
+  const handleClienteCreated = (cliente: ClienteListItem) => {
+    setClientes((prev) => {
+      if (prev.some((c) => c.id === cliente.id)) return prev;
+      return [cliente, ...prev];
+    });
+    setSelectedCliente(cliente);
+    setFormData((prev) => ({ ...prev, clienteId: cliente.id.toString() }));
+    setSearchCliente('');
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -165,22 +215,95 @@ export default function NewTicketPage() {
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
         <div className="space-y-6">
           <div>
-            <Label htmlFor="clienteId">Cliente</Label>
-            <Select
-              value={formData.clienteId}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, clienteId: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccione un cliente" />
-              </SelectTrigger>
-              <SelectContent>
-                {data?.clientes?.map((cliente: any) => (
-                  <SelectItem key={cliente.id} value={cliente.id.toString()}>
-                    {cliente.nombre} {cliente.apellidoPaterno} {cliente.apellidoMaterno}
-                  </SelectItem>
-                )) || []}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="clienteId">Cliente</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-auto px-2 py-1 text-xs"
+                onClick={handleOpenNuevoCliente}
+              >
+                <Plus className="mr-1 h-3 w-3" />
+                Nuevo cliente
+              </Button>
+            </div>
+            <Popover open={openCliente} onOpenChange={setOpenCliente}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openCliente}
+                  className="w-full justify-between mt-1"
+                >
+                  {formData.clienteId
+                    ? (() => {
+                        const cliente =
+                          selectedCliente ??
+                          clientes.find((c) => c.id.toString() === formData.clienteId);
+                        return cliente ? formatClienteNombre(cliente) : 'Seleccione un cliente';
+                      })()
+                    : 'Seleccione un cliente'}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command shouldFilter={false}>
+                  <CommandInput
+                    placeholder="Buscar cliente..."
+                    value={searchCliente}
+                    onValueChange={setSearchCliente}
+                  />
+                  <CommandEmpty>
+                    <div className="py-3 px-2 text-center text-sm space-y-2">
+                      <p>No se encontró ningún cliente.</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleOpenNuevoCliente}
+                      >
+                        <Plus className="mr-1 h-3 w-3" />
+                        Crear nuevo cliente
+                      </Button>
+                    </div>
+                  </CommandEmpty>
+                  <CommandGroup>
+                    {clientesFiltrados.map((cliente) => (
+                      <CommandItem
+                        key={cliente.id}
+                        value={cliente.id.toString()}
+                        onSelect={(currentValue) => {
+                          const clienteSeleccionado = clientes.find(
+                            (c) => c.id.toString() === currentValue
+                          );
+                          if (currentValue === formData.clienteId) {
+                            setFormData((prev) => ({ ...prev, clienteId: '' }));
+                            setSelectedCliente(null);
+                          } else {
+                            setFormData((prev) => ({ ...prev, clienteId: currentValue }));
+                            setSelectedCliente(clienteSeleccionado ?? null);
+                          }
+                          setOpenCliente(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            formData.clienteId === cliente.id.toString() ? 'opacity-100' : 'opacity-0'
+                          )}
+                        />
+                        {formatClienteNombre(cliente)}
+                      </CommandItem>
+                    ))}
+                    <CommandItem onSelect={handleOpenNuevoCliente}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Nuevo cliente
+                    </CommandItem>
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div>
@@ -389,6 +512,14 @@ export default function NewTicketPage() {
           </Button>
         </div>
       </form>
+
+      <NuevoClienteModal
+        open={openNuevoCliente}
+        onOpenChange={setOpenNuevoCliente}
+        onSuccess={handleClienteCreated}
+        initialSearch={searchCliente}
+        apiVariant="repair-point"
+      />
     </div>
   );
 } 
