@@ -169,9 +169,11 @@ export function NewTicketForm() {
   const [tecnicos, setTecnicos] = useState<any[]>([]);
   const router = useRouter();
 
+  const permissions = session?.user?.permissions ?? [];
   const canCreateCliente =
     session?.user?.role === 'ADMINISTRADOR' ||
-    session?.user?.permissions?.includes('CLIENTS_CREATE') === true;
+    permissions.includes('CLIENTS_CREATE') ||
+    permissions.includes('TICKETS_CREATE');
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

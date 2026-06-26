@@ -239,11 +239,16 @@ export async function POST(request: Request) {
       puntoRecoleccionIdToUse = userPointId;
     }
 
-    // Si no es admin ni tiene permisos, y no es usuario de punto, no puede crear
-    if (userRole !== 'ADMINISTRADOR' && !session.user.permissions.includes('CLIENTS_CREATE')) {
-      if (!userPointId) {
-        return NextResponse.json({ error: 'No autorizado para crear clientes' }, { status: 403 });
-      }
+    // Admin, permiso de clientes, permiso de tickets o usuario de punto
+    const permissions = session.user.permissions ?? [];
+    const canCreateCliente =
+      userRole === 'ADMINISTRADOR' ||
+      permissions.includes('CLIENTS_CREATE') ||
+      permissions.includes('TICKETS_CREATE') ||
+      !!userPointId;
+
+    if (!canCreateCliente) {
+      return NextResponse.json({ error: 'No autorizado para crear clientes' }, { status: 403 });
     }
 
     // Normalizar email y teléfono

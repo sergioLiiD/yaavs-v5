@@ -35,6 +35,7 @@ export const routePermissions: Record<string, string[]> = {
   '/dashboard/tickets': ['TICKETS_VIEW'],
   '/dashboard/tickets/[id]': ['TICKETS_VIEW_DETAIL'],
   '/dashboard/tickets/new': ['TICKETS_CREATE'],
+  '/dashboard/tickets/nuevo': ['TICKETS_CREATE'],
   '/dashboard/tickets/[id]/edit': ['TICKETS_EDIT'],
   '/dashboard/tickets/[id]/delete': ['TICKETS_DELETE'],
   '/dashboard/tickets/[id]/assign': ['TICKETS_ASSIGN'],
