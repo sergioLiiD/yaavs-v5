@@ -145,14 +145,13 @@ export default function NewClientePage() {
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email (opcional)</Label>
             <Input
               id="email"
               name="email"
               type="email"
               value={formData.email}
               onChange={handleChange}
-              required
             />
           </div>
         </div>

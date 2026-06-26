@@ -20,7 +20,7 @@ export interface CreateClienteDTO {
   apellidoMaterno?: string;
   telefonoCelular: string;
   telefonoContacto?: string;
-  email: string;
+  email?: string;
   calle?: string;
   numeroExterior?: string;
   numeroInterior?: string;

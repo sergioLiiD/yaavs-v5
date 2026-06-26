@@ -15,7 +15,10 @@ const clienteSchema = z.object({
   apellidoMaterno: z.string().optional(),
   telefonoCelular: z.string().min(1, 'El teléfono celular es requerido'),
   telefonoContacto: z.string().optional(),
-  email: z.string().email('Email inválido'),
+  email: z.preprocess(
+    (val) => (typeof val === 'string' && val.trim() === '' ? undefined : val),
+    z.string().email('Email inválido').optional()
+  ),
   rfc: z.string().optional(),
   calle: z.string().optional(),
   numeroExterior: z.string().optional(),
@@ -40,7 +43,7 @@ function cleanClienteData(data: any) {
     apellido_materno: data.apellidoMaterno,
     telefono_celular: data.telefonoCelular,
     telefono_contacto: data.telefonoContacto,
-    email: data.email,
+    email: data.email ?? null,
     rfc: data.rfc,
     calle: data.calle,
     numero_exterior: data.numeroExterior,
@@ -244,37 +247,41 @@ export async function POST(request: Request) {
     }
 
     // Normalizar email y teléfono
-    const emailNormalizado = validatedData.email.toLowerCase().trim();
+    const emailNormalizado = validatedData.email
+      ? validatedData.email.toLowerCase().trim()
+      : null;
     const telefonoNormalizado = validatedData.telefonoCelular.trim().replace(/\s+/g, '');
 
-    // Verificar si el email ya existe
-    const existingClientByEmail = await prisma.clientes.findUnique({
-      where: { email: emailNormalizado },
-      select: {
-        id: true,
-        nombre: true,
-        apellido_paterno: true,
-        email: true,
-        telefono_celular: true
-      }
-    });
+    // Verificar si el email ya existe (solo cuando se proporciona)
+    if (emailNormalizado) {
+      const existingClientByEmail = await prisma.clientes.findUnique({
+        where: { email: emailNormalizado },
+        select: {
+          id: true,
+          nombre: true,
+          apellido_paterno: true,
+          email: true,
+          telefono_celular: true
+        }
+      });
 
-    if (existingClientByEmail) {
-      const nombreCompleto = `${existingClientByEmail.nombre} ${existingClientByEmail.apellido_paterno}`.trim();
-      return NextResponse.json(
-        { 
-          error: 'El correo electrónico ya está registrado',
-          message: `Ya existe un cliente registrado con el correo electrónico "${validatedData.email}". Cliente: ${nombreCompleto}`,
-          field: 'email',
-          existingClient: {
-            id: existingClientByEmail.id,
-            nombre: nombreCompleto,
-            email: existingClientByEmail.email,
-            telefono: existingClientByEmail.telefono_celular
-          }
-        },
-        { status: 400 }
-      );
+      if (existingClientByEmail) {
+        const nombreCompleto = `${existingClientByEmail.nombre} ${existingClientByEmail.apellido_paterno}`.trim();
+        return NextResponse.json(
+          { 
+            error: 'El correo electrónico ya está registrado',
+            message: `Ya existe un cliente registrado con el correo electrónico "${validatedData.email}". Cliente: ${nombreCompleto}`,
+            field: 'email',
+            existingClient: {
+              id: existingClientByEmail.id,
+              nombre: nombreCompleto,
+              email: existingClientByEmail.email,
+              telefono: existingClientByEmail.telefono_celular
+            }
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Verificar si el teléfono ya existe (normalizar teléfonos en la búsqueda)

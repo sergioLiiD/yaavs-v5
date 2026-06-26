@@ -77,7 +77,7 @@ model clientes {
   apellido_materno     String?
   telefono_celular     String
   telefono_contacto    String?
-  email                String              @unique
+  email                String?             @unique
   calle                String?
   numero_exterior      String?
   numero_interior      String?

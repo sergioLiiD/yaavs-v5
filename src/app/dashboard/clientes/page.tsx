@@ -185,7 +185,7 @@ export default function ClientesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentCliente.nombre || !currentCliente.apellidoPaterno || !currentCliente.telefonoCelular || !currentCliente.email) {
+    if (!currentCliente.nombre || !currentCliente.apellidoPaterno || !currentCliente.telefonoCelular) {
       setError('Por favor complete todos los campos requeridos');
       return;
     }
@@ -635,7 +635,7 @@ export default function ClientesPage() {
                     </div>
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                        Correo Electrónico *
+                        Correo Electrónico
                       </label>
                       <input
                         type="email"
@@ -643,8 +643,7 @@ export default function ClientesPage() {
                         value={currentCliente.email}
                         onChange={handleInputChange}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FEBF19] focus:ring-[#FEBF19] sm:text-sm h-10 px-4 text-gray-900"
-                        placeholder="Ingrese el correo electrónico"
-                        required
+                        placeholder="Ingrese el correo electrónico (opcional)"
                       />
                     </div>
                     <div>

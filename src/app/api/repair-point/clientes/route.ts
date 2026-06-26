@@ -22,13 +22,9 @@ export async function POST(request: Request) {
       const body = await request.json();
       
       // Normalizar email y teléfono
-      const emailNormalizado = body.email?.toLowerCase().trim();
-      if (!emailNormalizado) {
-        return NextResponse.json(
-          { error: 'El correo electrónico es requerido' },
-          { status: 400 }
-        );
-      }
+      const emailNormalizado = body.email?.trim()
+        ? body.email.toLowerCase().trim()
+        : null;
       
       const telefonoNormalizado = body.telefono?.trim().replace(/\s+/g, '');
       if (!telefonoNormalizado) {
@@ -38,34 +34,36 @@ export async function POST(request: Request) {
         );
       }
       
-      // Verificar si el email ya existe
-      const existingClientByEmail = await prisma.clientes.findUnique({
-        where: { email: emailNormalizado },
-        select: {
-          id: true,
-          nombre: true,
-          apellido_paterno: true,
-          email: true,
-          telefono_celular: true
-        }
-      });
+      // Verificar si el email ya existe (solo cuando se proporciona)
+      if (emailNormalizado) {
+        const existingClientByEmail = await prisma.clientes.findUnique({
+          where: { email: emailNormalizado },
+          select: {
+            id: true,
+            nombre: true,
+            apellido_paterno: true,
+            email: true,
+            telefono_celular: true
+          }
+        });
 
-      if (existingClientByEmail) {
-        const nombreCompleto = `${existingClientByEmail.nombre} ${existingClientByEmail.apellido_paterno}`.trim();
-        return NextResponse.json(
-          { 
-            error: 'El correo electrónico ya está registrado',
-            message: `Ya existe un cliente registrado con el correo electrónico "${body.email}". Cliente: ${nombreCompleto}`,
-            field: 'email',
-            existingClient: {
-              id: existingClientByEmail.id,
-              nombre: nombreCompleto,
-              email: existingClientByEmail.email,
-              telefono: existingClientByEmail.telefono_celular
-            }
-          },
-          { status: 400 }
-        );
+        if (existingClientByEmail) {
+          const nombreCompleto = `${existingClientByEmail.nombre} ${existingClientByEmail.apellido_paterno}`.trim();
+          return NextResponse.json(
+            { 
+              error: 'El correo electrónico ya está registrado',
+              message: `Ya existe un cliente registrado con el correo electrónico "${body.email}". Cliente: ${nombreCompleto}`,
+              field: 'email',
+              existingClient: {
+                id: existingClientByEmail.id,
+                nombre: nombreCompleto,
+                email: existingClientByEmail.email,
+                telefono: existingClientByEmail.telefono_celular
+              }
+            },
+            { status: 400 }
+          );
+        }
       }
 
       // Verificar si el teléfono ya existe (normalizar teléfonos en la búsqueda)
@@ -144,13 +142,9 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     // Normalizar email y teléfono
-    const emailNormalizado = body.email?.toLowerCase().trim();
-    if (!emailNormalizado) {
-      return NextResponse.json(
-        { error: 'El correo electrónico es requerido' },
-        { status: 400 }
-      );
-    }
+    const emailNormalizado = body.email?.trim()
+      ? body.email.toLowerCase().trim()
+      : null;
     
     const telefonoNormalizado = body.telefono?.trim().replace(/\s+/g, '');
     if (!telefonoNormalizado) {
@@ -160,34 +154,36 @@ export async function POST(request: Request) {
       );
     }
     
-    // Verificar si el email ya existe
-    const existingClientByEmail = await prisma.clientes.findUnique({
-      where: { email: emailNormalizado },
-      select: {
-        id: true,
-        nombre: true,
-        apellido_paterno: true,
-        email: true,
-        telefono_celular: true
-      }
-    });
+    // Verificar si el email ya existe (solo cuando se proporciona)
+    if (emailNormalizado) {
+      const existingClientByEmail = await prisma.clientes.findUnique({
+        where: { email: emailNormalizado },
+        select: {
+          id: true,
+          nombre: true,
+          apellido_paterno: true,
+          email: true,
+          telefono_celular: true
+        }
+      });
 
-    if (existingClientByEmail) {
-      const nombreCompleto = `${existingClientByEmail.nombre} ${existingClientByEmail.apellido_paterno}`.trim();
-      return NextResponse.json(
-        { 
-          error: 'El correo electrónico ya está registrado',
-          message: `Ya existe un cliente registrado con el correo electrónico "${body.email}". Cliente: ${nombreCompleto}`,
-          field: 'email',
-          existingClient: {
-            id: existingClientByEmail.id,
-            nombre: nombreCompleto,
-            email: existingClientByEmail.email,
-            telefono: existingClientByEmail.telefono_celular
-          }
-        },
-        { status: 400 }
-      );
+      if (existingClientByEmail) {
+        const nombreCompleto = `${existingClientByEmail.nombre} ${existingClientByEmail.apellido_paterno}`.trim();
+        return NextResponse.json(
+          { 
+            error: 'El correo electrónico ya está registrado',
+            message: `Ya existe un cliente registrado con el correo electrónico "${body.email}". Cliente: ${nombreCompleto}`,
+            field: 'email',
+            existingClient: {
+              id: existingClientByEmail.id,
+              nombre: nombreCompleto,
+              email: existingClientByEmail.email,
+              telefono: existingClientByEmail.telefono_celular
+            }
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Verificar si el teléfono ya existe (normalizar teléfonos en la búsqueda)
