@@ -27,21 +27,34 @@ sudo mkdir -p /var/lib/yaavs/postgres /var/lib/yaavs/uploads
 sudo chown -R 70:70 /var/lib/yaavs/postgres
 sudo chown -R 1001:1001 /var/lib/yaavs/uploads 2>/dev/null || true
 
-echo "==> Evitar initdb con SQLs viejos en backups/"
+echo "==> Vaciar backups/ (initdb ejecuta todo lo que haya ahí)"
 mkdir -p /tmp/backups-hold
 shopt -s nullglob
 for f in backups/*.sql backups/*.sql.gz; do
-  base="$(basename "$f")"
-  [[ "$base" == "yaavs_limpio_20251125.sql.gz" ]] && continue
   mv "$f" /tmp/backups-hold/
 done
+cp "${BACKUP}" /tmp/yaavs_limpio_20251125.sql.gz
 
-echo "==> Arrancar Postgres"
+echo "==> Arrancar Postgres (sin scripts en initdb)"
 docker compose up -d postgres
 sleep 15
 
+echo "==> BD vacía antes del restore"
+docker exec -i "${CONTAINER}" psql -U postgres -c "DROP DATABASE IF EXISTS yaavs_db;"
+docker exec -i "${CONTAINER}" psql -U postgres -c "CREATE DATABASE yaavs_db;"
+docker exec -i "${CONTAINER}" psql -U postgres -c "DROP ROLE IF EXISTS yaavs_user;" 2>/dev/null || true
+docker exec -i "${CONTAINER}" psql -U postgres -c \
+  "CREATE ROLE yaavs_user WITH LOGIN SUPERUSER PASSWORD 'yaavs_password_2024';" 2>/dev/null || true
+
 echo "==> Restaurar dump limpio"
-gunzip -c "${BACKUP}" | docker exec -i "${CONTAINER}" psql -U postgres -d yaavs_db -v ON_ERROR_STOP=1
+gunzip -c /tmp/yaavs_limpio_20251125.sql.gz | \
+  docker exec -i "${CONTAINER}" psql -U postgres -d yaavs_db -v ON_ERROR_STOP=1
+
+echo "==> Devolver backups/ (excepto el dump limpio del repo)"
+cp /tmp/yaavs_limpio_20251125.sql.gz "${BACKUP}"
+for f in /tmp/backups-hold/*.sql /tmp/backups-hold/*.sql.gz; do
+  [[ -f "$f" ]] && mv "$f" backups/
+done
 
 echo "==> Verificar tickets"
 docker exec -i "${CONTAINER}" psql -U postgres -d yaavs_db -c "SELECT COUNT(*) FROM tickets;"
