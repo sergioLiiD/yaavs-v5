@@ -1,0 +1,48 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1925.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-06T13:08:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1780768264948",
+    "fecha_recepcion": "2026-06-06",
+    "fecha_entrega": "2026-06-06",
+    "descripcion_problema": "Servicio de Limpieza Centro de...",
+    "imei": null,
+    "color": "AZUL",
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Jorge Julian Ventura",
+    "nombre": "Jorge Julian",
+    "apellido_paterno": "Ventura",
+    "apellido_materno": null,
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Samsung A02S",
+    "marca_texto": "Samsung",
+    "modelo_texto": "A02S"
+  },
+  "financiero": {
+    "presupuesto_total": 150.0,
+    "total_pagado": 150.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "TARJETA",
+        "monto": 150.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

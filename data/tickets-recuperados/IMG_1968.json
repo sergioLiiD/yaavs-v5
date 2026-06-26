@@ -1,0 +1,48 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1968.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-24T10:51:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1782317137804",
+    "fecha_recepcion": "2026-06-24",
+    "fecha_entrega": "2026-06-24",
+    "descripcion_problema": "Servicio de mantenimiento",
+    "imei": null,
+    "color": "Gris",
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Maria Isabel Moysen Alcantara",
+    "nombre": "Maria Isabel",
+    "apellido_paterno": "Moysen",
+    "apellido_materno": "Alcantara",
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "REALME Neo 3",
+    "marca_texto": "REALME",
+    "modelo_texto": "Neo 3"
+  },
+  "financiero": {
+    "presupuesto_total": 200.0,
+    "total_pagado": 200.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "TARJETA",
+        "monto": 200.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

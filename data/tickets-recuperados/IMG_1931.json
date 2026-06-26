@@ -1,0 +1,53 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1931.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-12T17:41:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1781283883322",
+    "fecha_recepcion": "2026-06-12",
+    "fecha_entrega": "2026-06-12",
+    "descripcion_problema": "Bateria Inflada",
+    "imei": null,
+    "color": "Negro",
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Teresa Aguirre",
+    "nombre": "Teresa",
+    "apellido_paterno": "Aguirre",
+    "apellido_materno": null,
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Android VARIOS",
+    "marca_texto": "Android",
+    "modelo_texto": "VARIOS"
+  },
+  "financiero": {
+    "presupuesto_total": 1150.0,
+    "total_pagado": 1150.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 500.0,
+        "referencia": null
+      },
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 650.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

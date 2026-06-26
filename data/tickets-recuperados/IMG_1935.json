@@ -1,0 +1,48 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1935.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.9,
+    "timestamp_impresion": "2026-06-11T17:14:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1781115619546",
+    "fecha_recepcion": "2026-06-10",
+    "fecha_entrega": "2026-06-11",
+    "descripcion_problema": "Diagnóstico",
+    "imei": null,
+    "color": null,
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Rocio Becerra",
+    "nombre": "Rocio",
+    "apellido_paterno": "Becerra",
+    "apellido_materno": null,
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Apple iPhone 11",
+    "marca_texto": "Apple",
+    "modelo_texto": "iPhone 11"
+  },
+  "financiero": {
+    "presupuesto_total": 300.0,
+    "total_pagado": 300.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 300.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

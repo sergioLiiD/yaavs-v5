@@ -1,0 +1,48 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1922.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-05T15:04:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1780690235358",
+    "fecha_recepcion": "2026-06-05",
+    "fecha_entrega": "2026-06-05",
+    "descripcion_problema": "Mantenimiento / Centro de carg...",
+    "imei": null,
+    "color": "Negro",
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Joshua Valencia",
+    "nombre": "Joshua",
+    "apellido_paterno": "Valencia",
+    "apellido_materno": null,
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Xiaomi MI 11T",
+    "marca_texto": "Xiaomi",
+    "modelo_texto": "MI 11T"
+  },
+  "financiero": {
+    "presupuesto_total": 200.0,
+    "total_pagado": 200.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 200.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local pl y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

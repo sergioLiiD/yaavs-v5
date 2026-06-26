@@ -1,0 +1,53 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1955.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-17T15:05:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1780178304744",
+    "fecha_recepcion": "2026-05-30",
+    "fecha_entrega": "2026-06-17",
+    "descripcion_problema": "Solicita cambió de batería",
+    "imei": null,
+    "color": null,
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Regina muñoz",
+    "nombre": "Regina",
+    "apellido_paterno": "muñoz",
+    "apellido_materno": null,
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Apple iPhone 15 Pro",
+    "marca_texto": "Apple",
+    "modelo_texto": "iPhone 15 Pro"
+  },
+  "financiero": {
+    "presupuesto_total": 2000.0,
+    "total_pagado": 2000.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 500.0,
+        "referencia": null
+      },
+      {
+        "metodo_pago": "TARJETA",
+        "monto": 1500.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

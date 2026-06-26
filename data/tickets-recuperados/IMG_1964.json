@@ -1,0 +1,53 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1964.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-23T09:08:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1781881857332",
+    "fecha_recepcion": "2026-06-19",
+    "fecha_entrega": "2026-06-23",
+    "descripcion_problema": "Venta de accesorio Porta SIM",
+    "imei": null,
+    "color": null,
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Eduardo Rosas",
+    "nombre": "Eduardo",
+    "apellido_paterno": "Rosas",
+    "apellido_materno": null,
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Samsung A16 5g",
+    "marca_texto": "Samsung",
+    "modelo_texto": "A16 5g"
+  },
+  "financiero": {
+    "presupuesto_total": 380.0,
+    "total_pagado": 380.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 200.0,
+        "referencia": null
+      },
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 180.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

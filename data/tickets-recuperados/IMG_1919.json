@@ -1,0 +1,46 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1919.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-06T13:20:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1780767396597",
+    "fecha_recepcion": "2026-06-06",
+    "fecha_entrega": "2026-06-06",
+    "descripcion_problema": "Solicita cambio de batería",
+    "imei": null,
+    "color": "Negro",
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Miguel Angel Pantaleón",
+    "nombre": "Miguel Angel",
+    "apellido_paterno": "Pantaleón",
+    "apellido_materno": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Motorola G60",
+    "marca_texto": "Motorola",
+    "modelo_texto": "G60"
+  },
+  "financiero": {
+    "presupuesto_total": 650,
+    "total_pagado": 650,
+    "saldo": 0,
+    "pagos": [
+      {
+        "metodo_pago": "TARJETA",
+        "monto": 650,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

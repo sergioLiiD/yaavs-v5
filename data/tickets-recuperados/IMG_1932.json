@@ -1,0 +1,48 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1932.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-12T16:13:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1781216407061",
+    "fecha_recepcion": "2026-06-11",
+    "fecha_entrega": "2026-06-12",
+    "descripcion_problema": "Bateria inflada",
+    "imei": null,
+    "color": "Negro",
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Mauricio Garcia",
+    "nombre": "Mauricio",
+    "apellido_paterno": "Garcia",
+    "apellido_materno": null,
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Apple iPhone 14",
+    "marca_texto": "Apple",
+    "modelo_texto": "iPhone 14"
+  },
+  "financiero": {
+    "presupuesto_total": 3000.0,
+    "total_pagado": 3000.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 3000.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

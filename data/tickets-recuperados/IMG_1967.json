@@ -1,0 +1,48 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1967.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-23T15:07:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1782248715837",
+    "fecha_recepcion": "2026-06-23",
+    "fecha_entrega": "2026-06-23",
+    "descripcion_problema": "Solicita cambio de centro de c...",
+    "imei": null,
+    "color": "Gris",
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Monica Cruz Luna",
+    "nombre": "Monica",
+    "apellido_paterno": "Cruz",
+    "apellido_materno": "Luna",
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "REALME C15",
+    "marca_texto": "REALME",
+    "modelo_texto": "C15"
+  },
+  "financiero": {
+    "presupuesto_total": 250.0,
+    "total_pagado": 250.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 250.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

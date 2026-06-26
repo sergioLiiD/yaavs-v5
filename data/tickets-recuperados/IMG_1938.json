@@ -1,0 +1,53 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1938.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-15T15:11:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1781028024513",
+    "fecha_recepcion": "2026-06-09",
+    "fecha_entrega": "2026-06-15",
+    "descripcion_problema": "Cambio de display",
+    "imei": null,
+    "color": "AZUL",
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Reyna Blanderos",
+    "nombre": "Reyna",
+    "apellido_paterno": "Blanderos",
+    "apellido_materno": null,
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Oppo a15",
+    "marca_texto": "Oppo",
+    "modelo_texto": "a15"
+  },
+  "financiero": {
+    "presupuesto_total": 600.0,
+    "total_pagado": 600.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 100.0,
+        "referencia": null
+      },
+      {
+        "metodo_pago": "TARJETA",
+        "monto": 500.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

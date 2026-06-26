@@ -1,0 +1,47 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1930.png",
+    "tipo_documento": "ticket_de_reparacion",
+    "confianza_global": 0.9,
+    "timestamp_impresion": "2026-06-12T16:23:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1781302960948",
+    "fecha_recepcion": "2026-06-12",
+    "fecha_entrega": null,
+    "descripcion_problema": "El equipo no carga",
+    "imei": null,
+    "color": null,
+    "entregado": false,
+    "entregado_por_texto": null
+  },
+  "cliente": {
+    "nombre_completo": "ricardo Gomez",
+    "nombre": "ricardo",
+    "apellido_paterno": "Gomez",
+    "apellido_materno": null,
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Motorola ONE HYPER",
+    "marca_texto": "Motorola",
+    "modelo_texto": "ONE HYPER"
+  },
+  "financiero": {
+    "presupuesto_total": 350.0,
+    "total_pagado": 100.0,
+    "saldo": 250.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 100.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local pl y D2",
+  "campos_no_leidos": [
+    "telefono_celular"
+  ]
+}

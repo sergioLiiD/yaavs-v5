@@ -1,0 +1,53 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1933.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-11T17:19:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1781196984402",
+    "fecha_recepcion": "2026-06-11",
+    "fecha_entrega": "2026-06-11",
+    "descripcion_problema": "Diagnóstico",
+    "imei": null,
+    "color": null,
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Ana Silvia Catalan",
+    "nombre": "Ana Silvia",
+    "apellido_paterno": "Catalan",
+    "apellido_materno": null,
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Samsung A52",
+    "marca_texto": "Samsung",
+    "modelo_texto": "A52"
+  },
+  "financiero": {
+    "presupuesto_total": 500.0,
+    "total_pagado": 500.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 200.0,
+        "referencia": null
+      },
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 300.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

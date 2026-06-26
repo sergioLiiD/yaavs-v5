@@ -1,0 +1,46 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1943.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": null
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1780776783617",
+    "fecha_recepcion": "2026-06-06",
+    "fecha_entrega": "2026-06-08",
+    "descripcion_problema": "cambio de bateria",
+    "imei": null,
+    "color": "negro",
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Angel Soto",
+    "nombre": "Angel",
+    "apellido_paterno": "Soto",
+    "apellido_materno": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Apple iPhone XS Max",
+    "marca_texto": "Apple",
+    "modelo_texto": "iPhone XS Max"
+  },
+  "financiero": {
+    "presupuesto_total": 765,
+    "total_pagado": 765,
+    "saldo": 0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 765,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1924.png",
+    "tipo_documento": "ticket_de_reparacion",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-03T17:18:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1780499696102",
+    "fecha_recepcion": "2026-06-03",
+    "fecha_entrega": null,
+    "descripcion_problema": "Pantalla sin imagen, después de mojado",
+    "imei": null,
+    "color": null,
+    "entregado": false,
+    "entregado_por_texto": null
+  },
+  "cliente": {
+    "nombre_completo": "David Calvo",
+    "nombre": "David",
+    "apellido_paterno": "Calvo",
+    "apellido_materno": null,
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Motorola G8 POWER",
+    "marca_texto": "Motorola",
+    "modelo_texto": "G8 POWER"
+  },
+  "financiero": {
+    "presupuesto_total": 750.0,
+    "total_pagado": 750.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "TARJETA",
+        "monto": 750.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular"
+  ]
+}

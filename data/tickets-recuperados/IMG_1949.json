@@ -1,0 +1,56 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1949.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.7,
+    "timestamp_impresion": null
+  },
+  "ticket": {
+    "numero_ticket": null,
+    "fecha_recepcion": null,
+    "fecha_entrega": "2026-06-19",
+    "descripcion_problema": null,
+    "imei": null,
+    "color": null,
+    "entregado": true,
+    "entregado_por_texto": null
+  },
+  "cliente": {
+    "nombre_completo": null,
+    "nombre": null,
+    "apellido_paterno": null,
+    "apellido_materno": null
+  },
+  "dispositivo": {
+    "equipo_texto": null,
+    "marca_texto": null,
+    "modelo_texto": null
+  },
+  "financiero": {
+    "presupuesto_total": null,
+    "total_pagado": null,
+    "saldo": null,
+    "pagos": []
+  },
+  "punto_recoleccion_texto": "Plaza",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email",
+    "numero_ticket",
+    "fecha_recepcion",
+    "descripcion_problema",
+    "imei",
+    "color",
+    "entregado_por_texto",
+    "nombre_completo",
+    "nombre",
+    "apellido_paterno",
+    "apellido_materno",
+    "equipo_texto",
+    "marca_texto",
+    "modelo_texto",
+    "presupuesto_total",
+    "total_pagado",
+    "saldo"
+  ]
+}

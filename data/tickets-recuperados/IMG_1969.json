@@ -1,0 +1,53 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1969.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-24T17:24:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1782246543637",
+    "fecha_recepcion": "2026-06-23",
+    "fecha_entrega": "2026-06-24",
+    "descripcion_problema": "C67 Solicita cambio de batería",
+    "imei": null,
+    "color": "Grin",
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Isidro Galindo",
+    "nombre": "Isidro",
+    "apellido_paterno": "Galindo",
+    "apellido_materno": null,
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "REALME C 75",
+    "marca_texto": "REALME",
+    "modelo_texto": "C 75"
+  },
+  "financiero": {
+    "presupuesto_total": 700.0,
+    "total_pagado": 700.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 500.0,
+        "referencia": null
+      },
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 200.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

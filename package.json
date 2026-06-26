@@ -11,7 +11,9 @@
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate deploy",
     "prisma:studio": "npx prisma studio",
-    "migrate-data": "NODE_ENV=migration ts-node --project tsconfig.migration.json scripts/migrate-data.ts"
+    "migrate-data": "NODE_ENV=migration ts-node --project tsconfig.migration.json scripts/migrate-data.ts",
+    "import:tickets-recuperados": "ts-node --project tsconfig.migration.json scripts/import-tickets-recuperados.ts",
+    "import:tickets-recuperados:dry-run": "ts-node --project tsconfig.migration.json scripts/import-tickets-recuperados.ts --dry-run"
   },
   "dependencies": {
     "@auth/core": "0.34.2",

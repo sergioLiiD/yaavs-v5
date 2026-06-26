@@ -1,0 +1,52 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1963.png",
+    "tipo_documento": "ticket_de_reparacion",
+    "confianza_global": 0.9,
+    "timestamp_impresion": "2026-06-22T17:39:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1781995932009",
+    "fecha_recepcion": "2026-06-20",
+    "fecha_entrega": null,
+    "descripcion_problema": "centro de carga y cambio de pantalla",
+    "imei": null,
+    "color": null,
+    "entregado": false,
+    "entregado_por_texto": null
+  },
+  "cliente": {
+    "nombre_completo": "Alberto Caballero Dominguez",
+    "nombre": "Alberto",
+    "apellido_paterno": "Caballero",
+    "apellido_materno": "Dominguez",
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Motorola E6PLAY",
+    "marca_texto": "Motorola",
+    "modelo_texto": "E6PLAY"
+  },
+  "financiero": {
+    "presupuesto_total": 750.0,
+    "total_pagado": 750.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 500.0,
+        "referencia": null
+      },
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 250.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular"
+  ]
+}

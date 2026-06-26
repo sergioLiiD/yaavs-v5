@@ -1,0 +1,48 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1936.png",
+    "tipo_documento": "acta_de_entrega",
+    "confianza_global": 0.95,
+    "timestamp_impresion": "2026-06-11T14:19:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1781200460214",
+    "fecha_recepcion": "2026-06-11",
+    "fecha_entrega": "2026-06-11",
+    "descripcion_problema": "Servicio de software - Virus",
+    "imei": "867471074023479",
+    "color": null,
+    "entregado": true,
+    "entregado_por_texto": "TERESA"
+  },
+  "cliente": {
+    "nombre_completo": "Yanet Moreno Lopez",
+    "nombre": "Yanet",
+    "apellido_paterno": "Moreno",
+    "apellido_materno": "Lopez",
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Oppo Reno 14 F",
+    "marca_texto": "Oppo",
+    "modelo_texto": "Reno 14 F"
+  },
+  "financiero": {
+    "presupuesto_total": 350.0,
+    "total_pagado": 350.0,
+    "saldo": 0.0,
+    "pagos": [
+      {
+        "metodo_pago": "EFECTIVO",
+        "monto": 350.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local D1 y D2",
+  "campos_no_leidos": [
+    "telefono_celular",
+    "email"
+  ]
+}

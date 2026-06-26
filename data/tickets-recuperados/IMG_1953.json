@@ -1,0 +1,47 @@
+{
+  "extraccion": {
+    "archivo_origen": "IMG_1953.png",
+    "tipo_documento": "ticket_de_reparacion",
+    "confianza_global": 0.85,
+    "timestamp_impresion": "2026-06-18T02:38:00"
+  },
+  "ticket": {
+    "numero_ticket": "TICK-1781640191936",
+    "fecha_recepcion": "2026-06-16",
+    "fecha_entrega": null,
+    "descripcion_problema": "Bypass",
+    "imei": null,
+    "color": null,
+    "entregado": false,
+    "entregado_por_texto": null
+  },
+  "cliente": {
+    "nombre_completo": "Luis Gael Espinosa López",
+    "nombre": "Luis Gael",
+    "apellido_paterno": "Espinosa",
+    "apellido_materno": "López",
+    "telefono_celular": null,
+    "email": null
+  },
+  "dispositivo": {
+    "equipo_texto": "Apple SE 2022 A2819",
+    "marca_texto": "Apple",
+    "modelo_texto": "SE 2022 A2819"
+  },
+  "financiero": {
+    "presupuesto_total": 650.0,
+    "total_pagado": 200.0,
+    "saldo": 450.0,
+    "pagos": [
+      {
+        "metodo_pago": "TARJETA",
+        "monto": 200.0,
+        "referencia": null
+      }
+    ]
+  },
+  "punto_recoleccion_texto": "Plaza Ecatepec local pl y D2",
+  "campos_no_leidos": [
+    "telefono_celular"
+  ]
+}
