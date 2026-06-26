@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,8 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NuevoClienteModal } from '@/components/clientes/NuevoClienteModal';
+import { ClienteListItem, formatClienteNombre, mapClienteFromApi } from '@/lib/cliente-mapper';
 import {
   Command,
   CommandEmpty,
@@ -24,8 +27,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Cliente } from '@/types/cliente';
-
 interface TipoServicio {
   id: number;
   nombre: string;
@@ -148,13 +149,16 @@ export const PatternGrid = ({ value, onChange }: { value: string, onChange: (val
 };
 
 export function NewTicketForm() {
+  const { data: session } = useSession();
   const [openCliente, setOpenCliente] = useState(false);
   const [openMarca, setOpenMarca] = useState(false);
   const [openModelo, setOpenModelo] = useState(false);
+  const [openNuevoCliente, setOpenNuevoCliente] = useState(false);
   const [valueCliente, setValueCliente] = useState("");
   const [valueMarca, setValueMarca] = useState("");
   const [valueModelo, setValueModelo] = useState("");
-  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clientes, setClientes] = useState<ClienteListItem[]>([]);
+  const [selectedCliente, setSelectedCliente] = useState<ClienteListItem | null>(null);
   const [searchCliente, setSearchCliente] = useState("");
   const [loadingClientes, setLoadingClientes] = useState(false);
   const [marcas, setMarcas] = useState<Marca[]>([]);
@@ -164,6 +168,10 @@ export function NewTicketForm() {
   const [loading, setLoading] = useState(false);
   const [tecnicos, setTecnicos] = useState<any[]>([]);
   const router = useRouter();
+
+  const canCreateCliente =
+    session?.user?.role === 'ADMINISTRADOR' ||
+    session?.user?.permissions?.includes('CLIENTS_CREATE') === true;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -241,34 +249,7 @@ export function NewTicketForm() {
         }
 
         const clientesData = await response.json();
-
-        // Mapear los datos de clientes de snake_case a camelCase
-        const clientesMapeados = clientesData.map((cliente: any) => ({
-          id: cliente.id,
-          nombre: cliente.nombre,
-          apellidoPaterno: cliente.apellido_paterno,
-          apellidoMaterno: cliente.apellido_materno,
-          telefonoCelular: cliente.telefono_celular,
-          telefonoContacto: cliente.telefono_contacto,
-          email: cliente.email,
-          calle: cliente.calle,
-          numeroExterior: cliente.numero_exterior,
-          numeroInterior: cliente.numero_interior,
-          colonia: cliente.colonia,
-          ciudad: cliente.ciudad,
-          estado: cliente.estado,
-          codigoPostal: cliente.codigo_postal,
-          latitud: cliente.latitud,
-          longitud: cliente.longitud,
-          fuenteReferencia: cliente.fuente_referencia,
-          rfc: cliente.rfc,
-          tipoRegistro: cliente.tipo_registro,
-          createdAt: cliente.created_at,
-          updatedAt: cliente.updated_at,
-          puntoRecoleccion: cliente.punto_recoleccion
-        }));
-
-        setClientes(clientesMapeados);
+        setClientes(clientesData.map((cliente: Record<string, unknown>) => mapClienteFromApi(cliente)));
       } catch (error) {
         console.error('Error al buscar clientes:', error);
         toast.error('Error al buscar clientes');
@@ -295,6 +276,23 @@ export function NewTicketForm() {
       setModelosFiltrados([]);
     }
   }, [form.watch('marcaId'), modelos]);
+
+  const handleOpenNuevoCliente = () => {
+    setOpenCliente(false);
+    setOpenNuevoCliente(true);
+  };
+
+  const handleClienteCreated = (cliente: ClienteListItem) => {
+    setClientes((prev) => {
+      if (prev.some((c) => c.id === cliente.id)) return prev;
+      return [cliente, ...prev];
+    });
+    setSelectedCliente(cliente);
+    setValueCliente(cliente.id.toString());
+    form.setValue('clienteId', cliente.id);
+    setSearchCliente('');
+    toast.success('Cliente listo para el ticket');
+  };
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -325,7 +323,21 @@ export function NewTicketForm() {
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="cliente">Cliente</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="cliente">Cliente</Label>
+            {canCreateCliente && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-auto px-2 py-1 text-xs"
+                onClick={handleOpenNuevoCliente}
+              >
+                <Plus className="mr-1 h-3 w-3" />
+                Nuevo cliente
+              </Button>
+            )}
+          </div>
           <Popover open={openCliente} onOpenChange={setOpenCliente}>
             <PopoverTrigger asChild>
               <Button
@@ -336,8 +348,8 @@ export function NewTicketForm() {
               >
                 {valueCliente
                   ? (() => {
-                      const cliente = clientes.find((c) => c.id.toString() === valueCliente);
-                      return cliente ? `${cliente.nombre} ${cliente.apellidoPaterno} ${cliente.apellidoMaterno}` : "Seleccionar cliente...";
+                      const cliente = selectedCliente ?? clientes.find((c) => c.id.toString() === valueCliente);
+                      return cliente ? formatClienteNombre(cliente) : "Seleccionar cliente...";
                     })()
                   : "Seleccionar cliente..."}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -351,7 +363,24 @@ export function NewTicketForm() {
                   onValueChange={setSearchCliente}
                 />
                 <CommandEmpty>
-                  {loadingClientes ? "Buscando clientes..." : "No se encontró ningún cliente."}
+                  {loadingClientes ? (
+                    "Buscando clientes..."
+                  ) : canCreateCliente ? (
+                    <div className="py-3 px-2 text-center text-sm space-y-2">
+                      <p>No se encontró ningún cliente.</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleOpenNuevoCliente}
+                      >
+                        <Plus className="mr-1 h-3 w-3" />
+                        Crear nuevo cliente
+                      </Button>
+                    </div>
+                  ) : (
+                    "No se encontró ningún cliente."
+                  )}
                 </CommandEmpty>
                 <CommandGroup>
                   {loadingClientes ? (
@@ -360,25 +389,40 @@ export function NewTicketForm() {
                       <span className="ml-2">Buscando...</span>
                     </div>
                   ) : (
-                    clientes?.map((cliente) => (
-                      <CommandItem
-                        key={cliente.id}
-                        value={cliente.id.toString()}
-                        onSelect={(currentValue) => {
-                          setValueCliente(currentValue === valueCliente ? "" : currentValue);
-                          form.setValue('clienteId', parseInt(currentValue));
-                          setOpenCliente(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            valueCliente === cliente.id.toString() ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {cliente.nombre} {cliente.apellidoPaterno} {cliente.apellidoMaterno}
-                      </CommandItem>
-                    ))
+                    <>
+                      {clientes?.map((cliente) => (
+                        <CommandItem
+                          key={cliente.id}
+                          value={cliente.id.toString()}
+                          onSelect={(currentValue) => {
+                            if (currentValue === valueCliente) {
+                              setValueCliente("");
+                              setSelectedCliente(null);
+                            } else {
+                              const clienteSeleccionado = clientes.find((c) => c.id.toString() === currentValue);
+                              setValueCliente(currentValue);
+                              setSelectedCliente(clienteSeleccionado ?? null);
+                              form.setValue('clienteId', parseInt(currentValue));
+                            }
+                            setOpenCliente(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              valueCliente === cliente.id.toString() ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {formatClienteNombre(cliente)}
+                        </CommandItem>
+                      ))}
+                      {canCreateCliente && (
+                        <CommandItem onSelect={handleOpenNuevoCliente}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Nuevo cliente
+                        </CommandItem>
+                      )}
+                    </>
                   )}
                 </CommandGroup>
               </Command>
@@ -674,6 +718,15 @@ export function NewTicketForm() {
           {loading ? 'Creando...' : 'Crear Ticket'}
         </Button>
       </div>
+
+      {canCreateCliente && (
+        <NuevoClienteModal
+          open={openNuevoCliente}
+          onOpenChange={setOpenNuevoCliente}
+          onSuccess={handleClienteCreated}
+          initialSearch={searchCliente}
+        />
+      )}
     </form>
   );
 } 
