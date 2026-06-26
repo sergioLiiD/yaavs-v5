@@ -28,12 +28,12 @@ sudo chown -R 70:70 /var/lib/yaavs/postgres
 sudo chown -R 1001:1001 /var/lib/yaavs/uploads 2>/dev/null || true
 
 echo "==> Vaciar backups/ (initdb ejecuta todo lo que haya ahí)"
+cp "${BACKUP}" /tmp/yaavs_limpio_20251125.sql.gz
 mkdir -p /tmp/backups-hold
 shopt -s nullglob
 for f in backups/*.sql backups/*.sql.gz; do
   mv "$f" /tmp/backups-hold/
 done
-cp "${BACKUP}" /tmp/yaavs_limpio_20251125.sql.gz
 
 echo "==> Arrancar Postgres (sin scripts en initdb)"
 docker compose up -d postgres
@@ -62,4 +62,4 @@ docker exec -i "${CONTAINER}" psql -U postgres -d yaavs_db -c "SELECT COUNT(*) F
 echo ""
 echo "Listo. Siguiente:"
 echo "  docker compose up -d --build"
-echo "  docker compose exec app npx prisma migrate deploy"
+echo "  docker compose exec app npx --yes prisma@5.22.0 migrate deploy"
