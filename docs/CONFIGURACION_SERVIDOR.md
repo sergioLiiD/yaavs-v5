@@ -117,7 +117,7 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/yaavs_db?schema=public
-    command: sh -c "npx prisma migrate deploy && npx prisma db seed"
+    command: sh -c "npx --yes prisma@5.22.0 migrate deploy"
     volumes:
       - ./prisma:/app/prisma
     networks:

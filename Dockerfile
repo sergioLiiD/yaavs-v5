@@ -71,8 +71,11 @@ COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/next.config.js ./
 
-# Copiar node_modules optimizado
+# Copiar node_modules de producción + CLI de Prisma (migrate deploy)
 COPY --from=base /app/node_modules ./node_modules
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 
 # Cambiar ownership de archivos
 RUN chown -R nextjs:nodejs /app
