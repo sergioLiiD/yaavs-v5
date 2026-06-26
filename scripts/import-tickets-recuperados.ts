@@ -337,6 +337,7 @@ async function importOneTicket(
         imei: data.ticket?.imei || null,
         color: normalizeColor(data.ticket?.color),
         entregado,
+        recuperacion_manual: true,
         cliente_id: cliente.id,
         tipo_servicio_id: catalog.tipoServicioId,
         modelo_id: modelo.id,

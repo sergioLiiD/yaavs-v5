@@ -26,7 +26,8 @@ import {
   HiLocationMarker,
   HiUserGroup,
   HiKey,
-  HiRefresh
+  HiRefresh,
+  HiDocumentReport
 } from 'react-icons/hi';
 import Link from 'next/link';
 
@@ -97,7 +98,12 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
     // Enlaces principales - todos los usuarios pueden ver estos
     const baseLinks = [
       { href: '/dashboard', icon: HiChartPie, text: 'Dashboard', active: pathname === '/dashboard' },
-      { href: '/dashboard/tickets', icon: HiTicket, text: 'Tickets', active: pathname?.includes('/dashboard/tickets') },
+      {
+        href: '/dashboard/tickets',
+        icon: HiTicket,
+        text: 'Tickets',
+        active: Boolean(pathname?.match(/^\/dashboard\/tickets(\/|$)/) && !pathname?.includes('/tickets-recuperados')),
+      },
       { href: '/dashboard/venta-productos', icon: HiShoppingBag, text: 'Venta de Productos', active: pathname?.includes('/dashboard/venta-productos') },
       { href: '/dashboard/presupuestos', icon: HiClipboardCheck, text: 'Presupuestos', active: pathname?.includes('/dashboard/presupuestos') },
       { href: '/dashboard/clientes', icon: HiUsers, text: 'Clientes', active: pathname?.includes('/dashboard/clientes') },
@@ -110,6 +116,12 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
     // ADMINISTRADOR ve todo
     if (userRole === 'ADMINISTRADOR') {
       additionalLinks.push(
+        {
+          href: '/dashboard/tickets-recuperados',
+          icon: HiDocumentReport,
+          text: 'Tickets Recuperados',
+          active: pathname?.includes('/dashboard/tickets-recuperados'),
+        },
         { href: '/dashboard/reportes', icon: HiClipboardCheck, text: 'Reportes', active: pathname?.includes('/dashboard/reportes') },
         { href: '/dashboard/devoluciones', icon: HiRefresh, text: 'Devoluciones', active: pathname?.includes('/dashboard/devoluciones') },
         { href: '/dashboard/collection-points', icon: HiLocationMarker, text: 'Puntos de Recolección', active: pathname?.includes('/dashboard/collection-points') }

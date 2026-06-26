@@ -564,6 +564,7 @@ model tickets {
   created_at                                     DateTime            @default(now())
   updated_at                                     DateTime
   tipo_desbloqueo                                String?
+  recuperacion_manual                            Boolean             @default(false)
   dispositivos                                   dispositivos?
   entregas                                       entregas?
   pagos                                          pagos[]
