@@ -9,13 +9,17 @@ import GraficosReporte from './GraficosReporte';
 import ExportarReporte from './ExportarReporte';
 import CorteCaja from './CorteCaja';
 import { ReporteService, FiltrosReporte as IFiltrosReporte, ResumenFinanciero as IResumenFinanciero } from '@/services/reporteService';
+import { getTodayDateMX } from '@/lib/datetime';
 import { Download, RefreshCw } from 'lucide-react';
 
 export default function ReporteFinanciero() {
-  const [filtros, setFiltros] = useState<IFiltrosReporte>({
-    fechaInicio: new Date().toISOString().split('T')[0],
-    fechaFin: new Date().toISOString().split('T')[0],
-    tipoPeriodo: 'dia'
+  const [filtros, setFiltros] = useState<IFiltrosReporte>(() => {
+    const hoy = getTodayDateMX();
+    return {
+      fechaInicio: hoy,
+      fechaFin: hoy,
+      tipoPeriodo: 'dia',
+    };
   });
   
   const [resumen, setResumen] = useState<IResumenFinanciero | null>(null);
@@ -26,6 +30,15 @@ export default function ReporteFinanciero() {
     try {
       setLoading(true);
       setError(null);
+
+      if (filtros.tipoPeriodo === 'dia') {
+        const hoy = getTodayDateMX();
+        if (filtros.fechaInicio !== hoy || filtros.fechaFin !== hoy) {
+          setFiltros({ ...filtros, fechaInicio: hoy, fechaFin: hoy });
+          return;
+        }
+      }
+
       const data = await ReporteService.obtenerResumenFinanciero(filtros);
       setResumen(data);
     } catch (error: any) {

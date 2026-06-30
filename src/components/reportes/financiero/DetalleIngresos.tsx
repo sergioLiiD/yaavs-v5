@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ReporteService, FiltrosReporte, DetalleIngreso } from '@/services/reporteService';
+import { formatDateTimeMX } from '@/lib/datetime';
 import { TrendingUp, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface DetalleIngresosProps {
@@ -36,16 +37,7 @@ export default function DetalleIngresos({ filtros }: DetalleIngresosProps) {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatDate = (dateString: string) => formatDateTimeMX(dateString);
 
   const getTipoLabel = (tipo: string) => {
     switch (tipo) {

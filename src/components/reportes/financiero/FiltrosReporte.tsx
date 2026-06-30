@@ -2,6 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { FiltrosReporte } from '@/services/reporteService';
+import {
+  addDaysToDateString,
+  getDayOfWeekMX,
+  getMonthStartMX,
+  getTodayDateMX,
+} from '@/lib/datetime';
 import { Calendar, Filter } from 'lucide-react';
 
 interface FiltrosReporteProps {
@@ -24,33 +30,44 @@ export default function FiltrosReporte({ filtros, onFiltrosChange }: FiltrosRepo
   };
 
   const establecerPeriodo = (periodo: 'dia' | 'semana' | 'mes' | 'personalizado') => {
-    const hoy = new Date();
-    let inicio = new Date();
-    let fin = new Date();
+    if (periodo === 'personalizado') {
+      setTipoPeriodo(periodo);
+      return;
+    }
+
+    const hoy = getTodayDateMX();
+    let inicio = hoy;
+    let fin = hoy;
 
     switch (periodo) {
       case 'dia':
-        inicio = fin = hoy;
         break;
       case 'semana':
-        const inicioSemana = new Date(hoy);
-        inicioSemana.setDate(hoy.getDate() - hoy.getDay());
-        inicio = inicioSemana;
-        fin = hoy;
+        inicio = addDaysToDateString(hoy, -getDayOfWeekMX(hoy));
         break;
       case 'mes':
-        inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-        fin = hoy;
+        inicio = getMonthStartMX(hoy);
         break;
-      case 'personalizado':
-        // Mantener las fechas actuales
-        return;
     }
 
-    setFechaInicio(inicio.toISOString().split('T')[0]);
-    setFechaFin(fin.toISOString().split('T')[0]);
+    setFechaInicio(inicio);
+    setFechaFin(fin);
     setTipoPeriodo(periodo);
   };
+
+  useEffect(() => {
+    if (tipoPeriodo !== 'dia') return;
+
+    const syncHoy = () => {
+      const hoy = getTodayDateMX();
+      setFechaInicio((prev) => (prev === hoy ? prev : hoy));
+      setFechaFin((prev) => (prev === hoy ? prev : hoy));
+    };
+
+    syncHoy();
+    document.addEventListener('visibilitychange', syncHoy);
+    return () => document.removeEventListener('visibilitychange', syncHoy);
+  }, [tipoPeriodo]);
 
   useEffect(() => {
     actualizarFiltros();
@@ -91,7 +108,10 @@ export default function FiltrosReporte({ filtros, onFiltrosChange }: FiltrosRepo
             <input
               type="date"
               value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
+              onChange={(e) => {
+                setFechaInicio(e.target.value);
+                if (tipoPeriodo === 'dia') setTipoPeriodo('personalizado');
+              }}
               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:border-[#FEBF19]"
             />
           </div>
@@ -107,7 +127,10 @@ export default function FiltrosReporte({ filtros, onFiltrosChange }: FiltrosRepo
             <input
               type="date"
               value={fechaFin}
-              onChange={(e) => setFechaFin(e.target.value)}
+              onChange={(e) => {
+                setFechaFin(e.target.value);
+                if (tipoPeriodo === 'dia') setTipoPeriodo('personalizado');
+              }}
               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FEBF19] focus:border-[#FEBF19]"
             />
           </div>

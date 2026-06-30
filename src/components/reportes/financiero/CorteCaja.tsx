@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ReporteService, FiltrosReporte, CorteCaja as ICorteCaja, TransaccionCorteCaja } from '@/services/reporteService';
+import { formatDateMX, formatTimeMX } from '@/lib/datetime';
 import { Wallet, CreditCard, Building2, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface CorteCajaProps {
@@ -40,22 +41,9 @@ export default function CorteCaja({ filtros }: CorteCajaProps) {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-  };
+  const formatDate = (dateString: string) => formatDateMX(dateString) ?? 'Fecha inválida';
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('es-MX', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatTime = (dateString: string) => formatTimeMX(dateString) ?? 'Hora inválida';
 
   const toggleSeccion = (metodo: 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA') => {
     setExpandido(prev => ({

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ReporteService, FiltrosReporte, DetalleEgreso } from '@/services/reporteService';
+import { formatDateTimeMX } from '@/lib/datetime';
 import { TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface DetalleEgresosProps {
@@ -36,16 +37,7 @@ export default function DetalleEgresos({ filtros }: DetalleEgresosProps) {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatDate = (dateString: string) => formatDateTimeMX(dateString);
 
   const totalEgresos = egresos.reduce((sum, egreso) => sum + egreso.monto, 0);
 

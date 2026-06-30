@@ -7,6 +7,7 @@ import {
   ReportePiezasUsadas,
   ReportePiezasUsadasService,
 } from '@/services/reporteService';
+import { getMexicoDateParts, getTodayDateMX } from '@/lib/datetime';
 import { Download, RefreshCw, Package } from 'lucide-react';
 
 function formatCurrency(value: number) {
@@ -17,12 +18,12 @@ function formatCurrency(value: number) {
 }
 
 export default function ReportePiezasUsadas() {
-  const hoy = new Date();
-  const inicioAnio = new Date(hoy.getFullYear(), 0, 1);
+  const hoy = getTodayDateMX();
+  const { year } = getMexicoDateParts(new Date());
 
   const [filtros, setFiltros] = useState<IFiltrosReporte>({
-    fechaInicio: inicioAnio.toISOString().split('T')[0],
-    fechaFin: hoy.toISOString().split('T')[0],
+    fechaInicio: `${year}-01-01`,
+    fechaFin: hoy,
     tipoPeriodo: 'personalizado',
   });
 

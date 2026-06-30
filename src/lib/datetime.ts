@@ -110,6 +110,44 @@ export function getMexicoDateParts(date: DateInput) {
   return getPartsInTimeZone(toDate(date), APP_TIMEZONE);
 }
 
+/** Fecha calendario YYYY-MM-DD en Ciudad de México. */
+export function getTodayDateMX(date: DateInput = new Date()): string {
+  const { year, month, day } = getMexicoDateParts(date);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** Suma días a una fecha YYYY-MM-DD en calendario. */
+export function addDaysToDateString(dateStr: string, days: number): string {
+  const [y, m, d] = normalizeDateInput(dateStr).split('-').map(Number);
+  const next = new Date(Date.UTC(y, m - 1, d + days));
+  return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}-${String(next.getUTCDate()).padStart(2, '0')}`;
+}
+
+/** Día de la semana (0=domingo) en Ciudad de México para una fecha YYYY-MM-DD. */
+export function getDayOfWeekMX(dateStr: string): number {
+  const utc = zonedTimeToUtc(normalizeDateInput(dateStr), '12:00:00');
+  const weekday = new Intl.DateTimeFormat('en-US', {
+    timeZone: APP_TIMEZONE,
+    weekday: 'short',
+  }).format(utc);
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  return map[weekday] ?? 0;
+}
+
+/** Primer día del mes calendario en Ciudad de México. */
+export function getMonthStartMX(dateStr: string): string {
+  const [y, m] = normalizeDateInput(dateStr).split('-').map(Number);
+  return `${y}-${String(m).padStart(2, '0')}-01`;
+}
+
 export function mesKeyMX(date: DateInput): string {
   const { year, month } = getMexicoDateParts(date);
   return `${year}-${String(month).padStart(2, '0')}`;
