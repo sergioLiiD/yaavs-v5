@@ -20,12 +20,17 @@ export default function FiltrosReporte({ filtros, onFiltrosChange }: FiltrosRepo
   const [fechaFin, setFechaFin] = useState(filtros.fechaFin);
   const [tipoPeriodo, setTipoPeriodo] = useState(filtros.tipoPeriodo);
 
+  useEffect(() => {
+    setFechaInicio(filtros.fechaInicio);
+    setFechaFin(filtros.fechaFin);
+    setTipoPeriodo(filtros.tipoPeriodo);
+  }, [filtros.fechaInicio, filtros.fechaFin, filtros.tipoPeriodo]);
+
   const actualizarFiltros = () => {
     onFiltrosChange({
-      ...filtros,
       fechaInicio,
       fechaFin,
-      tipoPeriodo
+      tipoPeriodo,
     });
   };
 
