@@ -6,19 +6,17 @@ function normDate(d: string): string {
 }
 
 /**
- * Fecha calendario en Ciudad de México para un timestamp guardado en UTC (Prisma/PostgreSQL).
- * Usar en $queryRaw para filtrar por "día de negocio" en México.
+ * Fecha calendario en Ciudad de México.
+ * Los timestamps en BD (Prisma + PostgreSQL) se guardan como UTC en columnas `timestamp without time zone`.
+ * timezone('UTC', col) fuerza esa interpretación aunque la sesión PG use America/Mexico_City.
  */
-export function sqlMxCalendarDateFromUtc(column: string): Prisma.Sql {
-  return Prisma.sql`(${Prisma.raw(column)} AT TIME ZONE 'UTC' AT TIME ZONE ${APP_TIMEZONE})::date`;
-}
-
 /** Rango inclusive de fechas calendario YYYY-MM-DD en Ciudad de México. */
 export function sqlMxDateBetween(column: string, fechaInicio: string, fechaFin: string): Prisma.Sql {
   const start = normDate(fechaInicio);
   const end = normDate(fechaFin);
+  const col = Prisma.raw(column);
   return Prisma.sql`
-    ${sqlMxCalendarDateFromUtc(column)} >= ${start}::date
-    AND ${sqlMxCalendarDateFromUtc(column)} <= ${end}::date
+    DATE(timezone(${APP_TIMEZONE}, timezone('UTC', ${col}))) >= ${start}::date
+    AND DATE(timezone(${APP_TIMEZONE}, timezone('UTC', ${col}))) <= ${end}::date
   `;
 }

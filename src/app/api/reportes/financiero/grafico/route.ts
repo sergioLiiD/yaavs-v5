@@ -3,9 +3,13 @@ import { prisma } from '@/lib/prisma';
 import {
   eachCalendarDayMX,
   formatDateShortMX,
-  parseDateRangeMX,
   zonedTimeToUtc,
 } from '@/lib/datetime';
+import {
+  sumComprasInsumosMX,
+  sumPagosReparacionMX,
+  sumVentasProductosMX,
+} from '@/lib/reportes/financiero-queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,53 +21,13 @@ export async function POST(request: NextRequest) {
 
     const datosPorDia = await Promise.all(
       dias.map(async (dia) => {
-        const { fechaInicioDate: inicioDia, fechaFinDate: finDia } = parseDateRangeMX(dia, dia);
-
-        const [ventasProductos, serviciosReparacion, comprasInsumos] = await Promise.all([
-          prisma.ventas.aggregate({
-            where: {
-              created_at: {
-                gte: inicioDia,
-                lte: finDia,
-              },
-              estado: 'COMPLETADA',
-            },
-            _sum: {
-              total: true,
-            },
-          }),
-
-          prisma.presupuestos.aggregate({
-            where: {
-              created_at: {
-                gte: inicioDia,
-                lte: finDia,
-              },
-            },
-            _sum: {
-              total_final: true,
-            },
-          }),
-
-          prisma.entradas_almacen.findMany({
-            where: {
-              fecha: {
-                gte: inicioDia,
-                lte: finDia,
-              },
-            },
-            select: {
-              precio_compra: true,
-              cantidad: true,
-            },
-          }),
+        const [ingresosVentas, ingresosReparacion, egresos] = await Promise.all([
+          sumVentasProductosMX(dia, dia),
+          sumPagosReparacionMX(dia, dia),
+          sumComprasInsumosMX(dia, dia),
         ]);
 
-        const ingresos = (ventasProductos._sum?.total || 0) + (serviciosReparacion._sum?.total_final || 0);
-        const egresos = comprasInsumos.reduce(
-          (total, entrada) => total + entrada.precio_compra * entrada.cantidad,
-          0
-        );
+        const ingresos = ingresosVentas + ingresosReparacion;
         const balance = ingresos - egresos;
 
         return {
@@ -89,20 +53,20 @@ export async function POST(request: NextRequest) {
         {
           label: 'Ingresos',
           data: ingresosData,
-          backgroundColor: '#10B981',
-          borderColor: '#10B981',
+          backgroundColor: 'rgba(34, 197, 94, 0.8)',
+          borderColor: 'rgba(34, 197, 94, 1)',
         },
         {
           label: 'Egresos',
           data: egresosData,
-          backgroundColor: '#EF4444',
-          borderColor: '#EF4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.8)',
+          borderColor: 'rgba(239, 68, 68, 1)',
         },
         {
           label: 'Balance',
           data: balanceData,
-          backgroundColor: '#FEBF19',
-          borderColor: '#FEBF19',
+          backgroundColor: 'rgba(59, 130, 246, 0.8)',
+          borderColor: 'rgba(59, 130, 246, 1)',
         },
       ],
     };
